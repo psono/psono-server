@@ -15,15 +15,18 @@
 
     <!-- Helper functions to call the actual functions with form parameters and display the output -->
     <script type="text/javascript">
+        $(function() {
+            (function () {
+                "use strict";
 
-        function helper() {
-            $('#logintoken').val(generate_login_token($('#email').val(), $('#password')));
-        }
+                $('#step1_submitbutton').click(function (event) {
+                    event.preventDefault();
+                    // do the magic
+                    $('#logintoken').val(generate_login_token($('#email').val(), $('#password')));
+                });
 
-        function helper2() {
-            // TODO
-        }
-
+            }());
+        });
 
     </script>
 
@@ -52,7 +55,7 @@
         <label for="email">E-Mail: </label><input size="30" type="email" name="email" id="email" value="Test@test.com">
         <label for="password">Password: </label><input size="30" type="text" name="password" id="password" value="myPassword">
         <br/>
-        <INPUT type="button" name="button" value="1. Generate Login Token generate_login_token(email, password)" onClick="helper()" id="submit"/>
+        <INPUT type="button" name="button" value="1. Generate Login Token generate_login_token(email, password)" id="step1_submitbutton"/>
         <br/>
         <h4>OUTPUT: </h4>
         <label for="logintoken">Logintoken: </label>
@@ -68,7 +71,7 @@
         <h2>Step 2</h2>
         <p>Email and login token (from step 1) are used to get the encrypted data blob (keystorage) from the server</p>
 
-        <INPUT type="button" name="button" value="2. Query the server for the keystorage get_encrypted_keystorage(email, login_token)" onClick="helper2()" id="submit"/>
+        <INPUT type="button" name="button" value="2. Query the server for the keystorage get_encrypted_keystorage(email, login_token)" id="step2_submitbutton"/>
 
     </section>
 
