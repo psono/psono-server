@@ -1,5 +1,7 @@
 django
 djangorestframework
+django-rest-auth
+django-allauth
 markdown
 django-filter
 pyyaml

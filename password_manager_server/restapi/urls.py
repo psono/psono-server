@@ -17,6 +17,6 @@ from django.conf.urls import url, include
 import views
 
 urlpatterns = [
-    url(r'^$', views.api_root),
-    url(r'^api-auth/register', views.register, name='register'),
+    # url(r'^$', views.api_root),
+    # url(r'^api-auth/register', views.register, name='register'),
 ]
