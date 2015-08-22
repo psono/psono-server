@@ -131,7 +131,7 @@
 <form>
     <h1>JS Client</h1>
 
-    <p>This is a small demo client for the password manager in js</p>
+    <p>This is a small demo client for the password manager in JavaScript</p>
 
 
     <div id="tabs">
@@ -145,7 +145,7 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Email and password are taken to generate the login authkey for registration </p>
+                <p>Email and password are taken to generate the authkey for registration </p>
                 <h4>INPUT: </h4>
                 <label for="email_registration">E-Mail: </label><input size="30" type="email" name="email_registration"
                                                                        id="email_registration" value="Test@test.com">
@@ -154,7 +154,7 @@
                                                                             id="password_registration"
                                                                             value="myPassword">
                 <br/>
-                <INPUT type="button" name="button" value="1. Generate Login Token generate_authkey(email, password)"
+                <INPUT type="button" name="button" value="1. Generate Login Token: generate_authkey(email, password)"
                        id="generate_authkey_button_registration"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -172,12 +172,12 @@
                 <h3>Step 2</h3>
 
                 <p>
-                    Email and login authkey (from step 1) are used to register with the server (Endpoint
+                    Email and authkey (from step 1) are used to register with the server (Endpoint
                     <a href="/authentication/registration/">/authentication/registration/</a>)
                 </p>
 
                 <INPUT type="button" name="button"
-                       value="2. Query the server for registration register(email, authkey)"
+                       value="2. Query the server for registration: register(email, authkey)"
                        id="registration_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -200,13 +200,14 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Takes the activation_code that has been sent to the user via E-Mail and activates the account</p>
+                <p>Takes the activation_code that has been sent to the user via E-Mail and activates the account (Endpoint
+                    <a href="/authentication/login/">/authentication/verify-email/</a>)</p>
                 <h4>INPUT: </h4>
                 <label for="activation_code">Activation Code: </label><input size="180" type="text" name="activation_code"
                                                                 id="activation_code"
                                                                 value="">
                 <br/>
-                <INPUT type="button" name="button" value="1. Activates the email verify_email(activation_code)"
+                <INPUT type="button" name="button" value="1. Activates the email: verify_email(activation_code)"
                        id="verify_email_button"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -228,7 +229,7 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Email and password are taken to generate the login authkey (same as in registration)</p>
+                <p>Email and password are taken to generate the authkey for login (same as in registration)</p>
                 <h4>INPUT: </h4>
                 <label for="email_login">E-Mail: </label><input size="30" type="email" name="email_login"
                                                                 id="email_login"
@@ -236,7 +237,7 @@
                 <label for="password_login">Password: </label><input size="30" type="text" name="password_login"
                                                                      id="password_login" value="myPassword">
                 <br/>
-                <INPUT type="button" name="button" value="1. Generate Login Token generate_authkey(email, password)"
+                <INPUT type="button" name="button" value="1. Generate Login Token: generate_authkey(email, password)"
                        id="generate_authkey_button_login"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -254,13 +255,13 @@
                 <h3>Step 2</h3>
 
                 <p>
-                    Email and login authkey (from step 1) are used to login to the server (Endpoint
+                    Email and authkey (from step 1) are used to login to the server (Endpoint
                     <a href="/authentication/login/">/authentication/login/</a>) and get a token back for further
                     authentication
                 </p>
 
                 <INPUT type="button" name="button"
-                       value="2. Query the server for login register(email, authkey)"
+                       value="2. Query the server for login: login(email, authkey)"
                        id="login_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -268,7 +269,7 @@
                 <br/>
                 <textarea rows="4" cols="60" name="login_request_feedback" id="login_request_feedback" readonly></textarea>
                 <br/>
-                <small>Will return token for further authentication
+                <small>Will return the token for further authentication
                 </small>
 
             </section>
