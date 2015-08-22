@@ -4,10 +4,9 @@ from serializers import (
     TokenSerializer as DefaultTokenSerializer,
     UserDetailsSerializer as DefaultUserDetailsSerializer,
     LoginSerializer as DefaultLoginSerializer,
-    PasswordResetSerializer as DefaultPasswordResetSerializer,
-    PasswordResetConfirmSerializer as DefaultPasswordResetConfirmSerializer,
-    PasswordChangeSerializer as DefaultPasswordChangeSerializer,
-    RegisterSerializer as DefaultRegisterSerializer)
+    VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
+    RegisterSerializer as DefaultRegisterSerializer,
+    AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer)
 from .utils import import_callable
 
 
@@ -24,24 +23,11 @@ LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
 )
 
-PasswordResetSerializer = import_callable(
-    serializers.get(
-        'PASSWORD_RESET_SERIALIZER',
-        DefaultPasswordResetSerializer
-    )
-)
 
-PasswordResetConfirmSerializer = import_callable(
-    serializers.get(
-        'PASSWORD_RESET_CONFIRM_SERIALIZER',
-        DefaultPasswordResetConfirmSerializer
-    )
-)
-
-PasswordChangeSerializer = import_callable(
+AuthkeyChangeSerializer = import_callable(
     serializers.get(
         'PASSWORD_CHANGE_SERIALIZER',
-        DefaultPasswordChangeSerializer
+        DefaultAuthkeyChangeSerializer
     )
 )
 
@@ -49,6 +35,14 @@ RegisterSerializer = import_callable(
     serializers.get(
         'REGISTER_SERIALIZER',
         DefaultRegisterSerializer
+    )
+)
+
+
+VerifyEmailSerializer = import_callable(
+    serializers.get(
+        'VERIFY_EMAIL_SERIALIZER',
+        DefaultVerifyEmailSerializer
     )
 )
 

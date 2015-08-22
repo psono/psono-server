@@ -1,6 +1,6 @@
 from django.contrib.auth import login, logout
 from django.conf import settings
-from utils import generate_activation_code, validate_activation_code
+from utils import generate_activation_code
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -12,8 +12,7 @@ from rest_framework.generics import RetrieveUpdateAPIView
 
 from .app_settings import (
     TokenSerializer, UserDetailsSerializer, LoginSerializer,
-    PasswordResetSerializer, PasswordResetConfirmSerializer,
-    PasswordChangeSerializer, RegisterSerializer
+    AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer
 )
 
 from django.core.mail import send_mail
@@ -78,19 +77,30 @@ class RegisterView(GenericAPIView):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-class VerifyEmailView(APIView, ConfirmEmailView):
+class VerifyEmailView(GenericAPIView):
 
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+
+    serializer_class = VerifyEmailSerializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
-        self.kwargs['key'] = self.request.data.get('key', '')
-        confirmation = self.get_object()
-        confirmation.confirm(self.request)
-        return Response({'message': 'ok'}, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            owner = serializer.validated_data['owner']
+            owner.is_email_active = True
+            owner.save()
+
+            return Response({"success": "Successfully activated."},
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -174,67 +184,16 @@ class UserDetailsView(RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-
-class PasswordResetView(GenericAPIView):
-
-    """
-    Calls Django Auth PasswordResetForm save method.
-
-    Accepts the following POST parameters: email
-    Returns the success/fail message.
-    """
-
-    serializer_class = PasswordResetSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request, *args, **kwargs):
-        # Create a serializer with request.data
-        serializer = self.get_serializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        # Return the success message with OK HTTP status
-        return Response(
-            {"success": "Password reset e-mail has been sent."},
-            status=status.HTTP_200_OK
-        )
-
-
-class PasswordResetConfirmView(GenericAPIView):
+class AuthkeyChangeView(GenericAPIView):
 
     """
-    Password reset e-mail link is confirmed, therefore this resets the user's password.
-
-    Accepts the following POST parameters: new_password1, new_password2
-    Accepts the following Django URL arguments: token, uid
-    Returns the success/fail message.
-    """
-
-    serializer_class = PasswordResetConfirmSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer.save()
-        return Response({"success": "Password has been reset with the new password."})
-
-
-class PasswordChangeView(GenericAPIView):
-
-    """
-    Calls Django Auth SetPasswordForm save method.
+    Calls Django Auth SetAuthkeyForm save method.
 
     Accepts the following POST parameters: new_password1, new_password2
     Returns the success/fail message.
     """
 
-    serializer_class = PasswordChangeSerializer
+    serializer_class = AuthkeyChangeSerializer
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):

@@ -2,6 +2,7 @@ from django.conf import settings
 import bcrypt
 import time
 import base64
+from models import Content_Storage_Owner
 
 from six import string_types
 import sys
@@ -20,13 +21,39 @@ def import_callable(path_or_callable):
         return getattr(import_module(package), attr)
 
 def generate_activation_code(email):
+    """
+    Takes email address and combines it with a secret in settings ACTIVATION_LINK_SECRET and the
+    current timestamp in seconds to a hash based on bcrypt and base64 encoding without database backend
+
+    :param email: activation_code
+    :type email: unicode
+    :return: activation_code
+    :rtype: str
+    """
     email = str(email.strip())
     time_stamp = str(int(time.time()))
     return base64.b64encode(
-        time_stamp+'.'+bcrypt.hashpw(time_stamp+settings.ACTIVATION_LINK_SECRET+email, bcrypt.gensalt())
+        base64.b64encode(email)+'.'+time_stamp+'.'+bcrypt.hashpw(time_stamp+settings.ACTIVATION_LINK_SECRET+email, bcrypt.gensalt())
     )
 
-def validate_activation_code(email, activation_code):
-    time_stamp, hash = base64.b64decode(activation_code).split(".", 1)
-    return bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
-        time_stamp) + 60 * settings.ACTIVATION_LINK_TIME_VALID > int(time.time())
+def validate_activation_code(activation_code):
+    """
+    Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
+    without database reference, based on bcrypt. Returns the owner or False in case of a failure
+
+    :param activation_code: activation_code
+    :type activation_code: str
+    :return: content_storage_owner or False
+    :rtype: Content_Storage_Owner or bool
+    """
+    try:
+        email, time_stamp, hash = base64.b64decode(activation_code).split(".", 2)
+        email = base64.b64decode(email)
+        if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
+            time_stamp) + 60 * settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
+            return Content_Storage_Owner.objects.filter(email=email, is_email_active=False)[0]
+        return False
+
+    except:
+        #wrong format or whatever could happen
+        return False
