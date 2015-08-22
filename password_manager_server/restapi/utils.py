@@ -75,10 +75,10 @@ def authenticate(email = False, owner = False, authkey = False):
         return False
 
     if email:
-        owner = Content_Storage_Owner.objects.filter(email=email)[0]
-
-    if not owner:
-        return False
+        try:
+            owner = Content_Storage_Owner.objects.filter(email=email, is_active=True)[0]
+        except IndexError:
+            return False
 
     if not check_password(authkey, owner.authkey):
         return False
