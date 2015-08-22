@@ -11,14 +11,12 @@ from models import Token
 from rest_framework.generics import RetrieveUpdateAPIView
 
 from .app_settings import (
-    TokenSerializer, UserDetailsSerializer, LoginSerializer,
+    UserDetailsSerializer, LoginSerializer,
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer
 )
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-
-from allauth.account.views import ConfirmEmailView
 
 
 class RegisterView(GenericAPIView):
@@ -87,6 +85,9 @@ class VerifyEmailView(GenericAPIView):
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def post(self, request, *args, **kwargs):
 
         serializer = self.get_serializer(data=request.data)
@@ -118,31 +119,29 @@ class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
     token_model = Token
-    response_serializer = TokenSerializer
 
-    def login(self):
-        self.user = self.serializer.validated_data['user']
-        self.token, created = self.token_model.objects.get_or_create(
-            user=self.user)
-        if getattr(settings, 'REST_SESSION_LOGIN', True):
-            login(self.request, self.user)
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def get_response(self):
-        return Response(
-            self.response_serializer(self.token).data, status=status.HTTP_200_OK
-        )
-
-    def get_error_response(self):
-        return Response(
-            self.serializer.errors, status=status.HTTP_400_BAD_REQUEST
-        )
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
-        self.serializer = self.get_serializer(data=self.request.data)
-        if not self.serializer.is_valid():
-            return self.get_error_response()
-        self.login()
-        return self.get_response()
+        serializer = self.get_serializer(data=self.request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        owner = serializer.validated_data['owner']
+        token, created = self.token_model.objects.get_or_create(owner=owner)
+
+        # if getattr(settings, 'REST_SESSION_LOGIN', True):
+        #     login(self.request, owner)
+
+        return Response({"auth_token_key": token.key},
+            status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -154,6 +153,12 @@ class LogoutView(APIView):
     Accepts/Returns nothing.
     """
     permission_classes = (AllowAny,)
+
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request):
         try:

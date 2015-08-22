@@ -1,6 +1,7 @@
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.conf import settings
-from utils import validate_activation_code
+from utils import validate_activation_code, authenticate
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -13,71 +14,44 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from models import Token, Content_Storage_Owner
-from rest_framework.exceptions import ValidationError
-
-
-class AuthTokenSerializer(serializers.Serializer):
-    owner = serializers.CharField()
-    password = serializers.CharField(style={'input_type': 'password'})
-
-    def validate(self, attrs):
-        owner = attrs.get('owner')
-        password = attrs.get('password')
-
-        if owner and password:
-            #TODO authenticate needs another backend
-            ownerobj = authenticate(username=owner, password=password)
-
-            if ownerobj:
-                if not ownerobj.is_active:
-                    msg = _('User account is disabled.')
-                    raise exceptions.ValidationError(msg)
-            else:
-                msg = _('Unable to log in with provided credentials.')
-                raise exceptions.ValidationError(msg)
-        else:
-            msg = _('Must include "username" and "password".')
-            raise exceptions.ValidationError(msg)
-
-        attrs['ownerobj'] = ownerobj
-        return attrs
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
-    password = serializers.CharField(style={'input_type': 'password'},  required=True)
+    authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
         authkey = attrs.get('authkey')
 
         if email and authkey:
-            user = authenticate(email=email, password=authkey)
+            owner = authenticate(email=email, authkey=authkey)
         else:
             msg = _('Must include "email" and "authkey".')
             raise exceptions.ValidationError(msg)
 
         # Did we get back an active user?
-        if user:
-            if not user.is_active:
+        if owner:
+            if not owner.is_active:
                 msg = _('User account is disabled.')
                 raise exceptions.ValidationError(msg)
 
-            if not user.is_email_active:
-                msg = _('E-mail is not verified.')
+            if not owner.is_email_active:
+                msg = _('E-mail is not yet verified.')
                 raise exceptions.ValidationError(msg)
         else:
             msg = _('Unable to log in with provided credentials.')
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
+        attrs['owner'] = owner
         return attrs
 
 class VerifyEmailSerializeras(serializers.Serializer):
     activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
     def validate(self, attrs):
-        activation_code = attrs.get('activation_code')
+        activation_code = attrs.get('activation_code').strip()
+
         if activation_code:
             owner = validate_activation_code(activation_code)
         else:
@@ -88,6 +62,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
             msg = _('Activation code incorrect or already activated.')
             raise exceptions.ValidationError(msg)
         attrs['owner'] = owner
+        attrs['activation_code'] = activation_code
         return attrs
 
 
@@ -97,7 +72,7 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_email(self, value):
 
-        value = value.lower()
+        value = value.lower().strip()
 
         if Content_Storage_Owner.objects.filter(email=value).exists():
             msg = _('E-Mail already exists.')
@@ -106,6 +81,9 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_authkey(self, value):
+
+        value = value.strip()
+
         if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
             msg = _('Your Auth Key is too short. It needs to have %s Bytes (%s digits in hex)') % \
                   (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
@@ -116,19 +94,10 @@ class RegisterSerializer(serializers.Serializer):
                   (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
             raise exceptions.ValidationError(msg)
 
-        return value
+        return make_password(value)
 
     def create(self, validated_data):
         return Content_Storage_Owner.objects.create(**validated_data)
-
-class TokenSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Token model.
-    """
-
-    class Meta:
-        model = Token
-        fields = ('key',)
 
 
 class UserDetailsSerializer(serializers.ModelSerializer):

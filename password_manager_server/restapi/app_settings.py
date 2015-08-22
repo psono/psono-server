@@ -1,7 +1,6 @@
 from django.conf import settings
 
 from serializers import (
-    TokenSerializer as DefaultTokenSerializer,
     UserDetailsSerializer as DefaultUserDetailsSerializer,
     LoginSerializer as DefaultLoginSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
@@ -11,9 +10,6 @@ from .utils import import_callable
 
 
 serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
-
-TokenSerializer = import_callable(
-    serializers.get('TOKEN_SERIALIZER', DefaultTokenSerializer))
 
 UserDetailsSerializer = import_callable(
     serializers.get('USER_DETAILS_SERIALIZER', DefaultUserDetailsSerializer)

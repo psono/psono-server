@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 import bcrypt
 import time
 import base64
@@ -57,3 +58,29 @@ def validate_activation_code(activation_code):
     except:
         #wrong format or whatever could happen
         return False
+
+def authenticate(email = False, owner = False, authkey = False):
+    """
+    Checks if the authkey for the given owner, specified by the email or directly by the owner object matches
+
+    :param email: str
+    :param owner: Content_Storage_Owner
+    :param authkey: str
+    :return: content_storage_owner or False
+    :rtype: Content_Storage_Owner or bool
+    """
+    if not authkey:
+        return False
+    if not email and not owner:
+        return False
+
+    if email:
+        owner = Content_Storage_Owner.objects.filter(email=email)[0]
+
+    if not owner:
+        return False
+
+    if not check_password(authkey, owner.authkey):
+        return False
+
+    return owner
