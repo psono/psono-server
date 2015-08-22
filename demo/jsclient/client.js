@@ -2,7 +2,7 @@
 var client = {
 
     /**
-     * takes the sha512 of lowercase email as salt to generate scrypt password hash in hex
+     * takes the sha512 of lowercase email as salt to generate scrypt password hash in hex called the authkey
      *
      *   var n = 16384;
      *   var r = 8;
@@ -11,14 +11,14 @@ var client = {
      *
      * @param {string} email - email address of the user
      * @param {string} password - password of the user
-     * @returns scrypt_password_hash_hex - scrypt hex value of the password with the sha512 of lowercase email as salt
+     * @returns auth_key - scrypt hex value of the password with the sha512 of lowercase email as salt
      */
-    generate_login_token: function (email, password) {
+    generate_login_authkey: function (email, password) {
 
         var n = 16384;
         var r = 8;
         var p = 1;
-        var l = 64;
+        var l = 64; // 64 Bytes = 512 Bits
 
         var scrypt = scrypt_module_factory();
 

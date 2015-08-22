@@ -1,0 +1,6 @@
+Hello,
+You registered for an account with:
+{{ email }}
+
+Your activation code is:
+{{ activation_code }}

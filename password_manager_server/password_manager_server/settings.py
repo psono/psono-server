@@ -44,11 +44,11 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'rest_framework',
-    'rest_framework.authtoken',
-    'rest_auth',
-    'allauth',
-    'allauth.account',
-    'rest_auth.registration',
+    #'rest_framework.authtoken',
+    #'rest_auth',
+    #'allauth',
+    #'allauth.account',
+    #'rest_auth.registration',
     # 'allauth.socialaccount',
     # 'allauth.socialaccount.providers.amazon',
     # 'allauth.socialaccount.providers.angellist',
@@ -113,41 +113,18 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = 'password_manager_server.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request',
-            ],
-        },
-    },
-]
-
-AUTHENTICATION_BACKENDS = (
-    # Needed to login by username in Django admin, regardless of `allauth`
-    'django.contrib.auth.backends.ModelBackend',
-
-    # `allauth` specific authentication methods, such as login by e-mail
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
+TEMPLATES = config['TEMPLATES']
 
 WSGI_APPLICATION = 'password_manager_server.wsgi.application'
-
-SITE_ID = 1
-
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = config['DATABASES']
 
+EMAIL_FROM = config['EMAIL_FROM']
+ACTIVATION_LINK_SECRET = config['ACTIVATION_LINK_SECRET']
+ACTIVATION_LINK_TIME_VALID = config['ACTIVATION_LINK_TIME_VALID']
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

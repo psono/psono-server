@@ -22,16 +22,16 @@
             (function () {
                 "use strict";
 
-                $('#generate_token_button_registration').click(function (event) {
+                $('#generate_authkey_button_registration').click(function (event) {
                     event.preventDefault();
                     // do the magic
-                    $('#logintoken_registration').val(client.generate_login_token($('#email_registration').val(), $('#password_registration')));
+                    $('#loginauthkey_registration').val(client.generate_login_authkey($('#username_registration').val(), $('#password_registration')));
                 });
 
-                $('#generate_token_button_login').click(function (event) {
+                $('#generate_authkey_button_login').click(function (event) {
                     event.preventDefault();
                     // do the magic
-                    $('#logintoken_login').val(client.generate_login_token($('#email_login').val(), $('#password_login')));
+                    $('#loginauthkey_login').val(client.generate_login_authkey($('#username_login').val(), $('#password_login')));
                 });
             }());
         });
@@ -85,22 +85,22 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Email and password are taken to generate the login token for registration </p>
+                <p>Email and password are taken to generate the login authkey for registration </p>
                 <h4>INPUT: </h4>
-                <label for="email_registration">E-Mail: </label><input size="30" type="email" name="email_registration"
-                                                                       id="email_registration" value="Test@test.com">
+                <label for="username_registration">E-Mail: </label><input size="30" type="username" name="username_registration"
+                                                                       id="username_registration" value="Test@test.com">
                 <label for="password_registration">Password: </label><input size="30" type="text"
                                                                             name="password_registration"
                                                                             id="password_registration"
                                                                             value="myPassword">
                 <br/>
-                <INPUT type="button" name="button" value="1. Generate Login Token generate_login_token(email, password)"
-                       id="generate_token_button_registration"/>
+                <INPUT type="button" name="button" value="1. Generate Login Token generate_login_authkey(username, password)"
+                       id="generate_authkey_button_registration"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="logintoken_registration">Logintoken: </label>
+                <label for="loginauthkey_registration">Loginauthkey: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="logintoken_registration" id="logintoken_registration" readonly></textarea>
+                <textarea rows="4" cols="60" name="loginauthkey_registration" id="loginauthkey_registration" readonly></textarea>
                 <br/>
                 <small>It should bethe following for "Test@test.com" and "myPassword":<br/>83b75ba167d1f93a643566fa7824424e0cab780f47d2d1a668e7ba42fa9f42622d09412b371bd7fd73ead1ceec612ccf5dfd61571c9cde0556bc0cd2126d62c3
                 </small>
@@ -111,10 +111,10 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Email and login token (from step 1) are used to register with the server</p>
+                <p>Email and login authkey (from step 1) are used to register with the server (Endpoint <a href="/rest-auth/registration/">/rest-auth/registration/</a>)</p>
 
                 <INPUT type="button" name="button"
-                       value="2. Query the server for registration register(email, login_token)"
+                       value="2. Query the server for registration register(username, login_authkey)"
                        id="registration_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -126,6 +126,8 @@
                 </small>
 
             </section>
+
+
             <!-- END Registration -->
         </div>
         <div id="tabs-2">
@@ -133,21 +135,21 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Email and password are taken to generate the login token</p>
+                <p>Email and password are taken to generate the login authkey</p>
                 <h4>INPUT: </h4>
-                <label for="email_login">E-Mail: </label><input size="30" type="email" name="email_login"
-                                                                id="email_login"
+                <label for="username_login">E-Mail: </label><input size="30" type="username" name="username_login"
+                                                                id="username_login"
                                                                 value="Test@test.com">
                 <label for="password_login">Password: </label><input size="30" type="text" name="password_login"
                                                                      id="password_login" value="myPassword">
                 <br/>
-                <INPUT type="button" name="button" value="1. Generate Login Token generate_login_token(email, password)"
-                       id="generate_token_button_login"/>
+                <INPUT type="button" name="button" value="1. Generate Login Token generate_login_authkey(username, password)"
+                       id="generate_authkey_button_login"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="logintoken_login">Logintoken: </label>
+                <label for="loginauthkey_login">Loginauthkey: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="logintoken_login" id="logintoken_login" readonly></textarea>
+                <textarea rows="4" cols="60" name="loginauthkey_login" id="loginauthkey_login" readonly></textarea>
                 <br/>
                 <small>It should bethe following for "Test@test.com" and "myPassword":<br/>83b75ba167d1f93a643566fa7824424e0cab780f47d2d1a668e7ba42fa9f42622d09412b371bd7fd73ead1ceec612ccf5dfd61571c9cde0556bc0cd2126d62c3
                 </small>
@@ -158,11 +160,11 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Email and login token (from step 1) are used to get the encrypted data blob (keystorage) from the
+                <p>Email and login authkey (from step 1) are used to get the encrypted data blob (authkeystorage) from the
                     server</p>
 
                 <INPUT type="button" name="button"
-                       value="2. Query the server for the keystorage get_encrypted_keystorage(email, login_token)"
+                       value="2. Query the server for the authkeystorage get_encrypted_authkeystorage(username, login_authkey)"
                        id="step2_submitbutton"/>
 
             </section>
