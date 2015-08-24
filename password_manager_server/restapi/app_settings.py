@@ -5,7 +5,9 @@ from serializers import (
     LoginSerializer as DefaultLoginSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
-    AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer)
+    AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer,
+    DatastoreSerializer as DefaultDatastoreSerializer,
+    DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer)
 from .utils import import_callable
 
 
@@ -39,6 +41,20 @@ VerifyEmailSerializer = import_callable(
     serializers.get(
         'VERIFY_EMAIL_SERIALIZER',
         DefaultVerifyEmailSerializer
+    )
+)
+
+DatastoreSerializer = import_callable(
+    serializers.get(
+        'REGISTER_SERIALIZER',
+        DefaultDatastoreSerializer
+    )
+)
+
+DatastoreOverviewSerializer = import_callable(
+    serializers.get(
+        'REGISTER_SERIALIZER',
+        DefaultDatastoreOverviewSerializer
     )
 )
 

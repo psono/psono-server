@@ -22,6 +22,8 @@
             (function () {
                 "use strict";
 
+                var client = new ClassClient();
+
                 /*
                  *  Registraiton
                  */
@@ -92,6 +94,62 @@
                             $('#login_request_feedback').val(value.responseText);
                         });
                 });
+
+
+                /*
+                 *  Read Datastores
+                 */
+
+
+                $('#read_datastore').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_datastore($('#token_datastore_read').val())
+                        .done(function(value) {
+                            // Login was successful
+                            $('#the_datastore_read').val(value);
+                        })
+                        .fail(function(value) {
+                            // Login failed
+                            $('#the_datastore_read').val(value.responseText);
+                        });
+                });
+
+
+                $('#read_datastore_id').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_datastore($('#token_datastore_read_id').val(), $('#id_datastore_read_id').val())
+                        .done(function(value) {
+                            // Login was successful
+                            $('#the_datastore_read_id').val(value);
+                        })
+                        .fail(function(value) {
+                            // Login failed
+                            $('#the_datastore_read_id').val(value.responseText);
+                        });
+                });
+
+
+                /*
+                 *  Write Datastore
+                 */
+
+
+                $('#write_datastore').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.write_datastore($('#token_datastore_write').val(), $('#id_datastore_write_id').val(), $('#the_datastore_write').val())
+                        .done(function(value) {
+                            // Login was successful
+                            $('#datastore_write_request_feedback').val(value);
+                        })
+                        .fail(function(value) {
+                            // Login failed
+                            $('#datastore_write_request_feedback').val(value.responseText);
+                        });
+                });
+
             }());
         });
 
@@ -139,6 +197,8 @@
             <li><a href="#tabs-1">Registration</a></li>
             <li><a href="#tabs-2">Verify Email</a></li>
             <li><a href="#tabs-3">Login</a></li>
+            <li><a href="#tabs-4">Read Datastore</a></li>
+            <li><a href="#tabs-5">Write Datastore</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -275,9 +335,101 @@
             </section>
             <!-- END Login -->
         </div>
+
+
+
+
+        <div id="tabs-4">
+            <!-- START Read Datastore -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to get a list of all datastores</p>
+                <h4>INPUT: </h4>
+                <label for="token_datastore_read">Token: </label><input size="30" size="180" type="text" name="token_datastore_read"
+                                                                id="token_datastore_read"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Get datastore list: read_datastore(token)"
+                       id="read_datastore"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_datastore_read">Datastore: </label>
+                <br/>
+                <textarea rows="4" cols="60" name="the_datastore_read" id="the_datastore_read" readonly></textarea>
+                <br/>
+                <small>
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Use the token from login and the datastore ID to get the datastore's content</p>
+                <h4>INPUT: </h4>
+                <label for="token_datastore_read_id">Token: </label><input size="30" size="180" type="text" name="token_datastore_read_id"
+                                                                id="token_datastore_read_id"
+                                                                value="">
+                <br/>
+                <label for="id_datastore_read_id">Datastore ID: </label><input size="30" size="180" type="text" name="id_datastore_read_id"
+                                                                id="id_datastore_read_id"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Read one datastores content: read_datastore(token, datastore_id)"
+                       id="read_datastore_id"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_datastore_read_id">Datastore: </label>
+                <br/>
+                <textarea rows="4" cols="60" name="the_datastore_read_id" id="the_datastore_read_id" readonly></textarea>
+                <br/>
+                <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
+                </small>
+            </section>
+            <!-- END Read Datastore -->
+        </div>
+
+
+
+
+        <div id="tabs-5">
+            <!-- START Write Datastore -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to get the datastore</p>
+                <h4>INPUT: </h4>
+                <label for="token_datastore_write">Token: </label><input size="30" size="180" type="text" name="token_datastore_write"
+                                                                id="token_datastore_write"
+                                                                value="">
+                <br/>
+                <label for="id_datastore_write_id">Datastore ID: </label><input size="30" size="180" type="text" name="id_datastore_write_id"
+                                                                id="id_datastore_write_id"
+                                                                value="">
+                <br/>
+                <label for="the_datastore_write">Datastore: </label>
+                <br/>
+                <textarea rows="4" cols="60" name="the_datastore_write" id="the_datastore_write"></textarea>
+                <br/>
+                <small>You can only change the data value for now.
+                </small>
+                <br/>
+                <INPUT type="button" name="button" value="1. Write the datastore: write_datastore(token, datastore)"
+                       id="write_datastore"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="datastore_write_request_feedback">Datastore: </label>
+                <br/>
+                <textarea rows="4" cols="60" name="datastore_write_request_feedback" id="datastore_write_request_feedback" readonly></textarea>
+                <small>
+                </small>
+            </section>
+            <!-- END Write Datastore -->
+        </div>
+
     </div>
-
-
 </form>
 
 </body>

@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from utils import validate_activation_code, authenticate
+import uuid
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -13,7 +14,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import Token, Content_Storage_Owner
+from models import Token, Data_Store_Owner
 
 
 class LoginSerializer(serializers.Serializer):
@@ -30,17 +31,16 @@ class LoginSerializer(serializers.Serializer):
             msg = _('Must include "email" and "authkey".')
             raise exceptions.ValidationError(msg)
 
-        # Did we get back an active user?
-        if owner:
-            if not owner.is_active:
-                msg = _('User account is disabled.')
-                raise exceptions.ValidationError(msg)
-
-            if not owner.is_email_active:
-                msg = _('E-mail is not yet verified.')
-                raise exceptions.ValidationError(msg)
-        else:
+        if not owner:
             msg = _('Unable to log in with provided credentials.')
+            raise exceptions.ValidationError(msg)
+
+        if not owner.is_active:
+            msg = _('User account is disabled.')
+            raise exceptions.ValidationError(msg)
+
+        if not owner.is_email_active:
+            msg = _('E-mail is not yet verified.')
             raise exceptions.ValidationError(msg)
 
         attrs['owner'] = owner
@@ -74,7 +74,7 @@ class RegisterSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        if Content_Storage_Owner.objects.filter(email=value).exists():
+        if Data_Store_Owner.objects.filter(email=value).exists():
             msg = _('E-Mail already exists.')
             raise exceptions.ValidationError(msg)
 
@@ -97,7 +97,7 @@ class RegisterSerializer(serializers.Serializer):
         return make_password(value)
 
     def create(self, validated_data):
-        return Content_Storage_Owner.objects.create(**validated_data)
+        return Data_Store_Owner.objects.create(**validated_data)
 
 
 class UserDetailsSerializer(serializers.ModelSerializer):
@@ -136,3 +136,23 @@ class AuthkeyChangeSerializer(serializers.Serializer):
         #TODO Check if this is working
         instance.email = validated_data.get('authkey', instance.new_authkey)
         instance.save()
+
+
+class DatastoreSerializer(serializers.Serializer):
+
+    data = serializers.CharField()
+    type = serializers.CharField(max_length=64, default='password')
+    description = serializers.CharField(max_length=64, default='default')
+
+    def validate(self, attrs):
+        return attrs
+
+
+class DatastoreOverviewSerializer(serializers.Serializer):
+
+    id = serializers.UUIDField(default=uuid.uuid4)
+    type = serializers.CharField(max_length=64, default='password')
+    description = serializers.CharField(max_length=64, default='default')
+
+    def validate(self, attrs):
+        return attrs

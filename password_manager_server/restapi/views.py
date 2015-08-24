@@ -7,21 +7,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from models import Token
+from models import Token, Data_Store
 from rest_framework.generics import RetrieveUpdateAPIView
 
 from .app_settings import (
     UserDetailsSerializer, LoginSerializer,
-    AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer
+    AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
+    DatastoreSerializer, DatastoreOverviewSerializer
 )
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
+from authentication import TokenAuthentication
+
 
 class RegisterView(GenericAPIView):
     """
-    Accepts the email and authkey and creates a new Content Storage Owner
+    Accepts the email and authkey and creates a new Data Store Owner
     if the email address does not already exist
 
     Method: POST
@@ -113,8 +116,14 @@ class LoginView(GenericAPIView):
     Calls Django Auth login method to register User ID
     in Django session framework
 
-    Accept the following POST parameters: email, password
-    Return the REST Framework Token Object's key.
+    Accepts the following POST parameters: email, password
+    Returns the token.
+
+    Clients should authenticate by passing the token key in the "Authorization"
+    HTTP header, prepended with the string "Token ". For example:
+
+        Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
+
     """
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
@@ -135,12 +144,12 @@ class LoginView(GenericAPIView):
             )
 
         owner = serializer.validated_data['owner']
-        token, created = self.token_model.objects.get_or_create(owner=owner)
+        token = self.token_model.objects.create(owner=owner)
 
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, owner)
 
-        return Response({"auth_token_key": token.key},
+        return Response({"token": token.clear_text_key},
             status=status.HTTP_200_OK)
 
 
@@ -161,6 +170,7 @@ class LogoutView(APIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request):
+        #TODO Create this logout function
         try:
             request.user.auth_token.delete()
         except:
@@ -209,3 +219,53 @@ class AuthkeyChangeView(GenericAPIView):
             )
         serializer.save()
         return Response({"success": "New password has been saved."})
+
+
+
+class DatastoreView(GenericAPIView):
+
+    """
+    Check the credentials and return the REST Token
+    if the credentials are valid and authenticated.
+    Calls Django Auth login method to register User ID
+    in Django session framework
+
+    Accept the following POST parameters: email, password
+    Return the REST Framework Token Object's key.
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (AllowAny,)
+    serializer_class = DatastoreSerializer
+
+    def get(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+            # TODO Discuss if many datastorages may make sense
+            storages, created = Data_Store.objects.get_or_create(owner=request.user, type='password', description='default')
+
+            if not isinstance(storages, (list, tuple)):
+                storages = [storages]
+
+            # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
+            return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
+                status=status.HTTP_200_OK)
+        else:
+            datastore = Data_Store.objects.get(pk=uuid)
+
+            return Response(DatastoreSerializer(datastore).data,
+                status=status.HTTP_200_OK)
+
+    def put(self, *args, **kwargs):
+        # TODO implement insert statement for enterprise users
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+        # TODO implement check for authorization
+        datastore = Data_Store.objects.get(pk=uuid)
+
+        datastore.data = str(request.data['data'])
+        datastore.save()
+
+        return Response({"success": "Data updated."},
+                        status=status.HTTP_200_OK)
+
