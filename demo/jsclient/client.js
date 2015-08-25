@@ -112,6 +112,22 @@ var ClassClient = function(){
         });
     };
 
+
+    this.authentication_logout = function(token) {
+        var endpoint = '/authentication/logout/';
+        var type = "POST";
+
+        return $.ajax({
+            type: type,
+            url: backend+endpoint,
+            data: null, // No data required for get
+            dataType: 'text', // will be json but for demonstration purposes we insist on text
+            beforeSend: function( xhr ) {
+                xhr.setRequestHeader ("Authorization", "Token "+token);
+            }
+        });
+    };
+
     /**
      * Ajax GET request with the token as authentication to get the current user's datastore
      *

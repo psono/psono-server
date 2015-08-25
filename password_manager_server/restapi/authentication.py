@@ -24,6 +24,11 @@ class TokenAuthentication(BaseAuthentication):
     """
 
     def authenticate(self, request):
+        token_hash = self.get_token_hash(request)
+        return self.authenticate_credentials(token_hash)
+
+    @staticmethod
+    def get_token_hash(request):
         auth = get_authorization_header(request).split()
 
         if not auth or auth[0].lower() != b'token':
@@ -41,12 +46,11 @@ class TokenAuthentication(BaseAuthentication):
         except UnicodeError:
             msg = _('Invalid token header. Token string should not contain invalid characters.')
             raise exceptions.AuthenticationFailed(msg)
+        return sha256(token).hexdigest()
 
-        return self.authenticate_credentials(token)
-
-    def authenticate_credentials(self, key):
+    def authenticate_credentials(self, token_hash):
         try:
-            token = self.model.objects.select_related('owner').get(key=sha256(key).hexdigest())
+            token = self.model.objects.select_related('owner').get(key=token_hash)
         except self.model.DoesNotExist:
             raise exceptions.AuthenticationFailed(_('Invalid token.'))
 

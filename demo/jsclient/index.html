@@ -86,12 +86,32 @@
                     // do the magic, function will return a promise so handle it
                     client.authentication_login($('#email_login').val(), $('#authkey_login').val())
                         .done(function(value) {
-                            // Login was successful
+                            // Login successful
                             $('#login_request_feedback').val(value);
                         })
                         .fail(function(value) {
                             // Login failed
                             $('#login_request_feedback').val(value.responseText);
+                        });
+                });
+
+
+                /*
+                 *  Logout
+                 */
+
+
+                $('#logout_submitbutton').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.authentication_logout($('#token_logout').val())
+                        .done(function(value) {
+                            // Logout successful
+                            $('#logout_request_feedback').val(value);
+                        })
+                        .fail(function(value) {
+                            // Logout failed
+                            $('#logout_request_feedback').val(value.responseText);
                         });
                 });
 
@@ -106,11 +126,11 @@
                     // do the magic, function will return a promise so handle it
                     client.read_datastore($('#token_datastore_read').val())
                         .done(function(value) {
-                            // Login was successful
+                            // successful
                             $('#the_datastore_read').val(value);
                         })
                         .fail(function(value) {
-                            // Login failed
+                            // failed
                             $('#the_datastore_read').val(value.responseText);
                         });
                 });
@@ -121,11 +141,11 @@
                     // do the magic, function will return a promise so handle it
                     client.read_datastore($('#token_datastore_read_id').val(), $('#id_datastore_read_id').val())
                         .done(function(value) {
-                            // Login was successful
+                            // successful
                             $('#the_datastore_read_id').val(value);
                         })
                         .fail(function(value) {
-                            // Login failed
+                            // failed
                             $('#the_datastore_read_id').val(value.responseText);
                         });
                 });
@@ -141,11 +161,11 @@
                     // do the magic, function will return a promise so handle it
                     client.write_datastore($('#token_datastore_write').val(), $('#id_datastore_write_id').val(), $('#the_datastore_write').val())
                         .done(function(value) {
-                            // Login was successful
+                            // successful
                             $('#datastore_write_request_feedback').val(value);
                         })
                         .fail(function(value) {
-                            // Login failed
+                            // failed
                             $('#datastore_write_request_feedback').val(value.responseText);
                         });
                 });
@@ -197,8 +217,9 @@
             <li><a href="#tabs-1">Registration</a></li>
             <li><a href="#tabs-2">Verify Email</a></li>
             <li><a href="#tabs-3">Login</a></li>
-            <li><a href="#tabs-4">Read Datastore</a></li>
-            <li><a href="#tabs-5">Write Datastore</a></li>
+            <li><a href="#tabs-4">Logout</a></li>
+            <li><a href="#tabs-5">Read Datastore</a></li>
+            <li><a href="#tabs-6">Write Datastore</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -340,6 +361,34 @@
 
 
         <div id="tabs-4">
+            <!-- START Logout -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to logout</p>
+                <h4>INPUT: </h4>
+                <label for="token_logout">Token: </label><input size="30" size="180" type="text" name="token_logout"
+                                                                id="token_logout"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Logout: logout(token)"
+                       id="logout_submitbutton"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="logout_request_feedback">Datastore: </label>
+                <br/>
+                <textarea rows="4" cols="60" name="logout_request_feedback" id="logout_request_feedback" readonly></textarea>
+                <br/>
+                <small>
+                </small>
+            </section>
+            <!-- END Logout -->
+        </div>
+
+
+
+
+        <div id="tabs-5">
             <!-- START Read Datastore -->
             <section>
                 <h3>Step 1</h3>
@@ -394,7 +443,7 @@
 
 
 
-        <div id="tabs-5">
+        <div id="tabs-6">
             <!-- START Write Datastore -->
             <section>
                 <h3>Step 1</h3>

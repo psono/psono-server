@@ -15,6 +15,7 @@ from .app_settings import (
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
     DatastoreSerializer, DatastoreOverviewSerializer
 )
+from rest_framework.exceptions import PermissionDenied
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -161,7 +162,9 @@ class LogoutView(APIView):
 
     Accepts/Returns nothing.
     """
+    authentication_classes = (TokenAuthentication, )
     permission_classes = (AllowAny,)
+    token_model = Token
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -172,11 +175,10 @@ class LogoutView(APIView):
     def post(self, request):
         #TODO Create this logout function
         try:
-            request.user.auth_token.delete()
+            token_hash=TokenAuthentication.get_token_hash(request)
+            self.token_model.objects.filter(key=token_hash).delete()
         except:
             pass
-
-        logout(request)
 
         return Response({"success": "Successfully logged out."},
                         status=status.HTTP_200_OK)
@@ -234,7 +236,7 @@ class DatastoreView(GenericAPIView):
     Return the REST Framework Token Object's key.
     """
     authentication_classes = (TokenAuthentication, )
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
     serializer_class = DatastoreSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
@@ -260,8 +262,16 @@ class DatastoreView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, uuid = None, *args, **kwargs):
-        # TODO implement check for authorization
-        datastore = Data_Store.objects.get(pk=uuid)
+
+        try:
+            datastore = Data_Store.objects.get(pk=uuid)
+        except Data_Store.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+        if not datastore.owner == request.user:
+            raise PermissionDenied({"message":"You don't have permission to access",
+                            "object_id": datastore.id})
 
         datastore.data = str(request.data['data'])
         datastore.save()

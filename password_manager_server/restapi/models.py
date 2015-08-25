@@ -27,6 +27,13 @@ class Data_Store_Owner(models.Model):
     class Meta:
         abstract = False
 
+    def is_authenticated(self):
+        """
+        Always return True. This is a way to tell if the user has been
+        authenticated in templates.
+        """
+        return True
+
 
 class Data_Store(models.Model):
     """
