@@ -6,9 +6,14 @@
 
     <!-- All of the following lines in head are kinda mandatory -->
 
-    <!-- SCrypt and sha512 are mandatory -->
+    <!-- NaCl, SCrypt and sha512 are mandatory -->
+    <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
     <script src="libs/scrypt/browser/scrypt.js" type="text/javascript"></script>
-    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha512.js" type="text/javascript"></script>
+
+    <!-- Our NaCl factory instantiated-->
+    <script>
+        var nacl = nacl_factory.instantiate();
+    </script>
 
     <!-- Main Script -->
     <script src="client.js" type="text/javascript"></script>
@@ -175,6 +180,11 @@
 
     </script>
 
+    <script>
+      //var nacl = nacl_factory.instantiate();
+      //alert(nacl.to_hex(nacl.random_bytes(16)));
+    </script>
+
 
     <!-- All of the following lines in head are only for styling -->
 
@@ -184,6 +194,9 @@
 
     <!-- Just some Styles, not necessary :D  -->
     <style>
+        a {
+            color: #1e1e1e;
+        }
         .ui-widget {
             font-size: 0.9em;
         }
@@ -480,6 +493,8 @@
 
     </div>
 </form>
+<br>
 
+<div style="width: 100%; text-align: center">Some unrelated links: <a href="benchmark.html">Benchmark</a> - <a href="test.html">Test</a> </div>
 </body>
 </html>

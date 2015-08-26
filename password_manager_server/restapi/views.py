@@ -80,6 +80,15 @@ class RegisterView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmailView(GenericAPIView):
+    """
+    Verifies the activation code sent via email and updates the Owner
+
+    Method: POST
+
+    Fields: activation_code
+
+    Returns: nothing
+    """
 
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
@@ -114,10 +123,8 @@ class LoginView(GenericAPIView):
     """
     Check the credentials and return the REST Token
     if the credentials are valid and authenticated.
-    Calls Django Auth login method to register User ID
-    in Django session framework
 
-    Accepts the following POST parameters: email, password
+    Accepts the following POST parameters: email, authkey
     Returns the token.
 
     Clients should authenticate by passing the token key in the "Authorization"
@@ -157,8 +164,7 @@ class LoginView(GenericAPIView):
 class LogoutView(APIView):
 
     """
-    Calls Django logout method and delete the Token object
-    assigned to the current User object.
+    Delete the current used token object.
 
     Accepts/Returns nothing.
     """
@@ -227,13 +233,11 @@ class AuthkeyChangeView(GenericAPIView):
 class DatastoreView(GenericAPIView):
 
     """
-    Check the credentials and return the REST Token
-    if the credentials are valid and authenticated.
-    Calls Django Auth login method to register User ID
-    in Django session framework
+    Check the REST Token and the object permissions and returns
+    the datastore if the necessary access rights are granted
 
-    Accept the following POST parameters: email, password
-    Return the REST Framework Token Object's key.
+    Accept the following POST parameters: datastore_id (optional)
+    Return a list of the datastores or the datastore
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)

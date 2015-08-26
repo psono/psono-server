@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEST</title>
+
+    <!-- All of the following lines in head are kinda mandatory -->
+
+    <!-- NaCl, SCrypt and sha512 are mandatory -->
+    <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
+    <script src="libs/scrypt/browser/scrypt.js" type="text/javascript"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha512.js" type="text/javascript"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core-min.js"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js"></script>
+
+    <!-- Main Script -->
+    <script src="client.js" type="text/javascript"></script>
+
+    <!-- Jquery is used for all REST-API Calls -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+    <script>
+        var nacl = nacl_factory.instantiate();
+    </script>
+</head>
+<body>
+
+    <script>
+        var r = nacl.random_bytes(16);
+        console.log(r);
+        var r_btoa = btoa(r);
+        var r_hex = nacl.to_hex(r);
+        console.log(r_btoa);
+        console.log(r_hex);
+    </script>
+
+    <script>
+        var sha_512_as_hex = nacl.to_hex(nacl.crypto_hash_string("sexy"));
+        var sha_512_as_base64= CryptoJS.enc.Base64.stringify(CryptoJS.enc.Hex.parse(sha_512_as_hex));
+        console.log(sha_512_as_hex);
+        console.log(sha_512_as_base64);
+
+    </script>
+
+
+
+</body>
+</html>

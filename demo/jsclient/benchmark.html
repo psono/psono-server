@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Benchmark</title>
+
+    <!-- All of the following lines in head are kinda mandatory -->
+
+    <!-- NaCl, SCrypt and sha512 are mandatory -->
+    <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
+    <script src="libs/scrypt/browser/scrypt.js" type="text/javascript"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha512.js" type="text/javascript"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core-min.js"></script>
+    <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js"></script>
+
+    <!-- Benchmark JS for benchmarking and the dependencies -->
+    <script src="libs/benchmark.js/benchmark.js" type="text/javascript"></script>
+
+    <!-- Main Script -->
+    <script src="client.js" type="text/javascript"></script>
+
+    <!-- Jquery is used for all REST-API Calls -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+    <script>
+        var nacl = nacl_factory.instantiate();
+    </script>
+</head>
+<body>
+
+    <script>
+        var suite = new Benchmark.Suite;
+
+        var delimiter_big = '======================================================';
+        var delimiter_small = '===';
+
+        // START NaCl-SHA-512 vs CryptoJS-SHA-512
+        console.log(delimiter_big);
+        console.log('NaCl-SHA-512 vs CryptoJS-SHA-512 :');
+        console.log(delimiter_small);
+
+        console.log(nacl.to_hex(nacl.crypto_hash_string("sexy")));
+        console.log(CryptoJS.SHA512("sexy").toString(CryptoJS.enc.Hex));
+
+        // add tests
+        suite.add('NaCl-SHA-512', function() {
+            nacl.to_hex(nacl.crypto_hash_string("sexy"));
+        })
+        .add('CryptoJS-SHA-512', function() {
+            CryptoJS.SHA512("sexy").toString(CryptoJS.enc.Hex);
+        })
+        // add listeners
+        .on('cycle', function(event) {
+            console.log(String(event.target));
+        })
+        .on('complete', function() {
+            console.log('Fastest is ' + this.filter('fastest').pluck('name'));
+        })
+        // run async
+        .run({ 'async': false });
+        // END NaCl-SHA-512 vs CryptoJS-SHA-512
+
+
+        console.log(delimiter_big);
+
+    </script>
+
+
+
+</body>
+</html>
