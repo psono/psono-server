@@ -7,13 +7,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from models import Token, Data_Store
+from models import Token, Data_Store, Share
 from rest_framework.generics import RetrieveUpdateAPIView
 
 from .app_settings import (
     UserDetailsSerializer, LoginSerializer,
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
-    DatastoreSerializer, DatastoreOverviewSerializer
+    DatastoreSerializer, ShareSerializer, DatastoreOverviewSerializer
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -256,9 +256,16 @@ class DatastoreView(GenericAPIView):
             return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
                 status=status.HTTP_200_OK)
         else:
-            datastore = Data_Store.objects.get(pk=uuid)
+            try:
+                datastore = Data_Store.objects.get(pk=uuid)
+            except Data_Store.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
 
-            return Response(DatastoreSerializer(datastore).data,
+            if not datastore.owner == request.user:
+                raise PermissionDenied({"message":"You don't have permission to access",
+                                "object_id": datastore.id})
+
+            return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
@@ -283,3 +290,55 @@ class DatastoreView(GenericAPIView):
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
 
+
+class ShareView(GenericAPIView):
+
+    """
+    Check the REST Token and the object permissions and returns
+    the share if the necessary access rights are granted
+
+    Accept the following POST parameters: share_id (optional)
+    Return a list of the shares or the share
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ShareSerializer
+
+    def get(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+            return Response({"error":"The UUID for the share is mandatory"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                share = Share.objects.get(pk=uuid)
+            except Share.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
+            if not share.owner == request.user:
+                raise PermissionDenied({"message":"You don't have permission to access",
+                                "object_id": share.id})
+
+            return Response(self.serializer_class(share).data,
+                status=status.HTTP_200_OK)
+
+    def put(self, *args, **kwargs):
+        # TODO implement insert statement for enterprise users
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+
+        try:
+            share = Share.objects.get(pk=uuid)
+        except Share.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+        if not share.owner == request.user:
+            raise PermissionDenied({"message":"You don't have permission to access",
+                            "object_id": share.id})
+
+        share.data = str(request.data['data'])
+        share.save()
+
+        return Response({"success": "Data updated."},
+                        status=status.HTTP_200_OK)

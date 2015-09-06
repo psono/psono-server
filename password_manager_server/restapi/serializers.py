@@ -147,6 +147,15 @@ class DatastoreSerializer(serializers.Serializer):
     def validate(self, attrs):
         return attrs
 
+class ShareSerializer(serializers.Serializer):
+
+    data = serializers.CharField()
+    type = serializers.CharField(max_length=64, default='password')
+    description = serializers.CharField(max_length=64, default='default')
+
+    def validate(self, attrs):
+        return attrs
+
 
 class DatastoreOverviewSerializer(serializers.Serializer):
 

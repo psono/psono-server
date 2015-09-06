@@ -41,6 +41,26 @@
                     );
                 });
 
+                $('#generate_secrets_registration').click(function (event) {
+                    event.preventDefault();
+                    var pair = client.generate_public_private_keypair();
+                    $('#registration_public_key').val(pair.public_key);
+                    $('#registration_private_key').val(pair.private_key);
+                    $('#registration_secret_key').val(client.generate_secret_key());
+
+                });
+
+                $('#encrypt_secrets_registration').click(function (event) {
+                    event.preventDefault();
+                    var priv_key_enc = client.encrypt_secret($('#registration_private_key').val(), $('#password_registration').val());
+                    var secret_key_enc = client.encrypt_secret($('#registration_secret_key').val(), $('#password_registration').val());
+                    $('#registration_private_key_enc').val(priv_key_enc.ciphertext);
+                    $('#registration_private_nonce_enc').val(priv_key_enc.nonce);
+                    $('#registration_secret_key_enc').val(secret_key_enc.ciphertext);
+                    $('#registration_secret_nonce_enc').val(secret_key_enc.nonce);
+
+                });
+
                 $('#registration_submitbutton').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
@@ -48,12 +68,15 @@
                         .done(function(value) {
                             // Registration was successful
                             jsoneditors.registration_request_feedback.set(JSON.parse(value));
+                            jsoneditors.registration_request_feedback.expandAll();
                         })
                         .fail(function(value) {
                             // Registration failed
                             jsoneditors.registration_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.registration_request_feedback.expandAll();
                         });
                 });
+
                 /*
                  *  Verify E-Mail
                  */
@@ -65,13 +88,14 @@
                         .done(function(value) {
                             // E-Mail verification was successful
                             jsoneditors.email_verification_request_feedback.set(JSON.parse(value));
+                            jsoneditors.email_verification_request_feedback.expandAll();
                         })
                         .fail(function(value) {
                             // E-Mail verification failed
                             jsoneditors.email_verification_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.email_verification_request_feedback.expandAll();
                         });
                 });
-
 
                 /*
                  *  Login
@@ -93,18 +117,18 @@
                         .done(function(value) {
                             // Login successful
                             jsoneditors.login_request_feedback.set(JSON.parse(value));
+                            jsoneditors.login_request_feedback.expandAll();
                         })
                         .fail(function(value) {
                             // Login failed
                             jsoneditors.login_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.login_request_feedback.expandAll();
                         });
                 });
-
 
                 /*
                  *  Logout
                  */
-
 
                 $('#logout_submitbutton').click(function (event) {
                     event.preventDefault();
@@ -113,18 +137,18 @@
                         .done(function(value) {
                             // Logout successful
                             jsoneditors.logout_request_feedback.set(JSON.parse(value));
+                            jsoneditors.logout_request_feedback.expandAll();
                         })
                         .fail(function(value) {
                             // Logout failed
                             jsoneditors.logout_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.logout_request_feedback.expandAll();
                         });
                 });
-
 
                 /*
                  *  Read Datastores
                  */
-
 
                 $('#read_datastore').click(function (event) {
                     event.preventDefault();
@@ -133,13 +157,14 @@
                         .done(function(value) {
                             // successful
                             jsoneditors.the_datastore_read.set(JSON.parse(value));
+                            jsoneditors.the_datastore_read.expandAll();
                         })
                         .fail(function(value) {
                             // failed
                             jsoneditors.the_datastore_read.set(JSON.parse(value.responseText));
+                            jsoneditors.the_datastore_read.expandAll();
                         });
                 });
-
 
                 $('#read_datastore_id').click(function (event) {
                     event.preventDefault();
@@ -148,25 +173,25 @@
                         .done(function(value) {
                             // successful
                             jsoneditors.the_datastore_read_id.set(JSON.parse(value));
+                            jsoneditors.the_datastore_read_id.expandAll();
                         })
                         .fail(function(value) {
                             // failed
                             jsoneditors.the_datastore_read_id.set(JSON.parse(value.responseText));
+                            jsoneditors.the_datastore_read_id.expandAll();
                         });
                 });
-
 
                 $('#decrypt_data').click(function (event) {
                     event.preventDefault();
                     // TODO do real decryption and unzipping of data
                     jsoneditors.decrypted_data.set(JSON.parse(jsoneditors.the_datastore_read_id.get().data));
+                    jsoneditors.decrypted_data.expandAll();
                 });
-
 
                 /*
                  *  Write Datastore
                  */
-
 
                 $('#write_datastore').click(function (event) {
                     event.preventDefault();
@@ -176,10 +201,12 @@
                         .done(function(value) {
                             // successful
                             jsoneditors.datastore_write_request_feedback.set(JSON.parse(value));
+                            jsoneditors.datastore_write_request_feedback.expandAll();
                         })
                         .fail(function(value) {
                             // failed
                             jsoneditors.datastore_write_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.datastore_write_request_feedback.expandAll();
                         });
                 });
 
@@ -304,7 +331,7 @@
                 <h4>OUTPUT: </h4>
                 <label for="authkey_registration">Authkey: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="authkey_registration" id="authkey_registration" readonly></textarea>
+                <textarea rows="3" cols="60" name="authkey_registration" id="authkey_registration" readonly></textarea>
                 <br/>
                 <small>It should be the following for "Test@test.com" and "myPassword":<br/>365bd57f7c0c0578eceeb0135e2c07d7dc0e0fb695e09737ca93fa738c4e0efbe94b4b811909749a76e401ea0d3cc6c2bda84f8d08c414a4080c8a5fbdadd3e4
                 </small>
@@ -316,12 +343,79 @@
                 <h3>Step 2</h3>
 
                 <p>
+                    Generate a secret key together with a public and private key pair. The private and the secret key
+                    will be encrypted before being sent for storage to the server
+                </p>
+
+                <INPUT type="button" name="button"
+                       value="2. Generate secrets"
+                       id="generate_secrets_registration"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="registration_public_key">Public Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_public_key" id="registration_public_key" readonly></textarea>
+                <br/>
+                <label for="registration_private_key">Private Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_private_key" id="registration_private_key" readonly></textarea>
+                <br/>
+                <label for="registration_secret_key">Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_secret_key" id="registration_secret_key" readonly></textarea>
+                <br/>
+                <small>
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>
+                    Encrypt the private key and the secret key with the password
+                </p>
+
+                <INPUT type="button" name="button"
+                       value="3. Encrypt secrets"
+                       id="encrypt_secrets_registration"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="registration_private_key_enc">Private Key (encrypted): </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_private_key_enc" id="registration_private_key_enc" readonly></textarea>
+                <br/>
+                <label for="registration_private_nonce_enc">Private Key Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_private_nonce_enc" id="registration_private_nonce_enc" readonly></textarea>
+                <br/>
+                <label for="registration_secret_key_enc">Secret Key (encrypted): </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_secret_key_enc" id="registration_secret_key_enc" readonly></textarea>
+                <br/>
+                <label for="registration_secret_nonce_enc">Private Key Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="registration_secret_nonce_enc" id="registration_secret_nonce_enc" readonly></textarea>
+                <br/>
+                <small>
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 4</h3>
+
+                <p>
                     Email and authkey (from step 1) are used to register with the server (Endpoint
                     <a href="/authentication/registration/">/authentication/registration/</a>)
                 </p>
 
                 <INPUT type="button" name="button"
-                       value="2. Query the server for registration: register(email, authkey)"
+                       value="3. Query the server for registration: register(email, authkey)"
                        id="registration_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -329,7 +423,8 @@
                 <br/>
                 <div id="registration_request_feedback" class="editclass_small"></div>
                 <br/>
-                <small>Will return a success message or an error. An email with an email_verification_code is sent to the provided email address.
+                <small>Will return a success message or an error. An email with an email_verification_code is sent to
+                    the provided email address.
                 </small>
 
             </section>
@@ -387,7 +482,7 @@
                 <h4>OUTPUT: </h4>
                 <label for="authkey_login">Authkey: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="authkey_login" id="authkey_login" readonly></textarea>
+                <textarea rows="3" cols="60" name="authkey_login" id="authkey_login" readonly></textarea>
                 <br/>
                 <small>It should be the following for "Test@test.com" and "myPassword":<br/>365bd57f7c0c0578eceeb0135e2c07d7dc0e0fb695e09737ca93fa738c4e0efbe94b4b811909749a76e401ea0d3cc6c2bda84f8d08c414a4080c8a5fbdadd3e4
                 </small>

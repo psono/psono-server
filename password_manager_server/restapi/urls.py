@@ -28,12 +28,14 @@ urlpatterns = [
     url(r'^authentication/verify-email/$', views.VerifyEmailView.as_view(), name='authentication_verify_email'),
 
     # URLs that require a user to be logged in with a valid session / token.
-    url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
-    url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
     #url(r'^owner/user/$', views.UserDetailsView.as_view(), name='authentication_user_details'),
     url(r'^authentication/authkey/change/$', views.AuthkeyChangeView.as_view(),
         name='authentication_authkey_change'),
+    url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
+    url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
+    url(r'^share/$', views.ShareView.as_view(), name='share'),
+    url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
     # url(r'^$', views.api_root),
 ]
 

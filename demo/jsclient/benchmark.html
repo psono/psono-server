@@ -29,18 +29,30 @@
 <body>
 
     <script>
-        var suite = new Benchmark.Suite;
+        function test (title) {
+
+            var div = document.createElement('div');
+            var h1 = document.createElement('h1');
+            $(h1).append(title);
+            $(div).append(h1);
+            $('body').append(div);
+
+            this.addLine = function (line) {
+                $(div).append(line+'<br>');
+            }
+        }
+    </script>
+
+
+    <script>
+
 
         var delimiter_big = '======================================================';
         var delimiter_small = '===';
 
         // START NaCl-SHA-512 vs CryptoJS-SHA-512
-        console.log(delimiter_big);
-        console.log('NaCl-SHA-512 vs CryptoJS-SHA-512 :');
-        console.log(delimiter_small);
-
-        console.log(nacl.to_hex(nacl.crypto_hash_string("sexy")));
-        console.log(CryptoJS.SHA512("sexy").toString(CryptoJS.enc.Hex));
+        var test1 = new test('NaCl-SHA-512 vs CryptoJS-SHA-512');
+        var suite = new Benchmark.Suite;
 
         // add tests
         suite.add('NaCl-SHA-512', function() {
@@ -51,17 +63,50 @@
         })
         // add listeners
         .on('cycle', function(event) {
-            console.log(String(event.target));
+            test1.addLine(String(event.target));
         })
         .on('complete', function() {
-            console.log('Fastest is ' + this.filter('fastest').pluck('name'));
+            test1.addLine('Fastest is ' + this.filter('fastest').pluck('name'));
         })
         // run async
-        .run({ 'async': false });
+        .run({ 'async': true });
         // END NaCl-SHA-512 vs CryptoJS-SHA-512
 
 
-        console.log(delimiter_big);
+        // START Public Key encryption vs Secret Key encryption
+        var test2 = new test('Public Key encryption vs Secret Key encryption');
+
+        suite = new Benchmark.Suite;
+
+        var senderKeypair = nacl.crypto_box_keypair();
+        var recipientKeypair = nacl.crypto_box_keypair();
+        var k = nacl.random_bytes(32);
+
+        // add tests
+        suite.add('Public Key', function() {
+            var message = nacl.encode_utf8("Hello!");
+
+            var nonce = nacl.crypto_box_random_nonce();
+            var packet = nacl.crypto_box(message, nonce, recipientKeypair.boxPk, senderKeypair.boxSk);
+
+            var decoded = nacl.crypto_box_open(packet, nonce, senderKeypair.boxPk, recipientKeypair.boxSk);
+        })
+        .add('Secret Key', function() {
+            var m = nacl.encode_utf8("Hello!");
+            var n = nacl.crypto_secretbox_random_nonce();
+            var c = nacl.crypto_secretbox(m, n, k);
+            var m1 = nacl.crypto_secretbox_open(c, n, k);
+        })
+        // add listeners
+        .on('cycle', function(event) {
+            test2.addLine(String(event.target));
+        })
+        .on('complete', function() {
+            test2.addLine('Fastest is ' + this.filter('fastest').pluck('name'));
+        })
+        // run async
+        .run({ 'async': true });
+        // END Public Key encryption vs Secret Key encryption
 
     </script>
 
