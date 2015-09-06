@@ -47,11 +47,11 @@
                     client.authentication_register($('#email_registration').val(), $('#authkey_registration').val())
                         .done(function(value) {
                             // Registration was successful
-                            $('#registration_request_feedback').val(value);
+                            jsoneditors.registration_request_feedback.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // Registration failed
-                            $('#registration_request_feedback').val(value.responseText);
+                            jsoneditors.registration_request_feedback.set(JSON.parse(value.responseText));
                         });
                 });
                 /*
@@ -64,11 +64,11 @@
                     client.authentication_verify_email($('#activation_code').val())
                         .done(function(value) {
                             // E-Mail verification was successful
-                            $('#email_verification_request_feedback').val(value);
+                            jsoneditors.email_verification_request_feedback.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // E-Mail verification failed
-                            $('#email_verification_request_feedback').val(value.responseText);
+                            jsoneditors.email_verification_request_feedback.set(JSON.parse(value.responseText));
                         });
                 });
 
@@ -92,11 +92,11 @@
                     client.authentication_login($('#email_login').val(), $('#authkey_login').val())
                         .done(function(value) {
                             // Login successful
-                            $('#login_request_feedback').val(value);
+                            jsoneditors.login_request_feedback.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // Login failed
-                            $('#login_request_feedback').val(value.responseText);
+                            jsoneditors.login_request_feedback.set(JSON.parse(value.responseText));
                         });
                 });
 
@@ -112,11 +112,11 @@
                     client.authentication_logout($('#token_logout').val())
                         .done(function(value) {
                             // Logout successful
-                            $('#logout_request_feedback').val(value);
+                            jsoneditors.logout_request_feedback.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // Logout failed
-                            $('#logout_request_feedback').val(value.responseText);
+                            jsoneditors.logout_request_feedback.set(JSON.parse(value.responseText));
                         });
                 });
 
@@ -132,11 +132,11 @@
                     client.read_datastore($('#token_datastore_read').val())
                         .done(function(value) {
                             // successful
-                            $('#the_datastore_read').val(value);
+                            jsoneditors.the_datastore_read.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // failed
-                            $('#the_datastore_read').val(value.responseText);
+                            jsoneditors.the_datastore_read.set(JSON.parse(value.responseText));
                         });
                 });
 
@@ -147,12 +147,19 @@
                     client.read_datastore($('#token_datastore_read_id').val(), $('#id_datastore_read_id').val())
                         .done(function(value) {
                             // successful
-                            $('#the_datastore_read_id').val(value);
+                            jsoneditors.the_datastore_read_id.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // failed
-                            $('#the_datastore_read_id').val(value.responseText);
+                            jsoneditors.the_datastore_read_id.set(JSON.parse(value.responseText));
                         });
+                });
+
+
+                $('#decrypt_data').click(function (event) {
+                    event.preventDefault();
+                    // TODO do real decryption and unzipping of data
+                    jsoneditors.decrypted_data.set(JSON.parse(jsoneditors.the_datastore_read_id.get().data));
                 });
 
 
@@ -164,14 +171,15 @@
                 $('#write_datastore').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.write_datastore($('#token_datastore_write').val(), $('#id_datastore_write_id').val(), $('#the_datastore_write').val())
+                    // TODO do zipping and encryption of data
+                    client.write_datastore($('#token_datastore_write').val(), $('#id_datastore_write_id').val(), jsoneditors.the_datastore_write.getText())
                         .done(function(value) {
                             // successful
-                            $('#datastore_write_request_feedback').val(value);
+                            jsoneditors.datastore_write_request_feedback.set(JSON.parse(value));
                         })
                         .fail(function(value) {
                             // failed
-                            $('#datastore_write_request_feedback').val(value.responseText);
+                            jsoneditors.datastore_write_request_feedback.set(JSON.parse(value.responseText));
                         });
                 });
 
@@ -215,6 +223,48 @@
             $("#tabs").tabs();
         });
     </script>
+
+    <!-- The nice json editor -->
+    <link href="libs/jsoneditor/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="libs/jsoneditor/dist/jsoneditor.min.js"></script>
+
+    <script>
+        var jsoneditors = {};
+        $(function() {
+
+            var editors = [
+                    'registration_request_feedback',
+                    'email_verification_request_feedback',
+                    'login_request_feedback',
+                    'logout_request_feedback',
+                    'the_datastore_read',
+                    'the_datastore_read_id',
+                    'datastore_write_request_feedback',
+                    'the_datastore_write',
+                    'decrypted_data'
+                ];
+
+            for (var i = 0; i < editors.length; i++) {
+                jsoneditors[editors[i]] = new JSONEditor(document.getElementById(editors[i]), {
+                    mode: 'view',
+                    modes: ['code', 'form', 'text', 'tree', 'view'], // allowed modes
+                    error: function (err) {
+                        alert(err.toString());
+                    }
+                });
+            }
+        });
+    </script>
+    <style>
+        .editclass {
+            width: 800px;
+            height: 400px;
+        }
+        .editclass_small {
+            width: 800px;
+            height: 150px;
+        }
+    </style>
 
 
 </head>
@@ -275,9 +325,9 @@
                        id="registration_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="registration_request_feedback">Registration Request Feedback: </label>
+                <label for="registration_request_feedback">Registration request feedback: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="registration_request_feedback" id="registration_request_feedback" readonly></textarea>
+                <div id="registration_request_feedback" class="editclass_small"></div>
                 <br/>
                 <small>Will return a success message or an error. An email with an email_verification_code is sent to the provided email address.
                 </small>
@@ -307,7 +357,7 @@
                 <h4>OUTPUT: </h4>
                 <label for="email_verification_request_feedback">Login Verification Feedback: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="email_verification_request_feedback" id="email_verification_request_feedback" readonly></textarea>
+                <div id="email_verification_request_feedback" class="editclass_small"></div>
                 <br/>
                 <small>Will return nothing except a success or fail message
                 </small>
@@ -359,9 +409,9 @@
                        id="login_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="login_request_feedback">Login Request Feedback: </label>
+                <label for="login_request_feedback">Login request feedback: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="login_request_feedback" id="login_request_feedback" readonly></textarea>
+                <div id="login_request_feedback" class="editclass_small"></div>
                 <br/>
                 <small>Will return the token for further authentication
                 </small>
@@ -388,9 +438,9 @@
                        id="logout_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="logout_request_feedback">Datastore: </label>
+                <label for="logout_request_feedback">Logout request feedback: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="logout_request_feedback" id="logout_request_feedback" readonly></textarea>
+                <div id="logout_request_feedback" class="editclass_small"></div>
                 <br/>
                 <small>
                 </small>
@@ -416,9 +466,9 @@
                        id="read_datastore"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="the_datastore_read">Datastore: </label>
+                <label for="the_datastore_read">List of all datastores: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="the_datastore_read" id="the_datastore_read" readonly></textarea>
+                <div id="the_datastore_read" class="editclass"></div>
                 <br/>
                 <small>
                 </small>
@@ -443,9 +493,28 @@
                        id="read_datastore_id"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="the_datastore_read_id">Datastore: </label>
+                <label for="the_datastore_read_id">Content of one datastore: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="the_datastore_read_id" id="the_datastore_read_id" readonly></textarea>
+                <div id="the_datastore_read_id" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+                <p>Decrypt the content of the data attribute</p>
+
+                <INPUT type="button" name="button" value="Decrypt Data"
+                       id="decrypt_data"/>
+                <br/>
+
+                <h4>OUTPUT: </h4>
+                <label for="decrypted_data">Decrypted content of the data of the fetched datastore: </label>
+                <br/>
+                <div id="decrypted_data" class="editclass"></div>
                 <br/>
                 <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
                 </small>
@@ -471,9 +540,9 @@
                                                                 id="id_datastore_write_id"
                                                                 value="">
                 <br/>
-                <label for="the_datastore_write">Datastore: </label>
+                <label for="the_datastore_write">Data of one datastore: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="the_datastore_write" id="the_datastore_write"></textarea>
+                <div id="the_datastore_write" class="editclass"></div>
                 <br/>
                 <small>You can only change the data value for now.
                 </small>
@@ -482,9 +551,9 @@
                        id="write_datastore"/>
                 <br/>
                 <h4>OUTPUT: </h4>
-                <label for="datastore_write_request_feedback">Datastore: </label>
+                <label for="datastore_write_request_feedback">Datastore write request feedback: </label>
                 <br/>
-                <textarea rows="4" cols="60" name="datastore_write_request_feedback" id="datastore_write_request_feedback" readonly></textarea>
+                <div id="datastore_write_request_feedback" class="editclass_small"></div>
                 <small>
                 </small>
             </section>

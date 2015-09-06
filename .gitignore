@@ -1,2 +1,6 @@
+.idea
 *.py[cod]
 problemtest
+
+# while developing and no final structure we wont push migration scripts
+password_manager_server/restapi/migrations/*
