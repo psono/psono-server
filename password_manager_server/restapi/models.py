@@ -17,6 +17,11 @@ class Data_Store_Owner(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     email = models.EmailField(_('email address'), unique=True)
     authkey = models.CharField(_('auth key'), max_length=128)
+    public_key = models.CharField(_('public key'), max_length=256)
+    private_key = models.CharField(_('private key'), max_length=256)
+    private_key_nonce = models.CharField(_('private key nonce'), max_length=64)
+    secret_key = models.CharField(_('secret key'), max_length=256)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
     is_email_active = models.BooleanField(_('email active'), default=False,
         help_text=_('Designates whether this email should be treated as '
                     'active. Unselect this if the user registers a new email.'))

@@ -10,11 +10,6 @@
     <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
     <script src="libs/scrypt/browser/scrypt.js" type="text/javascript"></script>
 
-    <!-- Our NaCl factory instantiated-->
-    <script>
-        var nacl = nacl_factory.instantiate();
-    </script>
-
     <!-- Main Script -->
     <script src="client.js" type="text/javascript"></script>
 
@@ -58,13 +53,20 @@
                     $('#registration_private_nonce_enc').val(priv_key_enc.nonce);
                     $('#registration_secret_key_enc').val(secret_key_enc.ciphertext);
                     $('#registration_secret_nonce_enc').val(secret_key_enc.nonce);
-
                 });
 
                 $('#registration_submitbutton').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.authentication_register($('#email_registration').val(), $('#authkey_registration').val())
+                    client.authentication_register(
+                            $('#email_registration').val(),
+                            $('#authkey_registration').val(),
+                            $('#registration_public_key').val(),
+                            $('#registration_private_key_enc').val(),
+                            $('#registration_private_nonce_enc').val(),
+                            $('#registration_secret_key_enc').val(),
+                            $('#registration_secret_nonce_enc').val()
+                        )
                         .done(function(value) {
                             // Registration was successful
                             jsoneditors.registration_request_feedback.set(JSON.parse(value));
@@ -215,12 +217,6 @@
 
     </script>
 
-    <script>
-      //var nacl = nacl_factory.instantiate();
-      //alert(nacl.to_hex(nacl.random_bytes(16)));
-    </script>
-
-
     <!-- All of the following lines in head are only for styling -->
 
     <!-- JQuery UI is only used for some nice styling -->
@@ -333,7 +329,7 @@
                 <br/>
                 <textarea rows="3" cols="60" name="authkey_registration" id="authkey_registration" readonly></textarea>
                 <br/>
-                <small>It should be the following for "Test@test.com" and "myPassword":<br/>365bd57f7c0c0578eceeb0135e2c07d7dc0e0fb695e09737ca93fa738c4e0efbe94b4b811909749a76e401ea0d3cc6c2bda84f8d08c414a4080c8a5fbdadd3e4
+                <small>It should be the following for "Test@test.com" and "myPassword":<br/>c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
                 </small>
             </section>
 
@@ -375,7 +371,8 @@
                 <h3>Step 3</h3>
 
                 <p>
-                    Encrypt the private key and the secret key with the password
+                    Encrypt the private key and the secret key with the password. Public key is skipped, because as the
+                    name says is the <b>public</b> key used for sharing
                 </p>
 
                 <INPUT type="button" name="button"
@@ -395,7 +392,7 @@
                 <br/>
                 <textarea rows="3" cols="60" name="registration_secret_key_enc" id="registration_secret_key_enc" readonly></textarea>
                 <br/>
-                <label for="registration_secret_nonce_enc">Private Key Nonce: </label>
+                <label for="registration_secret_nonce_enc">Secret Key Nonce: </label>
                 <br/>
                 <textarea rows="3" cols="60" name="registration_secret_nonce_enc" id="registration_secret_nonce_enc" readonly></textarea>
                 <br/>
@@ -415,7 +412,7 @@
                 </p>
 
                 <INPUT type="button" name="button"
-                       value="3. Query the server for registration: register(email, authkey)"
+                       value="3. Query the server for registration: register(email, authkey, public_key, private_key, private_key_nonce, secret_key, secret_key_nonce)"
                        id="registration_submitbutton"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -484,7 +481,7 @@
                 <br/>
                 <textarea rows="3" cols="60" name="authkey_login" id="authkey_login" readonly></textarea>
                 <br/>
-                <small>It should be the following for "Test@test.com" and "myPassword":<br/>365bd57f7c0c0578eceeb0135e2c07d7dc0e0fb695e09737ca93fa738c4e0efbe94b4b811909749a76e401ea0d3cc6c2bda84f8d08c414a4080c8a5fbdadd3e4
+                <small>It should be the following for "Test@test.com" and "myPassword":<br/>c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
                 </small>
             </section>
 

@@ -70,6 +70,12 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
+    public_key = serializers.CharField(required=True, )
+    private_key = serializers.CharField(required=True, )
+    private_key_nonce = serializers.CharField(required=True, )
+    secret_key = serializers.CharField(required=True, )
+    secret_key_nonce = serializers.CharField(required=True, )
+
     def validate_email(self, value):
 
         value = value.lower().strip()
