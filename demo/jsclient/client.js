@@ -35,11 +35,13 @@ var ClassClient = function(){
 
     /**
      * takes the sha512 of lowercase email (+ special sauce) as salt to generate scrypt password hash in hex called the
-     * authkey
+     * authkey, so basically:
+     *
+     * hex(scrypt(password, hex(sha512(lower(email)+special_sauce))))
      *
      * For compatibility reasons with other clients please use the following parameters if you create your own client:
      *
-     * var n = 16384;
+     * var n = 16384 // 2^14;
      * var r = 8;
      * var p = 1;
      * var l = 64;
@@ -135,6 +137,47 @@ var ClassClient = function(){
     };
 
     /**
+     * Takes the data and the secret_key as hex and encrypts the data.
+     * Returns the nonce and the cipher text as hex.
+     *
+     * @param {string} data
+     * @param {string} secret_key
+     * @returns {{nonce: string, ciphertext: string}}
+     */
+    this.encrypt_data = function(data, secret_key) {
+
+        var k = nacl.from_hex(secret_key);
+        var m = nacl.encode_utf8(data);
+        var n = nacl.crypto_secretbox_random_nonce();
+        var c = nacl.crypto_secretbox(m, n, k);
+
+        return {
+            nonce: nacl.to_hex(n),
+            ciphertext: nacl.to_hex(c)
+        }
+    };
+
+    /**
+     * Takes the cipher text and decrypts that with the nonce and the secret_key.
+     * Returns the initial data.
+     *
+     * @param {string} ciphertext
+     * @param {string} nonce
+     * @param {string} secret_key
+     *
+     * @returns {string} data
+     */
+    this.decrypt_data = function(ciphertext, nonce, secret_key) {
+
+        var k = nacl.from_hex(secret_key);
+        var n = nacl.from_hex(nonce);
+        var c = nacl.from_hex(ciphertext);
+        var m1 = nacl.crypto_secretbox_open(c, n, k);
+
+        return nacl.decode_utf8(m1);
+    };
+
+    /**
      * Ajax POST request to the backend with the email and authkey, returns nothing but an email is sent to the user
      * with an activation_code for the email
      *
@@ -156,7 +199,7 @@ var ClassClient = function(){
             public_key: public_key,
             private_key: private_key,
             private_key_nonce: private_key_nonce,
-            secret_key: secret_key_nonce,
+            secret_key: secret_key,
             secret_key_nonce: secret_key_nonce
         };
 
@@ -264,14 +307,16 @@ var ClassClient = function(){
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {uuid} datastore_id - the datastore ID
-     * @param {string} datastore - AES and Base64 encoded data
+     * @param {string} encrypted_data
+     * @param {string} encrypted_data_nonce
      * @returns {promise}
      */
-    this.write_datastore = function(token, datastore_id, datastore) {
+    this.write_datastore = function(token, datastore_id, encrypted_data, encrypted_data_nonce) {
         var endpoint = '/datastore/'+datastore_id+'/';
         var type = "POST";
         var data = {
-            data: datastore
+            data: encrypted_data,
+            nonce: encrypted_data_nonce
         };
 
         return $.ajax({

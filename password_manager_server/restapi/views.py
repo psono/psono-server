@@ -157,8 +157,17 @@ class LoginView(GenericAPIView):
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, owner)
 
-        return Response({"token": token.clear_text_key},
-            status=status.HTTP_200_OK)
+        return Response({
+            "token": token.clear_text_key,
+            "datastore_owner": {
+                "id": owner.id,
+                "public_key": owner.public_key,
+                "private_key": owner.private_key,
+                "private_key_nonce": owner.private_key_nonce,
+                "secret_key": owner.secret_key,
+                "secret_key_nonce": owner.secret_key_nonce,
+            }
+        },status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -285,6 +294,7 @@ class DatastoreView(GenericAPIView):
                             "object_id": datastore.id})
 
         datastore.data = str(request.data['data'])
+        datastore.nonce = str(request.data['nonce'])
         datastore.save()
 
         return Response({"success": "Data updated."},

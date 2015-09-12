@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
                 ('data', models.BinaryField()),
                 ('type', models.CharField(default=b'password', max_length=64, db_index=True)),
                 ('description', models.CharField(default=b'default', max_length=64)),
+                ('nonce', models.CharField(default=b'', max_length=64, verbose_name='nonce')),
             ],
             options={
                 'abstract': False,

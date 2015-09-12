@@ -128,6 +128,26 @@
                         });
                 });
 
+
+                $('#decrypt_secrets_login').click(function (event) {
+                    event.preventDefault();
+                    var password = $('#password_login').val();
+                    $('#login_decrypted_private_key').val(
+                        client.decrypt_secret(
+                                jsoneditors.login_request_feedback.get().datastore_owner.private_key,
+                                jsoneditors.login_request_feedback.get().datastore_owner.private_key_nonce,
+                                password
+                        )
+                    );
+                    $('#login_decrypted_secret_key').val(
+                        client.decrypt_secret(
+                                jsoneditors.login_request_feedback.get().datastore_owner.secret_key,
+                                jsoneditors.login_request_feedback.get().datastore_owner.secret_key_nonce,
+                                password
+                        )
+                    );
+                });
+
                 /*
                  *  Logout
                  */
@@ -187,7 +207,12 @@
                 $('#decrypt_data').click(function (event) {
                     event.preventDefault();
                     // TODO do real decryption and unzipping of data
-                    jsoneditors.decrypted_data.set(JSON.parse(jsoneditors.the_datastore_read_id.get().data));
+                    var plaintext_json = client.decrypt_data(
+                        jsoneditors.the_datastore_read_id.get().data,
+                        jsoneditors.the_datastore_read_id.get().nonce,
+                        $('#secret_key_read').val()
+                    );
+                    jsoneditors.decrypted_data.set(JSON.parse(plaintext_json));
                     jsoneditors.decrypted_data.expandAll();
                 });
 
@@ -195,11 +220,23 @@
                  *  Write Datastore
                  */
 
+                $('#encrypt_data').click(function (event) {
+                    event.preventDefault();
+                    // TODO zipping of data
+                    var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(), $('#secret_key_write').val());
+                    $('#encrypted_data').val(data_enc.ciphertext);
+                    $('#encrypted_data_nonce').val(data_enc.nonce);
+                });
+
                 $('#write_datastore').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    // TODO do zipping and encryption of data
-                    client.write_datastore($('#token_datastore_write').val(), $('#id_datastore_write_id').val(), jsoneditors.the_datastore_write.getText())
+                    client.write_datastore(
+                            $('#token_datastore_write').val(),
+                            $('#id_datastore_write_id').val(),
+                            $('#encrypted_data').val(),
+                            $('#encrypted_data_nonce').val()
+                        )
                         .done(function(value) {
                             // successful
                             jsoneditors.datastore_write_request_feedback.set(JSON.parse(value));
@@ -287,6 +324,13 @@
             width: 800px;
             height: 150px;
         }
+        .code {
+            border:1px solid #333;
+            background-color: #DDD;
+            overflow:auto;
+            padding:10px;
+            font-family: monospace;
+        }
     </style>
 
 
@@ -295,7 +339,10 @@
 <form>
     <h1>JS Client</h1>
 
-    <p>This is a small demo client for the password manager in JavaScript</p>
+    <p>This is a small demo client for the password manager in JavaScript. All the tiny steps which are normally
+    hidden from the user or done automatically in the background, are here explicitly shown as separate steps.
+    We hope this will give a better understanding of the necessity of some steps together with an explanation of what
+    to do in which order and why to do it.</p>
 
 
     <div id="tabs">
@@ -312,7 +359,19 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Email and password are taken to generate the authkey for registration </p>
+                <p>Email and password are taken to generate the authkey for registration. The authkey is used like the
+                password in normal registration processes as we dont want to send the password or any "easy" hashs to
+                the server. We are using scrypt and a "special sauce" to generate this hash.</p>
+                <p class="code">
+                    var n = 16384 // 2^14; <br>
+                    var r = 8; <br>
+                    var p = 1; <br>
+                    var l = 64; <br>
+
+                    var special_sauce = 'c8db7c084e181fbd0c616ed445545375a40d9a3ddc3f9d8fac1dba860579cbc1' <br>
+                    <br>
+                    to_hex(scrypt(password, to_hex(sha512(lower(email)+special_sauce)), n, r, p, l))
+                </p>
                 <h4>INPUT: </h4>
                 <label for="email_registration">E-Mail: </label><input size="30" type="email" name="email_registration"
                                                                        id="email_registration" value="Test@test.com">
@@ -407,8 +466,10 @@
                 <h3>Step 4</h3>
 
                 <p>
-                    Email and authkey (from step 1) are used to register with the server (Endpoint
-                    <a href="/authentication/registration/">/authentication/registration/</a>)
+                    Email and authkey (from step 1) are used to register with the server. In addition the auto generated
+                    encrypted private_key (and nonce), encrypted secret_key (and nonce) and the unencrypted public key
+                    are sent.
+                    (Endpoint <a href="/authentication/registration/">/authentication/registration/</a>)
                 </p>
 
                 <INPUT type="button" name="button"
@@ -503,9 +564,36 @@
                 <h4>OUTPUT: </h4>
                 <label for="login_request_feedback">Login request feedback: </label>
                 <br/>
-                <div id="login_request_feedback" class="editclass_small"></div>
+                <div id="login_request_feedback" class="editclass"></div>
                 <br/>
                 <small>Will return the token for further authentication
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>
+                    Decrypt the secrets like private or secret key.
+                </p>
+
+                <INPUT type="button" name="button"
+                       value="3. Descrypt secrets"
+                       id="decrypt_secrets_login"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="login_decrypted_private_key">Plaintext private key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="login_decrypted_private_key" id="login_decrypted_private_key" readonly></textarea>
+                <br/>
+                <label for="login_decrypted_secret_key">Plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="login_decrypted_secret_key" id="login_decrypted_secret_key" readonly></textarea>
+                <br/>
+                <small>
                 </small>
 
             </section>
@@ -520,7 +608,8 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Use the token from login to logout</p>
+                <p>Use the token from login to logout
+                    (Endpoint <a href="/authentication/logout/">/authentication/logout/</a>)</p>
                 <h4>INPUT: </h4>
                 <label for="token_logout">Token: </label><input size="30" size="180" type="text" name="token_logout"
                                                                 id="token_logout"
@@ -548,7 +637,8 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Use the token from login to get a list of all datastores</p>
+                <p>Use the token from login to get a list of all datastores
+                    (Endpoint <a href="/datastore/">/datastore/</a>)</p>
                 <h4>INPUT: </h4>
                 <label for="token_datastore_read">Token: </label><input size="30" size="180" type="text" name="token_datastore_read"
                                                                 id="token_datastore_read"
@@ -571,7 +661,8 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Use the token from login and the datastore ID to get the datastore's content</p>
+                <p>Use the token from login and the datastore ID to get the datastore's content
+                    (Endpoint <a href="/datastore/my-datastore-id/">/datastore/my-datastore-id/</a>)</p>
                 <h4>INPUT: </h4>
                 <label for="token_datastore_read_id">Token: </label><input size="30" size="180" type="text" name="token_datastore_read_id"
                                                                 id="token_datastore_read_id"
@@ -599,12 +690,17 @@
                 <h3>Step 3</h3>
                 <p>Decrypt the content of the data attribute</p>
 
+                <label for="secret_key_read">Plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="secret_key_read" id="secret_key_read" ></textarea>
+                <br/>
+
                 <INPUT type="button" name="button" value="Decrypt Data"
                        id="decrypt_data"/>
                 <br/>
 
                 <h4>OUTPUT: </h4>
-                <label for="decrypted_data">Decrypted content of the data of the fetched datastore: </label>
+                <label for="decrypted_data">Plaintext content of the data of the fetched datastore: </label>
                 <br/>
                 <div id="decrypted_data" class="editclass"></div>
                 <br/>
@@ -622,7 +718,44 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Use the token from login to get the datastore</p>
+                <p>Edit the content of the datastore data and encrypt it</p>
+                <h4>INPUT: </h4>
+                <label for="the_datastore_write">Plaintext data of one datastore: </label>
+                <br/>
+                <div id="the_datastore_write" class="editclass"></div>
+                <br/>
+                <label for="secret_key_write">Plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="secret_key_write" id="secret_key_write" ></textarea>
+                <br/>
+                <br/>
+
+                <INPUT type="button" name="button" value="1. encrypt the data: encrypt_data(data, secret_key)"
+                       id="encrypt_data"/>
+                <h4>OUTPUT: </h4>
+                <label for="encrypted_data">Encrypted Data: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data" id="encrypted_data" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_data_nonce">Encrypted Data Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_nonce" id="encrypted_data_nonce" readonly></textarea>
+                <br/>
+                <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+                <p>
+                    Finally write/upload the datastore data
+                    (Endpoint <a href="/datastore/my-datastore-id/">/datastore/my-datastore-id/</a>)
+                </p>
+
                 <h4>INPUT: </h4>
                 <label for="token_datastore_write">Token: </label><input size="30" size="180" type="text" name="token_datastore_write"
                                                                 id="token_datastore_write"
@@ -632,14 +765,8 @@
                                                                 id="id_datastore_write_id"
                                                                 value="">
                 <br/>
-                <label for="the_datastore_write">Data of one datastore: </label>
-                <br/>
-                <div id="the_datastore_write" class="editclass"></div>
-                <br/>
-                <small>You can only change the data value for now.
-                </small>
-                <br/>
-                <INPUT type="button" name="button" value="1. Write the datastore: write_datastore(token, datastore)"
+
+                <INPUT type="button" name="button" value="2. Write the datastore: write_datastore(token, datastore_id, encrypted_data, encrypted_data_nonce)"
                        id="write_datastore"/>
                 <br/>
                 <h4>OUTPUT: </h4>

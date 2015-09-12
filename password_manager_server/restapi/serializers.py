@@ -149,6 +149,7 @@ class DatastoreSerializer(serializers.Serializer):
     data = serializers.CharField()
     type = serializers.CharField(max_length=64, default='password')
     description = serializers.CharField(max_length=64, default='default')
+    nonce = serializers.CharField(max_length=64, default='default')
 
     def validate(self, attrs):
         return attrs

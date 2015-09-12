@@ -53,6 +53,7 @@ class Data_Store(models.Model):
     data = models.BinaryField()
     type = models.CharField(max_length=64, db_index=True, default='password')
     description = models.CharField(max_length=64, default='default')
+    nonce = models.CharField(_('nonce'), max_length=64, default='')
 
     class Meta:
         abstract = False
