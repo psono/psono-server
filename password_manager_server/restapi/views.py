@@ -336,38 +336,65 @@ class ShareView(GenericAPIView):
     def get(self, request, uuid = None, *args, **kwargs):
 
         if not uuid:
-            return Response({"error":"The UUID for the share is mandatory"}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                shares = Share.objects.filter(owner=request.user)
+            except Share.DoesNotExist:
+                shares = []
+
+            # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
+            return Response({'datastores': DatastoreOverviewSerializer(shares, many=True).data},
+                status=status.HTTP_200_OK)
         else:
             try:
-                share = Share.objects.get(pk=uuid)
+                datastore = Share.objects.get(pk=uuid)
             except Share.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-            if not share.owner == request.user:
+            if not datastore.owner == request.user:
                 raise PermissionDenied({"message":"You don't have permission to access",
-                                "object_id": share.id})
+                                "object_id": datastore.id})
 
-            return Response(self.serializer_class(share).data,
+            return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
 
-    def put(self, *args, **kwargs):
-        # TODO implement insert statement for enterprise users
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+        # TODO implement check for more datastores for enterprise users
+
+        try:
+            datastore = Share.objects.create(
+                data = str(request.data['data']),
+                data_nonce = str(request.data['data_nonce']),
+                secret_key = str(request.data['secret_key']),
+                secret_key_nonce = str(request.data['secret_key_nonce']),
+                owner = request.user
+            )
+        except IntegrityError:
+            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"datastore_id": datastore.id}, status=status.HTTP_200_OK)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
         try:
-            share = Share.objects.get(pk=uuid)
+            datastore = Share.objects.get(pk=uuid)
         except Share.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-        if not share.owner == request.user:
+        if not datastore.owner == request.user:
             raise PermissionDenied({"message":"You don't have permission to access",
-                            "object_id": share.id})
+                            "object_id": datastore.id})
 
-        share.data = str(request.data['data'])
-        share.save()
+        if 'data' in request.data:
+            datastore.data = str(request.data['data'])
+        if 'data_nonce' in request.data:
+            datastore.data_nonce = str(request.data['data_nonce'])
+        if 'secret_key' in request.data:
+            datastore.secret_key = str(request.data['secret_key'])
+        if 'secret_key_nonce' in request.data:
+            datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
+
+        datastore.save()
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

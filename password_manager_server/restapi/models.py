@@ -19,9 +19,9 @@ class Data_Store_Owner(models.Model):
     authkey = models.CharField(_('auth key'), max_length=128)
     public_key = models.CharField(_('public key'), max_length=256)
     private_key = models.CharField(_('private key'), max_length=256)
-    private_key_nonce = models.CharField(_('private key nonce'), max_length=64)
+    private_key_nonce = models.CharField(_('private key nonce'), max_length=64, unique=True)
     secret_key = models.CharField(_('secret key'), max_length=256)
-    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64, unique=True)
     is_email_active = models.BooleanField(_('email active'), default=False,
         help_text=_('Designates whether this email should be treated as '
                     'active. Unselect this if the user registers a new email.'))
@@ -51,15 +51,14 @@ class Data_Store(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='data_stores')
     data = models.BinaryField()
-    data_nonce = models.CharField(_('data nonce'), max_length=64)
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
     type = models.CharField(max_length=64, db_index=True, default='password')
     description = models.CharField(max_length=64, default='default')
     secret_key = models.CharField(_('secret key'), max_length=256)
-    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64, unique=True)
 
     class Meta:
         abstract = False
-        unique_together = ('owner', 'secret_key_nonce',)
 
 
 class Share(models.Model):
@@ -73,6 +72,7 @@ class Share(models.Model):
                               help_text=_('The share owner is always the same as the group owner, so the group '
                                           'owner always keeps full control.'))
     data = models.BinaryField()
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
     type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:
