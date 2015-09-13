@@ -204,17 +204,73 @@
                         });
                 });
 
+                $('#decrypt_datastore_secret').click(function (event) {
+                    event.preventDefault();
+
+
+
+                    $('#decrypted_datastore_secret').val(
+                        client.decrypt_data(
+                            jsoneditors.the_datastore_read_id.get().secret_key,
+                            jsoneditors.the_datastore_read_id.get().secret_key_nonce,
+                            $('#users_secret_key_read').val()
+                        )
+                    );
+
+                });
+
                 $('#decrypt_data').click(function (event) {
                     event.preventDefault();
-                    // TODO do real decryption and unzipping of data
+
+                    if (typeof jsoneditors.the_datastore_read_id.get().data === "undefined"
+                            || jsoneditors.the_datastore_read_id.get().data === ""){
+                        // Datastore is empty, nothing to decode
+                        alert("Datastore is empty ... nothing to decrypt");
+                        return;
+                    }
+                    // TODO add unzipping of data
                     var plaintext_json = client.decrypt_data(
                         jsoneditors.the_datastore_read_id.get().data,
-                        jsoneditors.the_datastore_read_id.get().nonce,
-                        $('#secret_key_read').val()
+                        jsoneditors.the_datastore_read_id.get().data_nonce,
+                        $('#decrypted_datastore_secret').val()
                     );
                     jsoneditors.decrypted_data.set(JSON.parse(plaintext_json));
                     jsoneditors.decrypted_data.expandAll();
                 });
+
+                /*
+                 *  Create Datastore
+                 */
+
+                $('#generate_secret_key').click(function (event) {
+                    event.preventDefault();
+                    $('#datastore_secret_key').val(client.generate_secret_key())
+                });
+
+                $('#encrypt_secret_key').click(function (event) {
+                    event.preventDefault();
+                    var data_enc = client.encrypt_data($('#datastore_secret_key').val(), $('#users_decrypted_secret_key').val());
+                    $('#encrypted_secret_key').val(data_enc.ciphertext);
+                    $('#encrypted_secret_key_nonce').val(data_enc.nonce);
+
+                });
+
+                $('#create_datastore').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.create_datastore($('#token_datastore_create').val(), null, null, $('#encrypted_secret_key').val(), $('#encrypted_secret_key_nonce').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.create_datastore_request_feedback.set(JSON.parse(value));
+                            jsoneditors.create_datastore_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.create_datastore_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.create_datastore_request_feedback.expandAll();
+                        });
+                });
+
 
                 /*
                  *  Write Datastore
@@ -301,12 +357,13 @@
                     'the_datastore_read_id',
                     'datastore_write_request_feedback',
                     'the_datastore_write',
-                    'decrypted_data'
+                    'decrypted_data',
+                    'create_datastore_request_feedback'
                 ];
 
             for (var i = 0; i < editors.length; i++) {
                 jsoneditors[editors[i]] = new JSONEditor(document.getElementById(editors[i]), {
-                    mode: 'view',
+                    mode: 'tree',
                     modes: ['code', 'form', 'text', 'tree', 'view'], // allowed modes
                     error: function (err) {
                         alert(err.toString());
@@ -352,7 +409,8 @@
             <li><a href="#tabs-3">Login</a></li>
             <li><a href="#tabs-4">Logout</a></li>
             <li><a href="#tabs-5">Read Datastore</a></li>
-            <li><a href="#tabs-6">Write Datastore</a></li>
+            <li><a href="#tabs-6">Create Datastore</a></li>
+            <li><a href="#tabs-7">Write Datastore</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -688,12 +746,31 @@
 
             <section>
                 <h3>Step 3</h3>
-                <p>Decrypt the content of the data attribute</p>
 
-                <label for="secret_key_read">Plaintext secret key: </label>
+                <p>Decrypt the secret key of the datastore with the secret key of the user</p>
+
+                <label for="users_secret_key_read">Plaintext user's secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="secret_key_read" id="secret_key_read" ></textarea>
+                <textarea rows="3" cols="60" name="users_secret_key_read" id="users_secret_key_read" ></textarea>
                 <br/>
+
+                <INPUT type="button" name="button" value="Decrypt Data"
+                       id="decrypt_datastore_secret"/>
+                <br/>
+
+                <h4>OUTPUT: </h4>
+                <label for="decrypted_datastore_secret">Plaintext datastore secret: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="decrypted_datastore_secret" id="decrypted_datastore_secret" readonly></textarea>
+                <br/>
+                <small></small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 4</h3>
+                <p>Decrypt the content of the data attribute with the data_nonce and the plaintext datastore secret</p>
 
                 <INPUT type="button" name="button" value="Decrypt Data"
                        id="decrypt_data"/>
@@ -710,10 +787,88 @@
             <!-- END Read Datastore -->
         </div>
 
-
-
-
         <div id="tabs-6">
+            <!-- START Create Datastore -->
+
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Generate a secret key for the new datastore</p>
+
+                <INPUT type="button" name="button" value="1. Generate Secret Key"
+                       id="generate_secret_key"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="datastore_secret_key">Datastore Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="datastore_secret_key" id="datastore_secret_key" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Encrypt the secret key for the new datastore with the secret key of hte user</p>
+
+                <h4>INPUT: </h4>
+                <label for="users_decrypted_secret_key">Users plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="users_decrypted_secret_key" id="users_decrypted_secret_key"></textarea>
+                <br/>
+
+                <INPUT type="button" name="button" value="2. Encrypt Secret Key"
+                       id="encrypt_secret_key"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="encrypted_secret_key">Encrypted Datastore Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key" id="encrypted_secret_key" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_secret_key_nonce">Encrypted Datastore Secret Key Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_nonce" id="encrypted_secret_key_nonce" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>Send the request so the datastore is created with this secret key</p>
+
+                <h4>INPUT: </h4>
+                <label for="token_datastore_create">Token: </label><input size="30" size="180" type="text" name="token_datastore_create"
+                                                                id="token_datastore_create"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Create Datastore"
+                       id="create_datastore"/>
+                <h4>OUTPUT: </h4>
+                <label for="create_datastore_request_feedback">Create Datastore Feedback: </label>
+                <br/>
+                <div id="create_datastore_request_feedback" class="editclass_small"></div>
+                <br/>
+                <small>Will return nothing except a success or fail message
+                </small>
+
+            </section>
+
+            <hr>
+
+            <!-- END Create Datastore -->
+        </div>
+
+
+        <div id="tabs-7">
             <!-- START Write Datastore -->
             <section>
                 <h3>Step 1</h3>
@@ -724,7 +879,7 @@
                 <br/>
                 <div id="the_datastore_write" class="editclass"></div>
                 <br/>
-                <label for="secret_key_write">Plaintext secret key: </label>
+                <label for="secret_key_write">Plaintext Datastore secret key: </label>
                 <br/>
                 <textarea rows="3" cols="60" name="secret_key_write" id="secret_key_write" ></textarea>
                 <br/>

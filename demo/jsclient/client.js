@@ -302,21 +302,58 @@ var ClassClient = function(){
         });
     };
 
+
+    /**
+     * Ajax PUT request to create a datstore with the token as authentication and optional already some data,
+     * together with the encrypted secret key and nonce
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {string} [encrypted_data] - optional data for the new datastore
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @param {string} [encrypted_data_secret_key] - encrypted secret key, only necessary if data is provided
+     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
+     * @returns {promise}
+     */
+    this.create_datastore = function(token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/datastore/';
+        var type = "PUT";
+        var data = {
+            data: encrypted_data,
+            data_nonce: encrypted_data_nonce,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
+        };
+
+        return $.ajax({
+            type: type,
+            url: backend+endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function( xhr ) {
+                xhr.setRequestHeader ("Authorization", "Token "+token);
+            }
+        });
+    };
+
     /**
      * Ajax PUT request with the token as authentication and the new datastore content
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {uuid} datastore_id - the datastore ID
-     * @param {string} encrypted_data
-     * @param {string} encrypted_data_nonce
+     * @param {string} [encrypted_data] - optional data for the new datastore
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @param {string} [encrypted_data_secret_key] - encrypted secret key, wont update on the server if not provided
+     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
      * @returns {promise}
      */
-    this.write_datastore = function(token, datastore_id, encrypted_data, encrypted_data_nonce) {
+    this.write_datastore = function(token, datastore_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
         var endpoint = '/datastore/'+datastore_id+'/';
         var type = "POST";
         var data = {
             data: encrypted_data,
-            nonce: encrypted_data_nonce
+            data_nonce: encrypted_data_nonce,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
         return $.ajax({

@@ -20,6 +20,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
+from django.db import IntegrityError
 from authentication import TokenAuthentication
 
 
@@ -165,7 +166,7 @@ class LoginView(GenericAPIView):
                 "private_key": owner.private_key,
                 "private_key_nonce": owner.private_key_nonce,
                 "secret_key": owner.secret_key,
-                "secret_key_nonce": owner.secret_key_nonce,
+                "secret_key_nonce": owner.secret_key_nonce
             }
         },status=status.HTTP_200_OK)
 
@@ -255,11 +256,10 @@ class DatastoreView(GenericAPIView):
     def get(self, request, uuid = None, *args, **kwargs):
 
         if not uuid:
-            # TODO Discuss if many datastorages may make sense
-            storages, created = Data_Store.objects.get_or_create(owner=request.user, type='password', description='default')
-
-            if not isinstance(storages, (list, tuple)):
-                storages = [storages]
+            try:
+                storages = Data_Store.objects.filter(owner=request.user)
+            except Data_Store.DoesNotExist:
+                storages = []
 
             # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
             return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
@@ -277,9 +277,21 @@ class DatastoreView(GenericAPIView):
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
 
-    def put(self, *args, **kwargs):
-        # TODO implement insert statement for enterprise users
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+        # TODO implement check for more datastores for enterprise users
+
+        try:
+            datastore = Data_Store.objects.create(
+                data = str(request.data['data']),
+                data_nonce = str(request.data['data_nonce']),
+                secret_key = str(request.data['secret_key']),
+                secret_key_nonce = str(request.data['secret_key_nonce']),
+                owner = request.user
+            )
+        except IntegrityError:
+            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"datastore_id": datastore.id}, status=status.HTTP_200_OK)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
@@ -293,8 +305,15 @@ class DatastoreView(GenericAPIView):
             raise PermissionDenied({"message":"You don't have permission to access",
                             "object_id": datastore.id})
 
-        datastore.data = str(request.data['data'])
-        datastore.nonce = str(request.data['nonce'])
+        if 'data' in request.data:
+            datastore.data = str(request.data['data'])
+        if 'data_nonce' in request.data:
+            datastore.data_nonce = str(request.data['data_nonce'])
+        if 'secret_key' in request.data:
+            datastore.secret_key = str(request.data['secret_key'])
+        if 'secret_key_nonce' in request.data:
+            datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
+
         datastore.save()
 
         return Response({"success": "Data updated."},

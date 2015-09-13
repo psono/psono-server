@@ -49,14 +49,17 @@ class Data_Store(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='data_store')
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='data_stores')
     data = models.BinaryField()
+    data_nonce = models.CharField(_('data nonce'), max_length=64)
     type = models.CharField(max_length=64, db_index=True, default='password')
     description = models.CharField(max_length=64, default='default')
-    nonce = models.CharField(_('nonce'), max_length=64, default='')
+    secret_key = models.CharField(_('secret key'), max_length=256)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
 
     class Meta:
         abstract = False
+        unique_together = ('owner', 'secret_key_nonce',)
 
 
 class Share(models.Model):
@@ -66,7 +69,7 @@ class Share(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='share',
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='shares',
                               help_text=_('The share owner is always the same as the group owner, so the group '
                                           'owner always keeps full control.'))
     data = models.BinaryField()
@@ -86,7 +89,7 @@ class Group(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='group')
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='groups')
     shares = models.ManyToManyField(Share, related_name='groups')
 
     class Meta:
@@ -110,8 +113,8 @@ class Group_User_Right(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='group_user_right')
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_user_right')
+    user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='group_user_rights')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_user_rights')
 
     read = models.BooleanField(_('read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read shares of this group'))
@@ -141,7 +144,7 @@ class Token(models.Model):
     """
     create_date = models.DateTimeField(auto_now_add=True)
     key = models.CharField(max_length=64, primary_key=True)
-    owner = models.ForeignKey(Data_Store_Owner, related_name='auth_token')
+    owner = models.ForeignKey(Data_Store_Owner, related_name='auth_tokens')
 
     def save(self, *args, **kwargs):
         if not self.key:

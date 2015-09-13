@@ -14,7 +14,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import Token, Data_Store_Owner
+from models import Token, Data_Store_Owner, Data_Store
 
 
 class LoginSerializer(serializers.Serializer):
@@ -147,12 +147,12 @@ class AuthkeyChangeSerializer(serializers.Serializer):
 class DatastoreSerializer(serializers.Serializer):
 
     data = serializers.CharField()
+    data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
     description = serializers.CharField(max_length=64, default='default')
-    nonce = serializers.CharField(max_length=64, default='default')
+    secret_key = serializers.CharField(max_length=256)
+    secret_key_nonce = serializers.CharField(max_length=64)
 
-    def validate(self, attrs):
-        return attrs
 
 class ShareSerializer(serializers.Serializer):
 
