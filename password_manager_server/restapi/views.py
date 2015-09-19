@@ -320,6 +320,9 @@ class ShareView(GenericAPIView):
     def get(self, request, uuid = None, *args, **kwargs):
 
         if not uuid:
+
+            #TODO optimize query. this way its too inefficient ...
+
             try:
                 shares = models.Share.objects.filter(user_shares__user=request.user).distinct()
             except models.Share.DoesNotExist:
@@ -329,7 +332,7 @@ class ShareView(GenericAPIView):
             for s in shares:
 
                 user_shares = []
-                for u in s.user_shares.all():
+                for u in s.user_shares.filter(user=request.user):
                     user_shares.append({
                         'id': u.id,
                         'key': u.key,
@@ -340,14 +343,15 @@ class ShareView(GenericAPIView):
                         'write': u.write,
                         'grant': u.grant,
                         'revoke': u.revoke,
+                        'owner_id': u.owner_id,
                     })
 
                 response.append({
                     'id': s.id,
-                    'data': s.data if s.data else '',
+                    'data': str(s.data) if s.data else '',
                     'data_nonce': s.data_nonce if s.data_nonce else '',
                     'type': s.type,
-                    'owner': s.owner_id,
+                    'owner_id': s.owner_id,
                     'user_shares': user_shares
                 })
 
@@ -364,7 +368,33 @@ class ShareView(GenericAPIView):
                 raise PermissionDenied({"message":"You don't have permission to access",
                                 "object_id": share.id})
 
-            return Response(self.serializer_class(share).data,
+
+            user_shares = []
+
+            for u in share.user_shares.filter(user=request.user):
+                user_shares.append({
+                    'id': u.id,
+                    'key': u.key,
+                    'key_nonce': u.key_nonce,
+                    'encryption_type': u.encryption_type,
+                    'approved': u.approved,
+                    'read': u.read,
+                    'write': u.write,
+                    'grant': u.grant,
+                    'revoke': u.revoke,
+                    'owner_id': u.owner_id,
+                })
+
+            response = {
+                'id': share.id,
+                'data': str(share.data) if share.data else '',
+                'data_nonce': share.data_nonce if share.data_nonce else '',
+                'type': share.type,
+                'owner_id': share.owner_id,
+                'user_shares': user_shares
+            }
+
+            return Response(response,
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
@@ -402,10 +432,8 @@ class ShareView(GenericAPIView):
         except models.Share.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-        if not share.owner == request.user:
-            raise PermissionDenied({"message":"You don't have permission to access",
-                            "object_id": share.id})
+        if share.owner != request.user and share.user_shares.filter(user=request.user, write=True).count() < 0:
+            raise PermissionDenied()
 
         if 'data' in request.data:
             share.data = str(request.data['data'])

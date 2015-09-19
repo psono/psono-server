@@ -280,7 +280,7 @@
                 $('#encrypt_data_datastore').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
-                    var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(), $('#secret_key_write').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(), $('#secret_key_write_datastore').val());
                     $('#encrypted_data_datastore').val(data_enc.ciphertext);
                     $('#encrypted_data_datastore_nonce').val(data_enc.nonce);
                 });
@@ -344,16 +344,21 @@
 
                 $('#decrypt_share_secret').click(function (event) {
                     event.preventDefault();
+                    var secret = '';
 
-
-
-                    $('#decrypted_share_secret').val(
-                        client.decrypt_data(
-                            jsoneditors.the_share_read_id.get().secret_key,
-                            jsoneditors.the_share_read_id.get().secret_key_nonce,
+                    if ((jsoneditors.the_share_read_id.get().user_shares)[0].encryption_type == 'secret') {
+                        secret = client.decrypt_data(
+                            (jsoneditors.the_share_read_id.get().user_shares)[0].key,
+                            (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
                             $('#users_secret_key_read').val()
-                        )
-                    );
+                        );
+                    } else {
+                        // TODO implement public key crypto to read the share
+                        alert('TODO implement public key crypto to read the share');
+
+                    }
+
+                    $('#decrypted_share_secret').val(secret);
 
                 });
 
@@ -363,7 +368,8 @@
                     if (typeof jsoneditors.the_share_read_id.get().data === "undefined"
                             || jsoneditors.the_share_read_id.get().data === ""){
                         // Share is empty, nothing to decode
-                        alert("Share is empty ... nothing to decrypt");
+                        alert("Share is empty ... nothing to decrypt. If you just wrote to the share, start" +
+                                "over with Step 1 and read the share fresh from the backend");
                         return;
                     }
                     // TODO add unzipping of data
@@ -417,7 +423,7 @@
                 $('#encrypt_data_share').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
-                    var data_enc = client.encrypt_data(jsoneditors.the_share_write.getText(), $('#secret_key_write').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_share_write.getText(), $('#secret_key_write_share').val());
                     $('#encrypted_data_share').val(data_enc.ciphertext);
                     $('#encrypted_data_share_nonce').val(data_enc.nonce);
                 });
@@ -1020,9 +1026,9 @@
                 <br/>
                 <div id="the_datastore_write" class="editclass"></div>
                 <br/>
-                <label for="secret_key_write">Plaintext Datastore secret key: </label>
+                <label for="secret_key_write_datastore">Plaintext Datastore secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="secret_key_write" id="secret_key_write" ></textarea>
+                <textarea rows="3" cols="60" name="secret_key_write_datastore" id="secret_key_write_datastore" ></textarea>
                 <br/>
                 <br/>
 
@@ -1268,9 +1274,9 @@
                 <br/>
                 <div id="the_share_write" class="editclass"></div>
                 <br/>
-                <label for="secret_key_write">Plaintext Share secret key: </label>
+                <label for="secret_key_write_share">Plaintext Share secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="secret_key_write" id="secret_key_write" ></textarea>
+                <textarea rows="3" cols="60" name="secret_key_write_share" id="secret_key_write_share" ></textarea>
                 <br/>
                 <br/>
 
