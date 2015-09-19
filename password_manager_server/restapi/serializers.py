@@ -106,15 +106,8 @@ class RegisterSerializer(serializers.Serializer):
         return Data_Store_Owner.objects.create(**validated_data)
 
 
-class UserDetailsSerializer(serializers.ModelSerializer):
-
-    """
-    User model w/o password
-    """
-    class Meta:
-        model = get_user_model()
-        fields = ('username', 'email', 'first_name', 'last_name')
-        read_only_fields = ('email', )
+class PublicUserDetailsSerializer(serializers.Serializer):
+    id = serializers.UUIDField(default=uuid.uuid4)
 
 
 class AuthkeyChangeSerializer(serializers.Serializer):
@@ -153,13 +146,28 @@ class DatastoreSerializer(serializers.Serializer):
     secret_key = serializers.CharField(max_length=256)
     secret_key_nonce = serializers.CharField(max_length=64)
 
+class UserShareSerializer(serializers.Serializer):
+
+    id = serializers.UUIDField(default=uuid.uuid4)
+    key = serializers.CharField(max_length=256)
+    key_nonce = serializers.CharField(max_length=64)
+    encryption_type = serializers.CharField(max_length=6)
+    approved = serializers.BooleanField()
+    read = serializers.BooleanField()
+    write = serializers.BooleanField()
+    grant = serializers.BooleanField()
+    revoke = serializers.BooleanField()
+
+    owner = PublicUserDetailsSerializer()
 
 class ShareSerializer(serializers.Serializer):
 
+    id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
-    description = serializers.CharField(max_length=64, default='default')
+    user_shares = UserShareSerializer()
+    owner = PublicUserDetailsSerializer()
 
 
 class DatastoreOverviewSerializer(serializers.Serializer):
@@ -168,5 +176,12 @@ class DatastoreOverviewSerializer(serializers.Serializer):
     type = serializers.CharField(max_length=64, default='password')
     description = serializers.CharField(max_length=64, default='default')
 
-    def validate(self, attrs):
-        return attrs
+
+class ShareOverviewSerializer(serializers.Serializer):
+
+    id = serializers.UUIDField(default=uuid.uuid4)
+    data = serializers.CharField()
+    data_nonce = serializers.CharField(max_length=64)
+    type = serializers.CharField(max_length=64, default='password')
+    owner = serializers.UUIDField(default=uuid.uuid4)
+

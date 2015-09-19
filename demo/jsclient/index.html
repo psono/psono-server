@@ -219,13 +219,14 @@
 
                 });
 
-                $('#decrypt_data').click(function (event) {
+                $('#decrypt_data_datastore').click(function (event) {
                     event.preventDefault();
 
                     if (typeof jsoneditors.the_datastore_read_id.get().data === "undefined"
                             || jsoneditors.the_datastore_read_id.get().data === ""){
                         // Datastore is empty, nothing to decode
-                        alert("Datastore is empty ... nothing to decrypt");
+                        alert("Datastore is empty ... nothing to decrypt. If you just wrote to the datastore, start" +
+                                "over with Step 1 and read the datastore fresh from the backend");
                         return;
                     }
                     // TODO add unzipping of data
@@ -234,31 +235,31 @@
                         jsoneditors.the_datastore_read_id.get().data_nonce,
                         $('#decrypted_datastore_secret').val()
                     );
-                    jsoneditors.decrypted_data.set(JSON.parse(plaintext_json));
-                    jsoneditors.decrypted_data.expandAll();
+                    jsoneditors.decrypted_data_datastore.set(JSON.parse(plaintext_json));
+                    jsoneditors.decrypted_data_datastore.expandAll();
                 });
 
                 /*
                  *  Create Datastore
                  */
 
-                $('#generate_secret_key').click(function (event) {
+                $('#generate_secret_key_datastore').click(function (event) {
                     event.preventDefault();
                     $('#datastore_secret_key').val(client.generate_secret_key())
                 });
 
-                $('#encrypt_secret_key').click(function (event) {
+                $('#encrypt_secret_key_datastore').click(function (event) {
                     event.preventDefault();
-                    var data_enc = client.encrypt_data($('#datastore_secret_key').val(), $('#users_decrypted_secret_key').val());
-                    $('#encrypted_secret_key').val(data_enc.ciphertext);
-                    $('#encrypted_secret_key_nonce').val(data_enc.nonce);
+                    var data_enc = client.encrypt_data($('#datastore_secret_key').val(), $('#users_decrypted_secret_key_datastore').val());
+                    $('#encrypted_secret_key_datastore').val(data_enc.ciphertext);
+                    $('#encrypted_secret_key_datastore_nonce').val(data_enc.nonce);
 
                 });
 
                 $('#create_datastore').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.create_datastore($('#token_datastore_create').val(), null, null, $('#encrypted_secret_key').val(), $('#encrypted_secret_key_nonce').val())
+                    client.create_datastore($('#token_datastore_create').val(), null, null, $('#encrypted_secret_key_datastore').val(), $('#encrypted_secret_key_datastore_nonce').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.create_datastore_request_feedback.set(JSON.parse(value));
@@ -276,12 +277,12 @@
                  *  Write Datastore
                  */
 
-                $('#encrypt_data').click(function (event) {
+                $('#encrypt_data_datastore').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
                     var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(), $('#secret_key_write').val());
-                    $('#encrypted_data').val(data_enc.ciphertext);
-                    $('#encrypted_data_nonce').val(data_enc.nonce);
+                    $('#encrypted_data_datastore').val(data_enc.ciphertext);
+                    $('#encrypted_data_datastore_nonce').val(data_enc.nonce);
                 });
 
                 $('#write_datastore').click(function (event) {
@@ -290,8 +291,8 @@
                     client.write_datastore(
                             $('#token_datastore_write').val(),
                             $('#id_datastore_write_id').val(),
-                            $('#encrypted_data').val(),
-                            $('#encrypted_data_nonce').val()
+                            $('#encrypted_data_datastore').val(),
+                            $('#encrypted_data_datastore_nonce').val()
                         )
                         .done(function(value) {
                             // successful
@@ -302,6 +303,143 @@
                             // failed
                             jsoneditors.datastore_write_request_feedback.set(JSON.parse(value.responseText));
                             jsoneditors.datastore_write_request_feedback.expandAll();
+                        });
+                });
+
+                /*
+                 *  Read Shares
+                 */
+
+                $('#read_share').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_share($('#token_share_read').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_share_read.set(JSON.parse(value));
+                            jsoneditors.the_share_read.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_share_read.set(JSON.parse(value.responseText));
+                            jsoneditors.the_share_read.expandAll();
+                        });
+                });
+
+                $('#read_share_id').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_share($('#token_share_read_id').val(), $('#id_share_read_id').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_share_read_id.set(JSON.parse(value));
+                            jsoneditors.the_share_read_id.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_share_read_id.set(JSON.parse(value.responseText));
+                            jsoneditors.the_share_read_id.expandAll();
+                        });
+                });
+
+                $('#decrypt_share_secret').click(function (event) {
+                    event.preventDefault();
+
+
+
+                    $('#decrypted_share_secret').val(
+                        client.decrypt_data(
+                            jsoneditors.the_share_read_id.get().secret_key,
+                            jsoneditors.the_share_read_id.get().secret_key_nonce,
+                            $('#users_secret_key_read').val()
+                        )
+                    );
+
+                });
+
+                $('#decrypt_data_share').click(function (event) {
+                    event.preventDefault();
+
+                    if (typeof jsoneditors.the_share_read_id.get().data === "undefined"
+                            || jsoneditors.the_share_read_id.get().data === ""){
+                        // Share is empty, nothing to decode
+                        alert("Share is empty ... nothing to decrypt");
+                        return;
+                    }
+                    // TODO add unzipping of data
+                    var plaintext_json = client.decrypt_data(
+                        jsoneditors.the_share_read_id.get().data,
+                        jsoneditors.the_share_read_id.get().data_nonce,
+                        $('#decrypted_share_secret').val()
+                    );
+                    jsoneditors.decrypted_data_share.set(JSON.parse(plaintext_json));
+                    jsoneditors.decrypted_data_share.expandAll();
+                });
+
+                /*
+                 *  Create Share
+                 */
+
+                $('#generate_secret_key_share').click(function (event) {
+                    event.preventDefault();
+                    $('#share_secret_key').val(client.generate_secret_key())
+                });
+
+                $('#encrypt_secret_key_share').click(function (event) {
+                    event.preventDefault();
+                    var data_enc = client.encrypt_data($('#share_secret_key').val(), $('#users_decrypted_secret_key_share').val());
+                    $('#encrypted_secret_key_share').val(data_enc.ciphertext);
+                    $('#encrypted_secret_key_share_nonce').val(data_enc.nonce);
+
+                });
+
+                $('#create_share').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.create_share($('#token_share_create').val(), null, null, $('#encrypted_secret_key_share').val(), $('#encrypted_secret_key_share_nonce').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.create_share_request_feedback.set(JSON.parse(value));
+                            jsoneditors.create_share_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.create_share_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.create_share_request_feedback.expandAll();
+                        });
+                });
+
+
+                /*
+                 *  Write Share
+                 */
+
+                $('#encrypt_data_share').click(function (event) {
+                    event.preventDefault();
+                    // TODO zipping of data
+                    var data_enc = client.encrypt_data(jsoneditors.the_share_write.getText(), $('#secret_key_write').val());
+                    $('#encrypted_data_share').val(data_enc.ciphertext);
+                    $('#encrypted_data_share_nonce').val(data_enc.nonce);
+                });
+
+                $('#write_share').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.write_share(
+                            $('#token_share_write').val(),
+                            $('#id_share_write_id').val(),
+                            $('#encrypted_data_share').val(),
+                            $('#encrypted_data_share_nonce').val()
+                        )
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.share_write_request_feedback.set(JSON.parse(value));
+                            jsoneditors.share_write_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.share_write_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.share_write_request_feedback.expandAll();
                         });
                 });
 
@@ -357,8 +495,14 @@
                     'the_datastore_read_id',
                     'datastore_write_request_feedback',
                     'the_datastore_write',
-                    'decrypted_data',
-                    'create_datastore_request_feedback'
+                    'decrypted_data_datastore',
+                    'create_datastore_request_feedback',
+                    'the_share_read',
+                    'the_share_read_id',
+                    'share_write_request_feedback',
+                    'the_share_write',
+                    'decrypted_data_share',
+                    'create_share_request_feedback'
                 ];
 
             for (var i = 0; i < editors.length; i++) {
@@ -411,6 +555,9 @@
             <li><a href="#tabs-5">Read Datastore</a></li>
             <li><a href="#tabs-6">Create Datastore</a></li>
             <li><a href="#tabs-7">Write Datastore</a></li>
+            <li><a href="#tabs-8">Read Share</a></li>
+            <li><a href="#tabs-9">Create Share</a></li>
+            <li><a href="#tabs-10">Write Share</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -548,8 +695,6 @@
         </div>
 
 
-
-
         <div id="tabs-2">
             <!-- START Verify E-Mail -->
             <section>
@@ -575,8 +720,6 @@
             </section>
             <!-- END Verify E-Mail -->
         </div>
-
-
 
 
         <div id="tabs-3">
@@ -659,8 +802,6 @@
         </div>
 
 
-
-
         <div id="tabs-4">
             <!-- START Logout -->
             <section>
@@ -686,8 +827,6 @@
             </section>
             <!-- END Logout -->
         </div>
-
-
 
 
         <div id="tabs-5">
@@ -730,7 +869,7 @@
                                                                 id="id_datastore_read_id"
                                                                 value="">
                 <br/>
-                <INPUT type="button" name="button" value="1. Read one datastores content: read_datastore(token, datastore_id)"
+                <INPUT type="button" name="button" value="2. Read one datastores content: read_datastore(token, datastore_id)"
                        id="read_datastore_id"/>
                 <br/>
                 <h4>OUTPUT: </h4>
@@ -754,7 +893,7 @@
                 <textarea rows="3" cols="60" name="users_secret_key_read" id="users_secret_key_read" ></textarea>
                 <br/>
 
-                <INPUT type="button" name="button" value="Decrypt Data"
+                <INPUT type="button" name="button" value="3. Decrypt datastore secret"
                        id="decrypt_datastore_secret"/>
                 <br/>
 
@@ -772,20 +911,21 @@
                 <h3>Step 4</h3>
                 <p>Decrypt the content of the data attribute with the data_nonce and the plaintext datastore secret</p>
 
-                <INPUT type="button" name="button" value="Decrypt Data"
-                       id="decrypt_data"/>
+                <INPUT type="button" name="button" value="4. Decrypt Datastore data"
+                       id="decrypt_data_datastore"/>
                 <br/>
 
                 <h4>OUTPUT: </h4>
-                <label for="decrypted_data">Plaintext content of the data of the fetched datastore: </label>
+                <label for="decrypted_data_datastore">Plaintext content of the data of the fetched datastore: </label>
                 <br/>
-                <div id="decrypted_data" class="editclass"></div>
+                <div id="decrypted_data_datastore" class="editclass"></div>
                 <br/>
                 <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
                 </small>
             </section>
             <!-- END Read Datastore -->
         </div>
+
 
         <div id="tabs-6">
             <!-- START Create Datastore -->
@@ -796,7 +936,7 @@
                 <p>Generate a secret key for the new datastore</p>
 
                 <INPUT type="button" name="button" value="1. Generate Secret Key"
-                       id="generate_secret_key"/>
+                       id="generate_secret_key_datastore"/>
                 <h4>OUTPUT: </h4>
 
                 <label for="datastore_secret_key">Datastore Secret Key: </label>
@@ -815,23 +955,23 @@
                 <p>Encrypt the secret key for the new datastore with the secret key of hte user</p>
 
                 <h4>INPUT: </h4>
-                <label for="users_decrypted_secret_key">Users plaintext secret key: </label>
+                <label for="users_decrypted_secret_key_datastore">Users plaintext secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="users_decrypted_secret_key" id="users_decrypted_secret_key"></textarea>
+                <textarea rows="3" cols="60" name="users_decrypted_secret_key_datastore" id="users_decrypted_secret_key_datastore"></textarea>
                 <br/>
 
                 <INPUT type="button" name="button" value="2. Encrypt Secret Key"
-                       id="encrypt_secret_key"/>
+                       id="encrypt_secret_key_datastore"/>
                 <h4>OUTPUT: </h4>
 
-                <label for="encrypted_secret_key">Encrypted Datastore Secret Key: </label>
+                <label for="encrypted_secret_key_datastore">Encrypted Datastore Secret Key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="encrypted_secret_key" id="encrypted_secret_key" readonly></textarea>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_datastore" id="encrypted_secret_key_datastore" readonly></textarea>
                 <br/>
 
-                <label for="encrypted_secret_key_nonce">Encrypted Datastore Secret Key Nonce: </label>
+                <label for="encrypted_secret_key_datastore_nonce">Encrypted Datastore Secret Key Nonce: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="encrypted_secret_key_nonce" id="encrypted_secret_key_nonce" readonly></textarea>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_datastore_nonce" id="encrypted_secret_key_datastore_nonce" readonly></textarea>
                 <br/>
                 <small></small>
 
@@ -842,7 +982,8 @@
             <section>
                 <h3>Step 3</h3>
 
-                <p>Send the request so the datastore is created with this secret key</p>
+                <p>Send the request so the datastore is created with this secret key
+                    (Endpoint <a href="/datastore/">/datastore/</a>)</p>
 
                 <h4>INPUT: </h4>
                 <label for="token_datastore_create">Token: </label><input size="30" size="180" type="text" name="token_datastore_create"
@@ -886,16 +1027,16 @@
                 <br/>
 
                 <INPUT type="button" name="button" value="1. encrypt the data: encrypt_data(data, secret_key)"
-                       id="encrypt_data"/>
+                       id="encrypt_data_datastore"/>
                 <h4>OUTPUT: </h4>
-                <label for="encrypted_data">Encrypted Data: </label>
+                <label for="encrypted_data_datastore">Encrypted Data: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="encrypted_data" id="encrypted_data" readonly></textarea>
+                <textarea rows="3" cols="60" name="encrypted_data_datastore" id="encrypted_data_datastore" readonly></textarea>
                 <br/>
 
-                <label for="encrypted_data_nonce">Encrypted Data Nonce: </label>
+                <label for="encrypted_data_datastore_nonce">Encrypted Data Nonce: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="encrypted_data_nonce" id="encrypted_data_nonce" readonly></textarea>
+                <textarea rows="3" cols="60" name="encrypted_data_datastore_nonce" id="encrypted_data_datastore_nonce" readonly></textarea>
                 <br/>
                 <small>No final decision has yet been made about the structure of the datastore, but the idea is that clients filter according to type
                 </small>
@@ -932,6 +1073,254 @@
                 </small>
             </section>
             <!-- END Write Datastore -->
+        </div>
+
+
+
+
+        <div id="tabs-8">
+            <!-- START Read Share -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to get a list of all shares
+                    (Endpoint <a href="/share/">/share/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_share_read">Token: </label><input size="30" size="180" type="text" name="token_share_read"
+                                                                id="token_share_read"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Get share list: read_share(token)"
+                       id="read_share"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_share_read">List of all shares: </label>
+                <br/>
+                <div id="the_share_read" class="editclass"></div>
+                <br/>
+                <small>
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Use the token from login and the share ID to get the share's content
+                    (Endpoint <a href="/share/my-share-id/">/share/my-share-id/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_share_read_id">Token: </label><input size="30" size="180" type="text" name="token_share_read_id"
+                                                                id="token_share_read_id"
+                                                                value="">
+                <br/>
+                <label for="id_share_read_id">Share ID: </label><input size="30" size="180" type="text" name="id_share_read_id"
+                                                                id="id_share_read_id"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="2. Read one shares content: read_share(token, share_id)"
+                       id="read_share_id"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_share_read_id">Content of one share: </label>
+                <br/>
+                <div id="the_share_read_id" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the share, but the idea is that clients filter according to type
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>Decrypt the secret key of the share with the secret key of the user</p>
+
+                <label for="users_secret_key_read">Plaintext user's secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="users_secret_key_read" id="users_secret_key_read" ></textarea>
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Decrypt share secret"
+                       id="decrypt_share_secret"/>
+                <br/>
+
+                <h4>OUTPUT: </h4>
+                <label for="decrypted_share_secret">Plaintext share secret: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="decrypted_share_secret" id="decrypted_share_secret" readonly></textarea>
+                <br/>
+                <small></small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 4</h3>
+                <p>Decrypt the content of the data attribute with the data_nonce and the plaintext share secret</p>
+
+                <INPUT type="button" name="button" value="4. Decrypt Share Data"
+                       id="decrypt_data_share"/>
+                <br/>
+
+                <h4>OUTPUT: </h4>
+                <label for="decrypted_data_share">Plaintext content of the data of the fetched share: </label>
+                <br/>
+                <div id="decrypted_data_share" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the share, but the idea is that clients filter according to type
+                </small>
+            </section>
+            <!-- END Read Share -->
+        </div>
+
+        <div id="tabs-9">
+            <!-- START Create Share -->
+
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Generate a secret key for the new share</p>
+
+                <INPUT type="button" name="button" value="1. Generate Secret Key"
+                       id="generate_secret_key_share"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="share_secret_key">Share Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="share_secret_key" id="share_secret_key" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Encrypt the secret key for the new share with the secret key of hte user</p>
+
+                <h4>INPUT: </h4>
+                <label for="users_decrypted_secret_key_share">Users plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="users_decrypted_secret_key_share" id="users_decrypted_secret_key_share"></textarea>
+                <br/>
+
+                <INPUT type="button" name="button" value="2. Encrypt Secret Key"
+                       id="encrypt_secret_key_share"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="encrypted_secret_key_share">Encrypted Share Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_share" id="encrypted_secret_key_share" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_secret_key_share_nonce">Encrypted Share Secret Key Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_share_nonce" id="encrypted_secret_key_share_nonce" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>Send the request so the share is created with this secret key
+                    (Endpoint <a href="/share/">/share/</a>)</p></p>
+
+                <h4>INPUT: </h4>
+                <label for="token_share_create">Token: </label><input size="30" size="180" type="text" name="token_share_create"
+                                                                id="token_share_create"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Create Share"
+                       id="create_share"/>
+                <h4>OUTPUT: </h4>
+                <label for="create_share_request_feedback">Create Share Feedback: </label>
+                <br/>
+                <div id="create_share_request_feedback" class="editclass_small"></div>
+                <br/>
+                <small>Will return nothing except a success or fail message
+                </small>
+
+            </section>
+
+            <hr>
+
+            <!-- END Create Share -->
+        </div>
+
+
+        <div id="tabs-10">
+            <!-- START Write Share -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Edit the content of the share data and encrypt it</p>
+                <h4>INPUT: </h4>
+                <label for="the_share_write">Plaintext data of one share: </label>
+                <br/>
+                <div id="the_share_write" class="editclass"></div>
+                <br/>
+                <label for="secret_key_write">Plaintext Share secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="secret_key_write" id="secret_key_write" ></textarea>
+                <br/>
+                <br/>
+
+                <INPUT type="button" name="button" value="1. encrypt the data: encrypt_data(data, secret_key)"
+                       id="encrypt_data_share"/>
+                <h4>OUTPUT: </h4>
+                <label for="encrypted_data_share">Encrypted Data: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_share" id="encrypted_data_share" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_data_share_nonce">Encrypted Data Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_share_nonce" id="encrypted_data_share_nonce" readonly></textarea>
+                <br/>
+                <small>No final decision has yet been made about the structure of the share, but the idea is that clients filter according to type
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+                <p>
+                    Finally write/upload the share data
+                    (Endpoint <a href="/share/my-share-id/">/share/my-share-id/</a>)
+                </p>
+
+                <h4>INPUT: </h4>
+                <label for="token_share_write">Token: </label><input size="30" size="180" type="text" name="token_share_write"
+                                                                id="token_share_write"
+                                                                value="">
+                <br/>
+                <label for="id_share_write_id">Share ID: </label><input size="30" size="180" type="text" name="id_share_write_id"
+                                                                id="id_share_write_id"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="2. Write the share: write_share(token, share_id, encrypted_data, encrypted_data_nonce)"
+                       id="write_share"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="share_write_request_feedback">Share write request feedback: </label>
+                <br/>
+                <div id="share_write_request_feedback" class="editclass_small"></div>
+                <small>
+                </small>
+            </section>
+            <!-- END Write Share -->
         </div>
 
     </div>

@@ -7,13 +7,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from models import Token, Data_Store, Share
+import models
 from rest_framework.generics import RetrieveUpdateAPIView
 
 from .app_settings import (
-    UserDetailsSerializer, LoginSerializer,
+    LoginSerializer,
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
-    DatastoreSerializer, ShareSerializer, DatastoreOverviewSerializer
+    DatastoreSerializer, ShareSerializer, DatastoreOverviewSerializer,
+    ShareOverviewSerializer
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -136,7 +137,7 @@ class LoginView(GenericAPIView):
     """
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
-    token_model = Token
+    token_model = models.Token
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -180,7 +181,7 @@ class LogoutView(APIView):
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AllowAny,)
-    token_model = Token
+    token_model = models.Token
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -199,23 +200,6 @@ class LogoutView(APIView):
         return Response({"success": "Successfully logged out."},
                         status=status.HTTP_200_OK)
 
-
-class UserDetailsView(RetrieveUpdateAPIView):
-
-    """
-    Returns User's details in JSON format.
-
-    Accepts the following GET parameters: token
-    Accepts the following POST parameters:
-        Required: token
-        Optional: email, first_name, last_name and UserProfile fields
-    Returns the updated UserProfile and/or User object.
-    """
-    serializer_class = UserDetailsSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self):
-        return self.request.user
 
 class AuthkeyChangeView(GenericAPIView):
 
@@ -257,8 +241,8 @@ class DatastoreView(GenericAPIView):
 
         if not uuid:
             try:
-                storages = Data_Store.objects.filter(owner=request.user)
-            except Data_Store.DoesNotExist:
+                storages = models.Data_Store.objects.filter(owner=request.user)
+            except models.Data_Store.DoesNotExist:
                 storages = []
 
             # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
@@ -266,8 +250,8 @@ class DatastoreView(GenericAPIView):
                 status=status.HTTP_200_OK)
         else:
             try:
-                datastore = Data_Store.objects.get(pk=uuid)
-            except Data_Store.DoesNotExist:
+                datastore = models.Data_Store.objects.get(pk=uuid)
+            except models.Data_Store.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
             if not datastore.owner == request.user:
@@ -281,7 +265,7 @@ class DatastoreView(GenericAPIView):
         # TODO implement check for more datastores for enterprise users
 
         try:
-            datastore = Data_Store.objects.create(
+            datastore = models.Data_Store.objects.create(
                 data = str(request.data['data']),
                 data_nonce = str(request.data['data_nonce']),
                 secret_key = str(request.data['secret_key']),
@@ -296,8 +280,8 @@ class DatastoreView(GenericAPIView):
     def post(self, request, uuid = None, *args, **kwargs):
 
         try:
-            datastore = Data_Store.objects.get(pk=uuid)
-        except Data_Store.DoesNotExist:
+            datastore = models.Data_Store.objects.get(pk=uuid)
+        except models.Data_Store.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -337,64 +321,102 @@ class ShareView(GenericAPIView):
 
         if not uuid:
             try:
-                shares = Share.objects.filter(owner=request.user)
-            except Share.DoesNotExist:
+                shares = models.Share.objects.filter(user_shares__user=request.user).distinct()
+            except models.Share.DoesNotExist:
                 shares = []
 
+            response = []
+            for s in shares:
+
+                user_shares = []
+                for u in s.user_shares.all():
+                    user_shares.append({
+                        'id': u.id,
+                        'key': u.key,
+                        'key_nonce': u.key_nonce,
+                        'encryption_type': u.encryption_type,
+                        'approved': u.approved,
+                        'read': u.read,
+                        'write': u.write,
+                        'grant': u.grant,
+                        'revoke': u.revoke,
+                    })
+
+                response.append({
+                    'id': s.id,
+                    'data': s.data if s.data else '',
+                    'data_nonce': s.data_nonce if s.data_nonce else '',
+                    'type': s.type,
+                    'owner': s.owner_id,
+                    'user_shares': user_shares
+                })
+
             # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
-            return Response({'datastores': DatastoreOverviewSerializer(shares, many=True).data},
+            return Response({'shares': response},
                 status=status.HTTP_200_OK)
         else:
             try:
-                datastore = Share.objects.get(pk=uuid)
-            except Share.DoesNotExist:
+                share = models.Share.objects.get(pk=uuid)
+            except models.Share.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-            if not datastore.owner == request.user:
+            if not share.owner == request.user:
                 raise PermissionDenied({"message":"You don't have permission to access",
-                                "object_id": datastore.id})
+                                "object_id": share.id})
 
-            return Response(self.serializer_class(datastore).data,
+            return Response(self.serializer_class(share).data,
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO implement check for more datastores for enterprise users
+        # TODO implement check for more shares for enterprise users
 
         try:
-            datastore = Share.objects.create(
+            share = models.Share.objects.create(
                 data = str(request.data['data']),
                 data_nonce = str(request.data['data_nonce']),
-                secret_key = str(request.data['secret_key']),
-                secret_key_nonce = str(request.data['secret_key_nonce']),
                 owner = request.user
             )
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"datastore_id": datastore.id}, status=status.HTTP_200_OK)
+        models.User_Share.objects.create(
+                owner = request.user,
+                user = request.user,
+                share = share,
+                key = str(request.data['secret_key']),
+                key_nonce = str(request.data['secret_key_nonce']),
+                approved = True,
+                encryption_type = 'secret',
+                read = True,
+                write = True,
+                grant = True,
+                revoke = True,
+            )
+
+        return Response({"share_id": share.id}, status=status.HTTP_200_OK)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
         try:
-            datastore = Share.objects.get(pk=uuid)
-        except Share.DoesNotExist:
+            share = models.Share.objects.get(pk=uuid)
+        except models.Share.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-        if not datastore.owner == request.user:
+        if not share.owner == request.user:
             raise PermissionDenied({"message":"You don't have permission to access",
-                            "object_id": datastore.id})
+                            "object_id": share.id})
 
         if 'data' in request.data:
-            datastore.data = str(request.data['data'])
+            share.data = str(request.data['data'])
         if 'data_nonce' in request.data:
-            datastore.data_nonce = str(request.data['data_nonce'])
+            share.data_nonce = str(request.data['data_nonce'])
         if 'secret_key' in request.data:
-            datastore.secret_key = str(request.data['secret_key'])
+            share.secret_key = str(request.data['secret_key'])
         if 'secret_key_nonce' in request.data:
-            datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
+            share.secret_key_nonce = str(request.data['secret_key_nonce'])
 
-        datastore.save()
+        share.save()
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

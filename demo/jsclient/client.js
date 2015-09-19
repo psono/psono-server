@@ -365,7 +365,98 @@ var ClassClient = function(){
                 xhr.setRequestHeader ("Authorization", "Token "+token);
             }
         });
-    }
+    };
+
+    /**
+     * Ajax GET request with the token as authentication to get the current user's share
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} [share_id=null] - the share ID
+     * @returns {promise}
+     */
+    this.read_share = function(token, share_id) {
+
+        //optional parameter share_id
+        if (typeof share_id === 'undefined') { share_id = null; }
+
+        var endpoint = '/share/' + (share_id == null ? '' : share_id+'/');
+        var type = "GET";
+
+        return $.ajax({
+            type: type,
+            url: backend+endpoint,
+            data: null, // No data required for get
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function( xhr ) {
+                xhr.setRequestHeader ("Authorization", "Token "+token);
+            }
+        });
+    };
+
+
+    /**
+     * Ajax PUT request to create a datstore with the token as authentication and optional already some data,
+     * together with the encrypted secret key and nonce
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {string} [encrypted_data] - optional data for the new share
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @param {string} [encrypted_data_secret_key] - encrypted secret key, only necessary if data is provided
+     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
+     * @returns {promise}
+     */
+    this.create_share = function(token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/share/';
+        var type = "PUT";
+        var data = {
+            data: encrypted_data,
+            data_nonce: encrypted_data_nonce,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
+        };
+
+        return $.ajax({
+            type: type,
+            url: backend+endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function( xhr ) {
+                xhr.setRequestHeader ("Authorization", "Token "+token);
+            }
+        });
+    };
+
+    /**
+     * Ajax PUT request with the token as authentication and the new share content
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} share_id - the share ID
+     * @param {string} [encrypted_data] - optional data for the new share
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @param {string} [encrypted_data_secret_key] - encrypted secret key, wont update on the server if not provided
+     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
+     * @returns {promise}
+     */
+    this.write_share = function(token, share_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/share/'+share_id+'/';
+        var type = "POST";
+        var data = {
+            data: encrypted_data,
+            data_nonce: encrypted_data_nonce,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
+        };
+
+        return $.ajax({
+            type: type,
+            url: backend+endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function( xhr ) {
+                xhr.setRequestHeader ("Authorization", "Token "+token);
+            }
+        });
+    };
 };
 
 

@@ -51,14 +51,16 @@ class Data_Store(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='data_stores')
     data = models.BinaryField()
-    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
+    data_nonce = models.CharField(_('data nonce'), max_length=64)
     type = models.CharField(max_length=64, db_index=True, default='password')
     description = models.CharField(max_length=64, default='default')
     secret_key = models.CharField(_('secret key'), max_length=256)
-    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64, unique=True)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
 
     class Meta:
         abstract = False
+
+
 
 
 class Share(models.Model):
@@ -72,7 +74,7 @@ class Share(models.Model):
                               help_text=_('The share owner is always the same as the group owner, so the group '
                                           'owner always keeps full control.'))
     data = models.BinaryField()
-    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
+    data_nonce = models.CharField(_('data nonce'), max_length=64)
     type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:
@@ -135,6 +137,42 @@ class Group_User_Right(models.Model):
 
     class Meta:
         abstract = False
+
+
+class User_Share(models.Model):
+    """
+    The user-share relation (in contrast to group shares), linking the user and shares with rights
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='own_user_shares',
+                              help_text=_('The guy who created this share'))
+    user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='foreign_user_shares',
+                              help_text=_('The guy who will receive this share'))
+    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_shares',
+                              help_text=_('The guy who created this share'))
+    key = models.CharField(_('Key'), max_length=256,
+                           help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
+    key_nonce = models.CharField(_('Key nonce'), max_length=64)
+    approved = models.BooleanField(_('approved'), default=True,
+                                        help_text=_('Designates whether this share has already been accepted or still '
+                                                    'needs approval.'))
+    encryption_type = models.CharField(max_length=6,
+                                       choices=(
+                                           ('public', 'Public-key encryption'),
+                                           ('secret', 'Secret-key encryption'),
+                                       ),
+                                       default='public')
+    read = models.BooleanField(_('Read right'), default=True,
+        help_text=_('Designates whether this user has "read" rights and can read this share'))
+    write = models.BooleanField(_('Wright right'), default=False,
+        help_text=_('Designates whether this user has "write" rights and can update this share'))
+    grant = models.BooleanField(_('Grant right'), default=False,
+        help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
+    revoke = models.BooleanField(_('Revoke right'), default=False,
+        help_text=_('Designates whether this user has "revoke" rights and can remove/reduce other users access rights'))
 
 
 @python_2_unicode_compatible

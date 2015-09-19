@@ -1,22 +1,18 @@
 from django.conf import settings
 
 from serializers import (
-    UserDetailsSerializer as DefaultUserDetailsSerializer,
     LoginSerializer as DefaultLoginSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer,
     DatastoreSerializer as DefaultDatastoreSerializer,
     ShareSerializer as DefaultShareSerializer,
-    DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer)
+    DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
+    ShareOverviewSerializer as DefaultShareOverviewSerializer)
 from .utils import import_callable
 
 
 serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
-
-UserDetailsSerializer = import_callable(
-    serializers.get('USER_DETAILS_SERIALIZER', DefaultUserDetailsSerializer)
-)
 
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
@@ -63,6 +59,12 @@ DatastoreOverviewSerializer = import_callable(
     serializers.get(
         'DATASTORE_OVERVIEW_SERIALIZER',
         DefaultDatastoreOverviewSerializer
+    )
+)
+ShareOverviewSerializer = import_callable(
+    serializers.get(
+        'SHARE_OVERVIEW_SERIALIZER',
+        DefaultShareOverviewSerializer
     )
 )
 
