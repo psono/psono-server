@@ -146,6 +146,11 @@ class DatastoreSerializer(serializers.Serializer):
     secret_key = serializers.CharField(max_length=256)
     secret_key_nonce = serializers.CharField(max_length=64)
 
+class UserPublicKeySerializer(serializers.Serializer):
+
+    user_id = serializers.UUIDField(default=uuid.uuid4)
+    user_email = serializers.EmailField(required=False)
+
 class UserShareSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
@@ -168,7 +173,6 @@ class ShareSerializer(serializers.Serializer):
     type = serializers.CharField(max_length=64, default='password')
     user_shares = UserShareSerializer()
     owner = PublicUserDetailsSerializer()
-
 
 class DatastoreOverviewSerializer(serializers.Serializer):
 

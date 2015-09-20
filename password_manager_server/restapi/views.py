@@ -14,7 +14,7 @@ from .app_settings import (
     LoginSerializer,
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
     DatastoreSerializer, ShareSerializer, DatastoreOverviewSerializer,
-    ShareOverviewSerializer
+    UserPublicKeySerializer
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -245,18 +245,18 @@ class DatastoreView(GenericAPIView):
             except models.Data_Store.DoesNotExist:
                 storages = []
 
-            # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
             return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
                 status=status.HTTP_200_OK)
         else:
             try:
                 datastore = models.Data_Store.objects.get(pk=uuid)
             except models.Data_Store.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
             if not datastore.owner == request.user:
                 raise PermissionDenied({"message":"You don't have permission to access",
-                                "object_id": datastore.id})
+                                "resource_id": datastore.id})
 
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
@@ -282,12 +282,13 @@ class DatastoreView(GenericAPIView):
         try:
             datastore = models.Data_Store.objects.get(pk=uuid)
         except models.Data_Store.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
         if not datastore.owner == request.user:
             raise PermissionDenied({"message":"You don't have permission to access",
-                            "object_id": datastore.id})
+                            "resource_id": datastore.id})
 
         if 'data' in request.data:
             datastore.data = str(request.data['data'])
@@ -302,6 +303,139 @@ class DatastoreView(GenericAPIView):
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
+
+class UserPublicKey(GenericAPIView):
+
+    """
+    Check the REST Token and returns the user's public key. To identify the user either the email or the user_id needs
+    to be provided
+
+    Return the user's public key
+    """
+
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UserPublicKeySerializer
+
+    def post(self, request, *args, **kwargs):
+
+        if 'user_id' in request.data and request.data['user_id']:
+            try:
+                user = models.Data_Store_Owner.objects.get(pk=str(request.data['user_id']))
+                if user is None:
+                    return Response({"message":"You don't have permission to access or it does not exist.",
+                                    "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+            except models.Data_Store_Owner.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+
+        elif 'user_email' in request.data and request.data['user_email']:
+            try:
+                user = models.Data_Store_Owner.objects.get(email=str(request.data['user_email']))
+                if user is None:
+                    return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_404_NOT_FOUND)
+            except models.Data_Store_Owner.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'public_key': user.public_key},
+                status=status.HTTP_200_OK)
+
+
+class ShareRightsView(GenericAPIView):
+
+    """
+    Check the REST Token and the object permissions and returns
+    the share rights if the necessary access rights are granted
+    and the user is  the owner of the share
+
+    Accept the following POST parameters: share_id (optional)
+    Return a list of the shares or the share and the access rights
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ShareSerializer
+
+    def get(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+
+            # Generate a list of a all shares where the owner is the user and join all user_share objects
+            # Share data is not returned
+
+            # TODO optimize query. this way its too inefficient ...
+
+            try:
+                shares = models.Share.objects.filter(owner=request.user)
+            except models.Share.DoesNotExist:
+                shares = []
+
+            response = []
+            for s in shares:
+
+                user_shares = []
+                for u in s.user_shares.all():
+                    user_shares.append({
+                        'id': u.id,
+                        'key': u.key,
+                        'key_nonce': u.key_nonce,
+                        'encryption_type': u.encryption_type,
+                        'approved': u.approved,
+                        'read': u.read,
+                        'write': u.write,
+                        'grant': u.grant,
+                        'revoke': u.revoke,
+                        'user_id': u.user_id,
+                    })
+
+                response.append({
+                    'id': s.id,
+                    'type': s.type,
+                    'user_shares': user_shares
+                })
+
+            return Response({'shares': response},
+                status=status.HTTP_200_OK)
+        else:
+
+            # Returns the specified share if the owner is the user and join all user_share objects
+            # Share data is not returned
+
+            try:
+                share = models.Share.objects.get(pk=uuid, owner=request.user)
+            except models.Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+
+
+            user_shares = []
+
+            for u in share.user_shares.all():
+                user_shares.append({
+                    'id': u.id,
+                    'key': u.key,
+                    'key_nonce': u.key_nonce,
+                    'encryption_type': u.encryption_type,
+                    'approved': u.approved,
+                    'read': u.read,
+                    'write': u.write,
+                    'grant': u.grant,
+                    'revoke': u.revoke,
+                    'user_id': u.user_id,
+                })
+
+            response = {
+                'id': share.id,
+                'type': share.type,
+                'user_shares': user_shares
+            }
+
+            return Response(response,
+                status=status.HTTP_200_OK)
 
 
 class ShareView(GenericAPIView):
@@ -321,6 +455,8 @@ class ShareView(GenericAPIView):
 
         if not uuid:
 
+            # Generates a list of shares wherever the user has any rights for it and joins the user_share objects
+
             #TODO optimize query. this way its too inefficient ...
 
             try:
@@ -329,9 +465,10 @@ class ShareView(GenericAPIView):
                 shares = []
 
             response = []
-            for s in shares:
 
+            for s in shares:
                 user_shares = []
+
                 for u in s.user_shares.filter(user=request.user):
                     user_shares.append({
                         'id': u.id,
@@ -355,18 +492,17 @@ class ShareView(GenericAPIView):
                     'user_shares': user_shares
                 })
 
-            # TODO Discuss type of data field and base64 encoding or not and if encoding then client or serverside
             return Response({'shares': response},
                 status=status.HTTP_200_OK)
         else:
+
+            # Returns the specified share if the user has any rights for it and joins the user_share objects
+
             try:
                 share = models.Share.objects.get(pk=uuid)
             except models.Share.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
-
-            if not share.owner == request.user:
-                raise PermissionDenied({"message":"You don't have permission to access",
-                                "object_id": share.id})
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
             user_shares = []
@@ -384,6 +520,10 @@ class ShareView(GenericAPIView):
                     'revoke': u.revoke,
                     'owner_id': u.owner_id,
                 })
+
+            if not user_shares:
+                raise PermissionDenied({"message":"You don't have permission to access",
+                                "resource_id": share.id})
 
             response = {
                 'id': share.id,
@@ -430,7 +570,8 @@ class ShareView(GenericAPIView):
         try:
             share = models.Share.objects.get(pk=uuid)
         except models.Share.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
         if share.owner != request.user and share.user_shares.filter(user=request.user, write=True).count() < 0:
             raise PermissionDenied()

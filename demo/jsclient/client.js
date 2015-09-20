@@ -1,21 +1,21 @@
+/**
+   Some words in advance before you start implementing your own client that are really important:
+   - Keep the clients password hidden at all costs
+   - Keep the clients passwords sha256 hidden at all cost
+   - Keep the clients passwords sha512 hidden at all cost
+     ... and all other "weak" hashes of the users password! If you really really really need something coming from
+     the users password, use "strong" hashes bcrypt / scrypt / ...
+   - Never use a nonce twice
+   - Never use the special sauce in any sha256 / sha512 besides for the reasons below as its an additional
+     "hardening" of our implementation.
+ */
 
-var ClassClient = function(){
-
-    /**
-       Some words in advance before you start implementing your own client that are really important:
-       - Keep the clients password hidden at all costs
-       - Keep the clients passwords sha256 hidden at all cost
-       - Keep the clients passwords sha512 hidden at all cost
-         ... and all other "weak" hashes of the users password! If you really really really need something coming from
-         the users password, use "strong" hashes bcrypt / scrypt / ...
-       - Never use a nonce twice
-       - Never use the special sauce in any sha256 / sha512 besides for the reasons below as its an additional
-         "hardening" of our implementation.
-     */
-
+var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factory) {
+    "use strict";
     // Little Helper
-    if (!location.origin)
-       location.origin = location.protocol + "//" + location.host;
+    if (!location.origin) {
+        location.origin = location.protocol + "//" + location.host;
+    }
 
     /* Start of Config*/
 
@@ -31,7 +31,7 @@ var ClassClient = function(){
     /* Im afraid people will send/use shaXXX hashes of their password for other purposes, therefore I add this special
      * sauce to every hash. This special sauce can be considered a constant and will never change. Its no secret but
      * it should not be used for anything else besides the reasons below */
-    var special_sauce = 'c8db7c084e181fbd0c616ed445545375a40d9a3ddc3f9d8fac1dba860579cbc1'; //sha256 of 'danielandsaschatryingtheirbest'
+    var special_sauce = 'c8db7c084e181fbd0c616ed445545375a40d9a3ddc3f9d8fac1dba860579cbc1';//sha256 of 'danielandsaschatryingtheirbest'
 
     /**
      * takes the sha512 of lowercase email (+ special sauce) as salt to generate scrypt password hash in hex called the
@@ -62,7 +62,7 @@ var ClassClient = function(){
         var scrypt = scrypt_module_factory();
 
         // takes the email address basically as salt. sha512 is used to enforce minimum length
-        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase()+special_sauce));
+        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase() + special_sauce));
 
         return scrypt.to_hex(scrypt.crypto_scrypt(scrypt.encode_utf8(password), scrypt.encode_utf8(salt), n, r, p, l));
     };
@@ -72,7 +72,7 @@ var ClassClient = function(){
      *
      * @returns {{public_key: string, private_key: string, secret_key: string}}
      */
-    this.generate_secret_key = function() {
+    this.generate_secret_key = function () {
 
         return nacl.to_hex(nacl.random_bytes(32)); // 32 Bytes = 256 Bits
     };
@@ -83,7 +83,7 @@ var ClassClient = function(){
      *
      * @returns {{public_key: string, private_key: string}}
      */
-    this.generate_public_private_keypair = function() {
+    this.generate_public_private_keypair = function () {
 
         var pair = nacl.crypto_box_keypair();
 
@@ -102,17 +102,17 @@ var ClassClient = function(){
      * @param {string} password
      * @returns {{nonce: string, ciphertext: string}}
      */
-    this.encrypt_secret = function(secret, password) {
+    this.encrypt_secret = function (secret, password) {
 
-        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password+special_sauce));
+        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + special_sauce));
         var m = nacl.encode_utf8(secret);
         var n = nacl.crypto_secretbox_random_nonce();
         var c = nacl.crypto_secretbox(m, n, k);
-        
+
         return {
             nonce: nacl.to_hex(n),
             ciphertext: nacl.to_hex(c)
-        }
+        };
 
     };
 
@@ -126,9 +126,9 @@ var ClassClient = function(){
      *
      * @returns {string} secret
      */
-    this.decrypt_secret = function(ciphertext, nonce, password) {
+    this.decrypt_secret = function (ciphertext, nonce, password) {
 
-        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password+special_sauce));
+        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + special_sauce));
         var n = nacl.from_hex(nonce);
         var c = nacl.from_hex(ciphertext);
         var m1 = nacl.crypto_secretbox_open(c, n, k);
@@ -144,7 +144,7 @@ var ClassClient = function(){
      * @param {string} secret_key
      * @returns {{nonce: string, ciphertext: string}}
      */
-    this.encrypt_data = function(data, secret_key) {
+    this.encrypt_data = function (data, secret_key) {
 
         var k = nacl.from_hex(secret_key);
         var m = nacl.encode_utf8(data);
@@ -154,7 +154,7 @@ var ClassClient = function(){
         return {
             nonce: nacl.to_hex(n),
             ciphertext: nacl.to_hex(c)
-        }
+        };
     };
 
     /**
@@ -167,7 +167,7 @@ var ClassClient = function(){
      *
      * @returns {string} data
      */
-    this.decrypt_data = function(ciphertext, nonce, secret_key) {
+    this.decrypt_data = function (ciphertext, nonce, secret_key) {
 
         var k = nacl.from_hex(secret_key);
         var n = nacl.from_hex(nonce);
@@ -190,7 +190,7 @@ var ClassClient = function(){
      * @param {string} secret_key_nonce - the nonce for decrypting the encrypted secret_key
      * @returns {promise}
      */
-    this.authentication_register = function(email, authkey, public_key, private_key, private_key_nonce, secret_key, secret_key_nonce) {
+    this.authentication_register = function (email, authkey, public_key, private_key, private_key_nonce, secret_key, secret_key_nonce) {
         var endpoint = '/authentication/register/';
         var type = "POST";
         var data = {
@@ -203,9 +203,9 @@ var ClassClient = function(){
             secret_key_nonce: secret_key_nonce
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text' // will be json but for the demo purposes we insist on text
         });
@@ -218,16 +218,16 @@ var ClassClient = function(){
      * @param activation_code
      * @returns {promise}
      */
-    this.authentication_verify_email = function(activation_code) {
+    this.authentication_verify_email = function (activation_code) {
         var endpoint = '/authentication/verify-email/';
         var type = "POST";
         var data = {
             activation_code: activation_code
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text' // will be json but for the demo purposes we insist on text
         });
@@ -239,7 +239,7 @@ var ClassClient = function(){
      * @param {string} authkey - authkey gets generated by generate_authkey(email, password)
      * @returns {promise}
      */
-    this.authentication_login = function(email, authkey) {
+    this.authentication_login = function (email, authkey) {
         var endpoint = '/authentication/login/';
         var type = "POST";
         var data = {
@@ -247,9 +247,9 @@ var ClassClient = function(){
             authkey: authkey
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text' // will be json but for the demo purposes we insist on text
         });
@@ -261,17 +261,17 @@ var ClassClient = function(){
      * @param token
      * @returns {promise}
      */
-    this.authentication_logout = function(token) {
+    this.authentication_logout = function (token) {
         var endpoint = '/authentication/logout/';
         var type = "POST";
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: null, // No data required for get
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -283,21 +283,21 @@ var ClassClient = function(){
      * @param {uuid} [datastore_id=null] - the datastore ID
      * @returns {promise}
      */
-    this.read_datastore = function(token, datastore_id) {
+    this.read_datastore = function (token, datastore_id) {
 
         //optional parameter datastore_id
-        if (typeof datastore_id === 'undefined') { datastore_id = null; }
+        if (datastore_id === undefined) { datastore_id = null; }
 
-        var endpoint = '/datastore/' + (datastore_id == null ? '' : datastore_id+'/');
+        var endpoint = '/datastore/' + (datastore_id === null ? '' : datastore_id + '/');
         var type = "GET";
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: null, // No data required for get
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -314,7 +314,7 @@ var ClassClient = function(){
      * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
      * @returns {promise}
      */
-    this.create_datastore = function(token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+    this.create_datastore = function (token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
         var endpoint = '/datastore/';
         var type = "PUT";
         var data = {
@@ -324,13 +324,13 @@ var ClassClient = function(){
             secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -346,8 +346,8 @@ var ClassClient = function(){
      * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
      * @returns {promise}
      */
-    this.write_datastore = function(token, datastore_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
-        var endpoint = '/datastore/'+datastore_id+'/';
+    this.write_datastore = function (token, datastore_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/datastore/' + datastore_id + '/';
         var type = "POST";
         var data = {
             data: encrypted_data,
@@ -356,13 +356,13 @@ var ClassClient = function(){
             secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -374,21 +374,21 @@ var ClassClient = function(){
      * @param {uuid} [share_id=null] - the share ID
      * @returns {promise}
      */
-    this.read_share = function(token, share_id) {
+    this.read_share = function (token, share_id) {
 
         //optional parameter share_id
-        if (typeof share_id === 'undefined') { share_id = null; }
+        if (share_id === undefined) { share_id = null; }
 
-        var endpoint = '/share/' + (share_id == null ? '' : share_id+'/');
+        var endpoint = '/share/' + (share_id === null ? '' : share_id + '/');
         var type = "GET";
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: null, // No data required for get
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -405,7 +405,7 @@ var ClassClient = function(){
      * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
      * @returns {promise}
      */
-    this.create_share = function(token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+    this.create_share = function (token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
         var endpoint = '/share/';
         var type = "PUT";
         var data = {
@@ -415,13 +415,13 @@ var ClassClient = function(){
             secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };
@@ -437,8 +437,8 @@ var ClassClient = function(){
      * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
      * @returns {promise}
      */
-    this.write_share = function(token, share_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
-        var endpoint = '/share/'+share_id+'/';
+    this.write_share = function (token, share_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/share/' + share_id + '/';
         var type = "POST";
         var data = {
             data: encrypted_data,
@@ -447,13 +447,62 @@ var ClassClient = function(){
             secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
-        return $.ajax({
+        return jQuery.ajax({
             type: type,
-            url: backend+endpoint,
+            url: backend + endpoint,
             data: data,
             dataType: 'text', // will be json but for the demo purposes we insist on text
-            beforeSend: function( xhr ) {
-                xhr.setRequestHeader ("Authorization", "Token "+token);
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
+     * Ajax GET request with the token as authentication to get the users and groups rights of the share
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} share_id - the share ID
+     * @returns {promise}
+     */
+    this.get_share_rights = function (token, share_id) {
+        var endpoint = '/share/rights/' + share_id + '/';
+        var type = "GET";
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: null, // No data required for get
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
+     * Ajax GET request with the token as authentication to get the public key of a user by user_id or user_email
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} [user_id] - the user ID
+     * @param {uuid} [user_email] - the user email
+     * @returns {promise}
+     */
+    this.get_users_public_key = function (token, user_id, user_email) {
+        var endpoint = '/user/public-key/';
+        var type = "POST";
+        var data = {
+            user_id: user_id,
+            user_email: user_email
+        };
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
     };

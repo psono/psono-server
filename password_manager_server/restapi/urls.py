@@ -31,10 +31,17 @@ urlpatterns = [
     url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
     url(r'^authentication/authkey/change/$', views.AuthkeyChangeView.as_view(),
         name='authentication_authkey_change'),
+
+    url(r'^user/public-key/$', views.UserPublicKey.as_view(), name='user_public_key'),
+
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
+
     url(r'^share/$', views.ShareView.as_view(), name='share'),
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
+
+    url(r'^share/rights/$', views.ShareRightsView.as_view(), name='share_rights'),
+    url(r'^share/rights/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
     # url(r'^$', views.api_root),
 ]
 

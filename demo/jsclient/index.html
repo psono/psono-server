@@ -22,7 +22,7 @@
             (function () {
                 "use strict";
 
-                var client = new ClassClient();
+                var client = new ClassClient(location, nacl_factory, jQuery, scrypt_module_factory);
 
                 /*
                  *  Registraiton
@@ -213,7 +213,7 @@
                         client.decrypt_data(
                             jsoneditors.the_datastore_read_id.get().secret_key,
                             jsoneditors.the_datastore_read_id.get().secret_key_nonce,
-                            $('#users_secret_key_read').val()
+                            $('#users_secret_key_read_datastore').val()
                         )
                     );
 
@@ -350,7 +350,7 @@
                         secret = client.decrypt_data(
                             (jsoneditors.the_share_read_id.get().user_shares)[0].key,
                             (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
-                            $('#users_secret_key_read').val()
+                            $('#users_secret_key_read_share').val()
                         );
                     } else {
                         // TODO implement public key crypto to read the share
@@ -449,6 +449,41 @@
                         });
                 });
 
+
+                /*
+                 *  Share Share
+                 */
+
+                $('#get_share_rights').click(function (event) {
+                    event.preventDefault();
+                    client.get_share_rights($('#token_share_share_id').val(), $('#id_share_share_id').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.share_share_share_rights.set(JSON.parse(value));
+                            jsoneditors.share_share_share_rights.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.share_share_share_rights.set(JSON.parse(value.responseText));
+                            jsoneditors.share_share_share_rights.expandAll();
+                        });
+                });
+
+                $('#get_users_public_key').click(function (event) {
+                    event.preventDefault();
+                    client.get_users_public_key($('#token_share_share_id').val(), $('#user_id_share_share').val(), $('#user_email_share_share').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.share_share_users_public_key.set(JSON.parse(value));
+                            jsoneditors.share_share_users_public_key.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.share_share_users_public_key.set(JSON.parse(value.responseText));
+                            jsoneditors.share_share_users_public_key.expandAll();
+                        });
+                });
+
             }());
         });
 
@@ -508,7 +543,9 @@
                     'share_write_request_feedback',
                     'the_share_write',
                     'decrypted_data_share',
-                    'create_share_request_feedback'
+                    'create_share_request_feedback',
+                    'share_share_share_rights',
+                    'share_share_users_public_key'
                 ];
 
             for (var i = 0; i < editors.length; i++) {
@@ -564,6 +601,7 @@
             <li><a href="#tabs-8">Read Share</a></li>
             <li><a href="#tabs-9">Create Share</a></li>
             <li><a href="#tabs-10">Write Share</a></li>
+            <li><a href="#tabs-11">Share Share</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -816,7 +854,7 @@
                 <p>Use the token from login to logout
                     (Endpoint <a href="/authentication/logout/">/authentication/logout/</a>)</p>
                 <h4>INPUT: </h4>
-                <label for="token_logout">Token: </label><input size="30" size="180" type="text" name="token_logout"
+                <label for="token_logout">Token: </label><input size="30" type="text" name="token_logout"
                                                                 id="token_logout"
                                                                 value="">
                 <br/>
@@ -843,7 +881,7 @@
                 <p>Use the token from login to get a list of all datastores
                     (Endpoint <a href="/datastore/">/datastore/</a>)</p>
                 <h4>INPUT: </h4>
-                <label for="token_datastore_read">Token: </label><input size="30" size="180" type="text" name="token_datastore_read"
+                <label for="token_datastore_read">Token: </label><input size="30" type="text" name="token_datastore_read"
                                                                 id="token_datastore_read"
                                                                 value="">
                 <br/>
@@ -867,11 +905,11 @@
                 <p>Use the token from login and the datastore ID to get the datastore's content
                     (Endpoint <a href="/datastore/my-datastore-id/">/datastore/my-datastore-id/</a>)</p>
                 <h4>INPUT: </h4>
-                <label for="token_datastore_read_id">Token: </label><input size="30" size="180" type="text" name="token_datastore_read_id"
+                <label for="token_datastore_read_id">Token: </label><input size="30" type="text" name="token_datastore_read_id"
                                                                 id="token_datastore_read_id"
                                                                 value="">
                 <br/>
-                <label for="id_datastore_read_id">Datastore ID: </label><input size="30" size="180" type="text" name="id_datastore_read_id"
+                <label for="id_datastore_read_id">Datastore ID: </label><input size="30" type="text" name="id_datastore_read_id"
                                                                 id="id_datastore_read_id"
                                                                 value="">
                 <br/>
@@ -894,9 +932,9 @@
 
                 <p>Decrypt the secret key of the datastore with the secret key of the user</p>
 
-                <label for="users_secret_key_read">Plaintext user's secret key: </label>
+                <label for="users_secret_key_read_datastore">Plaintext user's secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="users_secret_key_read" id="users_secret_key_read" ></textarea>
+                <textarea rows="3" cols="60" name="users_secret_key_read_datastore" id="users_secret_key_read_datastore" ></textarea>
                 <br/>
 
                 <INPUT type="button" name="button" value="3. Decrypt datastore secret"
@@ -992,7 +1030,7 @@
                     (Endpoint <a href="/datastore/">/datastore/</a>)</p>
 
                 <h4>INPUT: </h4>
-                <label for="token_datastore_create">Token: </label><input size="30" size="180" type="text" name="token_datastore_create"
+                <label for="token_datastore_create">Token: </label><input size="30" type="text" name="token_datastore_create"
                                                                 id="token_datastore_create"
                                                                 value="">
                 <br/>
@@ -1059,11 +1097,11 @@
                 </p>
 
                 <h4>INPUT: </h4>
-                <label for="token_datastore_write">Token: </label><input size="30" size="180" type="text" name="token_datastore_write"
+                <label for="token_datastore_write">Token: </label><input size="30" type="text" name="token_datastore_write"
                                                                 id="token_datastore_write"
                                                                 value="">
                 <br/>
-                <label for="id_datastore_write_id">Datastore ID: </label><input size="30" size="180" type="text" name="id_datastore_write_id"
+                <label for="id_datastore_write_id">Datastore ID: </label><input size="30" type="text" name="id_datastore_write_id"
                                                                 id="id_datastore_write_id"
                                                                 value="">
                 <br/>
@@ -1092,7 +1130,7 @@
                 <p>Use the token from login to get a list of all shares
                     (Endpoint <a href="/share/">/share/</a>)</p>
                 <h4>INPUT: </h4>
-                <label for="token_share_read">Token: </label><input size="30" size="180" type="text" name="token_share_read"
+                <label for="token_share_read">Token: </label><input size="30" type="text" name="token_share_read"
                                                                 id="token_share_read"
                                                                 value="">
                 <br/>
@@ -1116,11 +1154,11 @@
                 <p>Use the token from login and the share ID to get the share's content
                     (Endpoint <a href="/share/my-share-id/">/share/my-share-id/</a>)</p>
                 <h4>INPUT: </h4>
-                <label for="token_share_read_id">Token: </label><input size="30" size="180" type="text" name="token_share_read_id"
+                <label for="token_share_read_id">Token: </label><input size="30" type="text" name="token_share_read_id"
                                                                 id="token_share_read_id"
                                                                 value="">
                 <br/>
-                <label for="id_share_read_id">Share ID: </label><input size="30" size="180" type="text" name="id_share_read_id"
+                <label for="id_share_read_id">Share ID: </label><input size="30" type="text" name="id_share_read_id"
                                                                 id="id_share_read_id"
                                                                 value="">
                 <br/>
@@ -1143,9 +1181,9 @@
 
                 <p>Decrypt the secret key of the share with the secret key of the user</p>
 
-                <label for="users_secret_key_read">Plaintext user's secret key: </label>
+                <label for="users_secret_key_read_share">Plaintext user's secret key: </label>
                 <br/>
-                <textarea rows="3" cols="60" name="users_secret_key_read" id="users_secret_key_read" ></textarea>
+                <textarea rows="3" cols="60" name="users_secret_key_read_share" id="users_secret_key_read_share" ></textarea>
                 <br/>
 
                 <INPUT type="button" name="button" value="3. Decrypt share secret"
@@ -1240,7 +1278,7 @@
                     (Endpoint <a href="/share/">/share/</a>)</p></p>
 
                 <h4>INPUT: </h4>
-                <label for="token_share_create">Token: </label><input size="30" size="180" type="text" name="token_share_create"
+                <label for="token_share_create">Token: </label><input size="30" type="text" name="token_share_create"
                                                                 id="token_share_create"
                                                                 value="">
                 <br/>
@@ -1307,11 +1345,11 @@
                 </p>
 
                 <h4>INPUT: </h4>
-                <label for="token_share_write">Token: </label><input size="30" size="180" type="text" name="token_share_write"
+                <label for="token_share_write">Token: </label><input size="30" type="text" name="token_share_write"
                                                                 id="token_share_write"
                                                                 value="">
                 <br/>
-                <label for="id_share_write_id">Share ID: </label><input size="30" size="180" type="text" name="id_share_write_id"
+                <label for="id_share_write_id">Share ID: </label><input size="30" type="text" name="id_share_write_id"
                                                                 id="id_share_write_id"
                                                                 value="">
                 <br/>
@@ -1327,6 +1365,67 @@
                 </small>
             </section>
             <!-- END Write Share -->
+        </div>
+
+
+        <div id="tabs-11">
+            <!-- START Share Share -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Get share details</p>
+                <h4>INPUT: </h4>
+                <label for="token_share_share_id">Token: </label><input size="30" type="text" name="token_share_share_id"
+                                                                id="token_share_share_id"
+                                                                value="">
+                <br/>
+                <label for="id_share_share_id">Share ID: </label><input size="30" type="text" name="id_share_share_id"
+                                                                id="id_share_share_id"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="1. get share rights: get_share_rights(token, share_id)"
+                       id="get_share_rights"/>
+                <h4>OUTPUT: </h4>
+                <label for="share_share_share_rights">Share Details: </label>
+                <br/>
+                <div id="share_share_share_rights" class="editclass"></div>
+                <br/>
+                <small>
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+                <p>
+                    Get other user's public key
+                    (Endpoint <a href="/user/public-key/">/user/public-key/</a>)
+                </p>
+
+                <h4>INPUT: </h4>
+                <label for="user_id_share_share">User ID: </label><input size="30" type="text" name="user_id_share_share"
+                                                                id="user_id_share_share"
+                                                                value="">
+                <br/>
+                <b>OR</b>
+                <br/>
+                <label for="user_email_share_share">User E-Mail: </label><input size="30" type="text" name="user_email_share_share"
+                                                                id="user_email_share_share"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="2. get user's public key: get_users_public_key(token, user_id, user_email)"
+                       id="get_users_public_key"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="share_share_users_public_key">Other User's Public Key: </label>
+                <br/>
+                <div id="share_share_users_public_key" class="editclass"></div>
+            </section>
+            <!-- END Share Share -->
         </div>
 
     </div>
