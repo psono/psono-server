@@ -178,6 +178,51 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     };
 
     /**
+     * Takes the data and encrypts that with a random nonce, the receivers public key and users private key.
+     * Returns the nonce and the cipher text as hex.
+     *
+     * @param {string} data
+     * @param {string} public_key
+     * @param {string} private_key
+     * @returns {{nonce: string, ciphertext: string}}
+     */
+    this.encrypt_data_public_key = function (data, public_key, private_key) {
+
+        var p = nacl.from_hex(public_key);
+        var s = nacl.from_hex(private_key);
+        var m = nacl.encode_utf8(data);
+        var n = nacl.crypto_box_random_nonce();
+        var c = nacl.crypto_box(m, n, p, s);
+
+        return {
+            nonce: nacl.to_hex(n),
+            ciphertext: nacl.to_hex(c)
+        };
+    };
+
+    /**
+     * Takes the cipher text and decrypts that with the nonce, the senders public key and users private key.
+     * Returns the initial data.
+     *
+     * @param {string} ciphertext
+     * @param {string} nonce
+     * @param {string} public_key
+     * @param {string} private_key
+     *
+     * @returns {string} data
+     */
+    this.decrypt_data_public_key = function (ciphertext, nonce, public_key, private_key) {
+
+        var p = nacl.from_hex(public_key);
+        var s = nacl.from_hex(private_key);
+        var n = nacl.from_hex(nonce);
+        var c = nacl.from_hex(ciphertext);
+        var m1 = nacl.crypto_box_open(c, n, p, s);
+
+        return nacl.decode_utf8(m1);
+    };
+
+    /**
      * Ajax POST request to the backend with the email and authkey, returns nothing but an email is sent to the user
      * with an activation_code for the email
      *
@@ -473,6 +518,39 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
             type: type,
             url: backend + endpoint,
             data: null, // No data required for get
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
+     * Ajax GET request with the token as authentication to get the users and groups rights of the share
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} share_id - the share ID
+     * @param {uuid} user_id - the target user's user ID
+     * @param {string} key - the encrypted share secret, encrypted with the public key of the target user
+     * @param {string} nonce - the unique nonce for decryption
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @returns {promise}
+     */
+    this.create_share_right = function (token, share_id, user_id, key, nonce, read, write) {
+        var endpoint = '/share/rights/' + share_id + '/';
+        var type = "PUT";
+        var data = {
+            user_id: user_id,
+            key: key,
+            nonce: nonce,
+            read: read,
+            write: write
+        };
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: data,
             dataType: 'text', // will be json but for the demo purposes we insist on text
             beforeSend: function (xhr) {
                 xhr.setRequestHeader("Authorization", "Token " + token);

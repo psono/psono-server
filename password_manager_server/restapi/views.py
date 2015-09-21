@@ -342,7 +342,7 @@ class UserPublicKey(GenericAPIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'public_key': user.public_key},
+        return Response({'user_id': user.id, 'public_key': user.public_key},
                 status=status.HTTP_200_OK)
 
 
@@ -353,8 +353,8 @@ class ShareRightsView(GenericAPIView):
     the share rights if the necessary access rights are granted
     and the user is  the owner of the share
 
-    Accept the following POST parameters: share_id (optional)
-    Return a list of the shares or the share and the access rights
+    Accept the following GET parameters: share_id (optional)
+    Return a list of the shares or the share and the access rights or a message for an update of rights
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
@@ -435,6 +435,43 @@ class ShareRightsView(GenericAPIView):
             }
 
             return Response(response,
+                status=status.HTTP_200_OK)
+
+    def put(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+            return Response({"error": "NoIdProvided", 'message': "No share id provided"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+
+            # Adds the rights for the specified user to the user_shares table
+
+            try:
+                share = models.Share.objects.get(pk=uuid, owner=request.user)
+            except models.Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+
+            try:
+                user = models.Data_Store_Owner.objects.get(pk=str(request.data['user_id']) )
+            except models.Data_Store_Owner.DoesNotExist:
+                return Response({"message":"Target user does not exist.",
+                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+
+
+            user_share_obj = models.User_Share.objects.create(
+                key=str(request.data['key']),
+                key_nonce=str(request.data['nonce']),
+                encryption_type='public',
+                share=share,
+                owner=request.user,
+                user=user,
+                approved=False,
+                read=request.data['read'],
+                write=request.data['write'],
+            )
+            
+            return Response({"user_share_id": str(user_share_obj.id)},
                 status=status.HTTP_200_OK)
 
 
