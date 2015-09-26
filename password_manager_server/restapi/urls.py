@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'^authentication/authkey/change/$', views.AuthkeyChangeView.as_view(),
         name='authentication_authkey_change'),
 
-    url(r'^user/public-key/$', views.UserPublicKey.as_view(), name='user_public_key'),
+    url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
 
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),

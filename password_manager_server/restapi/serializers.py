@@ -91,16 +91,64 @@ class RegisterSerializer(serializers.Serializer):
         value = value.strip()
 
         if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your Auth Key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+            msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
                   (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
             raise exceptions.ValidationError(msg)
 
         if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your Auth Key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+            msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
                   (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
             raise exceptions.ValidationError(msg)
 
         return make_password(value)
+
+    def validate_public_key(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.USER_PUBLIC_KEY_LENGTH_BYTES*2:
+            msg = _('Your public key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PUBLIC_KEY_LENGTH_BYTES), str(settings.USER_PUBLIC_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.USER_PUBLIC_KEY_LENGTH_BYTES*2:
+            msg = _('Your public key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PUBLIC_KEY_LENGTH_BYTES), str(settings.USER_PUBLIC_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_private_key(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
+            msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
+            msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_secret_key(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.USER_SECRET_KEY_LENGTH_BYTES*2:
+            msg = _('Your secret key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.USER_SECRET_KEY_LENGTH_BYTES*2:
+            msg = _('Your secret key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
 
     def create(self, validated_data):
         return Data_Store_Owner.objects.create(**validated_data)

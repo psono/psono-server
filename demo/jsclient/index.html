@@ -346,16 +346,19 @@
                     event.preventDefault();
                     var secret = '';
 
-                    if ((jsoneditors.the_share_read_id.get().user_shares)[0].encryption_type == 'secret') {
+                    if ((jsoneditors.the_share_read_id.get().usre_shares)[0].encryption_type == 'secret') {
                         secret = client.decrypt_data(
                             (jsoneditors.the_share_read_id.get().user_shares)[0].key,
                             (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
                             $('#users_secret_key_read_share').val()
                         );
                     } else {
-                        // TODO implement public key crypto to read the share
-                        alert('TODO implement public key crypto to read the share');
-
+                        secret = client.decrypt_data_public_key(
+                            (jsoneditors.the_share_read_id.get().user_shares)[0].key,
+                            (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
+                            $('#users_public_key_read_share').val(),
+                            $('#users_private_key_read_share').val()
+                        );
                     }
 
                     $('#decrypted_share_secret').val(secret);
@@ -456,7 +459,7 @@
 
                 $('#get_share_rights').click(function (event) {
                     event.preventDefault();
-                    client.get_share_rights($('#token_share_share_id').val(), $('#id_share_share_id').val())
+                    client.read_share_total($('#token_share_share_id').val(), $('#id_share_share_id').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.share_share_share_rights.set(JSON.parse(value));
@@ -491,19 +494,27 @@
                         if (jsoneditors.share_share_share_rights.get().user_shares[i].user_id != $('#users_id_share_share').val()) {
                             continue;
                         }
+
+                        var secret = '';
+
                         if (jsoneditors.share_share_share_rights.get().user_shares[i].encryption_type == 'secret') {
                             // secret key encryption
-                            $('#share_share_share_secret').val(
-                                client.decrypt_data(
-                                    jsoneditors.share_share_share_rights.get().user_shares[i].key,
-                                    jsoneditors.share_share_share_rights.get().user_shares[i].key_nonce,
-                                    $('#users_secret_key_share_share').val()
-                                )
+                            secret = client.decrypt_data(
+                                jsoneditors.share_share_share_rights.get().user_shares[i].key,
+                                jsoneditors.share_share_share_rights.get().user_shares[i].key_nonce,
+                                $('#users_secret_key_share_share').val()
                             );
                         } else {
                             // public key encryption
-                            // TODO implement public key crypto to read the share
+                            secret = client.decrypt_data_public_key(
+                                jsoneditors.share_share_share_rights.get().user_shares[i].key,
+                                jsoneditors.share_share_share_rights.get().user_shares[i].key_nonce,
+                                $('#users_public_key_share_share').val(),
+                                $('#users_private_key_share_share').val()
+                            );
                         }
+
+                        $('#share_share_share_secret').val(secret);
 
                         break;
                     }
@@ -1188,7 +1199,9 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Use the token from login to get a list of all shares
+                <p>Use the token from login to get a list of all shares. This request will only return shares for which
+                    the user has access rights and therefore also only those "user_share" objects which can be used for
+                    encryption
                     (Endpoint <a href="/share/">/share/</a>)</p>
                 <h4>INPUT: </h4>
                 <label for="token_share_read">Token: </label><input size="30" type="text" name="token_share_read"
@@ -1446,7 +1459,10 @@
             <section>
                 <h3>Step 1</h3>
 
-                <p>Get share details</p>
+                <p>
+                    Get share details
+                    (Endpoint <a href="/share/rights/my-share-id/">/share/rights/my-share-id/</a>)
+                </p>
                 <h4>INPUT: </h4>
                 <label for="token_share_share_id">Token: </label><input size="30" type="text" name="token_share_share_id"
                                                                 id="token_share_share_id"
@@ -1457,7 +1473,7 @@
                                                                 value="">
                 <br/>
 
-                <INPUT type="button" name="button" value="1. get share rights: get_share_rights(token, share_id)"
+                <INPUT type="button" name="button" value="1. get share rights: read_share_total(token, share_id)"
                        id="get_share_rights"/>
                 <h4>OUTPUT: </h4>
                 <label for="share_share_share_rights">Share Details: </label>
@@ -1475,7 +1491,7 @@
                 <h3>Step 2 (optional)</h3>
                 <p>
                     Get other user's public key
-                    (Endpoint <a href="/user/public-key/">/user/public-key/</a>)
+                    (Endpoint <a href="/user/search/">/user/search/</a>)
                 </p>
 
                 <h4>INPUT: </h4>

@@ -113,7 +113,7 @@ class VerifyEmailView(GenericAPIView):
             owner.save()
 
             return Response({"success": "Successfully activated."},
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
@@ -305,7 +305,7 @@ class DatastoreView(GenericAPIView):
                         status=status.HTTP_200_OK)
 
 
-class UserPublicKey(GenericAPIView):
+class UserSearch(GenericAPIView):
 
     """
     Check the REST Token and returns the user's public key. To identify the user either the email or the user_id needs
@@ -342,7 +342,7 @@ class UserPublicKey(GenericAPIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'user_id': user.id, 'public_key': user.public_key},
+        return Response({'id': user.id, 'public_key': user.public_key, 'email': user.email},
                 status=status.HTTP_200_OK)
 
 
@@ -470,7 +470,7 @@ class ShareRightsView(GenericAPIView):
                 read=request.data['read'],
                 write=request.data['write'],
             )
-            
+
             return Response({"user_share_id": str(user_share_obj.id)},
                 status=status.HTTP_200_OK)
 

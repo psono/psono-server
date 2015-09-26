@@ -34,7 +34,7 @@ def generate_activation_code(email):
     email = str(email.strip())
     time_stamp = str(int(time.time()))
     return base64.b64encode(
-        base64.b64encode(email)+'.'+time_stamp+'.'+bcrypt.hashpw(time_stamp+settings.ACTIVATION_LINK_SECRET+email, bcrypt.gensalt())
+        email+','+time_stamp+','+bcrypt.hashpw(time_stamp+settings.ACTIVATION_LINK_SECRET+email, bcrypt.gensalt())
     )
 
 def validate_activation_code(activation_code):
@@ -48,8 +48,7 @@ def validate_activation_code(activation_code):
     :rtype: Data_Store_Owner or bool
     """
     try:
-        email, time_stamp, hash = base64.b64decode(activation_code).split(".", 2)
-        email = base64.b64decode(email)
+        email, time_stamp, hash = base64.b64decode(activation_code).split(",", 2)
         if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
             time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
             return Data_Store_Owner.objects.filter(email=email, is_email_active=False)[0]

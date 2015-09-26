@@ -510,7 +510,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {uuid} share_id - the share ID
      * @returns {promise}
      */
-    this.get_share_rights = function (token, share_id) {
+    this.read_share_total = function (token, share_id) {
         var endpoint = '/share/rights/' + share_id + '/';
         var type = "GET";
 
@@ -567,7 +567,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @returns {promise}
      */
     this.get_users_public_key = function (token, user_id, user_email) {
-        var endpoint = '/user/public-key/';
+        var endpoint = '/user/search/';
         var type = "POST";
         var data = {
             user_id: user_id,
