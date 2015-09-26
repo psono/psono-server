@@ -1,20 +1,57 @@
 # Password Manager
 
 ## Installation
-    sudo apt-get update
-    sudo apt-get install libpq-dev python-dev python-pip
-    sudo pip install -r requirements.txt
+
+1. Install some generic stuff
+
+        sudo apt-get update
+        sudo apt-get install libpq-dev python-dev python-pip
+        sudo pip install -r requirements.txt
  
-    TODO setup postgres user / database / ...
+2. Install a database
+
+    We recommend using postgres for which we provide here the setup guide:
+
+        sudo apt-get install postgresql postgresql-contrib
+        sudo su - postgres
+        createdb password_manager_server
+        psql template1
+        CREATE USER password_manager_server WITH PASSWORD 'password';
+        GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
+        \q
+        Ctrl + D
     
-    cp configs/mainconfig/settings.yaml /home/your-user/.password_manager_server/settings.yaml
+    If you want another DB, please visit https://docs.djangoproject.com/en/1.8/ref/databases/ for details.
+    
+3. Install the config
+
+        cp configs/mainconfig/settings.yaml /home/your-user/.password_manager_server/settings.yaml
+
+    **Update database credentials / secrets / paths and other settings you want to change in
+    /home/your-user/.password_manager_server/settings.yaml**
+    
+4. Create our database
+
+        ./password_manager_server/manage.py migrate
+    
+#### Test Server
+In /home/your-user/.password_manager_server/settings.yaml change
+    
+    DEBUG=False
+    
+to 
+
+    DEBUG= True
 
 #### Production Server
 
 From this point on you should already be ready to run a test server. If you want to run this in production you should
 make some additional steps.
 
-TODO
+TODO Install Apache
+TODO Install Apache modules
+TODO Install Apache site
+TODO Install Apache SSL Key
 
 install a cronjob to clear all expired tokens regulary
 
