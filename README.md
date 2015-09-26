@@ -33,29 +33,32 @@
 4. Create our database
 
         ./password_manager_server/manage.py migrate
-    
-#### Test Server
-In /home/your-user/.password_manager_server/settings.yaml change
-    
-    DEBUG=False
-    
-to 
 
-    DEBUG= True
 
-#### Production Server
+#### Installation Addition for Production Server
 
 From this point on you should already be ready to run a test server. If you want to run this in production you should
 make some additional steps.
 
-TODO Install Apache
-TODO Install Apache modules
-TODO Install Apache site
-TODO Install Apache SSL Key
+1. Disable Debug Mode
 
-install a cronjob to clear all expired tokens regulary
+    In /home/your-user/.password_manager_server/settings.yaml change
+        
+        DEBUG=True
+        
+    to 
+    
+        DEBUG=False
 
-    */5 * * * * /path/to/manage.py cleartoken
+2. TODO Install Apache
+3. TODO Install Apache modules
+4. TODO Install Apache site
+5. TODO Install Apache SSL Key
+6. Install Cronjobs
+
+    ... to clear all expired tokens regulary
+    
+        */5 * * * * /path/to/manage.py cleartoken
 
 
 ## Start Server
@@ -66,13 +69,17 @@ It depends if you only have a test server or a production server running. The pr
     ./password_manager_server/manage.py runserver 0.0.0.0:8001
 
 visit http://your-ip:8001 You should see something :)
+
 The demo jsclient can be found http://your-ip:8001/demo/jsclient/index.html
+
+Directory listing doesn't work, so don't be surprised that /demo/jsclient/ throws an error
 
 #### Production Server
 
     sudo service apache2 start
     
 visit https://your-ip You should see something :)
+
 The demo jsclient can be found https://your-ip/demo/jsclient/index.html
 
 ## Update Server (Test or Production)

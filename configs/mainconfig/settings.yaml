@@ -1,5 +1,5 @@
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 64 OR MORE DIGITS LONG'
-DEBUG: False
+DEBUG: True
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
 DATABASES:
     default:
