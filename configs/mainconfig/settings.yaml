@@ -1,0 +1,29 @@
+SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 64 OR MORE THAN DIGITS LONG'
+DEBUG: False
+EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
+DATABASES:
+    default:
+        'ENGINE': 'django.db.backends.postgresql_psycopg2'
+        'NAME': 'Your Postgres Database'
+        'USER': 'Your Postgres User'
+        'PASSWORD': 'Your Postgres Password'
+        'HOST': '127.0.0.1'
+        'PORT': '5432'
+        'ATOMIC_REQUESTS': True
+
+TEMPLATES : [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': ['/path/to/password-manager-server/password_manager_server/templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 64 OR MORE THAN DIGITS LONG'
