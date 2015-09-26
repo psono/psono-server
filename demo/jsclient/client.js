@@ -349,14 +349,14 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
 
     /**
-     * Ajax PUT request to create a datstore with the token as authentication and optional already some data,
+     * Ajax PUT request to create a datatore with the token as authentication and optional already some data,
      * together with the encrypted secret key and nonce
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {string} [encrypted_data] - optional data for the new datastore
      * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
-     * @param {string} [encrypted_data_secret_key] - encrypted secret key, only necessary if data is provided
-     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
+     * @param {string} encrypted_data_secret_key - encrypted secret key
+     * @param {string} encrypted_data_secret_key_nonce - nonce for secret key
      * @returns {promise}
      */
     this.create_datastore = function (token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
@@ -440,14 +440,14 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
 
     /**
-     * Ajax PUT request to create a datstore with the token as authentication and optional already some data,
+     * Ajax PUT request to create a datastore with the token as authentication and optional already some data,
      * together with the encrypted secret key and nonce
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {string} [encrypted_data] - optional data for the new share
      * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
-     * @param {string} [encrypted_data_secret_key] - encrypted secret key, only necessary if data is provided
-     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, only necessary if data is provided
+     * @param {string} encrypted_data_secret_key - encrypted secret key
+     * @param {string} encrypted_data_secret_key_nonce - nonce for secret key
      * @returns {promise}
      */
     this.create_share = function (token, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
@@ -534,6 +534,8 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} key - the encrypted share secret, encrypted with the public key of the target user
      * @param {string} nonce - the unique nonce for decryption
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {bool} read - read right
+     * @param {bool} write - write right
      * @returns {promise}
      */
     this.create_share_right = function (token, share_id, user_id, key, nonce, read, write) {
@@ -572,6 +574,62 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
         var data = {
             user_id: user_id,
             user_email: user_email
+        };
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
+     * Ajax GET request with the token as authentication to get the current user's groups
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} [group_id=null] - the group ID
+     * @returns {promise}
+     */
+    this.read_group = function (token, group_id) {
+
+        //optional parameter group_id
+        if (group_id === undefined) { group_id = null; }
+
+        var endpoint = '/group/' + (group_id === null ? '' : group_id + '/');
+        var type = "GET";
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: null, // No data required for get
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+
+    /**
+     * Ajax PUT request to create a group with the token as authentication and together with the name of the group
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {string} name - name of the new group
+     * @param {string} encrypted_data_secret_key - encrypted secret key
+     * @param {string} encrypted_data_secret_key_nonce - nonce for secret key
+     * @returns {promise}
+     */
+    this.create_group = function (token, name, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/group/';
+        var type = "PUT";
+        var data = {
+            name: name,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
         };
 
         return jQuery.ajax({

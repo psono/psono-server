@@ -42,6 +42,10 @@ urlpatterns = [
 
     url(r'^share/rights/$', views.ShareRightsView.as_view(), name='share_rights'),
     url(r'^share/rights/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
+
+    url(r'^group/$', views.GroupView.as_view(), name='group'),
+    url(r'^group/(?P<uuid>[^/]+)/$', views.GroupView.as_view(), name='group'),
+
     # url(r'^$', views.api_root),
 ]
 

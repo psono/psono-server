@@ -264,6 +264,8 @@ class DatastoreView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         # TODO implement check for more datastores for enterprise users
 
+        #TODO Check if secret_key and nonce exist
+
         try:
             datastore = models.Data_Store.objects.create(
                 data = str(request.data['data']),
@@ -275,7 +277,7 @@ class DatastoreView(GenericAPIView):
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"datastore_id": datastore.id}, status=status.HTTP_200_OK)
+        return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
@@ -377,9 +379,9 @@ class ShareRightsView(GenericAPIView):
             response = []
             for s in shares:
 
-                user_shares = []
-                for u in s.user_shares.all():
-                    user_shares.append({
+                user_share_rights = []
+                for u in s.user_share_rights.all():
+                    user_share_rights.append({
                         'id': u.id,
                         'key': u.key,
                         'key_nonce': u.key_nonce,
@@ -395,7 +397,7 @@ class ShareRightsView(GenericAPIView):
                 response.append({
                     'id': s.id,
                     'type': s.type,
-                    'user_shares': user_shares
+                    'user_share_rights': user_share_rights
                 })
 
             return Response({'shares': response},
@@ -412,10 +414,10 @@ class ShareRightsView(GenericAPIView):
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
-            user_shares = []
+            user_share_rights = []
 
-            for u in share.user_shares.all():
-                user_shares.append({
+            for u in share.user_share_rights.all():
+                user_share_rights.append({
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
@@ -431,7 +433,7 @@ class ShareRightsView(GenericAPIView):
             response = {
                 'id': share.id,
                 'type': share.type,
-                'user_shares': user_shares
+                'user_share_rights': user_share_rights
             }
 
             return Response(response,
@@ -444,7 +446,7 @@ class ShareRightsView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
         else:
 
-            # Adds the rights for the specified user to the user_shares table
+            # Adds the rights for the specified user to the user_share_rights table
 
             try:
                 share = models.Share.objects.get(pk=uuid, owner=request.user)
@@ -459,7 +461,7 @@ class ShareRightsView(GenericAPIView):
                                 "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
 
 
-            user_share_obj = models.User_Share.objects.create(
+            user_share_obj = models.User_Share_Right.objects.create(
                 key=str(request.data['key']),
                 key_nonce=str(request.data['nonce']),
                 encryption_type='public',
@@ -472,7 +474,7 @@ class ShareRightsView(GenericAPIView):
             )
 
             return Response({"user_share_id": str(user_share_obj.id)},
-                status=status.HTTP_200_OK)
+                status=status.HTTP_201_CREATED)
 
 
 class ShareView(GenericAPIView):
@@ -497,17 +499,17 @@ class ShareView(GenericAPIView):
             #TODO optimize query. this way its too inefficient ...
 
             try:
-                shares = models.Share.objects.filter(user_shares__user=request.user).distinct()
+                shares = models.Share.objects.filter(user_share_rights__user=request.user).distinct()
             except models.Share.DoesNotExist:
                 shares = []
 
             response = []
 
             for s in shares:
-                user_shares = []
+                user_share_rights = []
 
-                for u in s.user_shares.filter(user=request.user):
-                    user_shares.append({
+                for u in s.user_share_rights.filter(user=request.user):
+                    user_share_rights.append({
                         'id': u.id,
                         'key': u.key,
                         'key_nonce': u.key_nonce,
@@ -526,7 +528,7 @@ class ShareView(GenericAPIView):
                     'data_nonce': s.data_nonce if s.data_nonce else '',
                     'type': s.type,
                     'owner_id': s.owner_id,
-                    'user_shares': user_shares
+                    'user_share_rights': user_share_rights
                 })
 
             return Response({'shares': response},
@@ -542,10 +544,10 @@ class ShareView(GenericAPIView):
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
-            user_shares = []
+            user_share_rights = []
 
-            for u in share.user_shares.filter(user=request.user):
-                user_shares.append({
+            for u in share.user_share_rights.filter(user=request.user):
+                user_share_rights.append({
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
@@ -558,7 +560,7 @@ class ShareView(GenericAPIView):
                     'owner_id': u.owner_id,
                 })
 
-            if not user_shares:
+            if not user_share_rights:
                 raise PermissionDenied({"message":"You don't have permission to access",
                                 "resource_id": share.id})
 
@@ -568,7 +570,7 @@ class ShareView(GenericAPIView):
                 'data_nonce': share.data_nonce if share.data_nonce else '',
                 'type': share.type,
                 'owner_id': share.owner_id,
-                'user_shares': user_shares
+                'user_share_rights': user_share_rights
             }
 
             return Response(response,
@@ -576,6 +578,8 @@ class ShareView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         # TODO implement check for more shares for enterprise users
+
+        #TODO Check if secret_key and nonce exist
 
         try:
             share = models.Share.objects.create(
@@ -586,7 +590,7 @@ class ShareView(GenericAPIView):
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
-        models.User_Share.objects.create(
+        models.User_Share_Right.objects.create(
                 owner = request.user,
                 user = request.user,
                 share = share,
@@ -600,7 +604,7 @@ class ShareView(GenericAPIView):
                 revoke = True,
             )
 
-        return Response({"share_id": share.id}, status=status.HTTP_200_OK)
+        return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
@@ -610,7 +614,7 @@ class ShareView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
-        if share.owner != request.user and share.user_shares.filter(user=request.user, write=True).count() < 0:
+        if share.owner != request.user and share.user_share_rights.filter(user=request.user, write=True).count() < 0:
             raise PermissionDenied()
 
         if 'data' in request.data:
@@ -626,3 +630,112 @@ class ShareView(GenericAPIView):
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
+
+class GroupView(GenericAPIView):
+
+    """
+    Check the REST Token and returns a list of all groups or the specified groups details
+
+    Return the user's public key
+    """
+
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+
+            # Generates a list of groups wherever the user has any rights for it
+
+            try:
+                groups = models.Group.objects.filter(group_user_rights__user=request.user).distinct()
+            except models.Share.DoesNotExist:
+                groups = []
+
+            response = []
+
+            for g in groups:
+
+                response.append({
+                    'id': g.id,
+                    'name': g.name,
+                    'owner_id': g.owner_id,
+                })
+
+            return Response({'groups': response},
+                status=status.HTTP_200_OK)
+        else:
+
+            # Returns the specified share if the user has any rights for it and joins the user_share objects
+
+            try:
+                group = models.Group.objects.get(pk=uuid)
+            except models.Group.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+
+
+            user_share_rights = []
+
+            for u in group.group_user_rights.filter(user=request.user):
+                user_share_rights.append({
+                    'id': u.id,
+                    'owner': u.owner_id,
+                    'key': u.key,
+                    'key_nonce': u.key_nonce,
+                    'encryption_type': u.encryption_type,
+                    'approved': u.approved,
+                    'read': u.read,
+                    'write': u.write,
+                    'add_share': u.add_share,
+                    'remove_share': u.remove_share,
+                    'grant': u.grant,
+                    'revoke': u.revoke,
+                })
+
+            if not user_share_rights:
+                raise PermissionDenied({"message":"You don't have permission to access",
+                                "resource_id": group.id})
+
+            response = {
+                'id': group.id,
+                'name': group.name,
+                'owner_id': group.owner_id,
+                'user_share_rights': user_share_rights
+            }
+
+            return Response(response,
+                status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+
+        group = models.Group.objects.create(
+            name = str(request.data['name']),
+            owner = request.user
+        )
+
+        models.Group_User_Right.objects.create(
+                owner = request.user,
+                user = request.user,
+                group = group,
+                approved = True,
+                encryption_type = 'secret',
+                key = str(request.data['secret_key']),
+                key_nonce = str(request.data['secret_key_nonce']),
+                read = True,
+                write = True,
+                grant = True,
+                revoke = True,
+                add_share=True,
+                remove_share=True,
+            )
+
+        return Response({"group_id": group.id}, status=status.HTTP_201_CREATED)
+
+    def post(self, request, *args, **kwargs):
+
+        #TODO Implement
+
+        return Response(status=status.HTTP_200_OK)

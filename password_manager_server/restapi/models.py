@@ -91,6 +91,7 @@ class Group(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=64)
     owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='groups')
     shares = models.ManyToManyField(Share, related_name='groups')
 
@@ -117,6 +118,21 @@ class Group_User_Right(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='group_user_rights')
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_user_rights')
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='own_group_shares',
+                              help_text=_('The guy who created this share'))
+    key = models.CharField(_('Key'), max_length=256,
+                           help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
+    key_nonce = models.CharField(_('Key nonce'), max_length=64)
+    approved = models.BooleanField(_('approved'), default=True,
+                                        help_text=_('Designates whether this share has already been accepted or still '
+                                                    'needs approval.'))
+
+    encryption_type = models.CharField(max_length=6,
+                                       choices=(
+                                           ('public', 'Public-key encryption'),
+                                           ('secret', 'Secret-key encryption'),
+                                       ),
+                                       default='public')
 
     read = models.BooleanField(_('read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read shares of this group'))
@@ -139,7 +155,7 @@ class Group_User_Right(models.Model):
         abstract = False
 
 
-class User_Share(models.Model):
+class User_Share_Right(models.Model):
     """
     The user-share relation (in contrast to group shares), linking the user and shares with rights
     """
@@ -147,11 +163,11 @@ class User_Share(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='own_user_shares',
+    owner = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='own_user_share_rights',
                               help_text=_('The guy who created this share'))
-    user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='foreign_user_shares',
+    user = models.ForeignKey(Data_Store_Owner, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
                               help_text=_('The guy who will receive this share'))
-    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_shares',
+    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',
                               help_text=_('The guy who created this share'))
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))

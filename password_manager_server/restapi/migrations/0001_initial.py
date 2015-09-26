@@ -54,6 +54,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
+                ('name', models.CharField(max_length=64)),
                 ('owner', models.ForeignKey(related_name='groups', to='restapi.Data_Store_Owner')),
             ],
             options={
@@ -66,6 +67,10 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
+                ('key', models.CharField(help_text='The (public or secret) encrypted key with which the share is encrypted.', max_length=256, verbose_name='Key')),
+                ('key_nonce', models.CharField(max_length=64, verbose_name='Key nonce')),
+                ('approved', models.BooleanField(default=True, help_text='Designates whether this share has already been accepted or still needs approval.', verbose_name='approved')),
+                ('encryption_type', models.CharField(default=b'public', max_length=6, choices=[(b'public', b'Public-key encryption'), (b'secret', b'Secret-key encryption')])),
                 ('read', models.BooleanField(default=True, help_text='Designates whether this user has "read" rights and can read shares of this group', verbose_name='read right')),
                 ('write', models.BooleanField(default=False, help_text='Designates whether this user has "write" rights and can update shares of this group', verbose_name='wright right')),
                 ('add_share', models.BooleanField(default=False, help_text='Designates whether this user has "add share" rights and can add shares to this group', verbose_name='add share right')),
@@ -73,6 +78,7 @@ class Migration(migrations.Migration):
                 ('grant', models.BooleanField(default=False, help_text='Designates whether this user has "grant" rights and can add users and rights of users of thisgroup. The user is limited by his own rights, so e.g. he cannot grant write if he does not have write on his own.', verbose_name='grant right')),
                 ('revoke', models.BooleanField(default=False, help_text='Designates whether this user has "revoke" rights and can remove users and rights of users of this group. The owner of this group will always have full rights and cannot be shut out.', verbose_name='revoke right')),
                 ('group', models.ForeignKey(related_name='group_user_rights', to='restapi.Group')),
+                ('owner', models.ForeignKey(related_name='own_group_shares', to='restapi.Data_Store_Owner', help_text='The guy who created this share')),
                 ('user', models.ForeignKey(related_name='group_user_rights', to='restapi.Data_Store_Owner')),
             ],
             options={
@@ -106,7 +112,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='User_Share',
+            name='User_Share_Right',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
@@ -119,9 +125,9 @@ class Migration(migrations.Migration):
                 ('write', models.BooleanField(default=False, help_text='Designates whether this user has "write" rights and can update this share', verbose_name='Wright right')),
                 ('grant', models.BooleanField(default=False, help_text='Designates whether this user has "grant" rights and can re-share this share', verbose_name='Grant right')),
                 ('revoke', models.BooleanField(default=False, help_text='Designates whether this user has "revoke" rights and can remove/reduce other users access rights', verbose_name='Revoke right')),
-                ('owner', models.ForeignKey(related_name='own_user_shares', to='restapi.Data_Store_Owner', help_text='The guy who created this share')),
-                ('share', models.ForeignKey(related_name='user_shares', to='restapi.Share', help_text='The guy who created this share')),
-                ('user', models.ForeignKey(related_name='foreign_user_shares', to='restapi.Data_Store_Owner', help_text='The guy who will receive this share')),
+                ('owner', models.ForeignKey(related_name='own_user_share_rights', to='restapi.Data_Store_Owner', help_text='The guy who created this share')),
+                ('share', models.ForeignKey(related_name='user_share_rights', to='restapi.Share', help_text='The guy who created this share')),
+                ('user', models.ForeignKey(related_name='foreign_user_share_rights', to='restapi.Data_Store_Owner', help_text='The guy who will receive this share')),
             ],
         ),
         migrations.AddField(

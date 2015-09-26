@@ -348,14 +348,14 @@
 
                     if ((jsoneditors.the_share_read_id.get().usre_shares)[0].encryption_type == 'secret') {
                         secret = client.decrypt_data(
-                            (jsoneditors.the_share_read_id.get().user_shares)[0].key,
-                            (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
+                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
+                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,
                             $('#users_secret_key_read_share').val()
                         );
                     } else {
                         secret = client.decrypt_data_public_key(
-                            (jsoneditors.the_share_read_id.get().user_shares)[0].key,
-                            (jsoneditors.the_share_read_id.get().user_shares)[0].key_nonce,
+                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
+                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,
                             $('#users_public_key_read_share').val(),
                             $('#users_private_key_read_share').val()
                         );
@@ -490,25 +490,25 @@
                 $('#share_share_decrypt_share_secret').click(function (event) {
                     event.preventDefault();
 
-                    for (var i = 0; i < jsoneditors.share_share_share_rights.get().user_shares.length; i++) {
-                        if (jsoneditors.share_share_share_rights.get().user_shares[i].user_id != $('#users_id_share_share').val()) {
+                    for (var i = 0; i < jsoneditors.share_share_share_rights.get().user_share_rights.length; i++) {
+                        if (jsoneditors.share_share_share_rights.get().user_share_rights[i].user_id != $('#users_id_share_share').val()) {
                             continue;
                         }
 
                         var secret = '';
 
-                        if (jsoneditors.share_share_share_rights.get().user_shares[i].encryption_type == 'secret') {
+                        if (jsoneditors.share_share_share_rights.get().user_share_rights[i].encryption_type == 'secret') {
                             // secret key encryption
                             secret = client.decrypt_data(
-                                jsoneditors.share_share_share_rights.get().user_shares[i].key,
-                                jsoneditors.share_share_share_rights.get().user_shares[i].key_nonce,
+                                jsoneditors.share_share_share_rights.get().user_share_rights[i].key,
+                                jsoneditors.share_share_share_rights.get().user_share_rights[i].key_nonce,
                                 $('#users_secret_key_share_share').val()
                             );
                         } else {
                             // public key encryption
                             secret = client.decrypt_data_public_key(
-                                jsoneditors.share_share_share_rights.get().user_shares[i].key,
-                                jsoneditors.share_share_share_rights.get().user_shares[i].key_nonce,
+                                jsoneditors.share_share_share_rights.get().user_share_rights[i].key,
+                                jsoneditors.share_share_share_rights.get().user_share_rights[i].key_nonce,
                                 $('#users_public_key_share_share').val(),
                                 $('#users_private_key_share_share').val()
                             );
@@ -553,6 +553,78 @@
                             jsoneditors.share_share_request_feedback.expandAll();
                         });
                 });
+
+
+                /*
+                 *  Read Group
+                 */
+
+                $('#read_group').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_group($('#token_group_read').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_group_read.set(JSON.parse(value));
+                            jsoneditors.the_group_read.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_group_read.set(JSON.parse(value.responseText));
+                            jsoneditors.the_group_read.expandAll();
+                        });
+                });
+
+                $('#read_group_id').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_group($('#token_group_read_id').val(), $('#id_group_read_id').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_group_read_id.set(JSON.parse(value));
+                            jsoneditors.the_group_read_id.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_group_read_id.set(JSON.parse(value.responseText));
+                            jsoneditors.the_group_read_id.expandAll();
+                        });
+                });
+
+                /*
+                 *  Create Group
+                 */
+
+                $('#generate_secret_key_group').click(function (event) {
+                    event.preventDefault();
+                    $('#group_secret_key').val(client.generate_secret_key())
+                });
+
+                $('#encrypt_secret_key_group').click(function (event) {
+                    event.preventDefault();
+                    var data_enc = client.encrypt_data($('#group_secret_key').val(), $('#users_decrypted_secret_key_group').val());
+                    $('#encrypted_secret_key_group').val(data_enc.ciphertext);
+                    $('#encrypted_secret_key_group_nonce').val(data_enc.nonce);
+
+                });
+
+                $('#create_group').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.create_group($('#token_group_create').val(), $('#name_group_create').val(), $('#encrypted_secret_key_group').val(), $('#encrypted_secret_key_group_nonce').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.create_group_request_feedback.set(JSON.parse(value));
+                            jsoneditors.create_group_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.create_group_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.create_group_request_feedback.expandAll();
+                        });
+                });
+
+
 
 
             }());
@@ -617,7 +689,10 @@
                     'create_share_request_feedback',
                     'share_share_share_rights',
                     'share_share_users_public_key',
-                    'share_share_request_feedback'
+                    'share_share_request_feedback',
+                    'the_group_read',
+                    'the_group_read_id',
+                    'create_group_request_feedback'
                 ];
 
             for (var i = 0; i < editors.length; i++) {
@@ -674,6 +749,8 @@
             <li><a href="#tabs-9">Create Share</a></li>
             <li><a href="#tabs-10">Write Share</a></li>
             <li><a href="#tabs-11">Share Share</a></li>
+            <li><a href="#tabs-12">Read Group</a></li>
+            <li><a href="#tabs-13">Create Group</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -1520,7 +1597,7 @@
             <section>
                 <h3>Step 3</h3>
                 <p>
-                    Decrypt share secret key. Will decrypt the share depending on the user_shares encryption_type.
+                    Decrypt share secret key. Will decrypt the share depending on the user_share_rights encryption_type.
                 </p>
                 <h4>INPUT: </h4>
 
@@ -1617,6 +1694,147 @@
 
             </section>
             <!-- END Share Share -->
+        </div>
+
+
+        <div id="tabs-12">
+            <!-- START Read Group -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to get a list of all groups
+                    (Endpoint <a href="/group/">/group/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_group_read">Token: </label><input size="30" type="text" name="token_group_read"
+                                                                id="token_group_read"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Get group list: read_group(token)"
+                       id="read_group"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_group_read">List of all groups: </label>
+                <br/>
+                <div id="the_group_read" class="editclass"></div>
+                <br/>
+                <small>
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Use the token from login and the group ID to get the group's content
+                    (Endpoint <a href="/group/my-group-id/">/group/my-group-id/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_group_read_id">Token: </label><input size="30" type="text" name="token_group_read_id"
+                                                                id="token_group_read_id"
+                                                                value="">
+                <br/>
+                <label for="id_group_read_id">Group ID: </label><input size="30" type="text" name="id_group_read_id"
+                                                                id="id_group_read_id"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="2. Read one groups content: read_group(token, group_id)"
+                       id="read_group_id"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_group_read_id">Content of one group: </label>
+                <br/>
+                <div id="the_group_read_id" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the group, but the idea is that clients filter according to type
+                </small>
+            </section>
+            <!-- END Read Group -->
+        </div>
+
+
+        <div id="tabs-13">
+            <!-- START Create Group -->
+
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Generate a secret key for the new group</p>
+
+                <INPUT type="button" name="button" value="1. Generate Secret Key"
+                       id="generate_secret_key_group"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="group_secret_key">Group Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="group_secret_key" id="group_secret_key" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Encrypt the secret key for the new group with the secret key of hte user</p>
+
+                <h4>INPUT: </h4>
+                <label for="users_decrypted_secret_key_group">Users plaintext secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="users_decrypted_secret_key_group" id="users_decrypted_secret_key_group"></textarea>
+                <br/>
+
+                <INPUT type="button" name="button" value="2. Encrypt Secret Key"
+                       id="encrypt_secret_key_group"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="encrypted_secret_key_group">Encrypted Group Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_group" id="encrypted_secret_key_group" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_secret_key_group_nonce">Encrypted Group Secret Key Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_secret_key_group_nonce" id="encrypted_secret_key_group_nonce" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>Send the request so the group is created with this secret key
+                    (Endpoint <a href="/group/">/group/</a>)</p>
+
+                <h4>INPUT: </h4>
+                <label for="token_group_create">Token: </label><input size="30" type="text" name="token_group_create"
+                                                                id="token_group_create"
+                                                                value="">
+                <br/>
+                <label for="name_group_create">Group Name: </label><input size="30" type="text" name="name_group_create"
+                                                                id="name_group_create"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Create Group"
+                       id="create_group"/>
+                <h4>OUTPUT: </h4>
+                <label for="create_group_request_feedback">Create Group Feedback: </label>
+                <br/>
+                <div id="create_group_request_feedback" class="editclass_small"></div>
+                <br/>
+                <small>Will return nothing except a success or fail message
+                </small>
+
+            </section>
+
+            <hr>
+
+            <!-- END Create Group -->
         </div>
 
     </div>

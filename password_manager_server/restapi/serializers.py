@@ -219,7 +219,7 @@ class ShareSerializer(serializers.Serializer):
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
-    user_shares = UserShareSerializer()
+    user_share_rights = UserShareSerializer()
     owner = PublicUserDetailsSerializer()
 
 class DatastoreOverviewSerializer(serializers.Serializer):
