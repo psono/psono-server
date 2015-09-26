@@ -9,7 +9,7 @@
     
     cp configs/mainconfig/settings.yaml /home/your-user/.password_manager_server/settings.yaml
 
-### Production Server
+#### Production Server
 
 From this point on you should already be ready to run a test server. If you want to run this in production you should
 make some additional steps.
@@ -25,13 +25,13 @@ install a cronjob to clear all expired tokens regulary
 
 It depends if you only have a test server or a production server running. The production server is controled by apache.
 
-### Test Server
+#### Test Server
     ./password_manager_server/manage.py runserver 0.0.0.0:8001
 
 visit http://your-ip:8001 You should see something :)
 The demo jsclient can be found http://your-ip:8001/demo/jsclient/index.html
 
-### Production Server
+#### Production Server
 
     sudo service apache2 start
     
