@@ -52,6 +52,9 @@ make some additional steps.
 
 2. TODO Install Apache
 3. TODO Install Apache modules
+
+        sudo a2enmod headers
+        
 4. TODO Install Apache site
 5. TODO Install Apache SSL Key
 6. Install Cronjobs

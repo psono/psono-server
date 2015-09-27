@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'corsheaders',
     'rest_framework',
     #'rest_framework.authtoken',
     #'rest_auth',
@@ -54,6 +55,7 @@ INSTALLED_APPS = (
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -80,6 +82,8 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'password_manager_server.urls'
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 TEMPLATES = config['TEMPLATES']
 
