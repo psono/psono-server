@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import check_password
 import bcrypt
 import time
 import base64
-from models import Data_Store_Owner
+from models import User
 
 from six import string_types
 import sys
@@ -40,46 +40,46 @@ def generate_activation_code(email):
 def validate_activation_code(activation_code):
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
-    without database reference, based on bcrypt. Returns the owner or False in case of a failure
+    without database reference, based on bcrypt. Returns the user or False in case of a failure
 
     :param activation_code: activation_code
     :type activation_code: str
-    :return: data_store_owner or False
-    :rtype: Data_Store_Owner or bool
+    :return: user or False
+    :rtype: User or bool
     """
     try:
         email, time_stamp, hash = base64.b64decode(activation_code).split(",", 2)
         if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
             time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
-            return Data_Store_Owner.objects.filter(email=email, is_email_active=False)[0]
+            return User.objects.filter(email=email, is_email_active=False)[0]
     except:
         #wrong format or whatever could happen
         pass
 
     return False
 
-def authenticate(email = False, owner = False, authkey = False):
+def authenticate(email = False, user = False, authkey = False):
     """
-    Checks if the authkey for the given owner, specified by the email or directly by the owner object matches
+    Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
     :param email: str
-    :param owner: Data_Store_Owner
+    :param user: User
     :param authkey: str
-    :return: data_store_owner or False
-    :rtype: Data_Store_Owner or bool
+    :return: user or False
+    :rtype: User or bool
     """
     if not authkey:
         return False
-    if not email and not owner:
+    if not email and not user:
         return False
 
     if email:
         try:
-            owner = Data_Store_Owner.objects.filter(email=email, is_active=True)[0]
+            user = User.objects.filter(email=email, is_active=True)[0]
         except IndexError:
             return False
 
-    if not check_password(authkey, owner.authkey):
+    if not check_password(authkey, user.authkey):
         return False
 
-    return owner
+    return user

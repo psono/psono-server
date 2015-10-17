@@ -134,15 +134,15 @@
                     var password = $('#password_login').val();
                     $('#login_decrypted_private_key').val(
                         client.decrypt_secret(
-                                jsoneditors.login_request_feedback.get().datastore_owner.private_key,
-                                jsoneditors.login_request_feedback.get().datastore_owner.private_key_nonce,
+                                jsoneditors.login_request_feedback.get().user.private_key,
+                                jsoneditors.login_request_feedback.get().user.private_key_nonce,
                                 password
                         )
                     );
                     $('#login_decrypted_secret_key').val(
                         client.decrypt_secret(
-                                jsoneditors.login_request_feedback.get().datastore_owner.secret_key,
-                                jsoneditors.login_request_feedback.get().datastore_owner.secret_key_nonce,
+                                jsoneditors.login_request_feedback.get().user.secret_key,
+                                jsoneditors.login_request_feedback.get().user.secret_key_nonce,
                                 password
                         )
                     );

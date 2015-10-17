@@ -14,7 +14,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import Token, Data_Store_Owner, Data_Store
+from models import Token, User, Data_Store
 
 
 class LoginSerializer(serializers.Serializer):
@@ -22,28 +22,30 @@ class LoginSerializer(serializers.Serializer):
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
 
     def validate(self, attrs):
-        email = attrs.get('email')
+        email = attrs.get('email').lower().strip()
         authkey = attrs.get('authkey')
 
+        print email
+
         if email and authkey:
-            owner = authenticate(email=email, authkey=authkey)
+            user = authenticate(email=email, authkey=authkey)
         else:
             msg = _('Must include "email" and "authkey".')
             raise exceptions.ValidationError(msg)
 
-        if not owner:
-            msg = _('Unable to log in with provided credentials.')
+        if not user:
+            msg = _('Password or e-mail wrong.')
             raise exceptions.ValidationError(msg)
 
-        if not owner.is_active:
+        if not user.is_active:
             msg = _('User account is disabled.')
             raise exceptions.ValidationError(msg)
 
-        if not owner.is_email_active:
+        if not user.is_email_active:
             msg = _('E-mail is not yet verified.')
             raise exceptions.ValidationError(msg)
 
-        attrs['owner'] = owner
+        attrs['user'] = user
         return attrs
 
 class VerifyEmailSerializeras(serializers.Serializer):
@@ -53,15 +55,15 @@ class VerifyEmailSerializeras(serializers.Serializer):
         activation_code = attrs.get('activation_code').strip()
 
         if activation_code:
-            owner = validate_activation_code(activation_code)
+            user = validate_activation_code(activation_code)
         else:
             msg = _('Must include "activation_code".')
             raise exceptions.ValidationError(msg)
 
-        if not owner:
+        if not user:
             msg = _('Activation code incorrect or already activated.')
             raise exceptions.ValidationError(msg)
-        attrs['owner'] = owner
+        attrs['user'] = user
         attrs['activation_code'] = activation_code
         return attrs
 
@@ -80,7 +82,7 @@ class RegisterSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        if Data_Store_Owner.objects.filter(email=value).exists():
+        if User.objects.filter(email=value).exists():
             msg = _('E-Mail already exists.')
             raise exceptions.ValidationError(msg)
 
@@ -151,7 +153,7 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        return Data_Store_Owner.objects.create(**validated_data)
+        return User.objects.create(**validated_data)
 
 
 class PublicUserDetailsSerializer(serializers.Serializer):
@@ -211,7 +213,7 @@ class UserShareSerializer(serializers.Serializer):
     grant = serializers.BooleanField()
     revoke = serializers.BooleanField()
 
-    owner = PublicUserDetailsSerializer()
+    user = PublicUserDetailsSerializer()
 
 class ShareSerializer(serializers.Serializer):
 
@@ -220,7 +222,7 @@ class ShareSerializer(serializers.Serializer):
     data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
     user_share_rights = UserShareSerializer()
-    owner = PublicUserDetailsSerializer()
+    user = PublicUserDetailsSerializer()
 
 class DatastoreOverviewSerializer(serializers.Serializer):
 
@@ -235,5 +237,5 @@ class ShareOverviewSerializer(serializers.Serializer):
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
-    owner = serializers.UUIDField(default=uuid.uuid4)
+    user = serializers.UUIDField(default=uuid.uuid4)
 

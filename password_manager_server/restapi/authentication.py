@@ -20,7 +20,7 @@ class TokenAuthentication(BaseAuthentication):
     A custom token model may be used, but must have the following properties.
 
     * key -- The string identifying the token
-    * owner -- The user to which the token belongs
+    * user -- The user to which the token belongs
     """
 
     def authenticate(self, request):
@@ -50,17 +50,17 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate_credentials(self, token_hash):
         try:
-            token = self.model.objects.select_related('owner').get(key=token_hash)
+            token = self.model.objects.select_related('user').get(key=token_hash)
         except self.model.DoesNotExist:
             raise exceptions.AuthenticationFailed(_('Invalid token.'))
 
-        if not token.owner.is_active:
+        if not token.user.is_active:
             raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
 
-        if not token.owner.is_email_active:
+        if not token.user.is_email_active:
             raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
 
-        return token.owner, token
+        return token.user, token
 
     def authenticate_header(self, request):
         return 'Token'

@@ -41,26 +41,26 @@ class RegistrationTests(APITestCase):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(models.Data_Store_Owner.objects.count(), 1)
+        self.assertEqual(models.User.objects.count(), 1)
 
-        owner = models.Data_Store_Owner.objects.get()
+        user = models.User.objects.get()
 
-        self.assertEqual(owner.email, email)
-        self.assertTrue(check_password(authkey, owner.authkey))
-        self.assertEqual(owner.public_key, public_key)
-        self.assertEqual(owner.private_key, private_key)
-        self.assertEqual(owner.private_key_nonce, private_key_nonce)
-        self.assertEqual(owner.secret_key, secret_key)
-        self.assertEqual(owner.secret_key_nonce, secret_key_nonce)
-        self.assertTrue(owner.is_active)
-        self.assertFalse(owner.is_email_active)
+        self.assertEqual(user.email, email)
+        self.assertTrue(check_password(authkey, user.authkey))
+        self.assertEqual(user.public_key, public_key)
+        self.assertEqual(user.private_key, private_key)
+        self.assertEqual(user.private_key_nonce, private_key_nonce)
+        self.assertEqual(user.secret_key, secret_key)
+        self.assertEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_email_active)
 
 
 class EmailVerificationTests(APITestCase):
 
     def setUp(self):
         self.test_email = u"test@test.de"
-        models.Data_Store_Owner.objects.create(email=self.test_email)
+        models.User.objects.create(email=self.test_email)
 
     def test_verify_email(self):
         """
@@ -77,9 +77,9 @@ class EmailVerificationTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        owner = models.Data_Store_Owner.objects.filter(email=self.test_email).get()
+        user = models.User.objects.filter(email=self.test_email).get()
 
-        self.assertTrue(owner.is_email_active)
+        self.assertTrue(user.is_email_active)
 
 class LoginTests(APITestCase):
 
@@ -91,7 +91,7 @@ class LoginTests(APITestCase):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        models.Data_Store_Owner.objects.create(
+        models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -119,21 +119,21 @@ class LoginTests(APITestCase):
 
         self.assertTrue(response.data.get('token', False),
                         'Token does not exist in login response')
-        self.assertTrue(response.data.get('datastore_owner', {}).get('id', False),
+        self.assertTrue(response.data.get('user', {}).get('id', False),
                         'User ID does not exist in login response')
-        self.assertEqual(response.data.get('datastore_owner', {}).get('public_key', False),
+        self.assertEqual(response.data.get('user', {}).get('public_key', False),
                          self.test_public_key,
                         'Public key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('datastore_owner', {}).get('private_key', False),
+        self.assertEqual(response.data.get('user', {}).get('private_key', False),
                          self.test_private_key,
                         'Private key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('datastore_owner', {}).get('private_key_nonce', False),
+        self.assertEqual(response.data.get('user', {}).get('private_key_nonce', False),
                          self.test_private_key_nonce,
                         'Private key nonce is wrong in response or does not exist')
-        self.assertEqual(response.data.get('datastore_owner', {}).get('secret_key', False),
+        self.assertEqual(response.data.get('user', {}).get('secret_key', False),
                          self.test_secret_key,
                         'Secret key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('datastore_owner', {}).get('secret_key_nonce', False),
+        self.assertEqual(response.data.get('user', {}).get('secret_key_nonce', False),
                          self.test_secret_key_nonce,
                         'Secret key nonce is wrong in response or does not exist')
 
@@ -149,7 +149,7 @@ class LogoutTests(APITestCase):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        models.Data_Store_Owner.objects.create(
+        models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
