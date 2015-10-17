@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    Data_Store,
+    Secret,
 )
 
 from ..app_settings import (
-    DatastoreSerializer, DatastoreOverviewSerializer,
+    SecretSerializer, SecretOverviewSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -15,84 +15,76 @@ from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
 
-class DatastoreView(GenericAPIView):
+class SecretView(GenericAPIView):
 
     """
     Check the REST Token and the object permissions and returns
-    the data store if the necessary access rights are granted
+    the secret if the necessary access rights are granted
 
-    Accept the following POST parameters: datastore_id (optional)
-    Return a list of the data stores or the data store
+    Accept the following POST parameters: secret_id (optional)
+    Return a list of the secrets or the secret
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = DatastoreSerializer
+    serializer_class = SecretSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
 
         if not uuid:
             try:
-                storages = Data_Store.objects.filter(user=request.user)
-            except Data_Store.DoesNotExist:
+                storages = Secret.objects.filter(user=request.user)
+            except Secret.DoesNotExist:
                 storages = []
 
-            return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
+            return Response({'secrets': SecretOverviewSerializer(storages, many=True).data},
                 status=status.HTTP_200_OK)
         else:
             try:
-                datastore = Data_Store.objects.get(pk=uuid)
-            except Data_Store.DoesNotExist:
+                secret = Secret.objects.get(pk=uuid)
+            except Secret.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
-            if not datastore.user == request.user:
+            if not secret.user == request.user:
                 raise PermissionDenied({"message":"You don't have permission to access",
-                                "resource_id": datastore.id})
+                                "resource_id": secret.id})
 
-            return Response(self.serializer_class(datastore).data,
+            return Response(self.serializer_class(secret).data,
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO implement check for more data stores for enterprise users
-
-        #TODO Check if secret_key and nonce exist
+        # TODO implement check for more secrets for enterprise users
 
         try:
-            datastore = Data_Store.objects.create(
+            secret = Secret.objects.create(
                 data = str(request.data['data']),
                 data_nonce = str(request.data['data_nonce']),
-                secret_key = str(request.data['secret_key']),
-                secret_key_nonce = str(request.data['secret_key_nonce']),
                 user = request.user
             )
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
+        return Response({"secret_id": secret.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
 
         try:
-            datastore = Data_Store.objects.get(pk=uuid)
-        except Data_Store.DoesNotExist:
+            secret = Secret.objects.get(pk=uuid)
+        except Secret.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
-        if not datastore.user == request.user:
+        if not secret.user == request.user:
             raise PermissionDenied({"message":"You don't have permission to access",
-                            "resource_id": datastore.id})
+                            "resource_id": secret.id})
 
         if 'data' in request.data:
-            datastore.data = str(request.data['data'])
+            secret.data = str(request.data['data'])
         if 'data_nonce' in request.data:
-            datastore.data_nonce = str(request.data['data_nonce'])
-        if 'secret_key' in request.data:
-            datastore.secret_key = str(request.data['secret_key'])
-        if 'secret_key_nonce' in request.data:
-            datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
+            secret.data_nonce = str(request.data['data_nonce'])
 
-        datastore.save()
+        secret.save()
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

@@ -307,6 +307,129 @@
                 });
 
                 /*
+                 *  Read Secret
+                 */
+
+                $('#read_secret').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_secret($('#token_secret_read').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_secret_read.set(JSON.parse(value));
+                            jsoneditors.the_secret_read.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_secret_read.set(JSON.parse(value.responseText));
+                            jsoneditors.the_secret_read.expandAll();
+                        });
+                });
+
+                $('#read_secret_id').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.read_secret($('#token_secret_read_id').val(), $('#id_secret_read_id').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.the_secret_read_id.set(JSON.parse(value));
+                            jsoneditors.the_secret_read_id.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.the_secret_read_id.set(JSON.parse(value.responseText));
+                            jsoneditors.the_secret_read_id.expandAll();
+                        });
+                });
+
+                $('#decrypt_data_secret').click(function (event) {
+                    event.preventDefault();
+
+                    if (typeof jsoneditors.the_secret_read_id.get().data === "undefined"
+                            || jsoneditors.the_secret_read_id.get().data === ""){
+                        // Datastore is empty, nothing to decode
+                        alert("Datastore is empty ... nothing to decrypt. If you just wrote to the secret, start" +
+                                "over with Step 1 and read the secret fresh from the backend");
+                        return;
+                    }
+                    // TODO add unzipping of data
+                    var plaintext_json = client.decrypt_data(
+                        jsoneditors.the_secret_read_id.get().data,
+                        jsoneditors.the_secret_read_id.get().data_nonce,
+                        $('#decrypted_secret_secret').val()
+                    );
+                    jsoneditors.decrypted_data_secret.set(JSON.parse(plaintext_json));
+                    jsoneditors.decrypted_data_secret.expandAll();
+                });
+
+                /*
+                 *  Create Secret
+                 */
+
+                $('#generate_secret_key_secret').click(function (event) {
+                    event.preventDefault();
+                    $('#secret_secret_key').val(client.generate_secret_key())
+                });
+
+                $('#encrypt_data_secret_create').click(function (event) {
+                    event.preventDefault();
+                    var data_enc = client.encrypt_data(jsoneditors.the_secret_create.getText(), $('#secret_secret_key').val());
+                    $('#encrypted_data_secret_create').val(data_enc.ciphertext);
+                    $('#encrypted_data_secret_create_nonce').val(data_enc.nonce);
+
+                });
+
+                $('#create_secret').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.create_secret($('#token_secret_create').val(), $('#encrypted_data_secret_create').val(), $('#encrypted_data_secret_create_nonce').val())
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.create_secret_request_feedback.set(JSON.parse(value));
+                            jsoneditors.create_secret_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.create_secret_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.create_secret_request_feedback.expandAll();
+                        });
+                });
+
+
+                /*
+                 *  Write Secret
+                 */
+
+                $('#encrypt_data_secret').click(function (event) {
+                    event.preventDefault();
+                    // TODO zipping of data
+                    var data_enc = client.encrypt_data(jsoneditors.the_secret_write.getText(), $('#secret_key_write_secret').val());
+                    $('#encrypted_data_secret').val(data_enc.ciphertext);
+                    $('#encrypted_data_secret_nonce').val(data_enc.nonce);
+                });
+
+                $('#write_secret').click(function (event) {
+                    event.preventDefault();
+                    // do the magic, function will return a promise so handle it
+                    client.write_secret(
+                            $('#token_secret_write').val(),
+                            $('#id_secret_write_id').val(),
+                            $('#encrypted_data_secret').val(),
+                            $('#encrypted_data_secret_nonce').val()
+                        )
+                        .done(function(value) {
+                            // successful
+                            jsoneditors.secret_write_request_feedback.set(JSON.parse(value));
+                            jsoneditors.secret_write_request_feedback.expandAll();
+                        })
+                        .fail(function(value) {
+                            // failed
+                            jsoneditors.secret_write_request_feedback.set(JSON.parse(value.responseText));
+                            jsoneditors.secret_write_request_feedback.expandAll();
+                        });
+                });
+
+                /*
                  *  Read Shares
                  */
 
@@ -681,6 +804,13 @@
                     'the_datastore_write',
                     'decrypted_data_datastore',
                     'create_datastore_request_feedback',
+                    'the_secret_read',
+                    'the_secret_read_id',
+                    'secret_write_request_feedback',
+                    'the_secret_write',
+                    'decrypted_data_secret',
+                    'the_secret_create',
+                    'create_secret_request_feedback',
                     'the_share_read',
                     'the_share_read_id',
                     'share_write_request_feedback',
@@ -745,12 +875,15 @@
             <li><a href="#tabs-5">Read Datastore</a></li>
             <li><a href="#tabs-6">Create Datastore</a></li>
             <li><a href="#tabs-7">Write Datastore</a></li>
-            <li><a href="#tabs-8">Read Share</a></li>
-            <li><a href="#tabs-9">Create Share</a></li>
-            <li><a href="#tabs-10">Write Share</a></li>
-            <li><a href="#tabs-11">Share Share</a></li>
-            <li><a href="#tabs-12">Read Group</a></li>
-            <li><a href="#tabs-13">Create Group</a></li>
+            <li><a href="#tabs-8">Read Secret</a></li>
+            <li><a href="#tabs-9">Create Secret</a></li>
+            <li><a href="#tabs-10">Write Secret</a></li>
+            <li><a href="#tabs-11">Read Share</a></li>
+            <li><a href="#tabs-12">Create Share</a></li>
+            <li><a href="#tabs-13">Write Share</a></li>
+            <li><a href="#tabs-14">Share Share</a></li>
+            <li><a href="#tabs-15">Read Group</a></li>
+            <li><a href="#tabs-16">Create Group</a></li>
         </ul>
         <div id="tabs-1">
             <!-- START Registration -->
@@ -1145,7 +1278,7 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Encrypt the secret key for the new datastore with the secret key of hte user</p>
+                <p>Encrypt the secret key for the new datastore with the secret key of the user</p>
 
                 <h4>INPUT: </h4>
                 <label for="users_decrypted_secret_key_datastore">Users plaintext secret key: </label>
@@ -1269,9 +1402,236 @@
         </div>
 
 
-
-
         <div id="tabs-8">
+            <!-- START Read Secret -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Use the token from login to get a list of all secrets
+                    (Endpoint <a href="/secret/">/secret/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_secret_read">Token: </label><input size="30" type="text" name="token_secret_read"
+                                                                id="token_secret_read"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="1. Get secret list: read_secret(token)"
+                       id="read_secret"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_secret_read">List of all secrets: </label>
+                <br/>
+                <div id="the_secret_read" class="editclass"></div>
+                <br/>
+                <small>
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+
+                <p>Use the token from login and the secret ID to get the secret's content
+                    (Endpoint <a href="/secret/my-secret-id/">/secret/my-secret-id/</a>)</p>
+                <h4>INPUT: </h4>
+                <label for="token_secret_read_id">Token: </label><input size="30" type="text" name="token_secret_read_id"
+                                                                id="token_secret_read_id"
+                                                                value="">
+                <br/>
+                <label for="id_secret_read_id">Secret ID: </label><input size="30" type="text" name="id_secret_read_id"
+                                                                id="id_secret_read_id"
+                                                                value="">
+                <br/>
+                <INPUT type="button" name="button" value="2. Read one secrets content: read_secret(token, secret_id)"
+                       id="read_secret_id"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="the_secret_read_id">Content of one secret: </label>
+                <br/>
+                <div id="the_secret_read_id" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the secret, but the idea is that clients filter according to type
+                </small>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+                <p>Decrypt the content of the data attribute with the data_nonce and the plaintext secret secret</p>
+                <h4>INPUT</h4>
+
+                <label for="decrypted_secret_secret">Plaintext secret secret: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="decrypted_secret_secret" id="decrypted_secret_secret"></textarea>
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Decrypt Secret data"
+                       id="decrypt_data_secret"/>
+                <br/>
+
+                <h4>OUTPUT: </h4>
+                <label for="decrypted_data_secret">Plaintext content of the data of the fetched secret: </label>
+                <br/>
+                <div id="decrypted_data_secret" class="editclass"></div>
+                <br/>
+                <small>No final decision has yet been made about the structure of the secret, but the idea is that clients filter according to type
+                </small>
+            </section>
+            <!-- END Read Secret -->
+        </div>
+
+
+        <div id="tabs-9">
+            <!-- START Create Secret -->
+
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Generate a secret key for the new secret</p>
+
+                <INPUT type="button" name="button" value="1. Generate Secret Key"
+                       id="generate_secret_key_secret"/>
+                <h4>OUTPUT: </h4>
+
+                <label for="secret_secret_key">Secret Secret Key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="secret_secret_key" id="secret_secret_key" readonly></textarea>
+                <br/>
+                <small></small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2 (optional)</h3>
+
+                <p>Provide the content of the secret and encrypt it</p>
+                <h4>INPUT: </h4>
+                <label for="the_secret_create">Plaintext data of one secret: </label>
+                <br/>
+                <div id="the_secret_create" class="editclass"></div>
+                <br/>
+                <br/>
+
+                <INPUT type="button" name="button" value="2. encrypt the data: encrypt_data(data, secret_key)"
+                       id="encrypt_data_secret_create"/>
+                <h4>OUTPUT: </h4>
+                <label for="encrypted_data_secret_create">Encrypted Data: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_secret_create" id="encrypted_data_secret_create" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_data_secret_create_nonce">Encrypted Data Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_secret_create_nonce" id="encrypted_data_secret_create_nonce" readonly></textarea>
+                <br/>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 3</h3>
+
+                <p>Send the request so the secret is created with this secret key
+                    (Endpoint <a href="/secret/">/secret/</a>)</p>
+
+                <h4>INPUT: </h4>
+                <label for="token_secret_create">Token: </label><input size="30" type="text" name="token_secret_create"
+                                                                id="token_secret_create"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="3. Create Secret"
+                       id="create_secret"/>
+                <h4>OUTPUT: </h4>
+                <label for="create_secret_request_feedback">Create Secret Feedback: </label>
+                <br/>
+                <div id="create_secret_request_feedback" class="editclass_small"></div>
+                <br/>
+                <small>Will return nothing except a success or fail message
+                </small>
+
+            </section>
+
+            <hr>
+
+            <!-- END Create Secret -->
+        </div>
+
+
+        <div id="tabs-10">
+            <!-- START Write Secret -->
+            <section>
+                <h3>Step 1</h3>
+
+                <p>Edit the content of the secret data and encrypt it</p>
+                <h4>INPUT: </h4>
+                <label for="the_secret_write">Plaintext data of one secret: </label>
+                <br/>
+                <div id="the_secret_write" class="editclass"></div>
+                <br/>
+                <label for="secret_key_write_secret">Plaintext Secret secret key: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="secret_key_write_secret" id="secret_key_write_secret" ></textarea>
+                <br/>
+                <br/>
+
+                <INPUT type="button" name="button" value="1. encrypt the data: encrypt_data(data, secret_key)"
+                       id="encrypt_data_secret"/>
+                <h4>OUTPUT: </h4>
+                <label for="encrypted_data_secret">Encrypted Data: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_secret" id="encrypted_data_secret" readonly></textarea>
+                <br/>
+
+                <label for="encrypted_data_secret_nonce">Encrypted Data Nonce: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="encrypted_data_secret_nonce" id="encrypted_data_secret_nonce" readonly></textarea>
+                <br/>
+                <small>No final decision has yet been made about the structure of the secret, but the idea is that clients filter according to type
+                </small>
+
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Step 2</h3>
+                <p>
+                    Finally write/upload the secret data
+                    (Endpoint <a href="/secret/my-secret-id/">/secret/my-secret-id/</a>)
+                </p>
+
+                <h4>INPUT: </h4>
+                <label for="token_secret_write">Token: </label><input size="30" type="text" name="token_secret_write"
+                                                                id="token_secret_write"
+                                                                value="">
+                <br/>
+                <label for="id_secret_write_id">Secret ID: </label><input size="30" type="text" name="id_secret_write_id"
+                                                                id="id_secret_write_id"
+                                                                value="">
+                <br/>
+
+                <INPUT type="button" name="button" value="2. Write the secret: write_secret(token, secret_id, encrypted_data, encrypted_data_nonce)"
+                       id="write_secret"/>
+                <br/>
+                <h4>OUTPUT: </h4>
+                <label for="secret_write_request_feedback">Secret write request feedback: </label>
+                <br/>
+                <div id="secret_write_request_feedback" class="editclass_small"></div>
+                <small>
+                </small>
+            </section>
+            <!-- END Write Secret -->
+        </div>
+
+
+
+
+        <div id="tabs-11">
             <!-- START Read Share -->
             <section>
                 <h3>Step 1</h3>
@@ -1382,7 +1742,7 @@
             <!-- END Read Share -->
         </div>
 
-        <div id="tabs-9">
+        <div id="tabs-12">
             <!-- START Create Share -->
 
             <section>
@@ -1407,7 +1767,7 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Encrypt the secret key for the new share with the secret key of hte user</p>
+                <p>Encrypt the secret key for the new share with the secret key of the user</p>
 
                 <h4>INPUT: </h4>
                 <label for="users_decrypted_secret_key_share">Users plaintext secret key: </label>
@@ -1464,7 +1824,7 @@
         </div>
 
 
-        <div id="tabs-10">
+        <div id="tabs-13">
             <!-- START Write Share -->
             <section>
                 <h3>Step 1</h3>
@@ -1531,7 +1891,7 @@
         </div>
 
 
-        <div id="tabs-11">
+        <div id="tabs-14">
             <!-- START Share Share -->
             <section>
                 <h3>Step 1</h3>
@@ -1697,7 +2057,7 @@
         </div>
 
 
-        <div id="tabs-12">
+        <div id="tabs-15">
             <!-- START Read Group -->
             <section>
                 <h3>Step 1</h3>
@@ -1752,7 +2112,7 @@
         </div>
 
 
-        <div id="tabs-13">
+        <div id="tabs-16">
             <!-- START Create Group -->
 
             <section>
@@ -1777,7 +2137,7 @@
             <section>
                 <h3>Step 2</h3>
 
-                <p>Encrypt the secret key for the new group with the secret key of hte user</p>
+                <p>Encrypt the secret key for the new group with the secret key of the user</p>
 
                 <h4>INPUT: </h4>
                 <label for="users_decrypted_secret_key_group">Users plaintext secret key: </label>

@@ -413,6 +413,93 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     };
 
     /**
+     * Ajax GET request with the token as authentication to get the current user's secret
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} [secret_id=null] - the secret ID
+     * @returns {promise}
+     */
+    this.read_secret = function (token, secret_id) {
+
+        //optional parameter secret_id
+        if (secret_id === undefined) { secret_id = null; }
+
+        var endpoint = '/secret/' + (secret_id === null ? '' : secret_id + '/');
+        var type = "GET";
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: null, // No data required for get
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+
+    /**
+     * Ajax PUT request to create a datatore with the token as authentication and optional already some data,
+     * together with the encrypted secret key and nonce
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {string} [encrypted_data] - optional data for the new secret
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @returns {promise}
+     */
+    this.create_secret = function (token, encrypted_data, encrypted_data_nonce) {
+        var endpoint = '/secret/';
+        var type = "PUT";
+        var data = {
+            data: encrypted_data,
+            data_nonce: encrypted_data_nonce
+        };
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
+     * Ajax PUT request with the token as authentication and the new secret content
+     *
+     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
+     * @param {uuid} secret_id - the secret ID
+     * @param {string} [encrypted_data] - optional data for the new secret
+     * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     * @param {string} [encrypted_data_secret_key] - encrypted secret key, wont update on the server if not provided
+     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
+     * @returns {promise}
+     */
+    this.write_secret = function (token, secret_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+        var endpoint = '/secret/' + secret_id + '/';
+        var type = "POST";
+        var data = {
+            data: encrypted_data,
+            data_nonce: encrypted_data_nonce,
+            secret_key: encrypted_data_secret_key,
+            secret_key_nonce: encrypted_data_secret_key_nonce
+        };
+
+        return jQuery.ajax({
+            type: type,
+            url: backend + endpoint,
+            data: data,
+            dataType: 'text', // will be json but for the demo purposes we insist on text
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", "Token " + token);
+            }
+        });
+    };
+
+    /**
      * Ajax GET request with the token as authentication to get the current user's share
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
@@ -440,7 +527,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
 
     /**
-     * Ajax PUT request to create a datastore with the token as authentication and optional already some data,
+     * Ajax PUT request to create a share with the token as authentication and optional already some data,
      * together with the encrypted secret key and nonce
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)

@@ -37,6 +37,9 @@ urlpatterns = [
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 
+    url(r'^secret/$', views.SecretView.as_view(), name='secret'),
+    url(r'^secret/(?P<uuid>[^/]+)/$', views.SecretView.as_view(), name='secret'),
+
     url(r'^share/$', views.ShareView.as_view(), name='share'),
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
 

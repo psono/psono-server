@@ -6,9 +6,11 @@ from serializers import (
     RegisterSerializer as DefaultRegisterSerializer,
     AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer,
     DatastoreSerializer as DefaultDatastoreSerializer,
+    SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     ShareSerializer as DefaultShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
+    SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer)
 from .utils import import_callable
 
@@ -48,6 +50,15 @@ DatastoreSerializer = import_callable(
         DefaultDatastoreSerializer
     )
 )
+
+SecretSerializer = import_callable(
+    serializers.get(
+        'SECRET_SERIALIZER',
+        DefaultSecretSerializer
+    )
+)
+
+
 UserPublicKeySerializer = import_callable(
     serializers.get(
         'USER_PUBLIC_KEY_SERIALIZER',
@@ -68,6 +79,14 @@ DatastoreOverviewSerializer = import_callable(
         DefaultDatastoreOverviewSerializer
     )
 )
+
+SecretOverviewSerializer = import_callable(
+    serializers.get(
+        'SECRET_OVERVIEW_SERIALIZER',
+        DefaultSecretOverviewSerializer
+    )
+)
+
 ShareOverviewSerializer = import_callable(
     serializers.get(
         'SHARE_OVERVIEW_SERIALIZER',

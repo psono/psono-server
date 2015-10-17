@@ -44,7 +44,7 @@ class User(models.Model):
 
 class Data_Store(models.Model):
     """
-    The data storage where all data of the user is saved
+    The data storage where the folder structure is saved
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
@@ -61,6 +61,21 @@ class Data_Store(models.Model):
         abstract = False
 
 
+class Secret(models.Model):
+    """
+    The secret objects for passwords, secure notes, files, whatsoever. The secret is always encrypted with symmetric
+    encryption. The key to decrypt the secret is either stored in the data store, or in the share
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='secrets')
+    data = models.BinaryField()
+    data_nonce = models.CharField(_('data nonce'), max_length=64)
+    type = models.CharField(max_length=64, db_index=True, default='password')
+
+    class Meta:
+        abstract = False
 
 
 class Share(models.Model):
