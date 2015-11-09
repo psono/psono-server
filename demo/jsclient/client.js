@@ -389,6 +389,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
      * @param {string} [encrypted_data_secret_key] - encrypted secret key, wont update on the server if not provided
      * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
+     *
      * @returns {promise}
      */
     this.write_datastore = function (token, datastore_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
@@ -417,6 +418,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {uuid} [secret_id=null] - the secret ID
+     *
      * @returns {promise}
      */
     this.read_secret = function (token, secret_id) {
@@ -446,6 +448,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {string} [encrypted_data] - optional data for the new secret
      * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
+     *
      * @returns {promise}
      */
     this.create_secret = function (token, encrypted_data, encrypted_data_nonce) {
@@ -474,18 +477,15 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {uuid} secret_id - the secret ID
      * @param {string} [encrypted_data] - optional data for the new secret
      * @param {string} [encrypted_data_nonce] - nonce for data, necessary if data is provided
-     * @param {string} [encrypted_data_secret_key] - encrypted secret key, wont update on the server if not provided
-     * @param {string} [encrypted_data_secret_key_nonce] - nonce for secret key, wont update on the server if not provided
+     *
      * @returns {promise}
      */
-    this.write_secret = function (token, secret_id, encrypted_data, encrypted_data_nonce, encrypted_data_secret_key, encrypted_data_secret_key_nonce) {
+    this.write_secret = function (token, secret_id, encrypted_data, encrypted_data_nonce) {
         var endpoint = '/secret/' + secret_id + '/';
         var type = "POST";
         var data = {
             data: encrypted_data,
-            data_nonce: encrypted_data_nonce,
-            secret_key: encrypted_data_secret_key,
-            secret_key_nonce: encrypted_data_secret_key_nonce
+            data_nonce: encrypted_data_nonce
         };
 
         return jQuery.ajax({
@@ -504,6 +504,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      *
      * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {uuid} [share_id=null] - the share ID
+     *
      * @returns {promise}
      */
     this.read_share = function (token, share_id) {
