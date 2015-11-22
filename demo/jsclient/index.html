@@ -47,8 +47,10 @@
 
                 $('#encrypt_secrets_registration').click(function (event) {
                     event.preventDefault();
-                    var priv_key_enc = client.encrypt_secret($('#registration_private_key').val(), $('#password_registration').val());
-                    var secret_key_enc = client.encrypt_secret($('#registration_secret_key').val(), $('#password_registration').val());
+                    var priv_key_enc = client.encrypt_secret($('#registration_private_key').val(),
+                            $('#password_registration').val());
+                    var secret_key_enc = client.encrypt_secret($('#registration_secret_key').val(),
+                            $('#password_registration').val());
                     $('#registration_private_key_enc').val(priv_key_enc.ciphertext);
                     $('#registration_private_nonce_enc').val(priv_key_enc.nonce);
                     $('#registration_secret_key_enc').val(secret_key_enc.ciphertext);
@@ -250,7 +252,8 @@
 
                 $('#encrypt_secret_key_datastore').click(function (event) {
                     event.preventDefault();
-                    var data_enc = client.encrypt_data($('#datastore_secret_key').val(), $('#users_decrypted_secret_key_datastore').val());
+                    var data_enc = client.encrypt_data($('#datastore_secret_key').val(),
+                            $('#users_decrypted_secret_key_datastore').val());
                     $('#encrypted_secret_key_datastore').val(data_enc.ciphertext);
                     $('#encrypted_secret_key_datastore_nonce').val(data_enc.nonce);
 
@@ -259,7 +262,10 @@
                 $('#create_datastore').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.create_datastore($('#token_datastore_create').val(), null, null, $('#encrypted_secret_key_datastore').val(), $('#encrypted_secret_key_datastore_nonce').val())
+                    client.create_datastore($('#token_datastore_create').val(), $('#type_datastore_create').val(),
+                            $('#description_datastore_create').val(), null, null,
+                            $('#encrypted_secret_key_datastore').val(),
+                            $('#encrypted_secret_key_datastore_nonce').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.create_datastore_request_feedback.set(JSON.parse(value));
@@ -280,7 +286,8 @@
                 $('#encrypt_data_datastore').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
-                    var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(), $('#secret_key_write_datastore').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_datastore_write.getText(),
+                            $('#secret_key_write_datastore').val());
                     $('#encrypted_data_datastore').val(data_enc.ciphertext);
                     $('#encrypted_data_datastore_nonce').val(data_enc.nonce);
                 });
@@ -373,7 +380,8 @@
 
                 $('#encrypt_data_secret_create').click(function (event) {
                     event.preventDefault();
-                    var data_enc = client.encrypt_data(jsoneditors.the_secret_create.getText(), $('#secret_secret_key').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_secret_create.getText(),
+                            $('#secret_secret_key').val());
                     $('#encrypted_data_secret_create').val(data_enc.ciphertext);
                     $('#encrypted_data_secret_create_nonce').val(data_enc.nonce);
 
@@ -382,7 +390,8 @@
                 $('#create_secret').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.create_secret($('#token_secret_create').val(), $('#encrypted_data_secret_create').val(), $('#encrypted_data_secret_create_nonce').val())
+                    client.create_secret($('#token_secret_create').val(), $('#encrypted_data_secret_create').val(),
+                            $('#encrypted_data_secret_create_nonce').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.create_secret_request_feedback.set(JSON.parse(value));
@@ -403,7 +412,8 @@
                 $('#encrypt_data_secret').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
-                    var data_enc = client.encrypt_data(jsoneditors.the_secret_write.getText(), $('#secret_key_write_secret').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_secret_write.getText(),
+                            $('#secret_key_write_secret').val());
                     $('#encrypted_data_secret').val(data_enc.ciphertext);
                     $('#encrypted_data_secret_nonce').val(data_enc.nonce);
                 });
@@ -519,7 +529,8 @@
 
                 $('#encrypt_secret_key_share').click(function (event) {
                     event.preventDefault();
-                    var data_enc = client.encrypt_data($('#share_secret_key').val(), $('#users_decrypted_secret_key_share').val());
+                    var data_enc = client.encrypt_data($('#share_secret_key').val(),
+                            $('#users_decrypted_secret_key_share').val());
                     $('#encrypted_secret_key_share').val(data_enc.ciphertext);
                     $('#encrypted_secret_key_share_nonce').val(data_enc.nonce);
 
@@ -528,7 +539,8 @@
                 $('#create_share').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.create_share($('#token_share_create').val(), null, null, $('#encrypted_secret_key_share').val(), $('#encrypted_secret_key_share_nonce').val())
+                    client.create_share($('#token_share_create').val(), null, null,
+                            $('#encrypted_secret_key_share').val(), $('#encrypted_secret_key_share_nonce').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.create_share_request_feedback.set(JSON.parse(value));
@@ -549,7 +561,8 @@
                 $('#encrypt_data_share').click(function (event) {
                     event.preventDefault();
                     // TODO zipping of data
-                    var data_enc = client.encrypt_data(jsoneditors.the_share_write.getText(), $('#secret_key_write_share').val());
+                    var data_enc = client.encrypt_data(jsoneditors.the_share_write.getText(),
+                            $('#secret_key_write_share').val());
                     $('#encrypted_data_share').val(data_enc.ciphertext);
                     $('#encrypted_data_share_nonce').val(data_enc.nonce);
                 });
@@ -597,7 +610,8 @@
 
                 $('#get_users_public_key').click(function (event) {
                     event.preventDefault();
-                    client.get_users_public_key($('#token_share_share_id').val(), $('#user_id_share_share').val(), $('#user_email_share_share').val())
+                    client.get_users_public_key($('#token_share_share_id').val(), $('#user_id_share_share').val(),
+                            $('#user_email_share_share').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.share_share_users_public_key.set(JSON.parse(value));
@@ -725,7 +739,8 @@
 
                 $('#encrypt_secret_key_group').click(function (event) {
                     event.preventDefault();
-                    var data_enc = client.encrypt_data($('#group_secret_key').val(), $('#users_decrypted_secret_key_group').val());
+                    var data_enc = client.encrypt_data($('#group_secret_key').val(),
+                            $('#users_decrypted_secret_key_group').val());
                     $('#encrypted_secret_key_group').val(data_enc.ciphertext);
                     $('#encrypted_secret_key_group_nonce').val(data_enc.nonce);
 
@@ -734,7 +749,8 @@
                 $('#create_group').click(function (event) {
                     event.preventDefault();
                     // do the magic, function will return a promise so handle it
-                    client.create_group($('#token_group_create').val(), $('#name_group_create').val(), $('#encrypted_secret_key_group').val(), $('#encrypted_secret_key_group_nonce').val())
+                    client.create_group($('#token_group_create').val(), $('#name_group_create').val(),
+                            $('#encrypted_secret_key_group').val(), $('#encrypted_secret_key_group_nonce').val())
                         .done(function(value) {
                             // successful
                             jsoneditors.create_group_request_feedback.set(JSON.parse(value));
@@ -919,7 +935,8 @@
                 <br/>
                 <textarea rows="3" cols="60" name="authkey_registration" id="authkey_registration" readonly></textarea>
                 <br/>
-                <small>It should be the following for "Test@test.com" and "myPassword":<br/>c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
+                <small>It should be the following for "Test@test.com" and "myPassword":<br/>
+                    c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
                 </small>
             </section>
 
@@ -1069,7 +1086,8 @@
                 <br/>
                 <textarea rows="3" cols="60" name="authkey_login" id="authkey_login" readonly></textarea>
                 <br/>
-                <small>It should be the following for "Test@test.com" and "myPassword":<br/>c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
+                <small>It should be the following for "Test@test.com" and "myPassword":<br/>
+                    c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7123d6be058e6d43cc71c1b666bdecaf33b734c8583a93
                 </small>
             </section>
 
@@ -1312,6 +1330,14 @@
                     (Endpoint <a href="/datastore/">/datastore/</a>)</p>
 
                 <h4>INPUT: </h4>
+                <label for="type_datastore_create">Type: </label><input size="30" type="text" name="type_datastore_create"
+                                                                id="type_datastore_create"
+                                                                value="">
+                <br/>
+                <label for="description_datastore_create">Description: </label><input size="30" type="text" name="description_datastore_create"
+                                                                id="description_datastore_create"
+                                                                value="">
+                <br/>
                 <label for="token_datastore_create">Token: </label><input size="30" type="text" name="token_datastore_create"
                                                                 id="token_datastore_create"
                                                                 value="">

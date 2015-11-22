@@ -59,6 +59,8 @@ class DatastoreView(GenericAPIView):
 
         try:
             datastore = Data_Store.objects.create(
+                type = str(request.data['type']),
+                description = str(request.data['description']),
                 data = str(request.data['data']),
                 data_nonce = str(request.data['data_nonce']),
                 secret_key = str(request.data['secret_key']),
