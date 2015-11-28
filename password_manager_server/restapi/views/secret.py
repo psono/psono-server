@@ -42,19 +42,18 @@ class SecretView(GenericAPIView):
             try:
                 secret = Secret.objects.get(pk=uuid)
             except Secret.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+            except ValueError:
+                return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-            if not secret.user == request.user:
-                raise PermissionDenied({"message":"You don't have permission to access",
-                                "resource_id": secret.id})
+            if not secret.user_id == request.auth.user_id:
+                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(secret).data,
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO implement check for more secrets for enterprise users
-
         try:
             secret = Secret.objects.create(
                 data = str(request.data['data']),
@@ -71,11 +70,13 @@ class SecretView(GenericAPIView):
         try:
             secret = Secret.objects.get(pk=uuid)
         except Secret.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+        except ValueError:
+            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
-        if not secret.user == request.user:
+        if not secret.user_id == request.auth.user_id:
             raise PermissionDenied({"message":"You don't have permission to access",
                             "resource_id": secret.id})
 
