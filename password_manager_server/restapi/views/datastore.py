@@ -42,18 +42,18 @@ class DatastoreView(GenericAPIView):
             try:
                 datastore = Data_Store.objects.get(pk=uuid)
             except Data_Store.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+            except ValueError:
+                return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-            if not datastore.user == request.user:
-                raise PermissionDenied({"message":"You don't have permission to access",
-                                "resource_id": datastore.id})
+            if not datastore.user_id == request.auth.user_id:
+                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO implement check for more data stores for enterprise users
 
         #TODO Check if secret_key and nonce exist
 
@@ -68,7 +68,8 @@ class DatastoreView(GenericAPIView):
                 user = request.user
             )
         except IntegrityError:
-            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
@@ -77,13 +78,14 @@ class DatastoreView(GenericAPIView):
         try:
             datastore = Data_Store.objects.get(pk=uuid)
         except Data_Store.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+        except ValueError:
+            return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
-        if not datastore.user == request.user:
-            raise PermissionDenied({"message":"You don't have permission to access",
-                            "resource_id": datastore.id})
+        if not datastore.user_id == request.auth.user_id:
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
             datastore.data = str(request.data['data'])
