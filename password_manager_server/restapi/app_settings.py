@@ -8,6 +8,7 @@ from serializers import (
     DatastoreSerializer as DefaultDatastoreSerializer,
     SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
+    UserUpdateSerializer as DefaultUserUpdateSerializer,
     ShareSerializer as DefaultShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     SecretOverviewSerializer as DefaultSecretOverviewSerializer,
@@ -65,6 +66,14 @@ UserPublicKeySerializer = import_callable(
         DefaultUserPublicKeySerializer
     )
 )
+
+UserUpdateSerializer = import_callable(
+    serializers.get(
+        'USER_UPDATE_SERIALIZER',
+        DefaultUserUpdateSerializer
+    )
+)
+
 
 ShareSerializer = import_callable(
     serializers.get(

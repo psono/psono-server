@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^authentication/authkey/change/$', views.AuthkeyChangeView.as_view(),
         name='authentication_authkey_change'),
 
+    url(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
 
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),

@@ -1,6 +1,6 @@
 from django.conf import settings
 from ..utils import generate_activation_code
-
+from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,8 +13,9 @@ from ..models import (
 from ..app_settings import (
     LoginSerializer,
     AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
-    UserPublicKeySerializer
+    UserUpdateSerializer, UserPublicKeySerializer
 )
+from rest_framework.exceptions import PermissionDenied
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -226,6 +227,43 @@ class AuthkeyChangeView(GenericAPIView):
         serializer.save()
         return Response({"success": "New password has been saved."})
 
+
+class UserUpdate(GenericAPIView):
+
+    """
+    Checks the REST Token and updates the users email / authkey / secret and private key
+    """
+
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UserUpdateSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = User.objects.get(pk=request.user.id)
+        except User.DoesNotExist:
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+        except ValueError:
+            return Response({"error": "IdNoUUID", 'message': "Badly formated token"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if 'email' in request.data:
+            user.email = str(request.data['email'])
+        if 'authkey' in request.data:
+            user.authkey = make_password(str(request.data['authkey']))
+        if 'secret_key' in request.data:
+            user.secret_key = str(request.data['secret_key'])
+        if 'secret_key_nonce' in request.data:
+            user.secret_key_nonce = str(request.data['secret_key_nonce'])
+        if 'private_key' in request.data:
+            user.private_key = str(request.data['private_key'])
+        if 'private_key_nonce' in request.data:
+            user.private_key_nonce = str(request.data['private_key_nonce'])
+
+        user.save()
+
+        return Response({"success": "User updated."},
+                        status=status.HTTP_200_OK)
 
 
 class UserSearch(GenericAPIView):

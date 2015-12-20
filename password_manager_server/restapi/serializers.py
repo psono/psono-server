@@ -210,6 +210,74 @@ class UserPublicKeySerializer(serializers.Serializer):
     user_email = serializers.EmailField(required=False)
 
 
+class UserUpdateSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
+
+    private_key = serializers.CharField(required=True, )
+    private_key_nonce = serializers.CharField(required=True, )
+    secret_key = serializers.CharField(required=True, )
+    secret_key_nonce = serializers.CharField(required=True, )
+
+    def validate_email(self, value):
+
+        value = value.lower().strip()
+
+        if User.objects.filter(email=value).exists():
+            msg = _('E-Mail already exists.')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_authkey(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
+            msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
+            msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_private_key(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
+            msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
+            msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_secret_key(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.USER_SECRET_KEY_LENGTH_BYTES*2:
+            msg = _('Your secret key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        if len(value) > settings.USER_SECRET_KEY_LENGTH_BYTES*2:
+            msg = _('Your secret key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+
 class UserShareSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
