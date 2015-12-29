@@ -47,7 +47,7 @@ class DatastoreView(GenericAPIView):
                 return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            if not datastore.user_id == request.auth.user_id:
+            if not datastore.user_id == request.user.pk:
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(datastore).data,
@@ -84,7 +84,7 @@ class DatastoreView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-        if not datastore.user_id == request.auth.user_id:
+        if not datastore.user_id == request.user.pk:
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:

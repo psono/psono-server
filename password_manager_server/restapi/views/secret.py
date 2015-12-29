@@ -47,7 +47,7 @@ class SecretView(GenericAPIView):
                 return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            if not secret.user_id == request.auth.user_id:
+            if not secret.user_id == request.user.pk:
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(secret).data,
@@ -76,7 +76,7 @@ class SecretView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-        if not secret.user_id == request.auth.user_id:
+        if not secret.user_id == request.user.pk:
             raise PermissionDenied({"message":"You don't have permission to access",
                             "resource_id": secret.id})
 

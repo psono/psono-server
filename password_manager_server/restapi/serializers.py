@@ -25,8 +25,6 @@ class LoginSerializer(serializers.Serializer):
         email = attrs.get('email').lower().strip()
         authkey = attrs.get('authkey')
 
-        print email
-
         if email and authkey:
             user = authenticate(email=email, authkey=authkey)
         else:
