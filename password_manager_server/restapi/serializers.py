@@ -10,11 +10,10 @@ except:
     # make compatible with django 1.5
     from django.utils.http import base36_to_int as uid_decoder
 
-from django.contrib.auth.tokens import default_token_generator
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import Token, User, Data_Store
+from models import User
 
 
 class LoginSerializer(serializers.Serializer):
@@ -158,33 +157,6 @@ class PublicUserDetailsSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
 
 
-class AuthkeyChangeSerializer(serializers.Serializer):
-
-    old_authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
-    new_authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
-
-    def validate_old_authkey(self, value):
-        # TODO Check for existing authkey
-        return value
-
-    def validate_new_authkey(self, value):
-        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your Auth Key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your Auth Key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-        return value
-
-    def update(self, instance, validated_data):
-        #TODO Check if this is working
-        instance.email = validated_data.get('authkey', instance.new_authkey)
-        instance.save()
-
-
 class DatastoreSerializer(serializers.Serializer):
 
     data = serializers.CharField()
@@ -211,6 +183,7 @@ class UserPublicKeySerializer(serializers.Serializer):
 class UserUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
+    authkey_old = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
     private_key = serializers.CharField(required=True, )
     private_key_nonce = serializers.CharField(required=True, )
@@ -221,7 +194,7 @@ class UserUpdateSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        if User.objects.filter(email=value).exists():
+        if User.objects.filter(email=value).exclude(pk=self.context['request'].user.pk).exists():
             msg = _('E-Mail already exists.')
             raise exceptions.ValidationError(msg)
 
@@ -239,6 +212,16 @@ class UserUpdateSerializer(serializers.Serializer):
         if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
             msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
                   (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_authkey_old(self, value):
+
+        value = value.strip()
+
+        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2 or len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
+            msg = _('Your old password was not right.')
             raise exceptions.ValidationError(msg)
 
         return value

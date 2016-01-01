@@ -29,8 +29,6 @@ urlpatterns = [
 
     # URLs that require a user to be logged in with a valid session / token.
     url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
-    url(r'^authentication/authkey/change/$', views.AuthkeyChangeView.as_view(),
-        name='authentication_authkey_change'),
 
     url(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),

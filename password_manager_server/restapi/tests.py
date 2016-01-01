@@ -1,6 +1,8 @@
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
+from django.utils import timezone
+from datetime import timedelta
 
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -155,6 +157,26 @@ class EmailVerificationTests(APITestCaseExtended):
 
         self.assertTrue(user.is_email_active)
 
+
+    def test_verify_email_wrong_code(self):
+        """
+        Ensure we don't verify emails with wrong codes
+        """
+        url = reverse('authentication_verify_email')
+        activation_code = generate_activation_code(self.test_email+'changedit')
+
+        data = {
+            'activation_code': activation_code,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        user = models.User.objects.filter(email=self.test_email).get()
+
+        self.assertFalse(user.is_email_active)
+
 class LoginTests(APITestCaseExtended):
 
     def setUp(self):
@@ -187,6 +209,8 @@ class LoginTests(APITestCaseExtended):
             'authkey': self.test_authkey,
         }
 
+        models.Token.objects.all().delete()
+
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -212,6 +236,81 @@ class LoginTests(APITestCaseExtended):
                         'Secret key nonce is wrong in response or does not exist')
 
         self.assertEqual(models.Token.objects.count(), 1)
+
+
+    def test_login_with_wrong_password(self):
+        """
+        Ensure we cannot login with wrong authkey
+        """
+        url = reverse('authentication_login')
+
+        data = {
+            'email': self.test_email,
+            'authkey': make_password(os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')),
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.assertEqual(models.Token.objects.count(), 0)
+
+
+    def test_token_expiration(self):
+        """
+        Ensure expired tokens are invalid
+        """
+        url = reverse('authentication_login')
+
+        data = {
+            'email': self.test_email,
+            'authkey': self.test_authkey,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(response.data.get('token', False),
+                        'Token does not exist in login response')
+
+        token = response.data.get('token', False)
+
+        # to test we first query our datastores with the valid token
+
+        url = reverse('datastore')
+
+        data = {}
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # seems to work, so lets now put the token back into the past
+
+        token_obj = models.Token.objects.get()
+        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID + 1)
+
+        token_obj.create_date = time_threshold
+
+        token_obj.save()
+
+        # ... and try again
+
+        url = reverse('datastore')
+
+        data = {}
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class LogoutTests(APITestCaseExtended):
 
@@ -276,6 +375,225 @@ class LogoutTests(APITestCaseExtended):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Logout has no real affect, Token not deleted')
+
+
+
+class UserModificationTests(APITestCaseExtended):
+
+    def setUp(self):
+        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))+ 'test@example.com'
+        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key,
+            secret_key_nonce=self.test_secret_key_nonce,
+            is_email_active=True
+        )
+
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))+ 'test@example.com'
+        self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key2 = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_obj2 = models.User.objects.create(
+            email=self.test_email2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            is_email_active=True
+        )
+
+    def reset(self):
+
+        url = reverse('user_update')
+
+        data = {
+            'email': self.test_email,
+            'authkey': make_password(self.test_authkey),
+            'authkey_old': self.test_public_key,
+            'private_key': self.test_private_key,
+            'private_key_nonce': self.test_private_key_nonce,
+            'secret_key': self.test_secret_key,
+            'secret_key_nonce': self.test_secret_key_nonce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.post(url, data)
+
+    def test_update_user(self):
+        """
+        Tests to update the user
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))+ 'test@example.com'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+
+        data = {
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertEqual(user.email, email)
+        self.assertTrue(check_password(authkey, user.authkey))
+        self.assertEqual(user.private_key, private_key)
+        self.assertEqual(user.private_key_nonce, private_key_nonce)
+        self.assertEqual(user.secret_key, secret_key)
+        self.assertEqual(user.secret_key_nonce, secret_key_nonce)
+
+        self.reset()
+
+    def test_update_user_with_email_duplicate(self):
+        """
+        Tests to update the user with an email address that already exists
+        """
+
+        url = reverse('user_update')
+
+        email = self.test_email2
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+
+        data = {
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertNotEqual(user.email, email)
+        self.assertFalse(check_password(authkey, user.authkey))
+        self.assertNotEqual(user.private_key, private_key)
+        self.assertNotEqual(user.private_key_nonce, private_key_nonce)
+        self.assertNotEqual(user.secret_key, secret_key)
+        self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+
+        self.reset()
+
+    def test_update_user_missing_old_authkey(self):
+        """
+        Tests to update the user without the old authentication key
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))+ 'test@example.com'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+
+        data = {
+            'email': email,
+            'authkey': authkey,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertNotEqual(user.email, email)
+        self.assertFalse(check_password(authkey, user.authkey))
+        self.assertNotEqual(user.private_key, private_key)
+        self.assertNotEqual(user.private_key_nonce, private_key_nonce)
+        self.assertNotEqual(user.secret_key, secret_key)
+        self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+
+        self.reset()
+
+    def test_update_user_wrong_old_authkey(self):
+        """
+        Tests to update the user with the wrong old authentication key
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))+ 'test@example.com'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+
+        data = {
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': 'asdf',
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertNotEqual(user.email, email)
+        self.assertFalse(check_password(authkey, user.authkey))
+        self.assertNotEqual(user.private_key, private_key)
+        self.assertNotEqual(user.private_key_nonce, private_key_nonce)
+        self.assertNotEqual(user.secret_key, secret_key)
+        self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+
+        self.reset()
 
 
 class DatastoreTests(APITestCaseExtended):
@@ -357,9 +675,9 @@ class DatastoreTests(APITestCaseExtended):
         self.assertEqual(len(response.data.get('datastores', False)), 0,
                         'Datastores hold already data, but should not contain any data at the beginning')
 
-    def test_update_datastore(self):
+    def test_insert_datastore(self):
         """
-        Tests to update the datastore
+        Tests to insert the datastore and check the rights to access it
         """
 
         # lets try to create a datastore
@@ -460,6 +778,179 @@ class DatastoreTests(APITestCaseExtended):
             self.assertNotEqual(store.get('id', ''), new_datastore_id,
                                 'Found our datastore in the list view of another user')
 
+    def test_insert_datastore_with_same_type_and_description(self):
+        """
+        Tests to insert the datastore with the same type and description twice
+        """
 
-    # TODO check that the combination of type and description of a datastore are unique
-    # TODO Test that user cannot change email to another users existing email
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': u"my-test-type",
+            'description': u"my-test-description",
+            'data': u"12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(response.data.get('datastore_id', False), False,
+                            'Datastore id does not exist in datastore PUT answer')
+        self.assertIsUUIDString(str(response.data.get('datastore_id', '')),
+                                'Datastore id is no valid UUID')
+
+        initial_data2 = {
+            'type': u"my-test-type",
+            'description': u"my-test-description",
+            'data': u"12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data2)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('error', False), 'DuplicateTypeDescription',
+                            'Wrong error for no unique combination of type description')
+
+    def test_update_datastore(self):
+        """
+        Tests to update the datastore
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': u"my-sexy-type",
+            'description': u"my-sexy-description",
+            'data': u"12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(response.data.get('datastore_id', False), False,
+                            'Datastore id does not exist in datastore PUT answer')
+        self.assertIsUUIDString(str(response.data.get('datastore_id', '')),
+                                'Datastore id is no valid UUID')
+
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # Initial datastore set, so lets update it
+
+        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+
+        updated_data = {
+            'data': u"123456",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # lets try to get it back in detail
+
+        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {
+            'type': initial_data['type'],
+            'description': initial_data['description'],
+
+            'data': updated_data['data'],
+            'data_nonce': updated_data['data_nonce'],
+            'secret_key': updated_data['secret_key'],
+            'secret_key_nonce': updated_data['secret_key_nonce'],
+        })
+
+
+    def test_change_datastore_type_or_description(self):
+        """
+        Tests to update the datastore with a type or description which should not work, because its not allwed to change
+        those.
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': u"my-second-sexy-type",
+            'description': u"my-second-sexy-description",
+            'data': u"12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(response.data.get('datastore_id', False), False,
+                            'Datastore id does not exist in datastore PUT answer')
+        self.assertIsUUIDString(str(response.data.get('datastore_id', '')),
+                                'Datastore id is no valid UUID')
+
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # Initial datastore set, so lets update it
+
+        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+
+        updated_data = {
+            'type': u"my-try-to-change-the-type",
+            'description': u"my-try-to-change-the-description",
+            'data': u"123456",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # lets try to get it back in detail
+
+        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {
+            'type': initial_data['type'],
+            'description': initial_data['description'],
+
+            'data': updated_data['data'],
+            'data_nonce': updated_data['data_nonce'],
+            'secret_key': updated_data['secret_key'],
+            'secret_key_nonce': updated_data['secret_key_nonce'],
+        })

@@ -59,6 +59,7 @@ class Data_Store(models.Model):
 
     class Meta:
         abstract = False
+        unique_together = ('user', 'type', 'description',)
 
 
 class Secret(models.Model):

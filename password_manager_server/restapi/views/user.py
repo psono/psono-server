@@ -1,5 +1,5 @@
 from django.conf import settings
-from ..utils import generate_activation_code
+from ..utils import generate_activation_code, authenticate
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.views import APIView
@@ -12,7 +12,7 @@ from ..models import (
 
 from ..app_settings import (
     LoginSerializer,
-    AuthkeyChangeSerializer, RegisterSerializer, VerifyEmailSerializer,
+    RegisterSerializer, VerifyEmailSerializer,
     UserUpdateSerializer, UserPublicKeySerializer
 )
 from rest_framework.exceptions import PermissionDenied
@@ -206,28 +206,6 @@ class LogoutView(APIView):
                         status=status.HTTP_200_OK)
 
 
-class AuthkeyChangeView(GenericAPIView):
-
-    """
-    Calls Django Auth SetAuthkeyForm save method.
-
-    Accepts the following POST parameters: new_password1, new_password2
-    Returns the success/fail message.
-    """
-
-    serializer_class = AuthkeyChangeSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer.save()
-        return Response({"success": "New password has been saved."})
-
-
 class UserUpdate(GenericAPIView):
 
     """
@@ -247,23 +225,35 @@ class UserUpdate(GenericAPIView):
             return Response({"error": "IdNoUUID", 'message': "Badly formated token"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if 'email' in request.data:
-            user.email = str(request.data['email'])
-        if 'authkey' in request.data:
-            user.authkey = make_password(str(request.data['authkey']))
-        if 'secret_key' in request.data:
-            user.secret_key = str(request.data['secret_key'])
-        if 'secret_key_nonce' in request.data:
-            user.secret_key_nonce = str(request.data['secret_key_nonce'])
-        if 'private_key' in request.data:
-            user.private_key = str(request.data['private_key'])
-        if 'private_key_nonce' in request.data:
-            user.private_key_nonce = str(request.data['private_key_nonce'])
+        serializer = self.get_serializer(data=request.data)
 
-        user.save()
+        if serializer.is_valid():
 
-        return Response({"success": "User updated."},
-                        status=status.HTTP_200_OK)
+            user = authenticate(email=user.email, authkey=str(request.data['authkey_old']))
+
+            if not user:
+                raise PermissionDenied({"message":"Your old password was not right."})
+
+            if 'email' in request.data:
+                user.email = str(request.data['email'])
+            if 'authkey' in request.data:
+                user.authkey = make_password(str(request.data['authkey']))
+            if 'secret_key' in request.data:
+                user.secret_key = str(request.data['secret_key'])
+            if 'secret_key_nonce' in request.data:
+                user.secret_key_nonce = str(request.data['secret_key_nonce'])
+            if 'private_key' in request.data:
+                user.private_key = str(request.data['private_key'])
+            if 'private_key_nonce' in request.data:
+                user.private_key_nonce = str(request.data['private_key_nonce'])
+
+            user.save()
+
+            return Response({"success": "User updated."},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserSearch(GenericAPIView):

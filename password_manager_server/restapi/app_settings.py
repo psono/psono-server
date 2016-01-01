@@ -4,7 +4,6 @@ from serializers import (
     LoginSerializer as DefaultLoginSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
-    AuthkeyChangeSerializer as DefaultAuthkeyChangeSerializer,
     DatastoreSerializer as DefaultDatastoreSerializer,
     SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
@@ -22,13 +21,6 @@ LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
 )
 
-
-AuthkeyChangeSerializer = import_callable(
-    serializers.get(
-        'PASSWORD_CHANGE_SERIALIZER',
-        DefaultAuthkeyChangeSerializer
-    )
-)
 
 RegisterSerializer = import_callable(
     serializers.get(

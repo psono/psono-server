@@ -3,6 +3,9 @@ from rest_framework import exceptions
 from models import Token
 from django.utils.translation import ugettext_lazy as _
 from hashlib import sha256
+from django.utils import timezone
+from django.conf import settings
+from datetime import timedelta
 
 
 class TokenAuthentication(BaseAuthentication):
@@ -49,8 +52,11 @@ class TokenAuthentication(BaseAuthentication):
         return sha256(token).hexdigest()
 
     def authenticate_credentials(self, token_hash):
+
+        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
+
         try:
-            token = self.model.objects.select_related('user').get(key=token_hash)
+            token = self.model.objects.select_related('user').get(key=token_hash, create_date__gte=time_threshold)
         except self.model.DoesNotExist:
             raise exceptions.AuthenticationFailed(_('Invalid token.'))
 

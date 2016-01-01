@@ -67,8 +67,13 @@ class DatastoreView(GenericAPIView):
                 secret_key_nonce = str(request.data['secret_key_nonce']),
                 user = request.user
             )
-        except IntegrityError:
-            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
+        except IntegrityError as e:
+            if '(user_id, type, description)' in e.message:
+                return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
+                                                                                 "description must be unique"},
+                            status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
