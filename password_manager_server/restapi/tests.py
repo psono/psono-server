@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from datetime import timedelta
+from django.db import IntegrityError
 
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -187,7 +188,7 @@ class LoginTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        models.User.objects.create(
+        self.user_obj = models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -197,6 +198,29 @@ class LoginTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce,
             is_email_active=True
         )
+
+    def test_unique_constraint_token(self):
+        key = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+
+        models.Token.objects.create(
+            key=key,
+            user=self.user_obj
+        )
+
+        error_thrown = False
+
+        try:
+            models.Token.objects.create(
+                key=key,
+                user=self.user_obj
+            )
+        except IntegrityError:
+            error_thrown = True
+
+        self.assertTrue(error_thrown,
+                        'Unique constraint lifted for Tokens which can lead to security problems')
+
+
 
     def test_login(self):
         """

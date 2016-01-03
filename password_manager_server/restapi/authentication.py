@@ -2,7 +2,7 @@ from rest_framework.authentication import BaseAuthentication, get_authorization_
 from rest_framework import exceptions
 from models import Token
 from django.utils.translation import ugettext_lazy as _
-from hashlib import sha256
+from hashlib import sha512
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
@@ -49,7 +49,7 @@ class TokenAuthentication(BaseAuthentication):
         except UnicodeError:
             msg = _('Invalid token header. Token string should not contain invalid characters.')
             raise exceptions.AuthenticationFailed(msg)
-        return sha256(token).hexdigest()
+        return sha512(token).hexdigest()
 
     def authenticate_credentials(self, token_hash):
 

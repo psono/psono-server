@@ -1,6 +1,6 @@
 import binascii
 import os
-from hashlib import sha256
+from hashlib import sha512
 import uuid
 
 from django.db import models
@@ -213,7 +213,7 @@ class Token(models.Model):
     The custom authorization token model.
     """
     create_date = models.DateTimeField(auto_now_add=True)
-    key = models.CharField(max_length=64, primary_key=True)
+    key = models.CharField(max_length=128, primary_key=True)
     user = models.ForeignKey(User, related_name='auth_tokens')
 
     def save(self, *args, **kwargs):
@@ -224,8 +224,8 @@ class Token(models.Model):
     def _generate(self):
         # clear_text_key will not be saved in db but set as property so a "one-time-access" is possible while this
         # object instance is still alive
-        self.clear_text_key = binascii.hexlify(os.urandom(32)).decode()
-        self.key = sha256(self.clear_text_key).hexdigest()
+        self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
+        self.key = sha512(self.clear_text_key).hexdigest()
 
     def __str__(self):
         return self.key
