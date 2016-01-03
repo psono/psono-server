@@ -31,7 +31,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     /* Im afraid people will send/use shaXXX hashes of their password for other purposes, therefore I add this special
      * sauce to every hash. This special sauce can be considered a constant and will never change. Its no secret but
      * it should not be used for anything else besides the reasons below */
-    var special_sauce = 'c8db7c084e181fbd0c616ed445545375a40d9a3ddc3f9d8fac1dba860579cbc1';//sha256 of 'danielandsaschatryingtheirbest'
+    var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469';//sha256 of 'our-chosen-sexy-sauce'
 
     /**
      * takes the sha512 of lowercase email (+ special sauce) as salt to generate scrypt password hash in hex called the
@@ -46,7 +46,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * var p = 1;
      * var l = 64;
      *
-     * var special_sauce = 'c8db7c084e181fbd0c616ed445545375a40d9a3ddc3f9d8fac1dba860579cbc1'
+     * var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469'
      *
      * @param {string} email - email address of the user
      * @param {string} password - password of the user
