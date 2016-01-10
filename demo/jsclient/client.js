@@ -95,16 +95,17 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
     /**
      * Takes the secret and encrypts that with the provided password. The crypto_box takes only 256 bits, therefore we
-     * are using sha256(password+special_sauce) as key for encryption.
+     * are using sha256(password+user_sauce) as key for encryption.
      * Returns the nonce and the cipher text as hex.
      *
      * @param {string} secret
      * @param {string} password
+     * @param {string} user_sauce
      * @returns {{nonce: string, ciphertext: string}}
      */
-    this.encrypt_secret = function (secret, password) {
+    this.encrypt_secret = function (secret, password, user_sauce) {
 
-        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + special_sauce));
+        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + user_sauce));
         var m = nacl.encode_utf8(secret);
         var n = nacl.crypto_secretbox_random_nonce();
         var c = nacl.crypto_secretbox(m, n, k);
@@ -117,18 +118,19 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     };
 
     /**
-     * Takes the cipher text and decrypts that with the nonce and the sha256(password+special_sauce).
+     * Takes the cipher text and decrypts that with the nonce and the sha256(password+user_sauce).
      * Returns the initial secret.
      *
      * @param {string} ciphertext
      * @param {string} nonce
      * @param {string} password
+     * @param {string} user_sauce
      *
      * @returns {string} secret
      */
-    this.decrypt_secret = function (ciphertext, nonce, password) {
+    this.decrypt_secret = function (ciphertext, nonce, password, user_sauce) {
 
-        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + special_sauce));
+        var k = nacl.crypto_hash_sha256(nacl.encode_utf8(password + user_sauce));
         var n = nacl.from_hex(nonce);
         var c = nacl.from_hex(ciphertext);
         var m1 = nacl.crypto_secretbox_open(c, n, k);
@@ -233,10 +235,11 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} private_key_nonce - the nonce for decrypting the encrypted private_key
      * @param {string} secret_key - secret_key for symmetric encryption, encrypted with encrypt_secret
      * @param {string} secret_key_nonce - the nonce for decrypting the encrypted secret_key
+         * @param {string} user_sauce - the random user sauce used
      * @param {string} base_url - the base url for the activation link creation
      * @returns {promise}
      */
-    this.authentication_register = function (email, authkey, public_key, private_key, private_key_nonce, secret_key, secret_key_nonce, base_url) {
+    this.authentication_register = function (email, authkey, public_key, private_key, private_key_nonce, secret_key, secret_key_nonce, user_sauce, base_url) {
         var endpoint = '/authentication/register/';
         var connection_type = "POST";
         var data = {
@@ -247,11 +250,12 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
             private_key_nonce: private_key_nonce,
             secret_key: secret_key,
             secret_key_nonce: secret_key_nonce,
+            user_sauce: user_sauce,
             base_url: base_url
         };
 
         return jQuery.ajax({
-            type: type,
+            type: connection_type,
             url: backend + endpoint,
             data: data,
             dataType: 'text' // will be json but for the demo purposes we insist on text
@@ -627,7 +631,6 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {uuid} user_id - the target user's user ID
      * @param {string} key - the encrypted share secret, encrypted with the public key of the target user
      * @param {string} nonce - the unique nonce for decryption
-     * @param {string} token - authentication token of the user, returned by authentication_login(email, authkey)
      * @param {bool} read - read right
      * @param {bool} write - write right
      * @returns {promise}
@@ -735,6 +738,16 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
                 xhr.setRequestHeader("Authorization", "Token " + token);
             }
         });
+    };
+
+    /**
+     * returns a 32 bytes long random hex value to be used as the user special sauce
+     *
+     * @returns {string}
+     */
+    this.generate_user_sauce = function () {
+
+        return nacl.to_hex(nacl.random_bytes(32)); // 32 Bytes = 256 Bits
     };
 };
 

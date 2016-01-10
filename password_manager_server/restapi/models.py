@@ -29,6 +29,7 @@ class User(models.Model):
     is_active = models.BooleanField(_('active'), default=True,
         help_text=_('Designates whether this user should be treated as '
                     'active. Unselect this instead of deleting accounts.'))
+    user_sauce = models.CharField(_('user sauce'), max_length=64)
 
     class Meta:
         abstract = False

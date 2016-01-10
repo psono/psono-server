@@ -62,6 +62,7 @@ class RegistrationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -71,6 +72,7 @@ class RegistrationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         response = self.client.post(url, data)
@@ -87,6 +89,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(user.private_key_nonce, private_key_nonce)
         self.assertEqual(user.secret_key, secret_key)
         self.assertEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertEqual(user.user_sauce, user_sauce)
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_email_active)
 
@@ -104,6 +107,7 @@ class RegistrationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -113,6 +117,7 @@ class RegistrationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         response = self.client.post(url, data)
@@ -188,6 +193,7 @@ class LoginTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_sauce = os.urandom(32).encode('hex')
         self.user_obj = models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
@@ -196,6 +202,7 @@ class LoginTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=self.test_user_sauce,
             is_email_active=True
         )
 
@@ -257,6 +264,9 @@ class LoginTests(APITestCaseExtended):
                         'Secret key is wrong in response or does not exist')
         self.assertEqual(response.data.get('user', {}).get('secret_key_nonce', False),
                          self.test_secret_key_nonce,
+                        'Secret key is wrong in response or does not exist')
+        self.assertEqual(response.data.get('user', {}).get('user_sauce', False),
+                         self.test_user_sauce,
                         'Secret key nonce is wrong in response or does not exist')
 
         self.assertEqual(models.Token.objects.count(), 1)
@@ -346,6 +356,7 @@ class LogoutTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_sauce = os.urandom(32).encode('hex')
         models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
@@ -354,6 +365,7 @@ class LogoutTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=self.test_user_sauce,
             is_email_active=True
         )
 
@@ -412,6 +424,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_sauce = os.urandom(32).encode('hex')
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             authkey=make_password(self.test_authkey),
@@ -420,6 +433,7 @@ class UserModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=self.test_user_sauce,
             is_email_active=True
         )
 
@@ -430,6 +444,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_sauce2 = os.urandom(32).encode('hex')
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
             authkey=make_password(self.test_authkey2),
@@ -438,6 +453,7 @@ class UserModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key2,
             secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
             is_email_active=True
         )
 
@@ -453,6 +469,7 @@ class UserModificationTests(APITestCaseExtended):
             'private_key_nonce': self.test_private_key_nonce,
             'secret_key': self.test_secret_key,
             'secret_key_nonce': self.test_secret_key_nonce,
+            'user_sauce':self.test_user_sauce,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -472,6 +489,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -481,6 +499,7 @@ class UserModificationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -496,6 +515,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(user.private_key_nonce, private_key_nonce)
         self.assertEqual(user.secret_key, secret_key)
         self.assertEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertEqual(user.user_sauce, user_sauce)
 
         self.reset()
 
@@ -513,6 +533,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -522,6 +543,7 @@ class UserModificationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -537,6 +559,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertNotEqual(user.private_key_nonce, private_key_nonce)
         self.assertNotEqual(user.secret_key, secret_key)
         self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertNotEqual(user.user_sauce, user_sauce)
 
         self.reset()
 
@@ -553,6 +576,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -561,6 +585,7 @@ class UserModificationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -576,6 +601,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertNotEqual(user.private_key_nonce, private_key_nonce)
         self.assertNotEqual(user.secret_key, secret_key)
         self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertNotEqual(user.user_sauce, user_sauce)
 
         self.reset()
 
@@ -592,6 +618,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
 
         data = {
             'email': email,
@@ -601,6 +628,7 @@ class UserModificationTests(APITestCaseExtended):
             'private_key_nonce': private_key_nonce,
             'secret_key': secret_key,
             'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -616,6 +644,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertNotEqual(user.private_key_nonce, private_key_nonce)
         self.assertNotEqual(user.secret_key, secret_key)
         self.assertNotEqual(user.secret_key_nonce, secret_key_nonce)
+        self.assertNotEqual(user.user_sauce, user_sauce)
 
         self.reset()
 
@@ -650,6 +679,7 @@ class DatastoreTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce = os.urandom(32).encode('hex'),
             is_email_active=True
         )
 
@@ -661,6 +691,7 @@ class DatastoreTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce = os.urandom(32).encode('hex'),
             is_email_active=True
         )
 

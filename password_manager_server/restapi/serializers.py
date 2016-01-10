@@ -74,6 +74,7 @@ class RegisterSerializer(serializers.Serializer):
     private_key_nonce = serializers.CharField(required=True, )
     secret_key = serializers.CharField(required=True, )
     secret_key_nonce = serializers.CharField(required=True, )
+    user_sauce = serializers.CharField(required=True, )
 
     def validate_email(self, value):
 
@@ -144,6 +145,17 @@ class RegisterSerializer(serializers.Serializer):
 
         if len(value) > settings.USER_SECRET_KEY_LENGTH_BYTES*2:
             msg = _('Your secret key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_user_sauce(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('You forgot to specify a user sauce') % \
                   (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
             raise exceptions.ValidationError(msg)
 

@@ -172,7 +172,8 @@ class LoginView(GenericAPIView):
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
                 "secret_key": user.secret_key,
-                "secret_key_nonce": user.secret_key_nonce
+                "secret_key_nonce": user.secret_key_nonce,
+                "user_sauce": user.user_sauce
             }
         },status=status.HTTP_200_OK)
 
@@ -246,6 +247,8 @@ class UserUpdate(GenericAPIView):
                 user.private_key = str(request.data['private_key'])
             if 'private_key_nonce' in request.data:
                 user.private_key_nonce = str(request.data['private_key_nonce'])
+            if 'user_sauce' in request.data:
+                user.user_sauce = str(request.data['user_sauce'])
 
             user.save()
 
