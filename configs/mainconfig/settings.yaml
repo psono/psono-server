@@ -1,17 +1,18 @@
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 64 OR MORE DIGITS LONG'
 DEBUG: True
+ALLOWED_HOSTS: ['*']
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
 DATABASES:
     default:
         'ENGINE': 'django.db.backends.postgresql_psycopg2'
-        'NAME': 'Your Postgres Database'
-        'USER': 'Your Postgres User'
-        'PASSWORD': 'Your Postgres Password'
-        'HOST': '127.0.0.1'
-        'PORT': '5432'
+        'NAME': 'YourPostgresDatabase'
+        'USER': 'YourPostgresUser'
+        'PASSWORD': 'YourPostgresPassword'
+        'HOST': 'YourPostgresHost'
+        'PORT': 'YourPostgresPort'
         'ATOMIC_REQUESTS': True
 
-TEMPLATES : [
+TEMPLATES: [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': ['/path/to/password-manager-server/password_manager_server/templates'],

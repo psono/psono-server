@@ -10,7 +10,7 @@ identical.
 1. Install some generic stuff
 
         sudo apt-get update
-        sudo apt-get install libpq-dev python-dev python-pip
+        sudo apt-get install libyaml-dev libpython2.7-dev libpq-dev libffi-dev python-dev python-pip python-psycopg2
         sudo pip install -r requirements.txt
  
 2. Install a database
@@ -56,6 +56,8 @@ instructions to get a production server running
     to 
     
         DEBUG=False
+        
+    in the same file, change the values for SECRET_KEY, ACTIVATION_LINK_SECRET and other values like EMAIL_FROM
 
 2. Install Apache
 

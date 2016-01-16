@@ -1,0 +1,9 @@
+db:
+  image: postgres
+passwordserver:
+  build: .
+  command: bash -c "./password_manager_server/manage.py migrate && ./password_manager_server/manage.py runserver 0.0.0.0:5000"
+  ports:
+   - "5000:5000"
+  links:
+   - db
