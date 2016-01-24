@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.conf import settings
+import django
 import views
 
 urlpatterns = [
@@ -54,6 +55,6 @@ urlpatterns = [
 if settings.DEBUG:
     # URLs for development purposes only
     urlpatterns += [
-        url(r'^demo/(?P<path>.*)$', 'django.views.static.serve',
+        url(r'^demo/(?P<path>.*)$', django.views.static.serve,
             {'document_root':'/home/chickahoona/gits/password-manager-server/demo'}),
     ]

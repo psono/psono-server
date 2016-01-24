@@ -18,6 +18,16 @@ HOME = os.path.expanduser('~')
 with open(os.path.join(HOME, '.password_manager_server', 'settings.yaml'), 'r') as stream:
     config = yaml.load(stream)
 
+
+def config_get(key, *args):
+    if 'SANSO_' + key in os.environ:
+        return os.environ.get('SANSO_' + key)
+    if key in config:
+        return config.get(key)
+    if len(args) > 0:
+        return args[0]
+    raise Exception("Setting missing", "Couldn't find the setting for %s (maybe you forget the 'SANSO_' prefix in the environment variable" % (key,))
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -25,12 +35,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config['SECRET_KEY']
+SECRET_KEY = config_get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config['DEBUG']
+DEBUG = config_get('DEBUG')
 
-ALLOWED_HOSTS = config['ALLOWED_HOSTS']
+ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -103,24 +113,35 @@ CORS_ALLOW_HEADERS = (
         'accept-encoding'
     )
 
-TEMPLATES = config['TEMPLATES']
+TEMPLATES = config_get('TEMPLATES')
 
 WSGI_APPLICATION = 'password_manager_server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-DATABASES = config['DATABASES']
+DATABASES = config_get('DATABASES')
 
-EMAIL_FROM = config['EMAIL_FROM']
-AUTH_KEY_LENGTH_BYTES = config.get('AUTH_KEY_LENGTH_BYTES', 64)
-USER_PRIVATE_KEY_LENGTH_BYTES = config.get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
-USER_PUBLIC_KEY_LENGTH_BYTES = config.get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
-USER_SECRET_KEY_LENGTH_BYTES = config.get('USER_SECRET_KEY_LENGTH_BYTES', 80)
-NONCE_LENGTH_BYTES = config.get('NONCE_LENGTH_BYTES', 24)
-ACTIVATION_LINK_SECRET = config['ACTIVATION_LINK_SECRET']
-ACTIVATION_LINK_TIME_VALID = config.get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
-TOKEN_TIME_VALID = config.get('TOKEN_TIME_VALID', 86400) # in seconds
+EMAIL_FROM = config_get('EMAIL_FROM')
+EMAIL_HOST = config_get('EMAIL_HOST', 'localhost')
+EMAIL_HOST_USER = config_get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = config_get('EMAIL_HOST_PASSWORD', '')
+EMAIL_PORT = config_get('EMAIL_PORT', 25)
+EMAIL_SUBJECT_PREFIX = config_get('EMAIL_SUBJECT_PREFIX', '')
+EMAIL_USE_TLS = config_get('EMAIL_USE_TLS', False)
+EMAIL_USE_SSL = config_get('EMAIL_USE_SSL', False)
+EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
+EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
+EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
+
+AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
+USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
+USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
+USER_SECRET_KEY_LENGTH_BYTES = config_get('USER_SECRET_KEY_LENGTH_BYTES', 80)
+NONCE_LENGTH_BYTES = config_get('NONCE_LENGTH_BYTES', 24)
+ACTIVATION_LINK_SECRET = config_get('ACTIVATION_LINK_SECRET')
+ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
+TOKEN_TIME_VALID = config_get('TOKEN_TIME_VALID', 86400) # in seconds
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

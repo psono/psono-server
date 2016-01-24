@@ -52,7 +52,7 @@ class RegisterView(GenericAPIView):
 
         if serializer.is_valid():
 
-            activation_code = generate_activation_code(serializer.data['email'])
+            activation_code = generate_activation_code(serializer.validated_data['email'])
 
             serializer.save()
 

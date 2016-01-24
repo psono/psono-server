@@ -13,4 +13,4 @@ RUN apt-get update && \
     sed -i s/YourPostgresUser/postgres/g .password_manager_server/settings.yaml && \
     sed -i s/YourPostgresHost/db/g .password_manager_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g .password_manager_server/settings.yaml && \
-    sed -i s/DEBUG:\ True/DEBUG:\ False/g .password_manager_server/settings.yaml
+    sed -i s,path/to/password-manager-server,root,g .password_manager_server/settings.yaml
