@@ -1,10 +1,10 @@
-password-server-db-test:
+db:
   image: postgres
 password-server-image-test:
   build: .
   command: bash -c "./password_manager_server/manage.py migrate && ./password_manager_server/manage.py test restapi"
   links:
-   - password-server-db-test
+   - db
   environment:
    - SANSO_EMAIL_HOST=172.17.0.1
    - SANSO_EMAIL_FROM=test@example.com
