@@ -3,8 +3,6 @@ password-server-db-test:
 password-server-image-test:
   build: .
   command: bash -c "./password_manager_server/manage.py migrate && ./password_manager_server/manage.py test restapi"
-  ports:
-   - "5001:5000"
   links:
    - password-server-db-test
   environment:
