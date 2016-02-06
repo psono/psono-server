@@ -905,9 +905,9 @@ class DatastoreTests(APITestCaseExtended):
             'type': u"my-test-type",
             'description': u"my-test-description",
             'data': u"12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'data_nonce': 'a' + ''.join(random.choice(string.ascii_lowercase) for _ in range(63)),
             'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key_nonce': 'b'.join(random.choice(string.ascii_lowercase) for _ in range(63)),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -923,17 +923,15 @@ class DatastoreTests(APITestCaseExtended):
             'type': u"my-test-type",
             'description': u"my-test-description",
             'data': u"12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'data_nonce': 'c'+ ''.join(random.choice(string.ascii_lowercase) for _ in range(63)),
             'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key_nonce': 'd'.join(random.choice(string.ascii_lowercase) for _ in range(63)),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data2)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error', False), 'DuplicateTypeDescription',
-                            'Wrong error for no unique combination of type description')
 
     def test_update_datastore(self):
         """

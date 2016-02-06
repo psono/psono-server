@@ -13,15 +13,23 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import yaml
+import json
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.password_manager_server', 'settings.yaml'), 'r') as stream:
     config = yaml.load(stream)
 
 
+
+
 def config_get(key, *args):
     if 'SANSO_' + key in os.environ:
-        return os.environ.get('SANSO_' + key)
+        val = os.environ.get('SANSO_' + key)
+        try:
+            json_object = json.loads(val)
+        except ValueError, e:
+            return val
+        return json_object
     if key in config:
         return config.get(key)
     if len(args) > 0:
@@ -121,6 +129,11 @@ WSGI_APPLICATION = 'password_manager_server.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = config_get('DATABASES')
+
+for db_name, db_values in DATABASES.iteritems():
+    for db_configname, db_value in db_values.iteritems():
+        DATABASES[db_name][db_configname] = config_get('DATABASES_' + db_name.upper() + '_' + db_configname.upper(), DATABASES[db_name][db_configname])
+
 
 EMAIL_FROM = config_get('EMAIL_FROM')
 EMAIL_HOST = config_get('EMAIL_HOST', 'localhost')
