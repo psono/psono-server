@@ -6,5 +6,5 @@ build_image:
     - /usr/local/bin/docker-compose -f docker-compose-test.yml kill
     - /usr/local/bin/docker-compose -f docker-compose-test.yml rm -f
     - /usr/local/bin/docker-compose -f docker-compose-test.yml build
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "ls -la /root/ && ./password_manager_server/manage.py migrate && chmod 777 /root/test.db && ls -la /root/ && ./password_manager_server/manage.py test restapi"
+    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && ./password_manager_server/manage.py test restapi"
     - /usr/local/bin/docker-compose -f docker-compose-test.yml stop
