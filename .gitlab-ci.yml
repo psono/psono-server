@@ -1,33 +1,6 @@
-services:
-  - postgres
-variables:
-  DEBIAN_FRONTEND: noninteractive
-  # Configure postgres service (https://hub.docker.com/_/postgres/)
-  POSTGRES_DB: postgres
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-
-connect:
-  image: postgres
-  script:
-  # official way to provide password to psql: http://www.postgresql.org/docs/9.3/static/libpq-envars.html
-  - export PGPASSWORD=$POSTGRES_PASSWORD
-  - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 'OK' AS status;"
-
 before_script:
-  - apt-get update
-  - apt-get install -y libyaml-dev libpython2.7-dev libpq-dev libffi-dev python-dev python-pip python-psycopg2
-  - pip install -r requirements.txt
-  - apt-get clean
-  - mkdir .password_manager_server
-  - cp configs/mainconfig/settings.yaml /root/.password_manager_server/settings.yaml
-  - sed -i s/YourPostgresDatabase/postgres/g /root/.password_manager_server/settings.yaml
-  - sed -i s/YourPostgresUser/postgres/g /root/.password_manager_server/settings.yaml
-  - sed -i s/YourPostgresHost/db/g /root/.password_manager_server/settings.yaml
-  - sed -i s/YourPostgresPassword/postgres/g /root/.password_manager_server/settings.yaml
-  - sed -i s/YourPostgresPort/5432/g /root/.password_manager_server/settings.yaml
-  - sed -i s,path/to/password-manager-server,root,g /root/.password_manager_server/settings.yaml
+  - docker info
 
-maintest:
+build_image:
   script:
-    - bash -c "./password_manager_server/manage.py test"
+    - docker-compose -f docker-compose-test.yml up

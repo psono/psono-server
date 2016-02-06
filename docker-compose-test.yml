@@ -1,0 +1,14 @@
+password-server-db-test:
+  image: postgres
+password-server-image-test:
+  build: .
+  command: bash -c "./password_manager_server/manage.py migrate && ./password_manager_server/manage.py test restapi"
+  ports:
+   - "5001:5000"
+  links:
+   - password-server-db-test
+  environment:
+   - SANSO_EMAIL_HOST=172.17.0.1
+   - SANSO_EMAIL_FROM=test@example.com
+   - SANSO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+   - SANSO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
