@@ -100,6 +100,7 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'password_manager_server.urls'
+SITE_ID = 1
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
