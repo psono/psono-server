@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEST</title>
+
+    <!-- NaCl, SCrypt and sha512 are mandatory -->
+    <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
+
+    <script>
+        var nacl = nacl_factory.instantiate();
+    </script>
+</head>
+<body>
+
+    <script>
+        function test (secret, password) {
+
+            var k = nacl.crypto_hash_sha256(password);
+            var m = nacl.encode_utf8(secret);
+            var n = nacl.crypto_secretbox_random_nonce();
+            var c = nacl.crypto_secretbox(m, n, k);
+
+            return {
+                nonce: nacl.to_hex(n),
+                ciphertext: nacl.to_hex(c)
+            }
+        }
+
+        console.log(test("mySecret", "myPassword"));
+    </script>
+
+
+
+</body>
+</html>

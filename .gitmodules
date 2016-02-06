@@ -1,0 +1,12 @@
+[submodule "demo/jsclient/libs/scrypt"]
+	path = demo/jsclient/libs/scrypt
+	url = https://github.com/tonyg/js-scrypt.git
+[submodule "demo/jsclient/libs/js-nacl"]
+	path = demo/jsclient/libs/js-nacl
+	url = https://github.com/tonyg/js-nacl.git
+[submodule "demo/jsclient/libs/benchmark.js"]
+	path = demo/jsclient/libs/benchmark.js
+	url = https://github.com/bestiejs/benchmark.js.git
+[submodule "demo/jsclient/libs/jsoneditor"]
+	path = demo/jsclient/libs/jsoneditor
+	url = https://github.com/josdejong/jsoneditor.git
