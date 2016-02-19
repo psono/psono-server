@@ -276,12 +276,11 @@ class UserShareSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
     key = serializers.CharField(max_length=256)
     key_nonce = serializers.CharField(max_length=64)
-    encryption_type = serializers.CharField(max_length=6)
-    approved = serializers.BooleanField()
+    title = serializers.CharField(max_length=256)
+    type = serializers.CharField(max_length=256)
     read = serializers.BooleanField()
     write = serializers.BooleanField()
     grant = serializers.BooleanField()
-    revoke = serializers.BooleanField()
 
     user = PublicUserDetailsSerializer()
 
@@ -291,7 +290,6 @@ class ShareSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
-    type = serializers.CharField(max_length=64, default='password')
     user_share_rights = UserShareSerializer()
     user = PublicUserDetailsSerializer()
 
@@ -313,6 +311,5 @@ class ShareOverviewSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
-    type = serializers.CharField(max_length=64, default='password')
     user = serializers.UUIDField(default=uuid.uuid4)
 

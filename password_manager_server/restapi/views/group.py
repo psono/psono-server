@@ -63,14 +63,11 @@ class GroupView(GenericAPIView):
                     'user': u.user_id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
-                    'encryption_type': u.encryption_type,
-                    'approved': u.approved,
                     'read': u.read,
                     'write': u.write,
                     'add_share': u.add_share,
                     'remove_share': u.remove_share,
                     'grant': u.grant,
-                    'revoke': u.revoke,
                 })
 
             if not user_share_rights:
@@ -98,14 +95,11 @@ class GroupView(GenericAPIView):
                 user = request.user,
                 owner = request.user,
                 group = group,
-                approved = True,
-                encryption_type = 'secret',
                 key = str(request.data['secret_key']),
                 key_nonce = str(request.data['secret_key_nonce']),
                 read = True,
                 write = True,
                 grant = True,
-                revoke = True,
                 add_share=True,
                 remove_share=True,
             )

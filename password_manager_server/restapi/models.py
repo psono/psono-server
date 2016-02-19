@@ -124,11 +124,9 @@ class Group_User_Right(models.Model):
         write: Designates whether this user has "write" rights and can update shares of this group
         add_share: Designates whether this user has "add share" rights and can add shares to this group
         remove_share: Designates whether this user has "remove share" rights and can remove shares of this group
-        grant: Designates whether this user has "grant" rights and can add users and rights of users of this
+        grant: Designates whether this user has "grant" rights and can add / remove users and rights of users of this
             group. The user is limited by his own rights, so e.g. he cannot grant write if he does not have
             write on his own.
-        revoke: Designates whether this user has "revoke" rights and can remove users and rights of users of
-            this group. The user of this group will always have full rights and cannot be shut out.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
@@ -140,16 +138,6 @@ class Group_User_Right(models.Model):
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
-    approved = models.BooleanField(_('approved'), default=True,
-                                        help_text=_('Designates whether this share has already been accepted or still '
-                                                    'needs approval.'))
-
-    encryption_type = models.CharField(max_length=6,
-                                       choices=(
-                                           ('public', 'Public-key encryption'),
-                                           ('secret', 'Secret-key encryption'),
-                                       ),
-                                       default='public')
 
     read = models.BooleanField(_('read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read shares of this group'))
@@ -163,9 +151,6 @@ class Group_User_Right(models.Model):
         help_text=_('Designates whether this user has "grant" rights and can add users and rights of users of this'
                     'group. The user is limited by his own rights, so e.g. he cannot grant write if he does not have '
                     'write on his own.'))
-    revoke = models.BooleanField(_('revoke right'), default=False,
-        help_text=_('Designates whether this user has "revoke" rights and can remove users and rights of users of '
-                    'this group. The user of this group will always have full rights and cannot be shut out.'))
 
 
     class Meta:
@@ -175,6 +160,10 @@ class Group_User_Right(models.Model):
 class User_Share_Right(models.Model):
     """
     The user-share relation (in contrast to group shares), linking the user and shares with rights
+
+    It is the request that is sent to the user to accept / refuse the share. It contains the encoded secret of the share
+    together with the rights and other "public" information of the share, like the title and type.
+    Once it gets declined it gets deleted.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -182,6 +171,11 @@ class User_Share_Right(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='own_user_share_rights',
                               help_text=_('The guy who created this share'))
+    title = models.CharField(_('Title'), max_length=256,
+                             help_text=_('The public title of the share.'),
+                             null=True)
+    type = models.CharField(_('Type'), max_length=256,
+                           help_text=_('The public type of the share.'), null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
                               help_text=_('The guy who will receive this share'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',
@@ -189,24 +183,12 @@ class User_Share_Right(models.Model):
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
-    approved = models.BooleanField(_('approved'), default=True,
-                                        help_text=_('Designates whether this share has already been accepted or still '
-                                                    'needs approval.'))
-    encryption_type = models.CharField(max_length=6,
-                                       choices=(
-                                           ('public', 'Public-key encryption'),
-                                           ('secret', 'Secret-key encryption'),
-                                       ),
-                                       default='public')
     read = models.BooleanField(_('Read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read this share'))
     write = models.BooleanField(_('Wright right'), default=False,
         help_text=_('Designates whether this user has "write" rights and can update this share'))
     grant = models.BooleanField(_('Grant right'), default=False,
         help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
-    revoke = models.BooleanField(_('Revoke right'), default=False,
-        help_text=_('Designates whether this user has "revoke" rights and can remove/reduce other users access rights'))
-
 
 @python_2_unicode_compatible
 class Token(models.Model):

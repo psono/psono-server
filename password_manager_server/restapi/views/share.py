@@ -52,12 +52,9 @@ class ShareRightsView(GenericAPIView):
                         'id': u.id,
                         'key': u.key,
                         'key_nonce': u.key_nonce,
-                        'encryption_type': u.encryption_type,
-                        'approved': u.approved,
                         'read': u.read,
                         'write': u.write,
                         'grant': u.grant,
-                        'revoke': u.revoke,
                         'user_id': u.user_id,
                     })
 
@@ -88,12 +85,9 @@ class ShareRightsView(GenericAPIView):
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
-                    'encryption_type': u.encryption_type,
-                    'approved': u.approved,
                     'read': u.read,
                     'write': u.write,
                     'grant': u.grant,
-                    'revoke': u.revoke,
                     'user_id': u.user_id,
                 })
 
@@ -131,11 +125,11 @@ class ShareRightsView(GenericAPIView):
             user_share_obj = User_Share_Right.objects.create(
                 key=str(request.data['key']),
                 key_nonce=str(request.data['nonce']),
-                encryption_type='public',
+                title=str(request.data['title']),
+                type=str(request.data['type']),
                 share=share,
                 owner=request.user,
                 user=user,
-                approved=False,
                 read=request.data['read'],
                 write=request.data['write'],
             )
@@ -180,12 +174,9 @@ class ShareView(GenericAPIView):
                         'id': u.id,
                         'key': u.key,
                         'key_nonce': u.key_nonce,
-                        'encryption_type': u.encryption_type,
-                        'approved': u.approved,
                         'read': u.read,
                         'write': u.write,
                         'grant': u.grant,
-                        'revoke': u.revoke,
                         'user_id': u.user_id,
                     })
 
@@ -193,7 +184,6 @@ class ShareView(GenericAPIView):
                     'id': s.id,
                     'data': str(s.data) if s.data else '',
                     'data_nonce': s.data_nonce if s.data_nonce else '',
-                    'type': s.type,
                     'user_id': s.user_id,
                     'user_share_rights': user_share_rights
                 })
@@ -218,12 +208,9 @@ class ShareView(GenericAPIView):
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
-                    'encryption_type': u.encryption_type,
-                    'approved': u.approved,
                     'read': u.read,
                     'write': u.write,
                     'grant': u.grant,
-                    'revoke': u.revoke,
                     'user_id': u.user_id,
                 })
 
@@ -235,7 +222,6 @@ class ShareView(GenericAPIView):
                 'id': share.id,
                 'data': str(share.data) if share.data else '',
                 'data_nonce': share.data_nonce if share.data_nonce else '',
-                'type': share.type,
                 'user_id': share.user_id,
                 'user_share_rights': user_share_rights
             }
@@ -263,12 +249,11 @@ class ShareView(GenericAPIView):
                 share = share,
                 key = str(request.data['secret_key']),
                 key_nonce = str(request.data['secret_key_nonce']),
-                approved = True,
-                encryption_type = 'secret',
+                title="",
+                type="",
                 read = True,
                 write = True,
-                grant = True,
-                revoke = True,
+                grant = True
             )
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
