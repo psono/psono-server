@@ -55,10 +55,10 @@ class GroupView(GenericAPIView):
                                 "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
 
 
-            user_share_rights = []
+            user_share_right = []
 
             for u in group.group_user_rights.filter(user=request.user):
-                user_share_rights.append({
+                user_share_right.append({
                     'id': u.id,
                     'user': u.user_id,
                     'key': u.key,
@@ -70,7 +70,7 @@ class GroupView(GenericAPIView):
                     'grant': u.grant,
                 })
 
-            if not user_share_rights:
+            if not user_share_right:
                 raise PermissionDenied({"message":"You don't have permission to access",
                                 "resource_id": group.id})
 
@@ -78,7 +78,7 @@ class GroupView(GenericAPIView):
                 'id': group.id,
                 'name': group.name,
                 'user_id': group.user_id,
-                'user_share_rights': user_share_rights
+                'user_share_right': user_share_right
             }
 
             return Response(response,

@@ -40,11 +40,11 @@ urlpatterns = [
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
     url(r'^secret/(?P<uuid>[^/]+)/$', views.SecretView.as_view(), name='secret'),
 
+    url(r'^share/right/$', views.ShareRightsView.as_view(), name='share_right'),
+    url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_right'),
+
     url(r'^share/$', views.ShareView.as_view(), name='share'),
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
-
-    url(r'^share/rights/$', views.ShareRightsView.as_view(), name='share_rights'),
-    url(r'^share/rights/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
 
     url(r'^group/$', views.GroupView.as_view(), name='group'),
     url(r'^group/(?P<uuid>[^/]+)/$', views.GroupView.as_view(), name='group'),
