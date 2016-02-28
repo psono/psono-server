@@ -9,3 +9,4 @@ django-filter
 pyyaml
 bcrypt
 psycopg2
+coverage

@@ -1411,7 +1411,7 @@ class UserShareRightTest(APITestCaseExtended):
         response = self.client.get(url, data, user=self.test_user_obj)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertNotIsInstance(response.data.get('user_share_right', False), list,
+        self.assertNotIsInstance(response.data.get('share_rights', False), list,
                         'We got some data even with a 401')
 
 
@@ -1507,6 +1507,22 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertFalse(response.data.get('shares', False),
                         'Shares do not exist in list shares response')
 
+        # lets try to get the share back in the list without rights
+
+        url = reverse('share')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data.get('shares', False), list,
+                        'Shares do not exist in list shares response')
+        self.assertEquals(len(response.data.get('shares', False)), 0,
+                        'Shares hold some data')
+
+
         # lets try to create a share right for this share
 
         url = reverse('share_right', kwargs={'uuid': str(self.test_share1_obj.id)})
@@ -1532,6 +1548,21 @@ class UserShareRightTest(APITestCaseExtended):
                                 'Share id is no valid UUID')
 
         new_share_right_id = str(response.data.get('share_right_id'))
+
+        # lets try to get the share back in the list now with rights
+
+        url = reverse('share')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data.get('shares', False), list,
+                        'Shares do not exist in list shares response')
+        self.assertEquals(len(response.data.get('shares', False)), 1,
+                        'The should only be one share')
 
 
         # Then lets try to get it in the overview

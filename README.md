@@ -201,9 +201,16 @@ The demo jsclient can be found https://your-ip/demo/jsclient/index.html
     ./password_manager_server/manage.py makemigrations restapi [only while developing]
     ./password_manager_server/manage.py migrate
 
-## Run Unit Tests
-    cd password_manager_server/
-    ./manage.py test
+## Run Unit Tests (with coverage)
+    coverage run --source='.' ./password_manager_server/manage.py test restapi
+    
+To get a nice report one can do:
+    
+    coverage report
+    
+or:
+
+    coverage html
 
 ## Production Server checks
 

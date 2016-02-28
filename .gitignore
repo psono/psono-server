@@ -1,6 +1,8 @@
 .idea
 *.py[cod]
 problemtest
+.coverage
+htmlcov/
 
 # while developing and no final structure we wont push migration scripts
 password_manager_server/restapi/migrations/*
