@@ -10,7 +10,8 @@ from ..models import (
 )
 
 from ..app_settings import (
-    ShareSerializer,
+    ShareRightSerializer,
+    CreateShareSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -30,7 +31,7 @@ class ShareRightsView(GenericAPIView):
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = ShareSerializer
+    serializer_class = ShareRightSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
 
@@ -49,7 +50,6 @@ class ShareRightsView(GenericAPIView):
                 responnse.append({
                     'id': share_right.id,
                     'title': share_right.title,
-                    'type': share_right.type,
                     'key': share_right.key,
                     'key_nonce': share_right.key_nonce,
                     'read': share_right.read,
@@ -81,7 +81,6 @@ class ShareRightsView(GenericAPIView):
             response = {
                 'id': share_right.id,
                 'title': share_right.title,
-                'type': share_right.type,
                 'key': share_right.key,
                 'key_nonce': share_right.key_nonce,
                 'read': share_right.read,
@@ -93,43 +92,37 @@ class ShareRightsView(GenericAPIView):
             return Response(response,
                 status=status.HTTP_200_OK)
 
-    def put(self, request, uuid = None, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
 
-        if not uuid:
-            return Response({"error": "NoIdProvided", 'message': "No share id provided"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        else:
+        # Adds the rights for the specified user to the user_share_rights table
 
-            # Adds the rights for the specified user to the user_share_rights table
+        try:
+            share = Share.objects.get(pk=request.data['share_id'], user=request.user)
+        except Share.DoesNotExist:
+            return Response({"message":"You don't have permission to access or it does not exist.",
+                            "resource_id": request.data['share_id']}, status=status.HTTP_404_NOT_FOUND)
 
-            try:
-                share = Share.objects.get(pk=uuid, user=request.user)
-            except Share.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
-
-            try:
-                user = User.objects.get(pk=str(request.data['user_id']) )
-            except User.DoesNotExist:
-                return Response({"message":"Target user does not exist.",
-                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = User.objects.get(pk=str(request.data['user_id']) )
+        except User.DoesNotExist:
+            return Response({"message":"Target user does not exist.",
+                            "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
 
 
-            user_share_right_obj = User_Share_Right.objects.create(
-                key=str(request.data['key']),
-                key_nonce=str(request.data['key_nonce']),
-                title=str(request.data['title']),
-                type=str(request.data['type']),
-                share=share,
-                owner=request.user,
-                user=user,
-                read=request.data['read'],
-                write=request.data['write'],
-                grant=request.data['grant'],
-            )
+        user_share_right_obj = User_Share_Right.objects.create(
+            key=str(request.data['key']),
+            key_nonce=str(request.data['key_nonce']),
+            title=str(request.data['title']),
+            share=share,
+            owner=request.user,
+            user=user,
+            read=request.data['read'],
+            write=request.data['write'],
+            grant=request.data['grant'],
+        )
 
-            return Response({"share_right_id": str(user_share_right_obj.id)},
-                status=status.HTTP_201_CREATED)
+        return Response({"share_right_id": str(user_share_right_obj.id)},
+            status=status.HTTP_201_CREATED)
 
     # TODO POST to update User_Share_Right
 
@@ -145,7 +138,7 @@ class ShareView(GenericAPIView):
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = ShareSerializer
+    serializer_class = CreateShareSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
 
@@ -230,6 +223,11 @@ class ShareView(GenericAPIView):
 
         #TODO Check if secret_key and nonce exist
 
+        if 'data' not in request.data:
+            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+
         try:
             share = Share.objects.create(
                 data = str(request.data['data']),
@@ -243,10 +241,9 @@ class ShareView(GenericAPIView):
                 owner = request.user,
                 user = request.user,
                 share = share,
-                key = str(request.data['secret_key']),
-                key_nonce = str(request.data['secret_key_nonce']),
+                key = "",
+                key_nonce = "",
                 title="",
-                type="",
                 read = True,
                 write = True,
                 grant = True

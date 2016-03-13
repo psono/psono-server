@@ -92,7 +92,6 @@ class Share(models.Model):
                                           'user always keeps full control.'))
     data = models.BinaryField()
     data_nonce = models.CharField(_('data nonce'), max_length=64)
-    type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:
         abstract = False
@@ -162,7 +161,7 @@ class User_Share_Right(models.Model):
     The user-share relation (in contrast to group shares), linking the user and shares with rights
 
     It is the request that is sent to the user to accept / refuse the share. It contains the encoded secret of the share
-    together with the rights and other "public" information of the share, like the title and type.
+    together with the rights and other "public" information of the share, like the title.
     Once it gets declined it gets deleted.
     """
 
@@ -174,8 +173,6 @@ class User_Share_Right(models.Model):
     title = models.CharField(_('Title'), max_length=256,
                              help_text=_('The public title of the share.'),
                              null=True)
-    type = models.CharField(_('Type'), max_length=256,
-                           help_text=_('The public type of the share.'), null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
                               help_text=_('The guy who will receive this share'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',

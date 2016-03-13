@@ -484,7 +484,9 @@
                     event.preventDefault();
                     var secret = '';
 
-                    if ((jsoneditors.the_share_read_id.get().usre_shares)[0].encryption_type == 'secret') {
+                    console.log(jsoneditors.the_share_read_id.get());
+
+                    if ((jsoneditors.the_share_read_id.get().user_share_rights)[0].key.length == 0) {
                         secret = client.decrypt_data(
                             (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
                             (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,

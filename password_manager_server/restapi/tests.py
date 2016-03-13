@@ -1162,8 +1162,6 @@ class ShareTests(APITestCaseExtended):
         initial_data = {
             'data': u"12345",
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1210,14 +1208,13 @@ class ShareTests(APITestCaseExtended):
                         'user_id' : self.test_user_obj.id,
                         'grant' : True,
                         'read' : True,
-                        'key_nonce' : unicode(initial_data['secret_key_nonce']),
+                        'key_nonce' : unicode(""),
                         'write' : True,
-                        'key' : unicode(initial_data['secret_key']),
+                        'key' : unicode(""),
                         'id' : store['user_share_rights'][0]['id']
                     }
                     ]
                 }
-
                 self.assertEqual(store, target_store)
 
         self.assertTrue(found, 'Did not find the share in the share list call')
@@ -1242,9 +1239,9 @@ class ShareTests(APITestCaseExtended):
                 'user_id' : self.test_user_obj.id,
                 'grant' : True,
                 'read' : True,
-                'key_nonce' : unicode(initial_data['secret_key_nonce']),
+                'key_nonce' : unicode(""),
                 'write' : True,
-                'key' : unicode(initial_data['secret_key']),
+                'key' : unicode(""),
                 'id' : store['user_share_rights'][0]['id']
             }
             ]
@@ -1289,9 +1286,7 @@ class ShareTests(APITestCaseExtended):
 
         initial_data = {
             'data': u"12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1341,9 +1336,9 @@ class ShareTests(APITestCaseExtended):
                 'user_id' : self.test_user_obj.id,
                 'grant' : True,
                 'read' : True,
-                'key_nonce' : unicode(initial_data['secret_key_nonce']),
+                'key_nonce' : unicode(""),
                 'write' : True,
-                'key' : unicode(initial_data['secret_key']),
+                'key' : unicode(""),
                 'id' : response.data['user_share_rights'][0]['id']
             }
             ]
@@ -1448,7 +1443,6 @@ class UserShareRightTest(APITestCaseExtended):
             key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             title= u"Sexy Password",
-            type= u"website_password",
             read= True,
             write= True,
             grant= True,
@@ -1525,13 +1519,13 @@ class UserShareRightTest(APITestCaseExtended):
 
         # lets try to create a share right for this share
 
-        url = reverse('share_right', kwargs={'uuid': str(self.test_share1_obj.id)})
+        url = reverse('share_right')
 
         initial_data = {
             'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
             'title': u"Sexy Password",
-            'type': u"website_password",
             'read': True,
             'write': True,
             'grant': True,
@@ -1585,7 +1579,6 @@ class UserShareRightTest(APITestCaseExtended):
             'id': UUID(new_share_right_id, version=4),
             'share_id': self.test_share1_obj.id,
             'title': u"Sexy Password",
-            'type': u"website_password",
             'read': True,
             'write': True,
             'grant': True,

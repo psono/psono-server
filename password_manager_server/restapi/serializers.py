@@ -169,6 +169,9 @@ class PublicUserDetailsSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
 
 
+class PublicShareDetailsSerializer(serializers.Serializer):
+    id = serializers.UUIDField(default=uuid.uuid4)
+
 class DatastoreSerializer(serializers.Serializer):
 
     data = serializers.CharField()
@@ -277,7 +280,6 @@ class UserShareSerializer(serializers.Serializer):
     key = serializers.CharField(max_length=256)
     key_nonce = serializers.CharField(max_length=64)
     title = serializers.CharField(max_length=256)
-    type = serializers.CharField(max_length=256)
     read = serializers.BooleanField()
     write = serializers.BooleanField()
     grant = serializers.BooleanField()
@@ -285,14 +287,30 @@ class UserShareSerializer(serializers.Serializer):
     user = PublicUserDetailsSerializer()
 
 
-class ShareSerializer(serializers.Serializer):
+class ShareRightSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     user_share_rights = UserShareSerializer()
     user = PublicUserDetailsSerializer()
+    share = PublicShareDetailsSerializer()
 
+class CreateShareSerializer(serializers.Serializer):
+
+    id = serializers.UUIDField(default=uuid.uuid4)
+    data = serializers.CharField()
+    data_nonce = serializers.CharField(max_length=64)
+
+    def validate(self, attrs):
+        data = attrs.get('data')
+        data_nonce = attrs.get('data_nonce')
+
+        if not data or not data_nonce:
+            msg = _('Must include "data" and "data_nonce".')
+            raise exceptions.ValidationError(msg)
+
+        return attrs
 
 class DatastoreOverviewSerializer(serializers.Serializer):
 
