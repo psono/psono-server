@@ -486,20 +486,12 @@
 
                     console.log(jsoneditors.the_share_read_id.get());
 
-                    if ((jsoneditors.the_share_read_id.get().user_share_rights)[0].key.length == 0) {
-                        secret = client.decrypt_data(
-                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
-                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,
-                            $('#users_secret_key_read_share').val()
-                        );
-                    } else {
-                        secret = client.decrypt_data_public_key(
-                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
-                            (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,
-                            $('#users_public_key_read_share').val(),
-                            $('#users_private_key_read_share').val()
-                        );
-                    }
+                    secret = client.decrypt_data_public_key(
+                        (jsoneditors.the_share_read_id.get().user_share_rights)[0].key,
+                        (jsoneditors.the_share_read_id.get().user_share_rights)[0].key_nonce,
+                        $('#users_public_key_read_share').val(),
+                        $('#users_private_key_read_share').val()
+                    );
 
                     $('#decrypted_share_secret').val(secret);
 
@@ -519,7 +511,7 @@
                     var plaintext_json = client.decrypt_data(
                         jsoneditors.the_share_read_id.get().data,
                         jsoneditors.the_share_read_id.get().data_nonce,
-                        $('#decrypted_share_secret').val()
+                        $('#decrypted_share_secret_v2').val()
                     );
                     jsoneditors.decrypted_data_share.set(JSON.parse(plaintext_json));
                     jsoneditors.decrypted_data_share.expandAll();
@@ -1726,17 +1718,11 @@
             <hr>
 
             <section>
-                <h3>Step 3</h3>
+                <h3>Step 3 (optional)</h3>
 
-                <p>Decrypt the secret key of the share with the secret key of the user</p>
+                <p>Decrypt the secret key of the share with the secret key of the user (if not yet accepted)</p>
 
                 <h4>INPUT: </h4>
-
-                <label for="users_secret_key_read_share">Plaintext user's secret key: </label>
-                <br/>
-                <textarea rows="3" cols="60" name="users_secret_key_read_share" id="users_secret_key_read_share" ></textarea>
-                <br/>
-                <b>OR</b>
                 <br/>
                 <label for="users_private_key_read_share">Plaintext user's private key: </label>
                 <br/>
@@ -1765,6 +1751,11 @@
                 <h3>Step 4</h3>
                 <p>Decrypt the content of the data attribute with the data_nonce and the plaintext share secret</p>
 
+                <h4>INPUT: </h4>
+                <label for="decrypted_share_secret_v2">Plaintext share secret: </label>
+                <br/>
+                <textarea rows="3" cols="60" name="decrypted_share_secret_v2" id="decrypted_share_secret_v2"></textarea>
+                <br/>
                 <INPUT type="button" name="button" value="4. Decrypt Share Data"
                        id="decrypt_data_share"/>
                 <br/>

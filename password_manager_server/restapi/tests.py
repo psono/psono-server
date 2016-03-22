@@ -1306,9 +1306,7 @@ class ShareTests(APITestCaseExtended):
 
         updated_data = {
             'data': u"123456",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)), #secret key should not change on update!
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)), # nonce should not change on update!
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
