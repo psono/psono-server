@@ -187,6 +187,11 @@ class User_Share_Right(models.Model):
     grant = models.BooleanField(_('Grant right'), default=False,
         help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
 
+    class Meta:
+        abstract = False
+        unique_together = ('user', 'share',)
+
+
 @python_2_unicode_compatible
 class Token(models.Model):
     """

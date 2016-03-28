@@ -40,7 +40,8 @@ class ShareRightsView(GenericAPIView):
             # Generate a list of a all share rights
 
             try:
-                share_rights = User_Share_Right.objects.filter(Q(user=request.user) | Q(owner=request.user)).distinct()
+                #share_rights = User_Share_Right.objects.filter(Q(user=request.user) | Q(owner=request.user)).distinct()
+                share_rights = User_Share_Right.objects.filter(Q(user=request.user)).distinct()
             except User_Share_Right.DoesNotExist:
                 share_rights = []
 
@@ -97,8 +98,12 @@ class ShareRightsView(GenericAPIView):
         # Adds the rights for the specified user to the user_share_rights table
 
         try:
-            share = Share.objects.get(pk=request.data['share_id'], user=request.user)
-        except Share.DoesNotExist:
+            User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user, grant=True)
+
+            # Maybe adjust this later so "owners" cannot lose the rights on their shares
+            # share = Share.objects.get(pk=request.data['share_id'], owner=request.user)
+
+        except User_Share_Right.DoesNotExist:
             return Response({"message":"You don't have permission to access or it does not exist.",
                             "resource_id": request.data['share_id']}, status=status.HTTP_404_NOT_FOUND)
 
@@ -108,23 +113,58 @@ class ShareRightsView(GenericAPIView):
             return Response({"message":"Target user does not exist.",
                             "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
 
+        try:
+            user_share_right_obj = User_Share_Right.objects.get(share_id=request.data['share_id'],
+                                                                user_id=str(request.data['user_id']))
+            user_share_right_obj.owner = request.user
+            user_share_right_obj.read = request.data['read']
+            user_share_right_obj.write = request.data['write']
+            user_share_right_obj.grant = request.data['grant']
+            user_share_right_obj.save()
 
-        user_share_right_obj = User_Share_Right.objects.create(
-            key=str(request.data['key']),
-            key_nonce=str(request.data['key_nonce']),
-            title=str(request.data['title']),
-            share=share,
-            owner=request.user,
-            user=user,
-            read=request.data['read'],
-            write=request.data['write'],
-            grant=request.data['grant'],
-        )
+            return Response({"share_right_id": str(user_share_right_obj.id)},
+                            status=status.HTTP_201_CREATED)
 
-        return Response({"share_right_id": str(user_share_right_obj.id)},
+
+        except User_Share_Right.DoesNotExist:
+            user_share_right_obj2 = User_Share_Right.objects.create(
+                key=str(request.data['key']),
+                key_nonce=str(request.data['key_nonce']),
+                title=str(request.data['title']),
+                share_id=request.data['share_id'],
+                owner=request.user,
+                user=user,
+                read=request.data['read'],
+                write=request.data['write'],
+                grant=request.data['grant'],
+            )
+
+        return Response({"share_right_id": str(user_share_right_obj2.id)},
             status=status.HTTP_201_CREATED)
 
-    # TODO POST to update User_Share_Right
+    def delete(self, request, uuid, *args, **kwargs):
+
+        if not uuid:
+            return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_404_NOT_FOUND)
+
+        # check if share_right exists
+        try:
+            share_right = User_Share_Right.objects.get(pk=uuid)
+        except User_Share_Right.DoesNotExist:
+            return Response({"message": "You don't have permission to access or it does not exist.",
+                         "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+
+        # check if user has the rights
+        try:
+            User_Share_Right.objects.get(share_id=share_right.share_id, user=request.user, grant=True)
+        except User_Share_Right.DoesNotExist:
+            return Response({"message": "You don't have permission to access or it does not exist.",
+                             "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+
+        # delete it
+        share_right.delete()
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class ShareView(GenericAPIView):

@@ -1434,6 +1434,15 @@ class UserShareRightTest(APITestCaseExtended):
             data_nonce="12345"
         )
 
+        models.User_Share_Right.objects.create(
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=True,
+            write=True,
+            grant=True
+        )
+
         # and now insert our dummy share_right
         self.test_share_right1_ob = models.User_Share_Right.objects.create(
             owner_id=self.test_user_obj.id,
@@ -1457,9 +1466,9 @@ class UserShareRightTest(APITestCaseExtended):
                         'Shares should contain 1 entry')
 
 
-    def test_insert_share_right(self):
+    def test_share_no_rights(self):
         """
-        Tests to insert the share right and check the rights to access it
+        Tests access without rights
         """
 
         # Lets first insert our dummy share
@@ -1481,14 +1490,13 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertIsInstance(response.data.get('share_rights', False), list,
-                        'Shares do not exist in list shares response')
+                              'Shares do not exist in list shares response')
         self.assertEqual(len(response.data.get('share_rights', False)), 0,
-                        'No share should exist for this user')
+                         'No share should exist for this user')
 
         # let try to query it directly with wrong user
 
         url = reverse('share_right', kwargs={'uuid': str(self.test_share1_obj.id)})
-
 
         data = {}
 
@@ -1497,23 +1505,47 @@ class UserShareRightTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertFalse(response.data.get('shares', False),
-                        'Shares do not exist in list shares response')
+                         'Shares do not exist in list shares response')
 
-        # lets try to get the share back in the list without rights
+        # lets try to create a share right for this share
 
-        url = reverse('share')
+        url = reverse('share_right')
 
-        data = {}
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': u"Sexy Password",
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+        }
 
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.get(url, data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(response.data.get('shares', False), list,
-                        'Shares do not exist in list shares response')
-        self.assertEquals(len(response.data.get('shares', False)), 0,
-                        'Shares hold some data')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_insert_share_right(self):
+        """
+        Tests to insert the share right and check the rights to access it
+        """
+
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+        models.User_Share_Right.objects.create(
+            owner_id=self.test_user_obj.id,
+            user_id= self.test_user_obj.id,
+            share_id= self.test_share1_obj.id,
+            read= True,
+            write= True,
+            grant= True
+        )
 
         # lets try to create a share right for this share
 
@@ -1540,6 +1572,9 @@ class UserShareRightTest(APITestCaseExtended):
                                 'Share id is no valid UUID')
 
         new_share_right_id = str(response.data.get('share_right_id'))
+
+
+
 
         # lets try to get the share back in the list now with rights
 
@@ -1585,3 +1620,92 @@ class UserShareRightTest(APITestCaseExtended):
         }
 
         self.assertEqual(response.data.get('share_rights', False)[0], target_store)
+
+
+    def test_delete_share_right_with_no_right(self):
+        """
+        Tests to delete the share right with no right
+        """
+
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+        models.User_Share_Right.objects.create(
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=True,
+            write=True,
+            grant=False
+        )
+        test_user_share_rights = models.User_Share_Right.objects.create(
+            owner_id=self.test_user2_obj.id,
+            user_id=self.test_user2_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=False,
+            write=False,
+            grant=False
+        )
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_user_share_rights.id).count(), 1,
+                         'Exactly one share right with this id should exist')
+
+        url = reverse('share_right', kwargs={'uuid': str(test_user_share_rights.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_delete_share_right_with_rights(self):
+        """
+        Tests to delete the share right with rights
+        """
+
+        # Lets first insert our dummy share
+        test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+        models.User_Share_Right.objects.create(
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=test_share1_obj.id,
+            read=True,
+            write=True,
+            grant=True
+        )
+
+        test_user_share_rights = models.User_Share_Right.objects.create(
+            owner_id=self.test_user2_obj.id,
+            user_id=self.test_user2_obj.id,
+            share_id=test_share1_obj.id,
+            read=False,
+            write=False,
+            grant=False
+        )
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_user_share_rights.id).count(), 1,
+                         'Exactly one share right with this id should exist')
+
+        url = reverse('share_right', kwargs={'uuid': str(test_user_share_rights.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_user_share_rights.id).count(), 0,
+                         'Share right with this id should have been deleted')
+
+
+
