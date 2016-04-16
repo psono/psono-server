@@ -1466,9 +1466,9 @@ class UserShareRightTest(APITestCaseExtended):
                         'Shares should contain 1 entry')
 
 
-    def test_share_no_rights(self):
+    def test_read_share_with_no_rights(self):
         """
-        Tests access without rights
+        Tests read share without rights
         """
 
         # Lets first insert our dummy share
@@ -1503,9 +1503,22 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(response.data.get('shares', False),
                          'Shares do not exist in list shares response')
+
+
+    def test_grant_share_right_with_no_rights(self):
+        """
+        Tests grant share right without rights
+        """
+
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
 
         # lets try to create a share right for this share
 
@@ -1525,9 +1538,10 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_insert_share_right(self):
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_grant_share_right_with_right(self):
         """
         Tests to insert the share right and check the rights to access it
         """
@@ -1660,7 +1674,7 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
     def test_delete_share_right_with_rights(self):

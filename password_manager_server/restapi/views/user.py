@@ -279,20 +279,20 @@ class UserSearch(GenericAPIView):
                 user = User.objects.get(pk=str(request.data['user_id']))
                 if user is None:
                     return Response({"message":"You don't have permission to access or it does not exist.",
-                                    "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+                                    "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
             except User.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
 
         elif 'user_email' in request.data and request.data['user_email']:
             try:
                 user = User.objects.get(email=str(request.data['user_email']))
                 if user is None:
                     return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_404_NOT_FOUND)
+                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_403_FORBIDDEN)
             except User.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_404_NOT_FOUND)
+                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 

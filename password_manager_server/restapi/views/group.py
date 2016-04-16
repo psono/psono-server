@@ -52,7 +52,7 @@ class GroupView(GenericAPIView):
                 group = Group.objects.get(pk=uuid)
             except Group.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
 
             user_share_right = []
