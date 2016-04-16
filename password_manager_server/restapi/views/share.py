@@ -19,12 +19,12 @@ from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
 
-class ShareRightsView(GenericAPIView):
+class ShareRightView(GenericAPIView):
 
     """
     Check the REST Token and the object permissions and returns
-    the share rights if the necessary access rights are granted
-    and the user is  the user of the share
+    own share right if the necessary access rights are granted
+    and the user is the user of the share right
 
     Accept the following GET parameters: share_id (optional)
     Return a list of the shares or the share and the access rights or a message for an update of rights
@@ -315,3 +315,64 @@ class ShareView(GenericAPIView):
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
+
+class ShareRightsView(GenericAPIView):
+
+    """
+    Check the REST Token and the object permissions and returns
+    the share rights of a specified share if the necessary access rights are granted
+
+    Accept the following GET parameters: share_id
+    Return a list of the share rights for the specified share
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ShareRightSerializer
+
+    def get(self, request, uuid = None, *args, **kwargs):
+
+        if not uuid:
+            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+
+        else:
+
+            # Returns the specified share rights if the user has any rights for it and joins the user_share objects
+
+            try:
+                share = Share.objects.get(pk=uuid)
+            except Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+
+
+            user_share_rights = []
+            user_has_rights = False
+
+            for u in share.user_share_rights.all():
+
+                user_share_rights.append({
+                    'id': u.id,
+                    'accepted': False if u.key or u.key_nonce else True,
+                    'read': u.read,
+                    'write': u.write,
+                    'grant': u.grant,
+                    'user_id': u.user_id,
+                    'email': u.user.email,
+                })
+
+                if u.user_id == request.user.id and (u.write or u.write or u.grant):
+                    user_has_rights = True
+
+
+            if not user_has_rights:
+                raise PermissionDenied({"message":"You don't have permission to access",
+                                "resource_id": share.id})
+
+            response = {
+                'id': share.id,
+                'user_share_rights': user_share_rights
+            }
+
+            return Response(response,
+                status=status.HTTP_200_OK)
