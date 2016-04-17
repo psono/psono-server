@@ -345,13 +345,13 @@ class ShareRightsView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
-
+            own_share_right = None
             user_share_rights = []
             user_has_rights = False
 
             for u in share.user_share_rights.all():
 
-                user_share_rights.append({
+                right = {
                     'id': u.id,
                     'accepted': False if u.key or u.key_nonce else True,
                     'read': u.read,
@@ -359,10 +359,13 @@ class ShareRightsView(GenericAPIView):
                     'grant': u.grant,
                     'user_id': u.user_id,
                     'email': u.user.email,
-                })
+                }
 
                 if u.user_id == request.user.id and (u.write or u.write or u.grant):
                     user_has_rights = True
+                    own_share_right = right
+
+                user_share_rights.append(right)
 
 
             if not user_has_rights:
@@ -371,6 +374,7 @@ class ShareRightsView(GenericAPIView):
 
             response = {
                 'id': share.id,
+                'own_share_rights': own_share_right,
                 'user_share_rights': user_share_rights
             }
 
