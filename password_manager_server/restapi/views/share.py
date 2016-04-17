@@ -358,6 +358,7 @@ class ShareRightsView(GenericAPIView):
                     'write': u.write,
                     'grant': u.grant,
                     'user_id': u.user_id,
+                    'share_id': u.share_id,
                     'email': u.user.email,
                 }
 
