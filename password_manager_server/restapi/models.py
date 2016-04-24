@@ -180,12 +180,16 @@ class User_Share_Right(models.Model):
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
+    key_type = models.CharField(_('Key type'), default="asymmetric",
+                                help_text=_('Key type, either symmetric, or asymmetric'), max_length=16)
     read = models.BooleanField(_('Read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read this share'))
     write = models.BooleanField(_('Wright right'), default=False,
         help_text=_('Designates whether this user has "write" rights and can update this share'))
     grant = models.BooleanField(_('Grant right'), default=False,
         help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
+    accepted = models.NullBooleanField(_('Accepted'), null=True, blank=True, default=None,
+        help_text=_('Has the share been accepted'))
 
     class Meta:
         abstract = False

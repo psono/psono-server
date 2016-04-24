@@ -301,6 +301,8 @@ class CreateShareSerializer(serializers.Serializer):
     id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
+    key = serializers.CharField(max_length=256)
+    key_nonce = serializers.CharField(max_length=64)
 
     def validate(self, attrs):
         data = attrs.get('data')

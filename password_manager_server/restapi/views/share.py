@@ -196,26 +196,29 @@ class ShareView(GenericAPIView):
             response = []
 
             for s in shares:
-                user_share_rights = []
+
+                share = {}
 
                 for u in s.user_share_rights.filter(user=request.user):
-                    user_share_rights.append({
-                        'id': u.id,
-                        'key': u.key,
-                        'key_nonce': u.key_nonce,
-                        'read': u.read,
-                        'write': u.write,
-                        'grant': u.grant,
-                        'user_id': u.user_id,
-                    })
+                    share['share_right_id'] = u.id
+                    share['share_right_user_id'] = u.user_id
+                    share['share_right_title'] = u.title
+                    share['share_right_key'] = u.key
+                    share['share_right_key_nonce'] = u.key_nonce
+                    share['share_right_key_type'] = u.key_type
+                    share['share_right_read'] = u.read
+                    share['share_right_write'] = u.write
+                    share['share_right_grant'] = u.grant
+                    share['share_right_accepted'] = u.accepted
+                    share['share_right_create_user_id'] = u.owner.id
+                    share['share_right_create_user_email'] = u.owner.email
 
-                response.append({
-                    'id': s.id,
-                    'data': str(s.data) if s.data else '',
-                    'data_nonce': s.data_nonce if s.data_nonce else '',
-                    'user_id': s.user_id,
-                    'user_share_rights': user_share_rights
-                })
+                share['id'] = s.id
+                # share.data = str(s.data) if s.data and s.share_right_read and s.share_right_accepted else ''
+                # share.data_nonce =  s.data_nonce if s.data_nonce and s.share_right_read and s.share_right_accepted else ''
+
+
+                response.append(share)
 
             return Response({'shares': response},
                 status=status.HTTP_200_OK)
@@ -237,6 +240,7 @@ class ShareView(GenericAPIView):
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
+                    'key_type': u.key_type,
                     'read': u.read,
                     'write': u.write,
                     'grant': u.grant,
@@ -277,12 +281,15 @@ class ShareView(GenericAPIView):
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
+
         User_Share_Right.objects.create(
                 owner = request.user,
                 user = request.user,
                 share = share,
-                key = "",
-                key_nonce = "",
+                key = request.data['key'],
+                key_nonce = request.data['key_nonce'],
+                key_type = request.data['key_type'],
+                accepted= True,
                 title="",
                 read = True,
                 write = True,
@@ -353,7 +360,7 @@ class ShareRightsView(GenericAPIView):
 
                 right = {
                     'id': u.id,
-                    'accepted': False if u.key or u.key_nonce else True,
+                    'accepted': u.accepted,
                     'read': u.read,
                     'write': u.write,
                     'grant': u.grant,

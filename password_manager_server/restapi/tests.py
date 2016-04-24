@@ -1162,6 +1162,9 @@ class ShareTests(APITestCaseExtended):
         initial_data = {
             'data': u"12345",
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key_type': 'symmetric',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1200,21 +1203,23 @@ class ShareTests(APITestCaseExtended):
                 found = True
 
                 target_store = {
+                    'share_right_user_id': self.test_user_obj.id,
                     'id': UUID(new_share_id, version=4),
-                    'data': str(initial_data['data']),
-                    'data_nonce': unicode(initial_data['data_nonce']),
-                    'user_id': self.test_user_obj.id,
-                    'user_share_rights' : [{
-                        'user_id' : self.test_user_obj.id,
-                        'grant' : True,
-                        'read' : True,
-                        'key_nonce' : unicode(""),
-                        'write' : True,
-                        'key' : unicode(""),
-                        'id' : store['user_share_rights'][0]['id']
-                    }
-                    ]
+                    #'data': str(initial_data['data']),
+                    #'data_nonce': unicode(initial_data['data_nonce']),
+                    'share_right_id': store['share_right_id'],
+                    'share_right_create_user_id': self.test_user_obj.id,
+                    'share_right_create_user_email': self.test_user_obj.email,
+                    'share_right_title': unicode(""),
+                    'share_right_key': unicode(initial_data['key']),
+                    'share_right_key_nonce': unicode(initial_data['key_nonce']),
+                    'share_right_key_type' : unicode(initial_data['key_type']),
+                    'share_right_read': True,
+                    'share_right_write': True,
+                    'share_right_grant': True,
+                    'share_right_accepted': True,
                 }
+
                 self.assertEqual(store, target_store)
 
         self.assertTrue(found, 'Did not find the share in the share list call')
@@ -1239,10 +1244,11 @@ class ShareTests(APITestCaseExtended):
                 'user_id' : self.test_user_obj.id,
                 'grant' : True,
                 'read' : True,
-                'key_nonce' : unicode(""),
+                'key_nonce' : unicode(initial_data['key_nonce']),
+                'key_type' : unicode(initial_data['key_type']),
                 'write' : True,
-                'key' : unicode(""),
-                'id' : store['user_share_rights'][0]['id']
+                'key' : unicode(initial_data['key']),
+                'id' : response.data['user_share_rights'][0]['id']
             }
             ]
         }
@@ -1286,7 +1292,10 @@ class ShareTests(APITestCaseExtended):
 
         initial_data = {
             'data': u"12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key_type': 'symmetric',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1334,9 +1343,10 @@ class ShareTests(APITestCaseExtended):
                 'user_id' : self.test_user_obj.id,
                 'grant' : True,
                 'read' : True,
-                'key_nonce' : unicode(""),
+                'key_nonce' : unicode(initial_data['key_nonce']),
                 'write' : True,
-                'key' : unicode(""),
+                'key' : unicode(initial_data['key']),
+                'key_type' : unicode(initial_data['key_type']),
                 'id' : response.data['user_share_rights'][0]['id']
             }
             ]
