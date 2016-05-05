@@ -95,7 +95,7 @@ class ShareRightView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
 
-        # Adds the rights for the specified user to the user_share_rights table
+        # Modifies rights of a share right
 
         try:
             User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user, grant=True)
@@ -142,6 +142,8 @@ class ShareRightView(GenericAPIView):
         return Response({"share_right_id": str(user_share_right_obj2.id)},
             status=status.HTTP_201_CREATED)
 
+
+
     def delete(self, request, uuid, *args, **kwargs):
 
         if not uuid:
@@ -163,6 +165,72 @@ class ShareRightView(GenericAPIView):
 
         # delete it
         share_right.delete()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class ShareRightAcceptView(GenericAPIView):
+
+    """
+    Check the REST Token and the object permissions and updates the share right as accepted with new symmetric
+    encryption key and nonce
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+
+        # Accepts or declines a share right
+
+        if not uuid:
+            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            user_share_right_obj = User_Share_Right.objects.get(id=uuid, user=request.user, accepted=None)
+
+            user_share_right_obj.accepted = True
+            user_share_right_obj.title = ''
+            user_share_right_obj.key_type = 'symmetric'
+            user_share_right_obj.key = request.data['key']
+            user_share_right_obj.key_nonce = request.data['key_nonce']
+            user_share_right_obj.save()
+
+        except User_Share_Right.DoesNotExist:
+            return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class ShareRightDeclineView(GenericAPIView):
+
+    """
+    Check the REST Token and the object permissions and updates the share right as declined and removes title and keys
+    from the share right
+    """
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+
+        # Accepts or declines a share right
+
+        if not uuid:
+            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            user_share_right_obj = User_Share_Right.objects.get(id=uuid, user=request.user, accepted=None)
+
+            user_share_right_obj.accepted = False
+            user_share_right_obj.title = ''
+            user_share_right_obj.key_type = ''
+            user_share_right_obj.key = ''
+            user_share_right_obj.key_nonce = ''
+            user_share_right_obj.save()
+
+        except User_Share_Right.DoesNotExist:
+            return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(status=status.HTTP_200_OK)
 
