@@ -1476,9 +1476,9 @@ class UserShareRightTest(APITestCaseExtended):
                         'Shares should contain 1 entry')
 
 
-    def test_read_share_with_no_rights(self):
+    def test_read_share_with_no_defined_rights(self):
         """
-        Tests read share without rights
+        Tests read share with no defined rights
         """
 
         # Lets first insert our dummy share
@@ -1488,7 +1488,7 @@ class UserShareRightTest(APITestCaseExtended):
             data_nonce="12345"
         )
 
-        # Then lets try to get it with the wrong user
+        # Then lets try to get it with the wrong user which has not even defined rights for this share
 
         url = reverse('share_right')
 
@@ -1516,6 +1516,75 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(response.data.get('shares', False),
                          'Shares do not exist in list shares response')
+
+
+    def test_read_share_with_no_read_rights(self):
+        """
+        Tests read share with no read rights
+        """
+
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+
+        # now lets define rights for this user
+        self.test_share_right1_obj = models.User_Share_Right.objects.create(
+            share_id = self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=False,
+            write=False,
+            grant=True
+        )
+
+        # Then lets try to get it with the user which has defined rights for this share but no read
+
+        url = reverse('share_right')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIsInstance(response.data.get('share_rights', False), list,
+                              'Shares do not exist in list shares response')
+
+        self.assertEqual(len(response.data.get('share_rights', False)), 1,
+                         'Exactly 1 share right should exist for this user')
+
+        self.assertEqual(response.data.get('share_rights', False)[0]['read'], False,
+                         'Read should be false')
+
+        # let try to query it directly with user which has defined rights for this share but no read
+
+        url = reverse('share_right', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data.get('shares', False),
+                         'Shares do not exist in list shares response')
+
+
+        # let try to query the share directly with user which has defined rights for this share but no read
+
+        url = reverse('share', kwargs={'uuid': str(self.test_share1_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 
     def test_grant_share_right_with_no_rights(self):
@@ -1646,9 +1715,9 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.data.get('share_rights', False)[0], target_store)
 
 
-    def test_delete_share_right_with_no_right(self):
+    def test_delete_share_right_with_no_grant_right(self):
         """
-        Tests to delete the share right with no right
+        Tests to delete the share right with no grant right
         """
 
         # Lets first insert our dummy share
@@ -1687,9 +1756,9 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-    def test_delete_share_right_with_rights(self):
+    def test_delete_share_right_with_grant_rights(self):
         """
-        Tests to delete the share right with rights
+        Tests to delete the share right with grant rights
         """
 
         # Lets first insert our dummy share

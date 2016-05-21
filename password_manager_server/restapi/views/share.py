@@ -45,10 +45,10 @@ class ShareRightView(GenericAPIView):
             except User_Share_Right.DoesNotExist:
                 share_rights = []
 
-            responnse = []
+            share_right_response = []
 
             for share_right in share_rights:
-                responnse.append({
+                share_right_response.append({
                     'id': share_right.id,
                     'title': share_right.title,
                     'key': share_right.key,
@@ -60,7 +60,7 @@ class ShareRightView(GenericAPIView):
                 })
 
             response = {
-                'share_rights': responnse
+                'share_rights': share_right_response
             }
 
             return Response(response,
@@ -199,7 +199,17 @@ class ShareRightAcceptView(GenericAPIView):
             return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
-        return Response(status=status.HTTP_200_OK)
+        if user_share_right_obj.read:
+            share = Share.objects.get(pk=user_share_right_obj.share_id)
+            return Response({
+                "share_id": share.id,
+                "share_data": str(share.data),
+                "share_data_nonce": share.data_nonce
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+                "share_id": user_share_right_obj.share_id
+            }, status=status.HTTP_200_OK)
 
 
 class ShareRightDeclineView(GenericAPIView):
@@ -302,6 +312,7 @@ class ShareView(GenericAPIView):
 
 
             user_share_rights = []
+            has_read_right = False
 
             for u in share.user_share_rights.filter(user=request.user):
                 user_share_rights.append({
@@ -315,8 +326,11 @@ class ShareView(GenericAPIView):
                     'user_id': u.user_id,
                 })
 
-            if not user_share_rights:
-                raise PermissionDenied({"message":"You don't have permission to access",
+                if u.read:
+                    has_read_right = True
+
+            if not user_share_rights or has_read_right == False:
+                raise PermissionDenied({"message":"You don't have permission to read the share",
                                 "resource_id": share.id})
 
             response = {
