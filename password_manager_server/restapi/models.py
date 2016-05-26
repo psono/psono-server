@@ -162,26 +162,25 @@ class User_Share_Right(models.Model):
 
     It is the request that is sent to the user to accept / refuse the share. It contains the encoded secret of the share
     together with the rights and other "public" information of the share, like the title.
-    Once it gets declined it gets deleted.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='own_user_share_rights',
-                              help_text=_('The guy who created this share'))
+                              help_text=_('The guy who created this share right'))
     title = models.CharField(_('Title'), max_length=256,
-                             help_text=_('The public title of the share.'),
+                             help_text=_('The public title of the share right.'),
                              null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
-                              help_text=_('The guy who will receive this share'))
+                              help_text=_('The guy who will receive this share right'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',
-                              help_text=_('The guy who created this share'))
+                              help_text=_('The share that this share right grants permissions to'))
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
     key_type = models.CharField(_('Key type'), default="asymmetric",
-                                help_text=_('Key type, either symmetric, or asymmetric'), max_length=16)
+                                help_text=_('Key type, either "symmetric", or "asymmetric"'), max_length=16)
     read = models.BooleanField(_('Read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read this share'))
     write = models.BooleanField(_('Wright right'), default=False,
@@ -189,11 +188,30 @@ class User_Share_Right(models.Model):
     grant = models.BooleanField(_('Grant right'), default=False,
         help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
     accepted = models.NullBooleanField(_('Accepted'), null=True, blank=True, default=None,
-        help_text=_('Has the share been accepted'))
+        help_text=_('Defines if the share has been accepted, declined, or still waits for approval'))
 
     class Meta:
         abstract = False
         unique_together = ('user', 'share',)
+
+
+class User_Share_Right_Inherit(models.Model):
+    """
+    Shares have sub shares. Those sub shares inherit the rights of the parent shares.
+
+    Multiple inheritances for one share can exist.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    share_right = models.ForeignKey(User_Share_Right, on_delete=models.CASCADE, related_name='user_share_right_inherits',
+                              help_text=_('The share right, where this inheritance gets its permissions from'))
+    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_right_inherits',
+                              help_text=_('The share that this share right grants permissions to'))
+
+    class Meta:
+        abstract = False
+        unique_together = ('share_right', 'share',)
 
 
 @python_2_unicode_compatible

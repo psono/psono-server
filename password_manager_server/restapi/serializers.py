@@ -287,13 +287,19 @@ class UserShareSerializer(serializers.Serializer):
     user = PublicUserDetailsSerializer()
 
 
-class ShareRightSerializer(serializers.Serializer):
+class UserShareRightSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     user_share_rights = UserShareSerializer()
     user = PublicUserDetailsSerializer()
+    share = PublicShareDetailsSerializer()
+
+class UserShareRightInheritSerializer(serializers.Serializer):
+
+    id = serializers.UUIDField(default=uuid.uuid4)
+    share_right = UserShareRightSerializer()
     share = PublicShareDetailsSerializer()
 
 class CreateShareSerializer(serializers.Serializer):
