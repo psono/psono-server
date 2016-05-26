@@ -202,7 +202,7 @@ The demo jsclient can be found https://your-ip/demo/jsclient/index.html
     ./password_manager_server/manage.py migrate
 
 ## Run Unit Tests (with coverage)
-    coverage run --source='.' ./password_manager_server/manage.py test restapi
+    coverage run --source='.' ./password_manager_server/manage.py test restapi.tests
     
 To get a nice report one can do:
     
