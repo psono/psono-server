@@ -113,10 +113,14 @@ class ShareRightView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
 
-        # Modifies rights of a share right
-
+        # check if user has rights
         try:
-            User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user, grant=True)
+            user_share_right = User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user)
+
+            #cannot combine this in the query, as direct share_rights override inherited share rights
+            if not user_share_right.grant:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
             # Maybe adjust this later so "owners" cannot lose the rights on their shares
 
@@ -128,15 +132,18 @@ class ShareRightView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
+        # check if user exists
         try:
-            user = User.objects.get(pk=str(request.data['user_id']) )
+            user = User.objects.get(pk=request.data['user_id'])
         except User.DoesNotExist:
             return Response({"message":"Target user does not exist.",
-                            "resource_id": str(request.data['user_id'])}, status=status.HTTP_404_NOT_FOUND)
+                            "resource_id": request.data['user_id']}, status=status.HTTP_403_FORBIDDEN)
+
 
         try:
+            # try to update it
             user_share_right_obj = User_Share_Right.objects.get(share_id=request.data['share_id'],
-                                                                user_id=str(request.data['user_id']))
+                                                                user_id=request.data['user_id'])
             user_share_right_obj.owner = request.user
             user_share_right_obj.read = request.data['read']
             user_share_right_obj.write = request.data['write']
@@ -144,10 +151,11 @@ class ShareRightView(GenericAPIView):
             user_share_right_obj.save()
 
             return Response({"share_right_id": str(user_share_right_obj.id)},
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_200_OK)
 
 
         except User_Share_Right.DoesNotExist:
+            # it does not yet exist, so lets create it
             user_share_right_obj2 = User_Share_Right.objects.create(
                 key=str(request.data['key']),
                 key_nonce=str(request.data['key_nonce']),
@@ -164,11 +172,10 @@ class ShareRightView(GenericAPIView):
             status=status.HTTP_201_CREATED)
 
 
-
-    def delete(self, request, uuid, *args, **kwargs):
+    def delete(self, request, uuid=None, *args, **kwargs):
 
         if not uuid:
-            return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_403_FORBIDDEN)
 
         # check if share_right exists
         try:
@@ -179,12 +186,14 @@ class ShareRightView(GenericAPIView):
 
         # check if user has the rights
         try:
-            User_Share_Right.objects.get(share_id=share_right.share_id, user=request.user, grant=True)
+            user_share_right = User_Share_Right.objects.get(share_id=share_right.share_id, user=request.user)
+
+            #cannot combine this in the query, as direct share_rights override inherited share rights
+            if not user_share_right.grant:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
         except User_Share_Right.DoesNotExist:
             try:
-                test1 = User_Share_Right_Inherit.objects.get(share_id=share_right.share_id)
-                test2 = User_Share_Right_Inherit.objects.get(share_right__user=request.user)
-                test3 = User_Share_Right_Inherit.objects.get(share_right__grant=True)
                 User_Share_Right_Inherit.objects.get(share_id=share_right.share_id, share_right__user=request.user, share_right__grant=True)
             except User_Share_Right_Inherit.DoesNotExist:
                 return Response({"message": "You don't have permission to access or it does not exist.",
@@ -212,39 +221,41 @@ class ShareRightInheritView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
 
-        # creates the inherited rights of a share right
-
+        # check if share exists
         try:
-            #first lets try explicit rights
+            share = Share.objects.get(pk=request.data['share_id'])
+        except Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # check if share_right exists
+        try:
+            share_right = User_Share_Right.objects.get(pk=request.data['share_right_id'] )
+        except User_Share_Right.DoesNotExist:
+            return Response({"message":"You don't have permission to access or it does not exist.",
+                            "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # check if user has the rights
+        try:
             user_share_right = User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user)
 
-            if not user_share_right.grant == False:
+            #cannot combine this in the query, as direct share_rights override inherited share rights
+            if not user_share_right.grant:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         except User_Share_Right.DoesNotExist:
             # maybe he has inherited rights
             try:
-                user_share_right_inherit = User_Share_Right_Inherit.objects.get(share_id=request.data['share_id'], share_right__user=request.user)
-
-                if not user_share_right_inherit.share_right.grant == False:
-                    return Response({"message":"You don't have permission to access or it does not exist.",
-                                     "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
+                User_Share_Right_Inherit.objects.get(share_id=request.data['share_id'], share_right__user=request.user, share_right__grant=True)
             except User_Share_Right_Inherit.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            User_Share_Right.objects.get(pk=str(request.data['share_right_id']) )
-        except User_Share_Right.DoesNotExist:
-            return Response({"message":"Target share_right does not exist.",
-                            "resource_id": str(request.data['share_right_id'])}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "You don't have permission to access or it does not exist.",
+                                 "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             User_Share_Right_Inherit.objects.create(
-                share_id=request.data['share_id'],
-                share_right=request.data['share_right_id'],
+                share=share,
+                share_right=share_right,
             )
 
         except IntegrityError:
@@ -254,40 +265,35 @@ class ShareRightInheritView(GenericAPIView):
 
 
 
-    def delete(self, request, uuid, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
 
-        if not uuid:
-            return Response({"message": "UUID for share_right_inherit not specified."}, status=status.HTTP_404_NOT_FOUND)
-
-        # check if share_right exists
+        # check if share exists
         try:
-            share_right = User_Share_Right_Inherit.objects.get(pk=uuid)
+            inherited_share_rights = User_Share_Right_Inherit.objects.get(share_id=request.data['share_id'],
+                                                                          share_right_id=request.data['share_right_id'])
         except User_Share_Right_Inherit.DoesNotExist:
-            return Response({"message": "You don't have permission to access or it does not exist.",
-                         "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check if user has the rights
         try:
-            user_share_right = User_Share_Right.objects.get(share_id=share_right.share_id, user=request.user)
+            user_share_right = User_Share_Right.objects.get(share_id=request.data['share_id'], user=request.user)
 
-            if not user_share_right.grant == False:
+            #cannot combine this in the query, as direct share_rights override inherited share rights
+            if not user_share_right.grant:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         except User_Share_Right.DoesNotExist:
             # maybe he has inherited rights
             try:
-                user_share_right_inherit = User_Share_Right_Inherit.objects.get(share_id=share_right.share_id, user=request.user)
-                if not user_share_right_inherit.share_right.grant == False:
-                    return Response({"message":"You don't have permission to access or it does not exist.",
-                                     "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                User_Share_Right_Inherit.objects.get(share_id=request.data['share_id'], share_right__user=request.user, share_right__grant=True)
             except User_Share_Right_Inherit.DoesNotExist:
                 return Response({"message": "You don't have permission to access or it does not exist.",
-                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
-
+                                 "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # delete it
-        share_right.delete()
+        inherited_share_rights.delete()
 
         return Response(status=status.HTTP_200_OK)
 

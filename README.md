@@ -206,11 +206,13 @@ The demo jsclient can be found https://your-ip/demo/jsclient/index.html
     
 To get a nice report one can do:
     
-    coverage report
+    coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*
     
 or:
 
-    coverage html
+    coverage html --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*
+    
+    The output of this command can be shown on https://your-ip/htmlcov/
 
 ## Production Server checks
 
