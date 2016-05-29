@@ -1,10 +1,25 @@
-password-server-image-test:
-  build: .
-  environment:
-   - SANSO_EMAIL_HOST=172.17.0.1
-   - SANSO_EMAIL_FROM=test@example.com
-   - SANSO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
-   - SANSO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
-   - SANSO_DATABASES_DEFAULT_ENGINE=django.db.backends.sqlite3
-   - SANSO_DATABASES_DEFAULT_NAME=/root/test.db
-   - SANSO_DATABASES_DEFAULT_ATOMIC_REQUESTS=true
+version: '2'
+
+services:
+  db:
+    image: postgres
+    networks:
+      - password-manager-server-network-test
+
+  password-server-image-test:
+    build: .
+    depends_on:
+      - db
+    links:
+     - db
+    environment:
+     - SANSO_EMAIL_HOST=172.17.0.1
+     - SANSO_EMAIL_FROM=test@example.com
+     - SANSO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+     - SANSO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+    networks:
+      - password-manager-server-network-test
+
+networks:
+  password-manager-server-network-test:
+    driver: bridge

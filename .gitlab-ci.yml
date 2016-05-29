@@ -6,5 +6,5 @@ build_image:
     - /usr/local/bin/docker-compose -f docker-compose-test.yml kill
     - /usr/local/bin/docker-compose -f docker-compose-test.yml rm -f
     - /usr/local/bin/docker-compose -f docker-compose-test.yml build
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
+    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "sleep 5 && ./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
     - /usr/local/bin/docker-compose -f docker-compose-test.yml stop
