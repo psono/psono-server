@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import check_password
 import bcrypt
 import time
 import base64
-from models import User
+from models import User, User_Share_Right
 
 from six import string_types
 import sys
@@ -83,3 +83,17 @@ def authenticate(email = False, user = False, authkey = False):
         return False
 
     return user
+
+
+def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
+    try:
+        # check direct share_rights first, as direct share_rights override inherited share rights
+        user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
+
+        return (read is None or read == user_share_right.read)\
+               and (write is None or write == user_share_right.write)\
+               and (grant is None or grant == user_share_right.grant)
+
+    except User_Share_Right.DoesNotExist:
+        # maybe he has inherited rights
+        return False

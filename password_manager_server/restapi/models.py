@@ -2,6 +2,7 @@ import binascii
 import os
 from hashlib import sha512
 import uuid
+from fields import LtreeField
 
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -195,23 +196,24 @@ class User_Share_Right(models.Model):
         unique_together = ('user', 'share',)
 
 
-class User_Share_Right_Inherit(models.Model):
+class Share_Tree(models.Model):
     """
-    Shares have sub shares. Those sub shares inherit the rights of the parent shares.
+    Shares have child shares. This tree structure links parents and childs
 
-    Multiple inheritances for one share can exist.
+    Multiple parents for one child share can exist, same as multiple childs can exist for one parent
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    share_right = models.ForeignKey(User_Share_Right, on_delete=models.CASCADE, related_name='user_share_right_inherits',
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_shares',
                               help_text=_('The share right, where this inheritance gets its permissions from'))
-    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_right_inherits',
+    child_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='child_shares',
                               help_text=_('The share that this share right grants permissions to'))
+    path = LtreeField()
 
     class Meta:
         abstract = False
-        unique_together = ('share_right', 'share',)
+        unique_together = ('parent_share', 'child_share',)
 
 
 @python_2_unicode_compatible

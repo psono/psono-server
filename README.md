@@ -15,18 +15,26 @@ identical.
  
 2. Install a database
 
-    We recommend using postgres for which we provide here the setup guide:
+    We will be using postgres (tested with version 9.5):
 
         sudo apt-get install postgresql postgresql-contrib
         sudo su - postgres
         createdb password_manager_server
-        psql template1
+        psql password_manager_server
         CREATE USER password_manager_server WITH PASSWORD 'password';
         GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
+        CREATE EXTENSION IF NOT EXISTS ltree;
+        
+    If you want to use this database for unit testing, you should also do:
+           
+        ALTER USER password_manager_server CREATEDB;
+        
+    To exit this shell and return to your normal user do:
+        
         \q
         Ctrl + D
     
-    If you want another DB, please visit https://docs.djangoproject.com/en/1.8/ref/databases/ for details.
+    Other databases are not supported because of missing ltree extension
     
 3. Install the config
 
@@ -202,6 +210,8 @@ The demo jsclient can be found https://your-ip/demo/jsclient/index.html
     ./password_manager_server/manage.py migrate
 
 ## Run Unit Tests (with coverage)
+To run unit tests, the database user needs CREATEDB rights.
+
     coverage run --source='.' ./password_manager_server/manage.py test restapi.tests
     
 To get a nice report one can do:

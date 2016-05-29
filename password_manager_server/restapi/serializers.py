@@ -296,11 +296,11 @@ class UserShareRightSerializer(serializers.Serializer):
     user = PublicUserDetailsSerializer()
     share = PublicShareDetailsSerializer()
 
-class UserShareRightInheritSerializer(serializers.Serializer):
+class ShareTreeSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
-    share_right = UserShareRightSerializer()
-    share = PublicShareDetailsSerializer()
+    parent_share = PublicShareDetailsSerializer()
+    child_share = PublicShareDetailsSerializer()
 
 class CreateShareSerializer(serializers.Serializer):
 
