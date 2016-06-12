@@ -198,22 +198,24 @@ class User_Share_Right(models.Model):
 
 class Share_Tree(models.Model):
     """
-    Shares have child shares. This tree structure links parents and childs
+    This tree structure links shares to other (parent) shares or datastores
 
-    Multiple parents for one child share can exist, same as multiple childs can exist for one parent
+    Multiple parents for one child share can exist, same as multiple children can exist for one parent
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_shares',
-                              help_text=_('The share right, where this inheritance gets its permissions from'))
-    child_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='child_shares',
-                              help_text=_('The share that this share right grants permissions to'))
-    path = LtreeField()
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='share_trees',
+                              help_text=_('The share that this link grants permissions to'))
+    path = LtreeField(null=True, help_text=_('The ltree path to this share'))
+
+    datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+                              help_text=_('The datastore, where this link ends'))
 
     class Meta:
         abstract = False
-        unique_together = ('parent_share', 'child_share',)
 
 
 @python_2_unicode_compatible

@@ -217,6 +217,12 @@ class UserUpdate(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserUpdateSerializer
 
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def post(self, request, *args, **kwargs):
         try:
             user = User.objects.get(pk=request.user.id)
@@ -271,6 +277,12 @@ class UserSearch(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserPublicKeySerializer
+
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
 

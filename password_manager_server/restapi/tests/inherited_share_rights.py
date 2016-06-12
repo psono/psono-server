@@ -76,6 +76,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             is_email_active=True
         )
 
+
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,

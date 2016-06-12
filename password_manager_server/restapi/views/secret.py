@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    Secret,
+    Secret
 )
 
 from ..app_settings import (

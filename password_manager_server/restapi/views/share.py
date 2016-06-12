@@ -1,4 +1,6 @@
-from ..utils import user_has_rights_on_share
+from ..utils import user_has_rights_on_share, is_uuid
+from share_tree import create_link
+from datastore import get_datastore
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -21,9 +23,6 @@ from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
 
-
-
-
 class ShareRightView(GenericAPIView):
 
     """
@@ -38,7 +37,20 @@ class ShareRightView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserShareRightSerializer
 
+
+    def post(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Returns a specific Share_Right or a list of all the users Share_Rights
+
+        :param request:
+        :param uuid:
+        :param args:
+        :param kwargs:
+        :return: 200 / 403
+        """
         if not uuid:
 
             # Generate a list of a all share rights
@@ -114,6 +126,17 @@ class ShareRightView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
+        """
+        Create Share_Right
+
+        Necessary Rights:
+            - grant on share
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 201 / 403
+        """
 
         # check permissions on parent
         if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
@@ -161,6 +184,19 @@ class ShareRightView(GenericAPIView):
 
 
     def delete(self, request, uuid=None, *args, **kwargs):
+        """
+        Delete a Share_Right obj
+
+        Necessary Rights:
+            - grant on share
+
+
+        :param request:
+        :param uuid: share_right_id
+        :param args:
+        :param kwargs:
+        :return: 200 / 403
+        """
 
         if not uuid:
             return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_403_FORBIDDEN)
@@ -172,6 +208,7 @@ class ShareRightView(GenericAPIView):
             return Response({"message": "You don't have permission to access or it does not exist.",
                          "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
+        # check permissions on parent
         if not user_has_rights_on_share(request.user.id, share_right.share_id, grant=True):
             return Response({"message": "You don't have permission to access or it does not exist.",
                              "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
@@ -182,57 +219,6 @@ class ShareRightView(GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class ShareTreeView(GenericAPIView):
-
-    """
-    Check the REST Token and the object permissions and returns
-    own share right if the necessary access rights are granted
-    and the user is the user of the share right
-
-    Accept the following GET parameters: share_id (optional)
-    Return a list of the shares or the share and the access rights or a message for an update of rights
-    """
-    authentication_classes = (TokenAuthentication, )
-    permission_classes = (IsAuthenticated,)
-    serializer_class = ShareTreeSerializer
-
-    def put(self, request, *args, **kwargs):
-
-        # check if child_share exists
-        try:
-            child_share = Share.objects.get(pk=request.data['child_share_id'])
-        except Share.DoesNotExist:
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['child_share_id']}, status=status.HTTP_403_FORBIDDEN)
-        # check if parent_share exists
-        try:
-            parent_share = Share.objects.get(pk=request.data['parent_share_id'])
-        except Share.DoesNotExist:
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # check permissions on parent
-        if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-
-        # TODO insert
-
-        return Response(status=status.HTTP_201_CREATED)
-
-
-
-    def delete(self, request, *args, **kwargs):
-
-        # check permissions on parent
-        if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # TODO DELETE
-
-        return Response(status=status.HTTP_200_OK)
 
 
 class ShareRightAcceptView(GenericAPIView):
@@ -244,15 +230,29 @@ class ShareRightAcceptView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-        # Accepts or declines a share right
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+        """
+        Mark a Share_right as accepted. In addition update the share right with the new encryption key and deletes now
+        unnecessary information like title.
+
+        :param request:
+        :param uuid: share_right_id
+        :param args:
+        :param kwargs:
+        :return: 200 / 403
+        """
 
         if not uuid:
-            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            user_share_right_obj = User_Share_Right.objects.get(id=uuid, user=request.user, accepted=None)
+            user_share_right_obj = User_Share_Right.objects.get(pk=uuid, user=request.user, accepted=None)
 
             user_share_right_obj.accepted = True
             user_share_right_obj.title = ''
@@ -287,9 +287,22 @@ class ShareRightDeclineView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-        # Accepts or declines a share right
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, uuid = None, *args, **kwargs):
+        """
+        Mark a Share_right as declined. In addition deletes now unnecessary information like title and encryption key.
+
+        :param request:
+        :param uuid: share_right_id
+        :param args:
+        :param kwargs:
+        :return: 200 / 403 / 404
+        """
 
         if not uuid:
             return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
@@ -325,6 +338,16 @@ class ShareView(GenericAPIView):
     serializer_class = CreateShareSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Returns a list of all shares with all own share rights on that share or
+        returns a share with all rights existing on the share
+
+        :param request:
+        :param uuid:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         if not uuid:
 
             # Generates a list of shares wherever the user has any rights for it and joins the user_share objects
@@ -477,15 +500,45 @@ class ShareView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO update according to inherit share rights
         # TODO implement check for more shares for enterprise users
 
         #TODO Check if secret_key and nonce exist
 
         if 'data' not in request.data:
-            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
+            return Response({"error": "NotInRequest", 'message': "Data not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+            return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        parent_share = None
+        parent_share_id = None
+        if 'parent_share_id' in request.data and request.data['parent_share_id']:
+            # check permissions on parent
+            if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
+                return Response({"message": "You don't have permission to access or it does not exist.",
+                                 "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+            try:
+                parent_share = Share.objects.get(pk=request.data['parent_share_id'])
+                parent_share_id = parent_share.id
+            except Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        datastore = None
+        datastore_id = None
+        if 'datastore_id' in request.data and request.data['datastore_id']:
+            datastore = get_datastore(request.data['datastore_id'], request.user)
+            if not datastore:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+            datastore_id = datastore.id
+
+        if not parent_share and not datastore:
+            return Response({"message": "Either parent share or datastore need to be specified."},
+                            status=status.HTTP_404_NOT_FOUND)
 
         try:
             share = Share.objects.create(
@@ -495,7 +548,6 @@ class ShareView(GenericAPIView):
             )
         except IntegrityError:
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
-
 
         User_Share_Right.objects.create(
                 owner = request.user,
@@ -511,6 +563,8 @@ class ShareView(GenericAPIView):
                 grant = True
             )
 
+        create_link(request.data['link_id'], parent_share_id, share.id, datastore_id)
+
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
@@ -522,8 +576,10 @@ class ShareView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
-        if share.user != request.user and share.user_share_rights.filter(user=request.user, write=True).count() < 0:
-            raise PermissionDenied()
+        # check permissions on share
+        if not user_has_rights_on_share(request.user.id, uuid, write=True):
+            return Response({"message": "You don't have permission to access or it does not exist.",
+                             "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         if 'data' in request.data:
             share.data = str(request.data['data'])
@@ -552,6 +608,12 @@ class ShareRightsView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserShareRightSerializer
+
+    def post(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get(self, request, uuid = None, *args, **kwargs):
         # TODO update according to inherit share rights

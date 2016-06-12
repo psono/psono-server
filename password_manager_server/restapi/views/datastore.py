@@ -14,6 +14,28 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
+def get_datastore(datastore_id=None, user=None):
+
+    if user and not datastore_id:
+        try:
+            datastores = Data_Store.objects.filter(user=user)
+        except Data_Store.DoesNotExist:
+            datastores = []
+        return datastores
+
+    datastore = None
+    try:
+        if user and datastore_id:
+            datastore = Data_Store.objects.get(pk=datastore_id, user=user)
+        else:
+            datastore = Data_Store.objects.get(pk=datastore_id)
+    except Data_Store.DoesNotExist:
+        pass
+    except ValueError:
+        pass
+
+    return datastore
+
 
 class DatastoreView(GenericAPIView):
 
@@ -31,23 +53,12 @@ class DatastoreView(GenericAPIView):
     def get(self, request, uuid = None, *args, **kwargs):
 
         if not uuid:
-            try:
-                storages = Data_Store.objects.filter(user=request.user)
-            except Data_Store.DoesNotExist:
-                storages = []
-
-            return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
+            datastores = get_datastore(user=request.user)
+            return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
         else:
-            try:
-                datastore = Data_Store.objects.get(pk=uuid)
-            except Data_Store.DoesNotExist:
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-            except ValueError:
-                return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            if not datastore.user_id == request.user.pk:
+            datastore = get_datastore(uuid, request.user)
+            if not datastore:
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(datastore).data,
@@ -80,17 +91,9 @@ class DatastoreView(GenericAPIView):
 
     def post(self, request, uuid = None, *args, **kwargs):
 
-        try:
-            datastore = Data_Store.objects.get(pk=uuid)
-        except Data_Store.DoesNotExist:
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-        except ValueError:
-            return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-
-        if not datastore.user_id == request.user.pk:
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+        datastore = get_datastore(uuid, request.user)
+        if not datastore:
+            raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
             datastore.data = str(request.data['data'])

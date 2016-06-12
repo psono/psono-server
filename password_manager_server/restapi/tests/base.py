@@ -1,5 +1,5 @@
-from uuid import UUID
 from rest_framework.test import APITestCase
+from restapi.utils import is_uuid
 
 class APITestCaseExtended(APITestCase):
     @staticmethod
@@ -16,11 +16,6 @@ class APITestCaseExtended(APITestCase):
     def assertIsUUIDString(self, expr, msg):
         """Check that the expression is a valid uuid"""
 
-        try:
-            val = UUID(expr, version=4)
-        except ValueError:
-            val = False
-
-        if not val:
+        if not is_uuid(expr):
             msg = self._formatMessage(msg, "%s is not an uuid" % self.safe_repr(expr))
             raise self.failureException(msg)

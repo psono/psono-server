@@ -15,5 +15,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL("CREATE EXTENSION IF NOT EXISTS ltree;"),
+        migrations.RunSQL("""CREATE EXTENSION IF NOT EXISTS "uuid-ossp";"""),
+        migrations.RunSQL("""CREATE EXTENSION IF NOT EXISTS ltree;"""),
+        #migrations.RunSQL("CREATE INDEX IF NOT EXISTS restapi_share_tree_path_6dcc1339 ON restapi_share_tree USING GIST(path);"),
     ]

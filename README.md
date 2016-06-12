@@ -24,6 +24,7 @@ identical.
         CREATE USER password_manager_server WITH PASSWORD 'password';
         GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
         CREATE EXTENSION IF NOT EXISTS ltree;
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
         
     If you want to use this database for unit testing, you should also do:
            

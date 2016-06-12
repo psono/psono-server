@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password
 import bcrypt
 import time
 import base64
+from uuid import UUID
 from models import User, User_Share_Right
 
 from six import string_types
@@ -31,6 +32,7 @@ def generate_activation_code(email):
     :return: activation_code
     :rtype: str
     """
+
     email = str(email.strip())
     time_stamp = str(int(time.time()))
     return base64.b64encode(
@@ -47,6 +49,7 @@ def validate_activation_code(activation_code):
     :return: user or False
     :rtype: User or bool
     """
+
     try:
         email, time_stamp, hash = base64.b64decode(activation_code).split(",", 2)
         if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
@@ -68,6 +71,7 @@ def authenticate(email = False, user = False, authkey = False):
     :return: user or False
     :rtype: User or bool
     """
+
     if not authkey:
         return False
     if not email and not user:
@@ -86,6 +90,17 @@ def authenticate(email = False, user = False, authkey = False):
 
 
 def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
+    """
+    Checks if the given user has the requested rights for the given share
+
+    :param user_id:
+    :param share_id:
+    :param read:
+    :param write:
+    :param grant:
+    :return:
+    """
+
     try:
         # check direct share_rights first, as direct share_rights override inherited share rights
         user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
@@ -97,3 +112,20 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
     except User_Share_Right.DoesNotExist:
         # maybe he has inherited rights
         return False
+
+def is_uuid(expr):
+    """
+    check if a given expression is a uuid (version 4)
+
+    :param expr: the possible uuid
+    :return: True or False
+    :rtype: bool
+    """
+
+    try:
+        val = UUID(expr, version=4)
+    except ValueError:
+        val = False
+
+    return not not val
+
