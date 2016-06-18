@@ -10,3 +10,4 @@ pyyaml
 bcrypt
 psycopg2
 coverage
+more_itertools
