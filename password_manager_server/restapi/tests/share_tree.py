@@ -436,10 +436,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                          'Exactly '+str(expected_share_tree_count)+' share tree objects should be created, but we got: ' + str(share_trees.count()))
 
         # lets try to create the a link to a share without rights to a datastore
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore2_obj.id,
         }
@@ -465,10 +465,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the link to a share with a datastore without rights
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore2_obj.id,
         }
@@ -496,10 +496,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.responseB3.data.get('share_id'),
         }
@@ -526,10 +526,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the link to a share with a parent_share without rights
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.responseB3.data.get('share_id'),
         }
@@ -557,10 +557,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -578,7 +578,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
                              share_trees.count()))
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*')
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*')
 
         expected_share_tree_count = 2
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -586,7 +586,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                      expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
                      share_trees.count()))
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*', share_id = self.response7.data.get('share_id'))
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*', share_id = self.response7.data.get('share_id'))
 
         expected_share_tree_count = 1
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -599,11 +599,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(share_trees[0].datastore_id, None,
                          'Datastore is incorrect')
 
-        expected_path = str(self.initial_data5['link_id']).replace("-", "")+'.'+str(request_data['link_id']).replace("-", "")
+        expected_path = str(self.initial_data5['link_id']).replace("-", "")+'.'+str(link_id).replace("-", "")
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*', parent_share_id = self.response7.data.get('share_id'))
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*', parent_share_id = self.response7.data.get('share_id'))
 
         expected_share_tree_count = 1
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -617,7 +617,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                          'Datastore is incorrect')
 
         expected_path = str(self.initial_data5['link_id']).replace("-", "")\
-                        +'.'+str(request_data['link_id']).replace("-", "")\
+                        +'.'+str(link_id).replace("-", "")\
                         +'.'+str(self.initial_data8['link_id']).replace("-", "")
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')
@@ -637,10 +637,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_tree')
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
-            'link_id': uuid4(),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore1_obj.id,
         }
@@ -658,7 +658,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
                              share_trees.count()))
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*')
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*')
 
         expected_share_tree_count = 2
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -666,7 +666,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                      expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
                      share_trees.count()))
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*', share_id = self.response7.data.get('share_id'))
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*', share_id = self.response7.data.get('share_id'))
 
         expected_share_tree_count = 1
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -679,11 +679,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(share_trees[0].datastore_id, request_data['datastore_id'],
                          'Datastore is incorrect')
 
-        expected_path = str(request_data['link_id']).replace("-", "")
+        expected_path = str(link_id).replace("-", "")
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')
 
-        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(request_data['link_id']).replace("-", "")+'.*', parent_share_id = self.response7.data.get('share_id'))
+        share_trees = models.Share_Tree.objects.filter(path__match='*.'+str(link_id).replace("-", "")+'.*', parent_share_id = self.response7.data.get('share_id'))
 
         expected_share_tree_count = 1
         self.assertEqual(share_trees.count(), expected_share_tree_count,
@@ -696,7 +696,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(share_trees[0].datastore_id, None,
                          'Datastore is incorrect')
 
-        expected_path = str(request_data['link_id']).replace("-", "")\
+        expected_path = str(link_id).replace("-", "")\
                         +'.'+str(self.initial_data8['link_id']).replace("-", "")
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')

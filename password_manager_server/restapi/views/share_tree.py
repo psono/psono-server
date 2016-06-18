@@ -1,3 +1,5 @@
+from  more_itertools import unique_everseen
+
 from ..utils import user_has_rights_on_share, is_uuid
 from rest_framework import status
 from rest_framework.response import Response
@@ -20,19 +22,32 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import connection
 from ..authentication import TokenAuthentication
 
+
 def create_link(link_id, parent_share_id, share_id, datastore_id):
+    """
+    DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
+    link paths to their children
+
+    Takes care of "degenerated" tree structures (e.g a child has two parents)
+
+    In addition checks if the link already exists, as this is a crucial part of the access rights system
+
+    :param link_id:
+    :param parent_share_id:
+    :param share_id:
+    :param datastore_id:
+    :return:
+    """
 
     link_id = str(link_id).replace("-", "")
 
-    # print("create_link with link_id:", link_id, 'parent_share_id:', parent_share_id, 'share_id:', share_id, 'datastore_id:', datastore_id)
-    #
-    # print("before A")
-    # trees = Share_Tree.objects.all()
-    # print("t.path, t.share_id, t.parent_share_id, t.datastore_id")
-    # for t in trees:
-    #     print(t.path, t.share_id, t.parent_share_id, t.datastore_id)
+    # Prevent malicious (or by bad RNGs generated?) link ids
+    # Not doing so could cause access rights problems
+    if Share_Tree.objects.filter(path__match='*.' + link_id + '.*').count() > 0:
+        return False
 
     cursor = connection.cursor()
+
     cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, datastore_id)
     SELECT
       uuid_generate_v4() id,
@@ -66,14 +81,6 @@ def create_link(link_id, parent_share_id, share_id, datastore_id):
         'parent_share_id': parent_share_id,
     })
 
-    # print("after A")
-    # trees = Share_Tree.objects.all()
-    # print("t.path, t.share_id, t.parent_share_id, t.datastore_id")
-    # for t in trees:
-    #     print(t.path, t.share_id, t.parent_share_id, t.datastore_id)
-
-    # print(cursor.rowcount)
-
     if cursor.rowcount == 0:
         if datastore_id:
             Share_Tree.objects.create(
@@ -81,7 +88,6 @@ def create_link(link_id, parent_share_id, share_id, datastore_id):
                 datastore_id=datastore_id,
                 path=link_id
             )
-
         else:
             cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, datastore_id)
             SELECT
@@ -100,14 +106,22 @@ def create_link(link_id, parent_share_id, share_id, datastore_id):
                 'share_id': share_id,
             })
 
+    return True
+
 def delete_link(link_id):
+    """
+    DB wrapper to delete a link to a share (and all his child shares with the same link)
+
+    :param link_id:
+    :return:
+    """
 
     link_id = str(link_id).replace("-", "")
 
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
 
 
-class ShareTreeView(GenericAPIView):
+class ShareLinkView(GenericAPIView):
 
     """
     Check the REST Token and the object permissions and returns
@@ -122,7 +136,7 @@ class ShareTreeView(GenericAPIView):
     serializer_class = ShareTreeSerializer
 
 
-    def put(self, request, *args, **kwargs):
+    def put(self, request, uuid, *args, **kwargs):
         """
         Insert Share_Tree obj
 
@@ -131,12 +145,13 @@ class ShareTreeView(GenericAPIView):
             - write on parent_share
 
         :param request:
+        :param uuid:
         :param args:
         :param kwargs:
         :return: 201 / 400 / 403
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if not uuid or not is_uuid(uuid):
             return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -178,135 +193,161 @@ class ShareTreeView(GenericAPIView):
                             "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
 
-        create_link(request.data['link_id'], parent_share_id, share.id, datastore_id)
+        if not create_link(uuid, parent_share_id, share.id, datastore_id):
+            return Response({"message":"Link id already exists.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(status=status.HTTP_201_CREATED)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, uuid, *args, **kwargs):
         """
-        Update Share_Tree obj
+        Move Share_Tree obj
 
         Necessary Rights:
             - grant on share
             - write on old_parent_share
+            - write on old_datastore
             - write on new_parent_share
+            - write on new_datastore
 
         :param request:
+        :param uuid:
         :param args:
         :param kwargs:
-        :return: 201 / 403 / 404
+        :return: 200 / 403 / 404
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
-            return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
+        if not uuid or not is_uuid(uuid):
+            return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        # check if share exists
-        try:
-            share = Share.objects.get(pk=request.data['share_id'])
-        except Share.DoesNotExist:
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
+        link_id = str(uuid).replace("-", "")
 
-        # check if old_parent_share exists
-        old_parent_share = None
-        if 'old_parent_share_id' in request.data and request.data['old_parent_share_id']:
-            try:
-                old_parent_share = Share.objects.get(pk=request.data['old_parent_share_id'])
-            except Share.DoesNotExist:
+        shares = []
+        old_parents = []
+        old_datastores = []
+
+        for s in Share_Tree.objects.filter(path__match='*.' + link_id).all():
+            shares.append(s.share_id)
+            if s.parent_share_id:
+                old_parents.append(s.parent_share_id)
+            if s.datastore_id:
+                old_datastores.append(s.datastore_id)
+
+        # remove duplicates
+        shares = list(unique_everseen(shares))
+        old_parents = list(unique_everseen(old_parents))
+        old_datastores = list(unique_everseen(old_datastores))
+
+        # check grant permissions on share
+        for share_id in shares:
+            if not user_has_rights_on_share(request.user.id, share_id, grant=True):
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                 "resource_id": request.data['old_parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": share_id}, status=status.HTTP_403_FORBIDDEN)
+
+        # check write permissions on old_parents
+        for old_parent_share_id in old_parents:
+            if not user_has_rights_on_share(request.user.id, old_parent_share_id, write=True):
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": old_parent_share_id}, status=status.HTTP_403_FORBIDDEN)
+
+        # check write permissions on old_datastores
+        for old_datastore_id in old_datastores:
+            if Data_Store.objects.get(pk=old_datastore_id, user=request.user):
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": old_datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
         # check if new_parent_share exists
-        new_parent_share = None
+        new_parent_share_id = None
         if 'new_parent_share_id' in request.data and request.data['new_parent_share_id']:
             try:
-                new_parent_share = Share.objects.get(pk=request.data['new_parent_share_id'])
+                parent_share = Share.objects.get(pk=request.data['new_parent_share_id'])
+                new_parent_share_id = parent_share.id
             except Share.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                  "resource_id": request.data['new_parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
-        if not old_parent_share and not new_parent_share:
-            return Response({"message": "You don't have permission to access or it does not exist."}, status=status.HTTP_403_FORBIDDEN)
+        # check if new_datastore exists
+        new_datastore_id = None
+        if 'new_datastore_id' in request.data and request.data['new_datastore_id']:
+            try:
+                datastore = Data_Store.objects.get(pk=request.data['new_datastore_id'], user=request.user)
+                new_datastore_id = datastore.id
+            except Data_Store.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                 "resource_id": request.data['new_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
 
-        # check grant permissions on share
-        if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
+        # check permissions on new_parent_share
+        if new_parent_share_id and not user_has_rights_on_share(request.user.id, new_parent_share_id, write=True):
             return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": new_parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
-        # check write permissions on old_parent
-        if old_parent_share:
-            if not user_has_rights_on_share(request.user.id, request.data['old_parent_share_id'], write=True):
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": request.data['old_parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+        # all checks passed, lets move the link with a delete and create at the new location
+        delete_link(uuid)
 
-        # check write permissions on new_parent
-        if new_parent_share:
-            if not user_has_rights_on_share(request.user.id, request.data['new_parent_share_id'], write=True):
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": request.data['new_parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-
-
-        # TODO update Share_Tree obj
-
-        # handle the move of the share
-        if old_parent_share and new_parent_share:
-            # its a move from an old parent to a new parent
-            Share_Tree.objects\
-                .filter(
-                    share_id=request.data['share_id'],
-                    parent_share_id=request.data['old_parent_share_id'],
-                    path__match='*'+request.data['link_id'].replace("-", "")+'*'
-                    )\
-                .update(parent_share_id=request.data['new_parent_share_id'])
-        elif old_parent_share:
-            # its a move from an old parent to a datastore
-            Share_Tree.objects\
-                .filter(
-                    share_id=request.data['share_id'],
-                    parent_share_id=request.data['old_parent_share_id']
-                    )\
-                .delete()
-        else:
-            pass
-            # its a move from a datastore to a parent
-            # TODO create_link(request.data['link_id'], new_parent_share.id, share.id)
-
-
-        # move all children of the share
-
-
-        share_trees = Share_Tree.objects.filter(path__match='*.Astronomy.*')
+        for share_id in shares:
+            create_link(uuid, new_parent_share_id, share_id, new_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 
 
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request, uuid, *args, **kwargs):
         """
         Delete Share_Tree obj
 
         Necessary Rights:
             - grant on share
             - write on parent_share
+            - write on datastore
 
         :param request:
+        :param uuid:
         :param args:
         :param kwargs:
-        :return: 200 / 403
+        :return: 200 / 400/ 403
         """
 
+        if not uuid or not is_uuid(uuid):
+            return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        link_id = str(uuid).replace("-", "")
+
+        shares = []
+        parents = []
+        datastores = []
+
+        for s in Share_Tree.objects.filter(path__match='*.' + link_id).all():
+            shares.append(s.share_id)
+            if s.parent_share_id:
+                parents.append(s.parent_share_id)
+            if s.datastore_id:
+                datastores.append(s.datastore_id)
+
+        # remove duplicates
+        shares = list(unique_everseen(shares))
+        parents = list(unique_everseen(parents))
+        datastores = list(unique_everseen(datastores))
+
         # check grant permissions on share
-        if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+        for share_id in shares:
+            if not user_has_rights_on_share(request.user.id, share_id, grant=True):
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": share_id}, status=status.HTTP_403_FORBIDDEN)
 
-        # check write permissions on parent
-        if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+        # check write permissions on parents
+        for parent_share_id in parents:
+            if not user_has_rights_on_share(request.user.id, parent_share_id, write=True):
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
-        # TODO DELETE
+        # check write permissions on datastores
+        for datastore_id in datastores:
+            if Data_Store.objects.get(pk=datastore_id, user=request.user):
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
+
+        delete_link(uuid)
 
         return Response(status=status.HTTP_200_OK)

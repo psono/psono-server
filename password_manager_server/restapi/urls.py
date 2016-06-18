@@ -48,8 +48,8 @@ urlpatterns = [
     url(r'^share/right/accept/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
     url(r'^share/right/decline/(?P<uuid>[^/]+)/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
 
-    url(r'^share/tree/$', views.ShareTreeView.as_view(), name='share_tree'),
-    url(r'^share/tree/(?P<uuid>[^/]+)/$', views.ShareTreeView.as_view(), name='share_tree'),
+    url(r'^share/link/$', views.ShareLinkView.as_view(), name='share_link'),
+    url(r'^share/link/(?P<uuid>[^/]+)/$', views.ShareLinkView.as_view(), name='share_link'),
 
     url(r'^share/right/$', views.ShareRightView.as_view(), name='share_right'),
     url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
