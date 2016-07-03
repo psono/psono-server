@@ -14,8 +14,7 @@ from ..models import (
 
 from ..app_settings import (
     UserShareRightSerializer,
-    CreateShareSerializer,
-    ShareTreeSerializer
+    CreateShareSerializer
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -248,11 +247,50 @@ class ShareRightAcceptView(GenericAPIView):
         :return: 200 / 403
         """
 
+        parent_share_id = None
+        parent_datastore_id = None
+
         if not uuid:
             return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_404_NOT_FOUND)
 
+        if 'link_id' not in request.data:
+            return Response({"error": "IdNoUUID", 'message': "link_id not in request"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if not is_uuid(request.data['link_id']):
+            return Response({"error": "IdNoUUID", 'message': "link_id is no valid uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if 'parent_share_id' not in request.data and 'parent_datastore_id' not in request.data:
+            return Response({"error": "NotInRequest", 'message': "No parent (share or datastore) has been provided as parent"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if 'parent_share_id' in request.data and 'parent_datastore_id' in request.data:
+            return Response({"error": "InRequest", 'message': "Only one parent can exist, either a datastore or a share"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if 'parent_share_id' in request.data and not is_uuid(request.data['parent_share_id']):
+            return Response({"error": "IdNoUUID", 'message': "parent_share_id is no valid uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        elif 'parent_share_id' in request.data:
+            parent_share_id = request.data['parent_share_id']
+
+        if 'parent_datastore_id' in request.data and not is_uuid(request.data['parent_datastore_id']):
+            return Response({"error": "IdNoUUID", 'message': "parent_datastore_id is no valid uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        elif 'parent_datastore_id' in request.data:
+            parent_datastore_id = request.data['parent_datastore_id']
+
         try:
             user_share_right_obj = User_Share_Right.objects.get(pk=uuid, user=request.user, accepted=None)
+
+            if not user_share_right_obj.grant and 'parent_share_id' in request.data:
+                return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
+                                "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+            if not create_link(request.data['link_id'], user_share_right_obj.share_id, parent_share_id, parent_datastore_id):
+                return Response({"message": "Link id already exists.",
+                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
             user_share_right_obj.accepted = True
             user_share_right_obj.title = ''
@@ -563,7 +601,7 @@ class ShareView(GenericAPIView):
                 grant = True
             )
 
-        create_link(request.data['link_id'], parent_share_id, share.id, datastore_id)
+        create_link(request.data['link_id'], share.id, parent_share_id, datastore_id)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 

@@ -23,7 +23,7 @@ from django.db import connection
 from ..authentication import TokenAuthentication
 
 
-def create_link(link_id, parent_share_id, share_id, datastore_id):
+def create_link(link_id, share_id, parent_share_id, datastore_id):
     """
     DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
     link paths to their children
@@ -193,7 +193,7 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
 
-        if not create_link(uuid, parent_share_id, share.id, datastore_id):
+        if not create_link(uuid, share.id, parent_share_id, datastore_id):
             return Response({"message":"Link id already exists.",
                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
@@ -286,7 +286,7 @@ class ShareLinkView(GenericAPIView):
         delete_link(uuid)
 
         for share_id in shares:
-            create_link(uuid, new_parent_share_id, share_id, new_datastore_id)
+            create_link(uuid, share_id, new_parent_share_id, new_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 
