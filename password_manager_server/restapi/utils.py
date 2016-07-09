@@ -103,7 +103,7 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
 
     try:
         # check direct share_rights first, as direct share_rights override inherited share rights
-        user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
+        user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id, accepted=True)
 
         return (read is None or read == user_share_right.read)\
                and (write is None or write == user_share_right.write)\
@@ -112,6 +112,7 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
     except User_Share_Right.DoesNotExist:
         # maybe he has inherited rights
         return False
+
 
 def is_uuid(expr):
     """

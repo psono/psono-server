@@ -23,7 +23,7 @@ from django.db import connection
 from ..authentication import TokenAuthentication
 
 
-def create_link(link_id, share_id, parent_share_id, datastore_id):
+def create_link(link_id, share_id, parent_share_id, parent_datastore_id):
     """
     DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
     link paths to their children
@@ -33,9 +33,9 @@ def create_link(link_id, share_id, parent_share_id, datastore_id):
     In addition checks if the link already exists, as this is a crucial part of the access rights system
 
     :param link_id:
-    :param parent_share_id:
     :param share_id:
-    :param datastore_id:
+    :param parent_share_id:
+    :param parent_datastore_id:
     :return:
     """
 
@@ -63,7 +63,7 @@ def create_link(link_id, share_id, parent_share_id, datastore_id):
         ELSE t.parent_share_id
       END parent_share_id,
       CASE
-        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(datastore_id)s, t.datastore_id) --replace this null with datastore id if specified
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(parent_datastore_id)s, t.datastore_id) --replace this null with datastore id if specified
         ELSE t.datastore_id
       END datastore_id
     FROM restapi_share_tree t
@@ -75,17 +75,17 @@ def create_link(link_id, share_id, parent_share_id, datastore_id):
     ) one_old_parent ON t.path <@ one_old_parent.path
     LEFT JOIN restapi_share_tree new_parent
       ON new_parent.share_id = %(parent_share_id)s""", {
-        'datastore_id': datastore_id,
+        'parent_datastore_id': parent_datastore_id,
         'link_id': link_id,
         'share_id': share_id,
         'parent_share_id': parent_share_id,
     })
 
     if cursor.rowcount == 0:
-        if datastore_id:
+        if parent_datastore_id:
             Share_Tree.objects.create(
                 share_id=share_id,
-                datastore_id=datastore_id,
+                datastore_id=parent_datastore_id,
                 path=link_id
             )
         else:
@@ -97,12 +97,12 @@ def create_link(link_id, share_id, parent_share_id, datastore_id):
                 path || %(link_id)s path,
                 %(share_id)s share_id,
                 %(parent_share_id)s parent_share_id,
-                %(datastore_id)s datastore_id
+                %(parent_datastore_id)s datastore_id
                 FROM restapi_share_tree
                 WHERE share_id = %(parent_share_id)s""", {
                 'link_id': link_id,
                 'parent_share_id': parent_share_id,
-                'datastore_id': datastore_id,
+                'parent_datastore_id': parent_datastore_id,
                 'share_id': share_id,
             })
 
@@ -268,14 +268,14 @@ class ShareLinkView(GenericAPIView):
                                  "resource_id": request.data['new_parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check if new_datastore exists
-        new_datastore_id = None
-        if 'new_datastore_id' in request.data and request.data['new_datastore_id']:
+        new_parent_datastore_id = None
+        if 'new_parent_datastore_id' in request.data and request.data['new_parent_datastore_id']:
             try:
-                datastore = Data_Store.objects.get(pk=request.data['new_datastore_id'], user=request.user)
-                new_datastore_id = datastore.id
+                datastore = Data_Store.objects.get(pk=request.data['new_parent_datastore_id'], user=request.user)
+                new_parent_datastore_id = datastore.id
             except Data_Store.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                 "resource_id": request.data['new_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+                                 "resource_id": request.data['new_parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check permissions on new_parent_share
         if new_parent_share_id and not user_has_rights_on_share(request.user.id, new_parent_share_id, write=True):
@@ -286,7 +286,7 @@ class ShareLinkView(GenericAPIView):
         delete_link(uuid)
 
         for share_id in shares:
-            create_link(uuid, share_id, new_parent_share_id, new_datastore_id)
+            create_link(uuid, share_id, new_parent_share_id, new_parent_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 
