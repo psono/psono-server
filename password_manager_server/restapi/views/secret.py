@@ -54,6 +54,14 @@ class SecretView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
+
+        if 'data' not in request.data:
+            return Response({"error": "NotInRequest", 'message': "data not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+        if 'data_nonce' not in request.data:
+            return Response({"error": "NotInRequest", 'message': "data_nonce not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         try:
             secret = Secret.objects.create(
                 data = str(request.data['data']),

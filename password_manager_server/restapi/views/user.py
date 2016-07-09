@@ -224,13 +224,8 @@ class UserUpdate(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
-        try:
-            user = User.objects.get(pk=request.user.id)
-        except User.DoesNotExist:
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-        except ValueError:
-            return Response({"error": "IdNoUUID", 'message': "Badly formated token"},
-                            status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.get(pk=request.user.id)
 
         serializer = self.get_serializer(data=request.data)
 
@@ -289,9 +284,9 @@ class UserSearch(GenericAPIView):
         if 'user_id' in request.data and request.data['user_id']:
             try:
                 user = User.objects.get(pk=str(request.data['user_id']))
-                if user is None:
-                    return Response({"message":"You don't have permission to access or it does not exist.",
-                                    "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
+            except ValueError:
+                return Response({"error": "IdNoUUID", 'message': "User ID is badly formed and no uuid"},
+                                status=status.HTTP_400_BAD_REQUEST)
             except User.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
@@ -299,9 +294,6 @@ class UserSearch(GenericAPIView):
         elif 'user_email' in request.data and request.data['user_email']:
             try:
                 user = User.objects.get(email=str(request.data['user_email']))
-                if user is None:
-                    return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_403_FORBIDDEN)
             except User.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": str(request.data['user_email'])}, status=status.HTTP_403_FORBIDDEN)

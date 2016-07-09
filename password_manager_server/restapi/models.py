@@ -74,7 +74,7 @@ class Secret(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='secrets')
     data = models.BinaryField()
-    data_nonce = models.CharField(_('data nonce'), max_length=64)
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
     type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:

@@ -700,3 +700,8 @@ class ShareTreeModificationTests(APITestCaseExtended):
                         +'.'+str(self.initial_data8['link_id']).replace("-", "")
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')
+
+    # TODO Test move share_tree obj (POST)
+
+
+    # TODO Test delete share_tree obj (DELETE)

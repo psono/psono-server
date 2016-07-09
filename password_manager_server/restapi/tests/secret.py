@@ -1,0 +1,415 @@
+from django.core.urlresolvers import reverse
+from django.contrib.auth.hashers import make_password
+
+from rest_framework import status
+from base import APITestCaseExtended
+
+from restapi import models
+
+import random
+import string
+import os
+
+from uuid import UUID
+
+class UserCreateSecretTest(APITestCaseExtended):
+    """
+    Test to create a secret (PUT)
+    """
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+
+
+    def test_without_data(self):
+        """
+        Tests to create a share without data
+        """
+
+        url = reverse('secret')
+
+        data = {
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_without_data_nonce(self):
+        """
+        Tests to create a share without data nonce
+        """
+
+        url = reverse('secret')
+
+        data = {
+            'data': '12345',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_secret(self):
+        """
+        Tests to create a share successfully
+        """
+
+        url = reverse('secret')
+
+        data = {
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+    def test_duplicate_nonce(self):
+        """
+        Tests to create a share, while reusing a nonce
+        """
+
+        url = reverse('secret')
+
+        first_secret = {
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, first_secret)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        second_secret = {
+            'data': '123456',
+            'data_nonce': first_secret['data_nonce'],
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, second_secret)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserGetSecretTest(APITestCaseExtended):
+    """
+    Test to get a secret (GET)
+    """
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_email2 = "test2@example.com"
+        self.test_email3 = "test3@example.com"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9902ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce3 = "f580c29902ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce2 = "4298a9ab3d8d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce3 = "4228a9ab3d8d5d8643dfd4445adc30301b565ab650497fb9"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+        self.test_user2_obj = models.User.objects.create(
+            email=self.test_email2,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+        self.test_user3_obj = models.User.objects.create(
+            email=self.test_email3,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce3,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce3,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+        self.test_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+        self.test_secret2_obj = models.Secret.objects.create(
+            user_id=self.test_user2_obj.id,
+            data='12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+
+    def test_without_uuid_and_existing_secrets(self):
+        """
+        Tests to get all shares without specifying a uuid, while having some secrets
+        """
+
+        url = reverse('secret')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data.get('secrets', False), False,
+                            'secrets does not exist in answer')
+        self.assertEqual(len(response.data['secrets']), 1,
+                            'There should only be one secret, but we got: ' + str(len(response.data['secrets'])))
+        self.assertNotEqual(response.data['secrets'][0].get('id', False), False,
+                            'object in list has no id attribute')
+
+
+    def test_without_uuid_and_no_existing_secrets(self):
+        """
+        Tests to get all shares without specifying a uuid, while having some secrets
+        """
+
+        url = reverse('secret')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user3_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data.get('secrets', False), False,
+                            'secrets does not exist in answer')
+        self.assertEqual(len(response.data['secrets']), 0,
+                            'There should not be any secret, but we got: ' + str(len(response.data['secrets'])))
+
+    def test_with_badly_formatted_uuid(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': "12345"})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_with_not_existing_secret(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_without_rights(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': str(self.test_secret2_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class UserUpdateSecretTest(APITestCaseExtended):
+    """
+    Test to update a secret (POST)
+    """
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_email2 = "test2@example.com"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9902ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce2 = "4298a9ab3d8d5d8643dfd4445adc30301b565ab650497fb9"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+        self.test_user2_obj = models.User.objects.create(
+            email=self.test_email2,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+
+        self.test_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+        self.test_secret2_obj = models.Secret.objects.create(
+            user_id=self.test_user2_obj.id,
+            data='12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+    def test_with_badly_formatted_uuid(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': "12345"})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_with_not_existing_secret(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_without_rights(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': str(self.test_secret2_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_with_rights(self):
+        """
+        Tests to get a specific share without rights
+        """
+
+        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
+
+        data = {
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        updated_secret = models.Secret.objects.get(pk=self.test_secret_obj.id)
+
+        self.assertEqual(str(updated_secret.data), data['data'],
+                            'data in secret was not updated')
+
+        self.assertEqual(str(updated_secret.data_nonce), data['data_nonce'],
+                            'data_nonce in secret was not updated')
