@@ -63,6 +63,8 @@ def create_link(link_id, share_id, parent_share_id, parent_datastore_id):
         ELSE t.parent_share_id
       END parent_share_id,
       CASE
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) AND new_parent.share_id IS NOT NULL THEN NULL
+        WHEN nlevel(one_old_parent.path) != nlevel(t.path) AND t.parent_share_id IS NOT NULL THEN NULL
         WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(parent_datastore_id)s, t.datastore_id) --replace this null with datastore id if specified
         ELSE t.datastore_id
       END datastore_id
@@ -253,7 +255,9 @@ class ShareLinkView(GenericAPIView):
 
         # check write permissions on old_datastores
         for old_datastore_id in old_datastores:
-            if Data_Store.objects.get(pk=old_datastore_id, user=request.user):
+            try:
+                Data_Store.objects.get(pk=old_datastore_id, user=request.user)
+            except Data_Store.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": old_datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
@@ -344,7 +348,9 @@ class ShareLinkView(GenericAPIView):
 
         # check write permissions on datastores
         for datastore_id in datastores:
-            if Data_Store.objects.get(pk=datastore_id, user=request.user):
+            try:
+                Data_Store.objects.get(pk=datastore_id, user=request.user)
+            except Data_Store.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
