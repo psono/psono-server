@@ -139,6 +139,9 @@ class ShareView(GenericAPIView):
 
             try:
                 share = Share.objects.get(pk=uuid)
+            except ValueError:
+                return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
+                                status=status.HTTP_400_BAD_REQUEST)
             except Share.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
@@ -270,6 +273,9 @@ class ShareView(GenericAPIView):
 
         try:
             share = Share.objects.get(pk=uuid)
+        except ValueError:
+            return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
         except Share.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
@@ -277,19 +283,16 @@ class ShareView(GenericAPIView):
         # check permissions on share
         if not user_has_rights_on_share(request.user.id, uuid, write=True):
             return Response({"message": "You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
+                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         if 'data' in request.data:
             share.data = str(request.data['data'])
         if 'data_nonce' in request.data:
             share.data_nonce = str(request.data['data_nonce'])
-        if 'secret_key' in request.data:
-            share.secret_key = str(request.data['secret_key'])
-        if 'secret_key_nonce' in request.data:
-            share.secret_key_nonce = str(request.data['secret_key_nonce'])
 
         share.save()
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
 
