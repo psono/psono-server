@@ -20,7 +20,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     /* Start of Config*/
 
     // Use current url, but should be hardcoded in production to something like:
-    // 'https://dev.sanso.pw' or 'http://dev.sanso.pw:8001'
+    // 'https://dev.psono.pw' or 'http://dev.psono.pw:8001'
     // Please only use http instead of https for development purposes only and NEVER in production!
     var backend = location.origin;
 

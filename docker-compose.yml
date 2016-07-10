@@ -8,4 +8,4 @@ passwordserver:
   links:
    - db
   environment:
-   - SANSO_EMAIL_HOST=172.17.0.1
+   - PSONO_EMAIL_HOST=172.17.0.1

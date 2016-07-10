@@ -13,10 +13,10 @@ services:
     links:
      - db
     environment:
-     - SANSO_EMAIL_HOST=172.17.0.1
-     - SANSO_EMAIL_FROM=test@example.com
-     - SANSO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
-     - SANSO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+     - PSONO_EMAIL_HOST=172.17.0.1
+     - PSONO_EMAIL_FROM=test@example.com
+     - PSONO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+     - PSONO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
     networks:
       - password-manager-server-network-test
 

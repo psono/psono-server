@@ -24,7 +24,7 @@ class SystemTests(APITestCaseExtended):
         mail.outbox = []
 
         successfull_delivered_messages = mail.send_mail('SMTP e-mail test', 'This is a test e-mail message.',
-                                                        'info@sanso.pw', ['saschapfeiffer1337@gmail.com'],
+                                                        'info@psono.pw', ['saschapfeiffer1337@gmail.com'],
                                                         fail_silently=False)
 
         self.assertEqual(successfull_delivered_messages, 1)

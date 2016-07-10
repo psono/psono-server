@@ -79,7 +79,7 @@ instructions to get a production server running
         
 4. Install Apache config
 
-        sudo ln -s /path/to/password-manager-server/configs/apache/dev.sanso.pw.conf /etc/apache2/sites-enabled/
+        sudo ln -s /path/to/password-manager-server/configs/apache/dev.psono.pw.conf /etc/apache2/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our apache:
     
@@ -125,7 +125,7 @@ instructions to get a production server running
         
 3. Install nginx config
 
-        sudo ln -s /path/to/password-manager-server/configs/nginx/dev.sanso.pw.conf /etc/nginx/sites-enabled/
+        sudo ln -s /path/to/password-manager-server/configs/nginx/dev.psono.pw.conf /etc/nginx/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our nginx:
     
