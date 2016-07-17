@@ -60,6 +60,7 @@ class ShareRightView(GenericAPIView):
                 share_right_response.append({
                     'id': share_right.id,
                     'title': share_right.title,
+                    'title_nonce': share_right.title_nonce,
                     'key': share_right.key,
                     'key_nonce': share_right.key_nonce,
                     'read': share_right.read,
@@ -75,6 +76,7 @@ class ShareRightView(GenericAPIView):
                 share_right_response.append({
                     'id': share_right.id,
                     'title': share_right.share_right.title,
+                    'title_nonce': share_right.share_right.title_nonce,
                     'key': share_right.share_right.key,
                     'key_nonce': share_right.share_right.key_nonce,
                     'read': share_right.share_right.read,
@@ -108,6 +110,7 @@ class ShareRightView(GenericAPIView):
             response = {
                 'id': share_right.id,
                 'title': share_right.title,
+                'title_nonce': share_right.title_nonce,
                 'key': share_right.key,
                 'key_nonce': share_right.key_nonce,
                 'read': share_right.read,
@@ -165,6 +168,7 @@ class ShareRightView(GenericAPIView):
                 key=str(request.data['key']),
                 key_nonce=str(request.data['key_nonce']),
                 title=str(request.data['title']),
+                title_nonce=str(request.data['title_nonce']),
                 share_id=request.data['share_id'],
                 owner=request.user,
                 user=user,
@@ -301,6 +305,7 @@ class ShareRightAcceptView(GenericAPIView):
 
             user_share_right_obj.accepted = True
             user_share_right_obj.title = ''
+            user_share_right_obj.title_nonce = ''
             user_share_right_obj.key_type = 'symmetric'
             user_share_right_obj.key = request.data['key']
             user_share_right_obj.key_nonce = request.data['key_nonce']
@@ -358,6 +363,7 @@ class ShareRightDeclineView(GenericAPIView):
 
             user_share_right_obj.accepted = False
             user_share_right_obj.title = ''
+            user_share_right_obj.title_nonce = ''
             user_share_right_obj.key_type = ''
             user_share_right_obj.key = ''
             user_share_right_obj.key_nonce = ''

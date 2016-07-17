@@ -118,6 +118,7 @@ class UserRightsDecline(APITestCaseExtended):
         saved_user_share_right = models.User_Share_Right.objects.get(pk=str(self.test_share_right1_obj.id))
 
         self.assertEqual(saved_user_share_right.title, "", "Title should be empty")
+        self.assertEqual(saved_user_share_right.title_nonce, "", "Title nonce should be empty")
         self.assertEqual(saved_user_share_right.accepted, False, "Accepted flag should be false")
         self.assertEqual(saved_user_share_right.key, "", "Key should be empty")
         self.assertEqual(saved_user_share_right.key_nonce, "", "Key nonce should be empty")

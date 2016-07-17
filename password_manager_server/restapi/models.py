@@ -170,9 +170,10 @@ class User_Share_Right(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='own_user_share_rights',
                               help_text=_('The guy who created this share right'))
-    title = models.CharField(_('Title'), max_length=256,
-                             help_text=_('The public title of the share right.'),
+    title = models.CharField(_('Title'), max_length=512,
+                             help_text=_('The public (yet encrypted) title of the share right.'),
                              null=True)
+    title_nonce = models.CharField(_('Title nonce'), max_length=64, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
                               help_text=_('The guy who will receive this share right'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',

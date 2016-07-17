@@ -71,6 +71,7 @@ class ShareView(GenericAPIView):
                         'share_right_id': u.id,
                         'share_right_user_id': u.user_id,
                         'share_right_title': u.title,
+                        'share_right_title_nonce': u.title_nonce,
                         'share_right_key': u.key,
                         'share_right_key_nonce': u.key_nonce,
                         'share_right_key_type': u.key_type,
@@ -79,7 +80,8 @@ class ShareView(GenericAPIView):
                         'share_right_grant': u.grant,
                         'share_right_accepted': u.accepted,
                         'share_right_create_user_id': u.owner.id,
-                        'share_right_create_user_email': u.owner.email}
+                        'share_right_create_user_email': u.owner.email,
+                        'share_right_create_user_public_key': u.owner.public_key}
 
                     # share.data = str(s.data) if s.data and s.share_right_read and s.share_right_accepted else ''
                     # share.data_nonce =  s.data_nonce if s.data_nonce and s.share_right_read and s.share_right_accepted else ''
@@ -104,6 +106,7 @@ class ShareView(GenericAPIView):
                         'share_right_id': [],
                         'share_right_user_id': [],
                         'share_right_title': '',
+                        'share_right_title_nonce': '',
                         'share_right_key': [],
                         'share_right_key_nonce': [],
                         'share_right_key_type': [],
@@ -112,7 +115,8 @@ class ShareView(GenericAPIView):
                         'share_right_grant': False,
                         'share_right_accepted': False,
                         'share_right_create_user_id': [],
-                        'share_right_create_user_email': []
+                        'share_right_create_user_email': [],
+                        'share_right_create_user_public_key': []
                     }
 
                 share_index[s.id]['share_right_id'].append(s.share_right.id)
@@ -126,6 +130,7 @@ class ShareView(GenericAPIView):
                 share_index[s.id]['share_right_accepted'] = share_index[s.id]['share_right_accepted'] or  s.share_right.accepted
                 share_index[s.id]['share_right_create_user_id'].append(s.share_right.owner.id)
                 share_index[s.id]['share_right_create_user_email'].append(s.share_right.owner.email)
+                share_index[s.id]['share_right_create_user_public_key'].append(s.share_right.owner.public_key)
 
             for share_id, share in share_index.items():
                 response.append(share)
@@ -259,6 +264,7 @@ class ShareView(GenericAPIView):
                 key_type = request.data['key_type'],
                 accepted= True,
                 title="",
+                title_nonce="",
                 read = True,
                 write = True,
                 grant = True

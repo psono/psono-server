@@ -267,7 +267,9 @@ class ShareTests(APITestCaseExtended):
                     'share_right_id': store['share_right_id'],
                     'share_right_create_user_id': self.test_user_obj.id,
                     'share_right_create_user_email': self.test_user_obj.email,
+                    'share_right_create_user_public_key': self.test_user_obj.public_key,
                     'share_right_title': "",
+                    'share_right_title_nonce': "",
                     'share_right_key': initial_data['key'],
                     'share_right_key_nonce': initial_data['key_nonce'],
                     'share_right_key_type': initial_data['key_type'],
@@ -560,7 +562,8 @@ class UserShareRightTest(APITestCaseExtended):
             share_id=self.test_share1_obj.id,
             key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            title="Sexy Password",
+            title=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            title_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             read=True,
             write=True,
             grant=True,
@@ -777,7 +780,8 @@ class UserShareRightTest(APITestCaseExtended):
             'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'share_id': str(self.test_share1_obj.id),
-            'title': "Sexy Password",
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'read': True,
             'write': True,
             'grant': True,
@@ -818,7 +822,8 @@ class UserShareRightTest(APITestCaseExtended):
             'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'share_id': str(self.test_share1_obj.id),
-            'title': "Sexy Password",
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'read': True,
             'write': True,
             'grant': True,
@@ -869,7 +874,8 @@ class UserShareRightTest(APITestCaseExtended):
         target_store = {
             'id': UUID(new_share_right_id, version=4),
             'share_id': self.test_share1_obj.id,
-            'title': "Sexy Password",
+            'title': initial_data['title'],
+            'title_nonce': initial_data['title_nonce'],
             'read': True,
             'write': True,
             'grant': True,
@@ -1132,7 +1138,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         updated_share = models.Share.objects.get(pk=str(self.test_share1_obj.id))

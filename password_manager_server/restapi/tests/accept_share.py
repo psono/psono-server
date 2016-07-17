@@ -156,6 +156,7 @@ class UserRightsAccept(APITestCaseExtended):
         saved_user_share_right = models.User_Share_Right.objects.get(pk=str(test_share_right1_obj.id))
 
         self.assertEqual(saved_user_share_right.title, "", "Title should be empty")
+        self.assertEqual(saved_user_share_right.title_nonce, "", "Title nonce should be empty")
         self.assertEqual(saved_user_share_right.accepted, True, "Accepted flag should be true")
         self.assertEqual(saved_user_share_right.key, initial_data['key'], "Key should be new key")
         self.assertEqual(saved_user_share_right.key_nonce, initial_data['key_nonce'], "Key nonce should be new key")
@@ -218,6 +219,7 @@ class UserRightsAccept(APITestCaseExtended):
         saved_user_share_right = models.User_Share_Right.objects.get(pk=str(test_share_right1_obj.id))
 
         self.assertEqual(saved_user_share_right.title, "", "Title should be empty")
+        self.assertEqual(saved_user_share_right.title_nonce, "", "Title nonce should be empty")
         self.assertEqual(saved_user_share_right.accepted, True, "Accepted flag should be true")
         self.assertEqual(saved_user_share_right.key, initial_data['key'], "Key should be new key")
         self.assertEqual(saved_user_share_right.key_nonce, initial_data['key_nonce'], "Key nonce should be new key")
