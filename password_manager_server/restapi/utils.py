@@ -89,6 +89,25 @@ def authenticate(email = False, user = False, authkey = False):
     return user
 
 
+def get_all_inherited_rights(user_id, share_id):
+
+    return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
+        FROM (
+          SELECT DISTINCT ON(t.path)
+          ur.*
+        FROM restapi_share_tree t
+        JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
+        JOIN restapi_user_share_right ur ON t2.share_id = ur.share_id
+        WHERE t.share_id = %(share_id)s
+          AND ur.user_id = %(user_id)s
+          AND ur.accepted = true
+        ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
+        ) a""", {
+        'share_id': share_id,
+        'user_id': user_id,
+    })
+
+
 def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
     """
     Checks if the given user has the requested rights for the given share
@@ -103,7 +122,7 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
 
     try:
         # check direct share_rights first, as direct share_rights override inherited share rights
-        user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id, accepted=True)
+        user_share_right = User_Share_Right.objects.get(user_id=user_id, share_id=share_id, accepted=True)
 
         return (read is None or read == user_share_right.read)\
                and (write is None or write == user_share_right.write)\
@@ -111,7 +130,20 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
 
     except User_Share_Right.DoesNotExist:
         # maybe he has inherited rights
-        return False
+        user_share_rights = get_all_inherited_rights(user_id, share_id)
+
+        grouped_read = False
+        grouped_write = False
+        grouped_grant = False
+
+        for s in user_share_rights:
+            grouped_read = grouped_read or s.read
+            grouped_write = grouped_write or s.write
+            grouped_grant = grouped_grant or s.grant
+
+        return (read is None or read == grouped_read) \
+               and (write is None or write == grouped_write) \
+               and (grant is None or grant == grouped_grant)
 
 
 def is_uuid(expr):

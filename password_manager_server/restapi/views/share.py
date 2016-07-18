@@ -1,4 +1,4 @@
-from ..utils import user_has_rights_on_share, is_uuid
+from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
 from share_tree import create_link
 from datastore import get_datastore
 from rest_framework import status
@@ -168,26 +168,25 @@ class ShareView(GenericAPIView):
                     'user_id': u.user_id,
                 })
 
-                if u.read:
-                    has_read_right = True
+                has_read_right = has_read_right or u.read
+
 
             if not user_share_rights:
-                pass
-                # TODO Fill user_share_rights_inherited with inherited rights
-                # for u in share.user_share_right_inherits.filter(share_right__user=request.user):
-                #     user_share_rights_inherited.append({
-                #         'id': u.share_right.id,
-                #         'key': u.share_right.key,
-                #         'key_nonce': u.share_right.key_nonce,
-                #         'key_type': u.share_right.key_type,
-                #         'read': u.share_right.read,
-                #         'write': u.share_right.write,
-                #         'grant': u.share_right.grant,
-                #         'user_id': u.share_right.user_id,
-                #     })
-                #
-                #     if u.share_right.read:
-                #         has_read_right = True
+                inherited_rights = get_all_inherited_rights(request.user.id, uuid)
+                for u in inherited_rights:
+                    user_share_rights_inherited.append({
+                        'id': u.id,
+                        'key': u.key,
+                        'key_nonce': u.key_nonce,
+                        'key_type': u.key_type,
+                        'read': u.read,
+                        'write': u.write,
+                        'grant': u.grant,
+                        'user_id': u.user_id,
+                    })
+
+                    has_read_right = has_read_right or u.read
+
 
             if not has_read_right:
                 raise PermissionDenied({"message":"You don't have permission to read the share",

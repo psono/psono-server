@@ -1,4 +1,4 @@
-from ..utils import user_has_rights_on_share, is_uuid
+from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
 from share_tree import create_link
 from rest_framework import status
 from rest_framework.response import Response
@@ -153,9 +153,12 @@ class ShareRightView(GenericAPIView):
             user_share_right_obj = User_Share_Right.objects.get(share_id=request.data['share_id'],
                                                                 user_id=request.data['user_id'])
             user_share_right_obj.owner = request.user
-            user_share_right_obj.read = request.data['read']
-            user_share_right_obj.write = request.data['write']
-            user_share_right_obj.grant = request.data['grant']
+
+            serializer = UserShareRightSerializer(request.data)
+
+            user_share_right_obj.read = serializer.data['read']
+            user_share_right_obj.write = serializer.data['write']
+            user_share_right_obj.grant = serializer.data['grant']
             user_share_right_obj.save()
 
             return Response({"share_right_id": str(user_share_right_obj.id)},
@@ -163,7 +166,15 @@ class ShareRightView(GenericAPIView):
 
 
         except User_Share_Right.DoesNotExist:
+
+            # lets check if the user has already a path to access the share. if yes automatically approve rights
+            accepted = None
+            if len(list(get_all_inherited_rights(user.id, request.data['share_id']))) > 0:
+                accepted = True
+
             # it does not yet exist, so lets create it
+            serializer = UserShareRightSerializer(request.data)
+
             user_share_right_obj2 = User_Share_Right.objects.create(
                 key=str(request.data['key']),
                 key_nonce=str(request.data['key_nonce']),
@@ -172,9 +183,10 @@ class ShareRightView(GenericAPIView):
                 share_id=request.data['share_id'],
                 owner=request.user,
                 user=user,
-                read=request.data['read'],
-                write=request.data['write'],
-                grant=request.data['grant'],
+                read=serializer.data['read'],
+                write=serializer.data['write'],
+                grant=serializer.data['grant'],
+                accepted=accepted,
             )
 
         return Response({"share_right_id": str(user_share_right_obj2.id)},

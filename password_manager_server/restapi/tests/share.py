@@ -409,9 +409,9 @@ class ShareTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
-                            'Datastore id does not exist in share PUT answer')
+                            'Share id does not exist in share PUT answer')
         self.assertIsUUIDString(str(response.data.get('share_id', '')),
-                                'Datastore id is no valid UUID')
+                                'Share id is no valid UUID')
 
         new_share_id = str(response.data.get('share_id'))
 

@@ -187,3 +187,5 @@ class UserShareRightsTest(APITestCaseExtended):
                             'user_share_rights does not exist in answer')
         self.assertNotEqual(response.data.get('user_share_rights_inherited', False), False,
                             'user_share_rights_inherited does not exist in answer')
+
+    #TODO Test actual database integrity of saved share rights

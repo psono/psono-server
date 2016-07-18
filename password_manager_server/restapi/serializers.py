@@ -288,13 +288,9 @@ class UserShareSerializer(serializers.Serializer):
 
 
 class UserShareRightSerializer(serializers.Serializer):
-
-    id = serializers.UUIDField(default=uuid.uuid4)
-    data = serializers.CharField()
-    data_nonce = serializers.CharField(max_length=64)
-    user_share_rights = UserShareSerializer()
-    user = PublicUserDetailsSerializer()
-    share = PublicShareDetailsSerializer()
+    read = serializers.BooleanField()
+    write = serializers.BooleanField()
+    grant = serializers.BooleanField()
 
 class ShareTreeSerializer(serializers.Serializer):
 
