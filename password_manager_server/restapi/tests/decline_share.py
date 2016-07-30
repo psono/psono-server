@@ -138,3 +138,85 @@ class UserRightsDecline(APITestCaseExtended):
         response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_decline_share_right(self):
+        """
+        Tests GET method to decline a share right
+        """
+
+        # Lets first insert our first dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+
+        models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            read=True,
+            write=False,
+            grant=True,
+            accepted=True
+        )
+
+        self.test_share_right1_obj = models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=True,
+            write=False,
+            grant=True
+        )
+
+        # lets try to create an inherited share right for share2
+        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+
+        initial_data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_put_decline_share_right(self):
+        """
+        Tests PUT method to decline a share right
+        """
+
+        # Lets first insert our first dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+
+        models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            read=True,
+            write=False,
+            grant=True,
+            accepted=True
+        )
+
+        self.test_share_right1_obj = models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=True,
+            write=False,
+            grant=True
+        )
+
+        # lets try to create an inherited share right for share2
+        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+
+        initial_data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
