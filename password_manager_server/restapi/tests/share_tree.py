@@ -205,6 +205,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email2 = "test2@example.com"
+        self.test_email3 = "test3@example.com"
         self.test_password = "myPassword"
         self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
                             "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
@@ -215,12 +216,14 @@ class ShareTreeModificationTests(APITestCaseExtended):
                                    "571a48eb"
         self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
         self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
+        self.test_secret_key_nonce3 = "f580cc990ace7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
         self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
         self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
                                     "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
                                     "a74b9b2452"
         self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
         self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+        self.test_private_key_nonce3 = "4298a9ab3d9d5d8643dfd4445adc30301b56aab650497fb8"
 
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -242,6 +245,18 @@ class ShareTreeModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=os.urandom(32).encode('hex'),
+            is_email_active=True
+        )
+
+        self.test_user3_obj = models.User.objects.create(
+            email=self.test_email3,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce3,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce3,
             user_sauce=os.urandom(32).encode('hex'),
             is_email_active=True
         )
@@ -424,17 +439,28 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.responseB3 = self.client.put(url, self.initial_dataB3)
 
 
-    def test_link_of_share_in_other_datastore_without_rights_for_the_share(self):
+    def test_link_of_share_to_other_parent_share_with_badly_formatted_uuid(self):
         """
-        Tests to link a share in other datastore without any rights for it
+        Tests to link a share to other parent_share with badly formatted uuid
         """
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': '123456'})
 
-        share_trees = models.Share_Tree.objects.all()
-        expected_share_tree_count = 11
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
 
-        self.assertEqual(share_trees.count(), expected_share_tree_count,
-                         'Exactly '+str(expected_share_tree_count)+' share tree objects should be created, but we got: ' + str(share_trees.count()))
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
 
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_link_of_share_to_other_datastore_without_rights_for_the_share(self):
+        """
+        Tests to link a share to other datastore without any rights for it
+        """
         # lets try to create the a link to a share without rights to a datastore
         link_id = uuid4()
         url = reverse('share_link', kwargs={'uuid': str(link_id)})
@@ -451,18 +477,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('resource_id', False), str(request_data['share_id']),
                             'Should be declined because of no rights for share')
 
-    def test_link_of_share_in_other_datastore_without_rights_for_the_datastore(self):
+    def test_link_of_share_to_other_datastore_without_rights_for_the_datastore(self):
         """
-        Tests to link a share in other datastore without any rights for the datastore
+        Tests to link a share to other datastore without any rights for the datastore
         """
-
-        share_trees = models.Share_Tree.objects.all()
-        expected_share_tree_count = 11
-
-        self.assertEqual(share_trees.count(), expected_share_tree_count,
-                         'Exactly ' + str(
-                             expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
-                             share_trees.count()))
 
         # lets try to create the link to a share with a datastore without rights
         link_id = uuid4()
@@ -482,18 +500,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                             'Should be declined because of no rights for datastore')
 
 
-    def test_link_of_share_in_other_parent_share_without_rights_for_the_share(self):
+    def test_link_of_share_to_other_parent_share_without_rights_for_the_share(self):
         """
-        Tests to link a share in other parent_share without any rights for the share
+        Tests to link a share to other parent_share without any rights for the share
         """
-
-        share_trees = models.Share_Tree.objects.all()
-        expected_share_tree_count = 11
-
-        self.assertEqual(share_trees.count(), expected_share_tree_count,
-                         'Exactly ' + str(
-                             expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
-                             share_trees.count()))
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
@@ -512,18 +522,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
                          'Should be declined because of no rights for share')
 
 
-    def test_link_of_share_in_other_parent_share_without_rights_for_the_parent_share(self):
+    def test_link_of_share_to_other_parent_share_without_rights_for_the_parent_share(self):
         """
-        Tests to link a share in other parent_share without any rights for the parent_share
+        Tests to link a share to other parent_share without any rights for the parent_share
         """
-
-        share_trees = models.Share_Tree.objects.all()
-        expected_share_tree_count = 11
-
-        self.assertEqual(share_trees.count(), expected_share_tree_count,
-                         'Exactly ' + str(
-                             expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
-                             share_trees.count()))
 
         # lets try to create the link to a share with a parent_share without rights
         link_id = uuid4()
@@ -543,9 +545,49 @@ class ShareTreeModificationTests(APITestCaseExtended):
                          'Should be declined because of no rights for parent_share')
 
 
-    def test_link_of_share_in_other_parent_share(self):
+    def test_link_of_share_to_other_not_existing_share(self):
         """
-        Tests to link a share in other parent_share
+        Tests to link a share to other not existing share
+        """
+
+        # lets try to create the a link to a share without rights to a parent_share
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': '9289cd38-380d-416e-88db-de2880fd9ba7',
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_link_of_share_to_other_not_existing_parent_share(self):
+        """
+        Tests to link a share to other not existing parent_share
+        """
+
+        # lets try to create the a link to a share without rights to a parent_share
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': '9289cd38-380d-416e-88db-de2880fd9ba7',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_link_of_share_to_other_parent_share(self):
+        """
+        Tests to link a share to other parent_share
         """
 
         share_trees = models.Share_Tree.objects.all()
@@ -623,9 +665,39 @@ class ShareTreeModificationTests(APITestCaseExtended):
                          'Path is incorrect')
 
 
+    def test_link_of_share_to_other_parent_share_with_duplicate_link_uuid(self):
+        """
+        Tests to link a share to other parent_share with duplicate link uuid
+        """
+
+        # lets try to create the a link to a share without rights to a parent_share
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
     def test_link_of_share_in_datastore(self):
         """
-        Tests to link a share in other parent_share
+        Tests to link a share to other parent_share
         """
 
         share_trees = models.Share_Tree.objects.all()
@@ -705,3 +777,558 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
     # TODO Test delete share_tree obj (DELETE)
+
+    def test_delete_with_badly_formatted_uuid(self):
+        """
+        Tests to delete a share_right with badly formed uuid
+        """
+
+        url = reverse('share_link', kwargs={'uuid': "12345"})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_share_that_does_not_exist(self):
+        """
+        Tests to delete a share_right
+        """
+
+        share_trees = models.Share_Tree.objects.all()
+        expected_share_tree_count = 11
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count,
+                         'Exactly ' + str(
+                             expected_share_tree_count) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': 'b48cbd50-1aba-4389-90ce-3bed32c831e3'})
+
+        request_data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_delete_share_that_exists(self):
+        """
+        Tests to delete a share_right
+        """
+
+        share_trees = models.Share_Tree.objects.all()
+        expected_share_tree_count_before = 11
+        expected_share_tree_count_after = 13
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_before,
+                         'Exactly ' + str(
+                             expected_share_tree_count_before) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+
+    def test_delete_share_with_no_grant_rights_on_share(self):
+        """
+        Tests to delete a share_right with no grant rights on share
+        """
+
+        share_trees = models.Share_Tree.objects.all()
+        expected_share_tree_count_after = 13
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+        # remove grant right on share
+        models.User_Share_Right.objects.filter(share_id=self.response7.data.get('share_id'), user=self.test_user_obj).update(grant=False)
+
+
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+
+    def test_delete_share_with_no_write_rights_on_parent_share(self):
+        """
+        Tests to delete a share_right with no write rights on parent share
+        """
+
+        share_trees = models.Share_Tree.objects.all()
+        expected_share_tree_count_after = 13
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+        # remove grant right on share
+        models.User_Share_Right.objects.filter(share_id=self.response5.data.get('share_id'), user=self.test_user_obj).update(write=False)
+
+
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+
+    def test_delete_share_with_no_write_rights_on_parent_datastore(self):
+        """
+        Tests to delete a share_right with no write rights on parent datastore
+        """
+
+        share_trees = models.Share_Tree.objects.all()
+        expected_share_tree_count_after = 13
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response7.data.get('share_id'),
+            'datastore_id': self.test_datastore1_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+        # change datastore owner
+        models.Data_Store.objects.filter(pk=self.test_datastore1_obj.id).update(user=self.test_user3_obj)
+
+
+        # lets try to create the a link to a share without rights to a parent_share
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
+                         'Exactly ' + str(
+                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
+                             share_trees.count()))
+
+
+    def test_move_not_existing_link(self):
+        """
+        Tests to move not existing link
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': 'd7d63a3a-d2ce-4c52-a9bb-37baf13d814f'})
+
+        request_data = {
+            'new_parent_share_id': self.response6.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_move_share_to_new_parent_share(self):
+        """
+        Tests to move share to new parent share
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_share_id': self.response6.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_move_share_to_new_parent_share_with_no_write_rights_on_new_parent(self):
+        """
+        Tests to move share to new parent share with no write rights on new parent
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # change share_rights to no write
+        models.User_Share_Right.objects.filter(share_id=self.response6.data.get('share_id'), user=self.test_user_obj).update(write=False)
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_share_id': self.response6.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_move_share_to_new_parent_share_with_no_write_rights_on_old_parent(self):
+        """
+        Tests to move share to new parent share with no write rights on old parent
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # change share_rights to no write
+        models.User_Share_Right.objects.filter(share_id=self.response5.data.get('share_id'), user=self.test_user_obj).update(write=False)
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_share_id': self.response6.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_move_share_to_new_parent_share_while_no_grant_permissions_on_share(self):
+        """
+        Tests to move share to new parent share while the user has no grant permissions on share
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # change share_rights to no write
+        models.User_Share_Right.objects.filter(share_id=self.response8.data.get('share_id'), user=self.test_user_obj).update(grant=False)
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_share_id': self.response6.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_move_share_to_new_parent_share_which_does_not_exist(self):
+        """
+        Tests to move share to new parent share which does not exist
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_share_id': 'aefb1f49-d61f-411b-9d3d-8f6ef82a3014',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_move_share_to_new_datastore(self):
+        """
+        Tests to move share to new datastore
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_datastore_id': self.test_datastore1_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_move_share_to_new_datastore_which_does_not_belong_to_the_user(self):
+        """
+        Tests to move share to new datastore which does not belong to the user
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_datastore_id': self.test_datastore2_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_move_share_to_new_datastore_which_does_not_exist(self):
+        """
+        Tests to move share to new datastore which does not exist
+        """
+
+        link_id = uuid4()
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'share_id': self.response8.data.get('share_id'),
+            'parent_share_id': self.response5.data.get('share_id'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+
+        request_data = {
+            'new_parent_datastore_id': '598da51a-3c96-4f75-beec-dc91f92905ec',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_move_from_not_own_datastore_to_own_datastore(self):
+        """
+        Tests to move share from another users datastore to own datastore
+        """
+
+        models.User_Share_Right.objects.filter(share_id=self.responseB3.data.get('share_id'), user=self.test_user2_obj).update(user=self.test_user_obj)
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str(self.initial_dataB3['link_id'])})
+
+        request_data = {
+            'new_parent_datastore_id': self.test_datastore1_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_move_of_share_to_other_parent_share_with_badly_formatted_uuid(self):
+        """
+        Tests to move a share to other datastore with badly formatted uuid
+        """
+
+        # lets try to move it
+        url = reverse('share_link', kwargs={'uuid': str('123456')})
+
+        request_data = {
+            'new_parent_datastore_id': self.test_datastore1_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -6,14 +6,11 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from django.db.models import Q
-
 from ..models import (
-    Share, User_Share_Right, User, Data_Store
+    Share, User_Share_Right
 )
 
 from ..app_settings import (
-    UserShareRightSerializer,
     CreateShareSerializer
 )
 from rest_framework.exceptions import PermissionDenied

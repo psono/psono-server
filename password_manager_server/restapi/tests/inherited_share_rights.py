@@ -368,7 +368,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             'share_id': str(self.response11.data['share_id']),
             'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
             'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'read': False,
+            'read': False, # NO READ - share right that changes
             'write': True,
             'grant': False,
             'user_id': str(self.test_user2_obj.id),
@@ -392,3 +392,5 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
 
     # TODO Test everything with write
     # TODO Test everything with grant
+
+

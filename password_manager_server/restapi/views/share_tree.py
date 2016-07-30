@@ -6,18 +6,14 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from django.db.models import Q
 
 from ..models import (
-    Share, User_Share_Right, User, Share_Tree, Data_Store
+    Share, Share_Tree, Data_Store
 )
 
 from ..app_settings import (
-    UserShareRightSerializer,
-    CreateShareSerializer,
     ShareTreeSerializer
 )
-from rest_framework.exceptions import PermissionDenied
 
 from django.db import connection
 from ..authentication import TokenAuthentication
@@ -243,6 +239,11 @@ class ShareLinkView(GenericAPIView):
         old_parents = list(unique_everseen(old_parents))
         old_datastores = list(unique_everseen(old_datastores))
 
+        if not shares and not old_parents and not old_datastores:
+            return Response({"message":"You don't have permission to access or it does not exist.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+
+
         # check grant permissions on share
         for share_id in shares:
             if not user_has_rights_on_share(request.user.id, share_id, grant=True):
@@ -335,6 +336,11 @@ class ShareLinkView(GenericAPIView):
         shares = list(unique_everseen(shares))
         parents = list(unique_everseen(parents))
         datastores = list(unique_everseen(datastores))
+
+
+        if not shares and not parents and not datastores:
+            return Response({"message":"You don't have permission to access or it does not exist.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         # check grant permissions on share
         for share_id in shares:
