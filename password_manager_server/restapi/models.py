@@ -7,6 +7,9 @@ from fields import LtreeField
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
+import nacl.secret
+import nacl.utils
+from nacl.public import PrivateKey
 
 
 class User(models.Model):
@@ -226,7 +229,11 @@ class Token(models.Model):
     """
     create_date = models.DateTimeField(auto_now_add=True)
     key = models.CharField(max_length=128, primary_key=True)
+    secret_key = models.CharField(max_length=64)
+    user_validator = models.CharField(max_length=64, null=True)
     user = models.ForeignKey(User, related_name='auth_tokens')
+    active = models.BooleanField(_('Activated'), default=False,
+        help_text=_('Specifies if the token has already been activated'))
 
     def save(self, *args, **kwargs):
         if not self.key:
@@ -238,6 +245,9 @@ class Token(models.Model):
         # object instance is still alive
         self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
         self.key = sha512(self.clear_text_key).hexdigest()
+
+        self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
+        self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
 
     def __str__(self):
         return self.key

@@ -11,7 +11,7 @@ from ..models import (
 )
 
 from ..app_settings import (
-    LoginSerializer,
+    LoginSerializer, ActivateTokenSerializer,
     RegisterSerializer, VerifyEmailSerializer,
     UserUpdateSerializer, UserPublicKeySerializer
 )
@@ -21,6 +21,8 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
 from ..authentication import TokenAuthentication
+import nacl.utils
+from nacl.public import PrivateKey, PublicKey, Box
 
 
 class RegisterView(GenericAPIView):
@@ -161,11 +163,46 @@ class LoginView(GenericAPIView):
         user = serializer.validated_data['user']
         token = self.token_model.objects.create(user=user)
 
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        server_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        server_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = serializer.validated_data['user_session_public_key']
+        user_public_key_hex = user.public_key
+
+        # both our crypto boxes
+        user_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                              PublicKey(user_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        session_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
+
+        # encrypt session secret with session_crypto_box
+        session_secret_key_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        session_secret_key_nonce_hex = nacl.encoding.HexEncoder.encode(session_secret_key_nonce)
+        encrypted = session_crypto_box.encrypt(token.secret_key, session_secret_key_nonce)
+        session_secret_key = encrypted[len(session_secret_key_nonce):]
+        session_secret_key_hex = nacl.encoding.HexEncoder.encode(session_secret_key)
+
+        # encrypt user_validator with user_crypto_box
+        user_validator_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        user_validator_nonce_hex = nacl.encoding.HexEncoder.encode(user_validator_nonce)
+        encrypted = user_crypto_box.encrypt(token.user_validator, user_validator_nonce)
+        user_validator = encrypted[len(user_validator_nonce):]
+        user_validator_hex = nacl.encoding.HexEncoder.encode(user_validator)
+
+
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, user)
 
         return Response({
             "token": token.clear_text_key,
+            "session_public_key": server_session_public_key_hex,
+            "session_secret_key": session_secret_key_hex,
+            "session_secret_key_nonce": session_secret_key_nonce_hex,
+            "user_validator": user_validator_hex,
+            "user_validator_nonce": user_validator_nonce_hex,
             "user": {
                 "id": user.id,
                 "public_key": user.public_key,
@@ -176,6 +213,40 @@ class LoginView(GenericAPIView):
                 "user_sauce": user.user_sauce
             }
         },status=status.HTTP_200_OK)
+
+
+
+class ActivateTokenView(GenericAPIView):
+
+    """
+    Activates a token
+
+    """
+    permission_classes = (AllowAny,)
+    serializer_class = ActivateTokenSerializer
+    token_model = Token
+
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=self.request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token = serializer.validated_data['token']
+
+        token.active = True
+        token.user_validator = None
+        token.save()
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

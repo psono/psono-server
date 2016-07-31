@@ -31,6 +31,10 @@ class TokenAuthentication(BaseAuthentication):
         return self.authenticate_credentials(token_hash)
 
     @staticmethod
+    def user_token_to_token_hash(token):
+        return sha512(token).hexdigest()
+
+    @staticmethod
     def get_token_hash(request):
         auth = get_authorization_header(request).split()
 
@@ -49,16 +53,16 @@ class TokenAuthentication(BaseAuthentication):
         except UnicodeError:
             msg = _('Invalid token header. Token string should not contain invalid characters.')
             raise exceptions.AuthenticationFailed(msg)
-        return sha512(token).hexdigest()
+        return TokenAuthentication.user_token_to_token_hash(token)
 
     def authenticate_credentials(self, token_hash):
 
         time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
 
         try:
-            token = self.model.objects.select_related('user').get(key=token_hash, create_date__gte=time_threshold)
+            token = self.model.objects.select_related('user').get(key=token_hash, create_date__gte=time_threshold, active=True)
         except self.model.DoesNotExist:
-            raise exceptions.AuthenticationFailed(_('Invalid token.'))
+            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
         if not token.user.is_active:
             raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))

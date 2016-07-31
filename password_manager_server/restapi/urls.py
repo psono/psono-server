@@ -25,6 +25,7 @@ urlpatterns = [
     #url(r'^authentication/authkey/reset/confirm/$', views.AuthkeyResetConfirmView.as_view(),
     #    name='authentication_authkey_reset_confirm'),
     url(r'^authentication/login/$', views.LoginView.as_view(), name='authentication_login'),
+    url(r'^authentication/activate-token/$', views.ActivateTokenView.as_view(), name='authentication_activate_token'),
     url(r'^authentication/register/$', views.RegisterView.as_view(), name='authentication_register'),
     url(r'^authentication/verify-email/$', views.VerifyEmailView.as_view(), name='authentication_verify_email'),
 

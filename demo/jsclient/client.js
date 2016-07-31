@@ -186,14 +186,20 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} data
      * @param {string} public_key
      * @param {string} private_key
+     * @param {string} nonce (optional, should be unique and only provided for fix testing)
      * @returns {{nonce: string, ciphertext: string}}
      */
-    this.encrypt_data_public_key = function (data, public_key, private_key) {
+    this.encrypt_data_public_key = function (data, public_key, private_key, nonce) {
 
         var p = nacl.from_hex(public_key);
         var s = nacl.from_hex(private_key);
         var m = nacl.encode_utf8(data);
-        var n = nacl.crypto_box_random_nonce();
+        var n;
+        if (typeof(nonce) === 'undefined') {
+            n = nacl.crypto_box_random_nonce();
+        } else {
+            n = nacl.from_hex(nonce);
+        }
         var c = nacl.crypto_box(m, n, p, s);
 
         return {

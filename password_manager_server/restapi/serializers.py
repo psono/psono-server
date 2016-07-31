@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from utils import validate_activation_code, authenticate
+from authentication import TokenAuthentication
 import uuid
 
 try:
@@ -13,16 +14,21 @@ except:
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import User
+from models import User, Token
+import nacl.utils
+from nacl.exceptions import CryptoError
+import nacl.secret
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
+    public_key = serializers.CharField(required=True)
 
     def validate(self, attrs):
         email = attrs.get('email').lower().strip()
         authkey = attrs.get('authkey')
+        public_key = attrs.get('public_key')
 
         if email and authkey:
             user = authenticate(email=email, authkey=authkey)
@@ -34,6 +40,10 @@ class LoginSerializer(serializers.Serializer):
             msg = _('Password or e-mail wrong.')
             raise exceptions.ValidationError(msg)
 
+        if len(public_key) != 64:
+            msg = _('Session public key seems invalid.')
+            raise exceptions.ValidationError(msg)
+
         if not user.is_active:
             msg = _('User account is disabled.')
             raise exceptions.ValidationError(msg)
@@ -43,7 +53,44 @@ class LoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         attrs['user'] = user
+        attrs['user_session_public_key'] = public_key
         return attrs
+
+class ActivateTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    verification = serializers.CharField(required=True)
+    verification_nonce = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        verification_hex = attrs.get('verification')
+        verification = nacl.encoding.HexEncoder.decode(verification_hex)
+        verification_nonce_hex = attrs.get('verification_nonce')
+        verification_nonce = nacl.encoding.HexEncoder.decode(verification_nonce_hex)
+
+        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+
+        try:
+            token = Token.objects.filter(key=token_hash, active=False).get()
+        except Token.DoesNotExist:
+            msg = _('Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        crypto_box = nacl.secret.SecretBox(token.secret_key, encoder=nacl.encoding.HexEncoder)
+
+        try:
+            decrypted = crypto_box.decrypt(verification, verification_nonce)
+        except CryptoError:
+            msg = _('Verification code incorrect.')
+            raise exceptions.ValidationError(msg)
+
+
+        if token.user_validator != decrypted:
+            msg = _('Verification code incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        attrs['token'] = token
+        return attrs
+
 
 class VerifyEmailSerializeras(serializers.Serializer):
     activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )

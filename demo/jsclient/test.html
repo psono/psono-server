@@ -2,35 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TEST</title>
+    <title>JS Client</title>
+
+    <!-- All of the following lines in head are kinda mandatory -->
 
     <!-- NaCl, SCrypt and sha512 are mandatory -->
     <script src="libs/js-nacl/lib/nacl_factory.js" type="text/javascript"></script>
+    <script src="libs/scrypt/browser/scrypt.js" type="text/javascript"></script>
 
-    <script>
-        var nacl = nacl_factory.instantiate();
+    <!-- Main Script -->
+    <script src="client.js" type="text/javascript"></script>
+
+    <!-- Jquery is used for all REST-API Calls -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+    <!-- Helper functions to call the actual functions with form parameters and display the output -->
+    <script type="text/javascript">
+        $(function () {
+            (function () {
+                "use strict";
+
+                var client = new ClassClient(location, nacl_factory, jQuery, scrypt_module_factory);
+
+
+
+                function test2() {
+                    var user_public_key_hex = 'ed432a749a329fc639a0d360925c16963274ea6db833af316f85f2b28c461aa8';
+                    var user_private_key_hex = '2a8d0fad610f5b1fc8c66dd73540c6a6743ca306779c1d91106cec3f1949332e';
+
+
+                    var server_session_private_key_hex = '68b07c8d834064269ff32a5bc228813787adf9b3a5783ff7af048a69ba75b5b1';
+                    var server_session_public_key_hex = 'ba27863332ffde70a85fb41a6e958ed516e21018b4cfa21f2dfecd9cf4588f70';
+
+                    var user_validator_cleartext = '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306';
+                    var user_validator_nonce_hex = 'b54952bb3a8cfe53cf5806534b61b7eb52fc8a4cdc23e95a';
+
+                    console.log(client.encrypt_data_public_key(user_validator_cleartext, user_public_key_hex, server_session_private_key_hex, user_validator_nonce_hex));
+                    //console.log(client.decrypt_data_public_key(msg, nonce, priv2, pub1));
+
+
+
+                }
+
+                test2();
+
+                /*
+                    server:
+                    ('user_public_key_hex:', u'ed432a749a329fc639a0d360925c16963274ea6db833af316f85f2b28c461aa8')
+                    ('server_session_private_key_hex:', '68b07c8d834064269ff32a5bc228813787adf9b3a5783ff7af048a69ba75b5b1')
+                    ('server_session_public_key_hex:', 'ba27863332ffde70a85fb41a6e958ed516e21018b4cfa21f2dfecd9cf4588f70')
+                    ('user_validator_hex:', '88963f455eb56073dad24dd2482b5a30fe82a75fab5f8be579f6517e78f6337030ca300fb7e369ca405fc419a638d5e71ea908d6e670829c2f982899d9c3055a76e2d91999bd2e658ba52f4c01ecdb06')
+                    ('user_validator_nonce_hex:', 'b54952bb3a8cfe53cf5806534b61b7eb52fc8a4cdc23e95a')
+                    ('user_validator_cleartext:', '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306')
+                    user:
+                    ('server_public_key_hex:', 'ba27863332ffde70a85fb41a6e958ed516e21018b4cfa21f2dfecd9cf4588f70')
+                    ('user_private_key_hex:', '2a8d0fad610f5b1fc8c66dd73540c6a6743ca306779c1d91106cec3f1949332e')
+                    ('user_public_key_hex:', 'ed432a749a329fc639a0d360925c16963274ea6db833af316f85f2b28c461aa8')
+                    ('user_validator_hex:', '88963f455eb56073dad24dd2482b5a30fe82a75fab5f8be579f6517e78f6337030ca300fb7e369ca405fc419a638d5e71ea908d6e670829c2f982899d9c3055a76e2d91999bd2e658ba52f4c01ecdb06')
+                    ('user_validator_nonce_hex:', 'b54952bb3a8cfe53cf5806534b61b7eb52fc8a4cdc23e95a')
+
+                 */
+
+            }());
+        });
+
     </script>
+
+    <!-- All of the following lines in head are only for styling -->
+
+    <!-- JQuery UI is only used for some nice styling -->
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+
+
+    <!-- The nice json editor -->
+    <link href="libs/jsoneditor/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="libs/jsoneditor/dist/jsoneditor.min.js"></script>
+
+
+
 </head>
 <body>
 
-    <script>
-        function test (secret, password) {
-
-            var k = nacl.crypto_hash_sha256(password);
-            var m = nacl.encode_utf8(secret);
-            var n = nacl.crypto_secretbox_random_nonce();
-            var c = nacl.crypto_secretbox(m, n, k);
-
-            return {
-                nonce: nacl.to_hex(n),
-                ciphertext: nacl.to_hex(c)
-            }
-        }
-
-        console.log(test("mySecret", "myPassword"));
-    </script>
 
 
-
+<INPUT type="button" name="button" value="Test" id="test"/>
 </body>
 </html>

@@ -16,7 +16,9 @@ import random
 import string
 import os
 
-from uuid import UUID
+import nacl.utils
+import nacl.secret
+from nacl.public import PrivateKey, PublicKey, Box
 
 
 class RegistrationTests(APITestCaseExtended):
@@ -208,9 +210,14 @@ class EmailVerificationTests(APITestCaseExtended):
 
 class LoginTests(APITestCaseExtended):
     def setUp(self):
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
         self.test_email = "test@example.com"
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
         self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
@@ -284,6 +291,7 @@ class LoginTests(APITestCaseExtended):
         data = {
             'email': self.test_email,
             'authkey': self.test_authkey,
+            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
         }
 
         models.Token.objects.all().delete()
@@ -315,7 +323,101 @@ class LoginTests(APITestCaseExtended):
                          self.test_user_sauce,
                          'Secret key nonce is wrong in response or does not exist')
 
+        self.assertNotEqual(response.data.get('session_public_key', False),
+                         False,
+                         'Session public key does not exist')
+        self.assertNotEqual(response.data.get('user_validator', False),
+                            False,
+                            'User validator does not exist')
+        self.assertNotEqual(response.data.get('user_validator_nonce', False),
+                            False,
+                            'User validator nonce does not exist')
+        self.assertNotEqual(response.data.get('session_secret_key', False),
+                         False,
+                         'Session secret key does not exist')
+        self.assertNotEqual(response.data.get('session_secret_key_nonce', False),
+                         False,
+                         'Session secret key nonce does not exist')
+
         self.assertEqual(models.Token.objects.count(), 1)
+
+    def test_activate_token(self):
+        """
+        Ensure we can activate our token
+        """
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+
+        url = reverse('authentication_login')
+
+        data = {
+            'email': self.test_email,
+            'authkey': self.test_authkey,
+            'public_key': user_session_public_key_hex,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        token = response.data.get('token', False)
+
+        server_public_key_hex = response.data.get('session_public_key', False)
+
+        # lets encrypt our token
+        user_private_key = PrivateKey(self.test_real_private_key,
+                          encoder=nacl.encoding.HexEncoder)
+        user_session_private_key = PrivateKey(user_session_private_key_hex,
+                          encoder=nacl.encoding.HexEncoder)
+        server_public_key = PublicKey(server_public_key_hex,
+                        encoder=nacl.encoding.HexEncoder)
+
+        # create both our crypto boxes
+        user_crypto_box = Box(user_private_key, server_public_key)
+        session_crypto_box = Box(user_session_private_key, server_public_key)
+
+        # decrypt session secret
+        session_secret_key_nonce_hex = response.data.get('session_secret_key_nonce', False)
+        session_secret_key_nonce = nacl.encoding.HexEncoder.decode(session_secret_key_nonce_hex)
+        session_secret_key_hex = response.data.get('session_secret_key', False)
+        session_secret_key = nacl.encoding.HexEncoder.decode(session_secret_key_hex)
+        decrypted_session_key_hex = session_crypto_box.decrypt(session_secret_key, session_secret_key_nonce)
+
+        # decrypt user validator
+        user_validator_nonce_hex = response.data.get('user_validator_nonce', False)
+        user_validator_nonce = nacl.encoding.HexEncoder.decode(user_validator_nonce_hex)
+        user_validator_hex = response.data.get('user_validator', False)
+        user_validator = nacl.encoding.HexEncoder.decode(user_validator_hex)
+
+        decrypted_user_validator = user_crypto_box.decrypt(user_validator, user_validator_nonce)
+
+        # encrypt user validator with session key
+        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        verification_nonce_hex = nacl.encoding.HexEncoder.encode(verification_nonce)
+        decrypted_session_key = nacl.encoding.HexEncoder.decode(decrypted_session_key_hex)
+        secret_box = nacl.secret.SecretBox(decrypted_session_key)
+        encrypted = secret_box.encrypt(decrypted_user_validator, verification_nonce)
+        verification = encrypted[len(verification_nonce):]
+        verification_hex = nacl.encoding.HexEncoder.encode(verification)
+
+        url = reverse('authentication_activate_token')
+
+        data = {
+            'token': token,
+            'verification': verification_hex,
+            'verification_nonce': verification_nonce_hex,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
 
     def test_login_with_wrong_password(self):
         """
@@ -336,6 +438,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 0)
 
+
     def test_token_expiration(self):
         """
         Ensure expired tokens are invalid
@@ -345,6 +448,7 @@ class LoginTests(APITestCaseExtended):
         data = {
             'email': self.test_email,
             'authkey': self.test_authkey,
+            'public_key': '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306',
         }
 
         models.Token.objects.all().delete()
@@ -357,6 +461,8 @@ class LoginTests(APITestCaseExtended):
                         'Token does not exist in login response')
 
         token = response.data.get('token', False)
+
+        models.Token.objects.all().update(active=True, user_validator=None)
 
         # to test we first query our datastores with the valid token
 
@@ -417,11 +523,14 @@ class LogoutTests(APITestCaseExtended):
         data = {
             'email': self.test_email,
             'authkey': self.test_authkey,
+            'public_key': '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306',
         }
 
         response = self.client.post(url, data)
 
         self.test_token = response.data.get('token', False)
+
+        models.Token.objects.all().update(active=True, user_validator=None)
 
     def test_logout_false_token(self):
         """

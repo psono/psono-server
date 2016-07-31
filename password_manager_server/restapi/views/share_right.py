@@ -135,7 +135,7 @@ class ShareRightView(GenericAPIView):
         :return: 200 / 201 / 403
         """
 
-        # check permissions on parent
+        # check permissions on share
         if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
             return Response({"message":"You don't have permission to access or it does not exist.",
                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
