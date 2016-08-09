@@ -21,14 +21,15 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
 from ..authentication import TokenAuthentication
+import nacl.encoding
 import nacl.utils
 from nacl.public import PrivateKey, PublicKey, Box
 
 
 class RegisterView(GenericAPIView):
     """
-    Accepts the email and authkey and creates a new user
-    if the email address does not already exist
+    Accepts the username, email and authkey and creates a new user
+    if the username (and email address) do not already exist
 
     Method: POST
 
@@ -65,11 +66,13 @@ class RegisterView(GenericAPIView):
 
             msg_plain = render_to_string('email/registration_successful.txt', {
                 'email': self.request.data.get('email', ''),
+                'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
                 'activation_link': activation_link
             })
             msg_html = render_to_string('email/registration_successful.html', {
                 'email': self.request.data.get('email', ''),
+                'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
                 'activation_link': activation_link
             })
@@ -205,6 +208,7 @@ class LoginView(GenericAPIView):
             "user_validator_nonce": user_validator_nonce_hex,
             "user": {
                 "id": user.id,
+                "email": user.email,
                 "public_key": user.public_key,
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
@@ -302,7 +306,7 @@ class UserUpdate(GenericAPIView):
 
         if serializer.is_valid():
 
-            user = authenticate(email=user.email, authkey=str(request.data['authkey_old']))
+            user = authenticate(username=user.username, authkey=str(request.data['authkey_old']))
 
             if not user:
                 raise PermissionDenied({"message":"Your old password was not right."})
@@ -362,14 +366,14 @@ class UserSearch(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
 
-        elif 'user_email' in request.data and request.data['user_email']:
+        elif 'user_username' in request.data and request.data['user_username']:
             try:
-                user = User.objects.get(email=str(request.data['user_email']))
+                user = User.objects.get(username=str(request.data['user_username']))
             except User.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_email'])}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": str(request.data['user_username'])}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'id': user.id, 'public_key': user.public_key, 'email': user.email},
+        return Response({'id': user.id, 'public_key': user.public_key, 'username': user.username},
                 status=status.HTTP_200_OK)

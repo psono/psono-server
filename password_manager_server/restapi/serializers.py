@@ -21,23 +21,23 @@ import nacl.secret
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
+    username = serializers.EmailField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
     public_key = serializers.CharField(required=True)
 
     def validate(self, attrs):
-        email = attrs.get('email').lower().strip()
+        username = attrs.get('username').lower().strip()
         authkey = attrs.get('authkey')
         public_key = attrs.get('public_key')
 
-        if email and authkey:
-            user = authenticate(email=email, authkey=authkey)
+        if username and authkey:
+            user = authenticate(username=username, authkey=authkey)
         else:
-            msg = _('Must include "email" and "authkey".')
+            msg = _('Must include "username" and "authkey".')
             raise exceptions.ValidationError(msg)
 
         if not user:
-            msg = _('Password or e-mail wrong.')
+            msg = _('Username or password wrong.')
             raise exceptions.ValidationError(msg)
 
         if len(public_key) != 64:
@@ -113,6 +113,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.Serializer):
+    username = serializers.EmailField(required=True)
     email = serializers.EmailField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
@@ -129,6 +130,16 @@ class RegisterSerializer(serializers.Serializer):
 
         if User.objects.filter(email=value).exists():
             msg = _('E-Mail already exists.')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_username(self, value):
+
+        value = value.lower().strip()
+
+        if User.objects.filter(username=value).exists():
+            msg = _('Username already exists.')
             raise exceptions.ValidationError(msg)
 
         return value

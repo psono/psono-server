@@ -61,11 +61,11 @@ def validate_activation_code(activation_code):
 
     return False
 
-def authenticate(email = False, user = False, authkey = False):
+def authenticate(username = False, user = False, authkey = False):
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
-    :param email: str
+    :param username: str
     :param user: User
     :param authkey: str
     :return: user or False
@@ -74,12 +74,12 @@ def authenticate(email = False, user = False, authkey = False):
 
     if not authkey:
         return False
-    if not email and not user:
+    if not username and not user:
         return False
 
-    if email:
+    if username:
         try:
-            user = User.objects.filter(email=email, is_active=True)[0]
+            user = User.objects.filter(username=username, is_active=True)[0]
         except IndexError:
             return False
 

@@ -9,7 +9,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 import nacl.secret
 import nacl.utils
-from nacl.public import PrivateKey
 
 
 class User(models.Model):
@@ -19,6 +18,7 @@ class User(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
+    username = models.EmailField(_('Username'), unique=True)
     email = models.EmailField(_('email address'), unique=True)
     authkey = models.CharField(_('auth key'), max_length=128)
     public_key = models.CharField(_('public key'), max_length=256)
