@@ -24,6 +24,7 @@ class SecretView(GenericAPIView):
     Accept the following POST parameters: secret_id (optional)
     Return a list of the secrets or the secret
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = SecretSerializer

@@ -28,6 +28,7 @@ class ShareView(GenericAPIView):
     Accept the following POST parameters: share_id (optional)
     Return a list of the shares or the share
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = CreateShareSerializer

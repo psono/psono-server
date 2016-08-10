@@ -25,12 +25,10 @@ urlpatterns = [
     #url(r'^authentication/authkey/reset/confirm/$', views.AuthkeyResetConfirmView.as_view(),
     #    name='authentication_authkey_reset_confirm'),
     url(r'^authentication/login/$', views.LoginView.as_view(), name='authentication_login'),
+    url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
     url(r'^authentication/activate-token/$', views.ActivateTokenView.as_view(), name='authentication_activate_token'),
     url(r'^authentication/register/$', views.RegisterView.as_view(), name='authentication_register'),
     url(r'^authentication/verify-email/$', views.VerifyEmailView.as_view(), name='authentication_verify_email'),
-
-    # URLs that require a user to be logged in with a valid session / token.
-    url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
 
     url(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
@@ -45,15 +43,13 @@ urlpatterns = [
 
     url(r'^share/right/accept/$', views.ShareRightAcceptView.as_view(), name='share_right_accept'),
     url(r'^share/right/accept/(?P<uuid>[^/]+)/$', views.ShareRightAcceptView.as_view(), name='share_right_accept'),
-
     url(r'^share/right/decline/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
     url(r'^share/right/decline/(?P<uuid>[^/]+)/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
+    url(r'^share/right/$', views.ShareRightView.as_view(), name='share_right'),
+    url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
 
     url(r'^share/link/$', views.ShareLinkView.as_view(), name='share_link'),
     url(r'^share/link/(?P<uuid>[^/]+)/$', views.ShareLinkView.as_view(), name='share_link'),
-
-    url(r'^share/right/$', views.ShareRightView.as_view(), name='share_right'),
-    url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
 
     url(r'^share/$', views.ShareView.as_view(), name='share'),
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),

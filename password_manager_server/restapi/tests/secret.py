@@ -10,8 +10,6 @@ import random
 import string
 import os
 
-from uuid import UUID
-
 class UserCreateSecretTest(APITestCaseExtended):
     """
     Test to create a secret (PUT)

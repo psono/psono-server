@@ -63,11 +63,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'corsheaders',
     'rest_framework',
-    #'rest_framework.authtoken',
-    #'rest_auth',
-    #'allauth',
-    #'allauth.account',
-    #'rest_auth.registration',
     'restapi',
 )
 
@@ -95,7 +90,18 @@ PASSWORD_HASHERS = (
 )
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAdminUser',
+    ),
+    'DEFAULT_PARSER_CLASSES': (
+        'restapi.parsers.DecryptJSONParser',
+        # 'rest_framework.parsers.FormParser', # default for Form Parsing
+        'rest_framework.parsers.MultiPartParser' # default for UnitTest Parsing
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'restapi.renderers.EncryptJSONRenderer',
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
     'PAGE_SIZE': 10
 }
 

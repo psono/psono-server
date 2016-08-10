@@ -27,6 +27,7 @@ class ShareRightView(GenericAPIView):
     Accept the following GET parameters: share_id (optional)
     Return a list of the shares or the share and the access rights or a message for an update of rights
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserShareRightSerializer
@@ -234,6 +235,7 @@ class ShareRightAcceptView(GenericAPIView):
     Check the REST Token and the object permissions and updates the share right as accepted with new symmetric
     encryption key and nonce
     """
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
@@ -347,6 +349,7 @@ class ShareRightDeclineView(GenericAPIView):
     Check the REST Token and the object permissions and updates the share right as declined and removes title and keys
     from the share right
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
 

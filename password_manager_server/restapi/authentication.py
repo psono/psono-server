@@ -28,7 +28,12 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
         token_hash = self.get_token_hash(request)
-        return self.authenticate_credentials(token_hash)
+        user, token = self.authenticate_credentials(token_hash)
+
+        request.user = user
+        user.session_secret_key = token.secret_key
+
+        return user, token
 
     @staticmethod
     def user_token_to_token_hash(token):

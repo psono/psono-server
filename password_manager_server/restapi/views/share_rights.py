@@ -23,6 +23,7 @@ class ShareRightsView(GenericAPIView):
     Accept the following GET parameters: share_id
     Return a list of the share rights for the specified share
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserShareRightSerializer

@@ -261,7 +261,7 @@ class LogoutView(APIView):
     Accepts/Returns nothing.
     """
     authentication_classes = (TokenAuthentication, )
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
     token_model = Token
 
     def get(self, *args, **kwargs):

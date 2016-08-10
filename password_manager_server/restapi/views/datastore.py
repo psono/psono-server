@@ -46,6 +46,7 @@ class DatastoreView(GenericAPIView):
     Accept the following POST parameters: datastore_id (optional)
     Return a list of the data stores or the data store
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = DatastoreSerializer
@@ -63,6 +64,7 @@ class DatastoreView(GenericAPIView):
 
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
+
 
     def put(self, request, *args, **kwargs):
 

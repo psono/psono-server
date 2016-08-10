@@ -1,5 +1,7 @@
+from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from rest_framework.response import Response
 import bcrypt
 import time
 import base64
@@ -161,4 +163,3 @@ def is_uuid(expr):
         val = False
 
     return not not val
-

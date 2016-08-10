@@ -131,6 +131,7 @@ class ShareLinkView(GenericAPIView):
     Accept the following GET parameters: share_id (optional)
     Return a list of the shares or the share and the access rights or a message for an update of rights
     """
+
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = ShareTreeSerializer
