@@ -58,7 +58,7 @@ class RegistrationTests(APITestCaseExtended):
         url = reverse('authentication_register')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@sanso.pw'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -104,7 +104,7 @@ class RegistrationTests(APITestCaseExtended):
         url = reverse('authentication_register')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@sanso.pw'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')

@@ -4,6 +4,7 @@ from django.conf import settings
 from utils import validate_activation_code, authenticate
 from authentication import TokenAuthentication
 import uuid
+import re
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -137,6 +138,52 @@ class RegisterSerializer(serializers.Serializer):
     def validate_username(self, value):
 
         value = value.lower().strip()
+
+        username, domain = value.split('@', 1)
+
+        if domain not in settings.ALLOWED_DOMAINS:
+            msg = _('The provided domain in your username is not allowed for the registration on this server.')
+            raise exceptions.ValidationError(msg)
+
+        if not re.match('^[a-z0-9.\-]*$', username, re.IGNORECASE):
+            msg = _('Usernames may only contain letters, numbers, periods and dashes.')
+            raise exceptions.ValidationError(msg)
+
+        if len(username) < 3:
+            msg = _('Usernames may not be shorter than 3 chars.')
+            raise exceptions.ValidationError(msg)
+
+        if username.startswith('.'):
+            msg = _('Usernames may not start with a period.')
+            raise exceptions.ValidationError(msg)
+
+        if username.startswith('-'):
+            msg = _('Usernames may not start with a dash.')
+            raise exceptions.ValidationError(msg)
+
+        if username.endswith('.'):
+            msg = _('Usernames may not end with a period.')
+            raise exceptions.ValidationError(msg)
+
+        if username.endswith('-'):
+            msg = _('Usernames may not end with a dash.')
+            raise exceptions.ValidationError(msg)
+
+        if '..' in username:
+            msg = _('Usernames may not contain consecutive periods.')
+            raise exceptions.ValidationError(msg)
+
+        if '--' in username:
+            msg = _('Usernames may not contain consecutive dashes.')
+            raise exceptions.ValidationError(msg)
+
+        if '.-' in username:
+            msg = _('Usernames may not contain periods followed by dashes.')
+            raise exceptions.ValidationError(msg)
+
+        if '-.' in username:
+            msg = _('Usernames may not contain dashes followed by periods.')
+            raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=value).exists():
             msg = _('Username already exists.')

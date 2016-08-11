@@ -49,6 +49,7 @@ SECRET_KEY = config_get('SECRET_KEY')
 DEBUG = config_get('DEBUG')
 
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
+ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
 
 # Application definition

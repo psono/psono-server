@@ -1,6 +1,7 @@
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 DEBUG: True
 ALLOWED_HOSTS: ['*']
+ALLOWED_DOMAINS: ['example.com']
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
 DATABASES:
     default:
