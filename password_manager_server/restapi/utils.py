@@ -58,7 +58,7 @@ def validate_activation_code(activation_code):
             time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
             email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:

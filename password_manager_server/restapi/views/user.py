@@ -324,7 +324,7 @@ class UserUpdate(GenericAPIView):
                 # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
                 # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
                 # if you have a better solution, please let me know.
-                user.email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT)
+                user.email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
                 # normally encrypt emails, so they are not stored in plaintext with a random nonce
                 secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()

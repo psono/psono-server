@@ -136,7 +136,7 @@ class RegisterSerializer(serializers.Serializer):
         # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
         # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
         # if you have a better solution, please let me know.
-        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exists():
             msg = _('E-Mail already exists.')
@@ -277,7 +277,7 @@ class RegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
 
-        validated_data['email_bcrypt'] = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        validated_data['email_bcrypt'] = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
         secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
@@ -333,7 +333,7 @@ class UserUpdateSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=self.context['request'].user.pk).exists():
             msg = _('E-Mail already exists.')
