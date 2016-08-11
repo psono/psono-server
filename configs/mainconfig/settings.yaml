@@ -1,8 +1,33 @@
+#
+# Backup this config and keep it secret
+# You need it if you ever need to restore your database
+#
+
+# Replace SECRET_KEY and ACTIVATION_LINK_SECRET and EMAIL_SECRET with something unique (best random)
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+EMAIL_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+
+# static salt for bcrypt. I know its bad, but better than storing cleartext emails in databases
+# can be generated e.g. in ipython with:
+# import bcrypt
+# bcrypt.gensalt()
+EMAIL_SECRET_SALT: '$2b$12$XUG.sKxC2jmkUvWQjg53.e'
+
+# Switch DEBUG to false if you go into production
 DEBUG: True
+
+# Adjust this according to Django Documentation https://docs.djangoproject.com/en/1.10/ref/settings/
 ALLOWED_HOSTS: ['*']
+
+# Should be your domain without "www."
+# If you dont care about user data export (not implemented yet), you can put anything here that looks like a domain
 ALLOWED_DOMAINS: ['example.com']
+
+# The email used to send emails, e.g. for activation
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
+
+# Your Postgres Database credentials
 DATABASES:
     default:
         'ENGINE': 'django.db.backends.postgresql_psycopg2'
@@ -13,6 +38,7 @@ DATABASES:
         'PORT': 'YourPostgresPort'
         'ATOMIC_REQUESTS': True
 
+# Your path to your templates folder
 TEMPLATES: [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -28,4 +54,3 @@ TEMPLATES: [
         },
     },
 ]
-ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'

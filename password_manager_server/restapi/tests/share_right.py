@@ -17,9 +17,11 @@ from uuid import UUID
 class UserShareRightTest(APITestCaseExtended):
     def setUp(self):
         self.test_email = "test@example.com"
+        self.test_email_bcrypt = "a"
         self.test_email2 = "test2@example.com"
-        self.test_username = "test@sanso.pw"
-        self.test_username2 = "test2@sanso.pw"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = "test@psono.pw"
+        self.test_username2 = "test2@psono.pw"
         self.test_password = "myPassword"
         self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
                             "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
@@ -39,6 +41,7 @@ class UserShareRightTest(APITestCaseExtended):
 
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -51,7 +54,7 @@ class UserShareRightTest(APITestCaseExtended):
         )
 
         self.test_user2_obj = models.User.objects.create(
-            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,

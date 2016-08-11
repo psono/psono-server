@@ -1,10 +1,11 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from utils import validate_activation_code, authenticate
 from authentication import TokenAuthentication
 import uuid
 import re
+import bcrypt
+import hashlib
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -19,6 +20,7 @@ from models import User, Token
 import nacl.utils
 from nacl.exceptions import CryptoError
 import nacl.secret
+import nacl.encoding
 
 
 class LoginSerializer(serializers.Serializer):
@@ -129,7 +131,14 @@ class RegisterSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        if User.objects.filter(email=value).exists():
+        # generate bcrypt with static salt.
+        # I know its bad to use static salts, but its the best solution I could come up with,
+        # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
+        # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
+        # if you have a better solution, please let me know.
+        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+
+        if User.objects.filter(email_bcrypt=email_bcrypt).exists():
             msg = _('E-Mail already exists.')
             raise exceptions.ValidationError(msg)
 
@@ -267,6 +276,15 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
+
+        validated_data['email_bcrypt'] = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT)
+
+        # normally encrypt emails, so they are not stored in plaintext with a random nonce
+        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        encrypted_email = crypto_box.encrypt(validated_data['email'].encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        validated_data['email'] = nacl.encoding.HexEncoder.encode(encrypted_email)
+
         return User.objects.create(**validated_data)
 
 
@@ -315,7 +333,9 @@ class UserUpdateSerializer(serializers.Serializer):
 
         value = value.lower().strip()
 
-        if User.objects.filter(email=value).exclude(pk=self.context['request'].user.pk).exists():
+        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+
+        if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=self.context['request'].user.pk).exists():
             msg = _('E-Mail already exists.')
             raise exceptions.ValidationError(msg)
 

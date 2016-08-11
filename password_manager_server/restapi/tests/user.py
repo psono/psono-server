@@ -20,6 +20,8 @@ import nacl.encoding
 import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
+import bcrypt
+import hashlib
 
 
 class RegistrationTests(APITestCaseExtended):
@@ -86,7 +88,11 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        self.assertEqual(user.email, email)
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(authkey, user.authkey))
         self.assertEqual(user.public_key, public_key)
         self.assertEqual(user.private_key, private_key)
@@ -132,7 +138,9 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        self.assertEqual(user.email, email)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
 
         response = self.client.post(url, data)
 
@@ -145,8 +153,32 @@ class RegistrationTests(APITestCaseExtended):
 
 class EmailVerificationTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = "test@example.com"
-        models.User.objects.create(email=self.test_email)
+
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+
+        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_obj = models.User.objects.create(
+            username=self.test_username,
+            email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
+            email_bcrypt=self.test_email_bcrypt,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce=self.test_user_sauce,
+            is_email_active=False
+        )
 
     def test_get_authentication_verify_email(self):
         """
@@ -189,7 +221,7 @@ class EmailVerificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        user = models.User.objects.filter(email=self.test_email).get()
+        user = models.User.objects.filter(email=self.test_user_obj.email).get()
 
         self.assertTrue(user.is_email_active)
 
@@ -208,7 +240,7 @@ class EmailVerificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        user = models.User.objects.filter(email=self.test_email).get()
+        user = models.User.objects.filter(email=self.test_user_obj.email).get()
 
         self.assertFalse(user.is_email_active)
 
@@ -220,7 +252,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         self.test_email = "test@example.com"
-        self.test_username = "test6@sanso.pw"
+        self.test_email_bcrypt = "a"
+        self.test_username = "test6@psono.pw"
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
@@ -231,6 +264,7 @@ class LoginTests(APITestCaseExtended):
         self.test_user_sauce = os.urandom(32).encode('hex')
         self.user_obj = models.User.objects.create(
             email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -506,7 +540,8 @@ class LoginTests(APITestCaseExtended):
 class LogoutTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = "test@example.com"
-        self.test_username = "test@sanso.pw"
+        self.test_email_bcrypt = "a"
+        self.test_username = "test@psono.pw"
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -517,6 +552,7 @@ class LogoutTests(APITestCaseExtended):
         models.User.objects.create(
             username=self.test_username,
             email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key,
@@ -602,8 +638,12 @@ class LogoutTests(APITestCaseExtended):
 
 class UserModificationTests(APITestCaseExtended):
     def setUp(self):
+
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -613,7 +653,8 @@ class UserModificationTests(APITestCaseExtended):
         self.test_user_sauce = os.urandom(32).encode('hex')
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
-            email=self.test_email,
+            email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
+            email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key,
@@ -625,7 +666,8 @@ class UserModificationTests(APITestCaseExtended):
         )
 
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key2 = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -635,7 +677,8 @@ class UserModificationTests(APITestCaseExtended):
         self.test_user_sauce2 = os.urandom(32).encode('hex')
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
-            email=self.test_email2,
+            email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email2.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
+            email_bcrypt=self.test_email_bcrypt2,
             authkey=make_password(self.test_authkey2),
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
@@ -680,6 +723,7 @@ class UserModificationTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'email': self.test_email,
+            'email_bcrypt': self.test_email_bcrypt,
             'authkey': make_password(self.test_authkey),
             'authkey_old': self.test_public_key,
             'private_key': self.test_private_key,
@@ -700,7 +744,7 @@ class UserModificationTests(APITestCaseExtended):
         url = reverse('user_update')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         authkey_old = self.test_authkey
         private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -728,7 +772,12 @@ class UserModificationTests(APITestCaseExtended):
 
         user = models.User.objects.get(pk=self.test_user_obj.pk)
 
-        self.assertEqual(user.email, email)
+
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertNotEqual(user.username, username)
         self.assertTrue(check_password(authkey, user.authkey))
         self.assertEqual(user.private_key, private_key)
@@ -747,6 +796,7 @@ class UserModificationTests(APITestCaseExtended):
         url = reverse('user_update')
 
         email = self.test_email2
+        email_bcrypt = self.test_email_bcrypt2
         username = self.test_username2
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         authkey_old = self.test_authkey
@@ -759,6 +809,7 @@ class UserModificationTests(APITestCaseExtended):
         data = {
             'username': username,
             'email': email,
+            'email_bcrypt': email_bcrypt,
             'authkey': authkey,
             'authkey_old': authkey_old,
             'private_key': private_key,
@@ -794,7 +845,7 @@ class UserModificationTests(APITestCaseExtended):
         url = reverse('user_update')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
@@ -839,7 +890,7 @@ class UserModificationTests(APITestCaseExtended):
         url = reverse('user_update')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
@@ -881,7 +932,8 @@ class UserModificationTests(APITestCaseExtended):
 class UserSearchTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        self.test_email_bcrypt = 'a'
+        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -891,6 +943,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_user_sauce = os.urandom(32).encode('hex')
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -903,7 +956,8 @@ class UserSearchTests(APITestCaseExtended):
         )
 
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@sanso.pw'
+        self.test_email_bcrypt2 = 'b'
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key2 = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
@@ -913,6 +967,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_user_sauce2 = os.urandom(32).encode('hex')
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
             authkey=make_password(self.test_authkey2),
             public_key=self.test_public_key2,

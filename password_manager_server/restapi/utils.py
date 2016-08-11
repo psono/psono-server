@@ -56,7 +56,11 @@ def validate_activation_code(activation_code):
         email, time_stamp, hash = base64.b64decode(activation_code).split(",", 2)
         if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
             time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
-            return User.objects.filter(email=email, is_email_active=False)[0]
+
+            email = email.lower().strip()
+            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT)
+
+            return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:
         #wrong format or whatever could happen
         pass

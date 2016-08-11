@@ -14,6 +14,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 import yaml
 import json
+import hashlib
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.password_manager_server', 'settings.yaml'), 'r') as stream:
@@ -161,6 +162,9 @@ USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
 USER_SECRET_KEY_LENGTH_BYTES = config_get('USER_SECRET_KEY_LENGTH_BYTES', 80)
 NONCE_LENGTH_BYTES = config_get('NONCE_LENGTH_BYTES', 24)
 ACTIVATION_LINK_SECRET = config_get('ACTIVATION_LINK_SECRET')
+EMAIL_SECRET = config_get('EMAIL_SECRET')
+EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
+
 ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
 TOKEN_TIME_VALID = config_get('TOKEN_TIME_VALID', 86400) # in seconds
 
