@@ -1,12 +1,14 @@
-from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from rest_framework.response import Response
 import bcrypt
 import time
-import base64
 from uuid import UUID
 from models import User, User_Share_Right
+
+import nacl.encoding
+import nacl.utils
+import nacl.secret
+import hashlib
 
 from six import string_types
 import sys
@@ -26,25 +28,30 @@ def import_callable(path_or_callable):
 
 def generate_activation_code(email):
     """
-    Takes email address and combines it with a secret in settings ACTIVATION_LINK_SECRET and the
-    current timestamp in seconds to a hash based on bcrypt and base64 encoding without database backend
+    Takes email address and combines it with a timestamp before encrypting everything with the ACTIVATION_LINK_SECRET
+    No database storage required for this action
 
-    :param email: activation_code
+    :param email: email
     :type email: unicode
     :return: activation_code
     :rtype: str
     """
 
-    email = str(email.strip())
+    email = str(email).lower().strip()
     time_stamp = str(int(time.time()))
-    return base64.b64encode(
-        email+','+time_stamp+','+bcrypt.hashpw(time_stamp+settings.ACTIVATION_LINK_SECRET+email, bcrypt.gensalt())
-    )
+
+    # normally encrypt emails, so they are not stored in plaintext with a random nonce
+    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET).hexdigest()
+    crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+    validation_secret = crypto_box.encrypt(time_stamp + '#' + email,
+                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    return nacl.encoding.HexEncoder.encode(validation_secret)
+
 
 def validate_activation_code(activation_code):
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
-    without database reference, based on bcrypt. Returns the user or False in case of a failure
+    without database reference, based on salsa20. Returns the user or False in case of a failure
 
     :param activation_code: activation_code
     :type activation_code: str
@@ -53,9 +60,12 @@ def validate_activation_code(activation_code):
     """
 
     try:
-        email, time_stamp, hash = base64.b64decode(activation_code).split(",", 2)
-        if bcrypt.hashpw(time_stamp + settings.ACTIVATION_LINK_SECRET + email, hash) == hash and int(
-            time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
+        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code))
+
+        time_stamp, email = validation_secret.split("#", 1)
+        if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
             email = email.lower().strip()
             email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
