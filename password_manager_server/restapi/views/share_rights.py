@@ -75,7 +75,7 @@ class ShareRightsView(GenericAPIView):
                     'grant': u.grant,
                     'user_id': u.user_id,
                     'share_id': u.share_id,
-                    'email': u.user.email,
+                    'username': u.user.username,
                 }
 
                 if u.user_id == request.user.id and (u.read or u.write or u.grant):
@@ -97,7 +97,7 @@ class ShareRightsView(GenericAPIView):
                     'grant': u.share_right.grant,
                     'user_id': u.share_right.user_id,
                     'share_id': u.share_id,
-                    'email': u.user.email,
+                    'username': u.user.username,
                 }
 
                 if not user_has_specific_rights and u.user_id == request.user.id and\
