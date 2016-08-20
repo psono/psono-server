@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import check_password
 import bcrypt
 import time
 from uuid import UUID
-from models import User, User_Share_Right
+from models import User, User_Share_Right, Secret_Link, Data_Store
 
 import nacl.encoding
 import nacl.utils
@@ -160,6 +160,37 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
         return (read is None or read == grouped_read) \
                and (write is None or write == grouped_write) \
                and (grant is None or grant == grouped_grant)
+
+
+def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None):
+    """
+    Checks if the given user has the requested rights for the given secret
+
+    :param user_id:
+    :param secret_id:
+    :param read:
+    :param write:
+    :return:
+    """
+
+    try:
+        datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True)
+    except Data_Store.DoesNotExist:
+        datastores = []
+
+    try:
+        # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
+        secret_links = Secret_Link.objects.filter(secret_id=secret_id).order_by('parent_datastore_id')
+    except Secret_Link.DoesNotExist:
+        return False
+
+    for link in secret_links:
+        if link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
+            return True
+        elif link.parent_datastore_id is not None and link.parent_datastore_id in datastores:
+            return True
+
+    return False
 
 
 def is_uuid(expr):

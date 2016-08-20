@@ -45,10 +45,38 @@ class UserCreateSecretTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_datastore_obj = models.Data_Store.objects.create(
+            user_id=self.test_user_obj.id,
+            type="my-type",
+            description= "my-description",
+            data= "12345",
+            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        )
+
+        # create share 1
+        url = reverse('share')
+
+        self.initial_data1 = {
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key_type': 'symmetric',
+            'link_id': '5993584d-bf73-4679-a92a-ea333640cfdd',
+            'datastore_id': self.test_datastore_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.response1 = self.client.put(url, self.initial_data1)
+
+        self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
+
 
     def test_without_data(self):
         """
-        Tests to create a share without data
+        Tests to create a secret without data
         """
 
         url = reverse('secret')
@@ -65,7 +93,7 @@ class UserCreateSecretTest(APITestCaseExtended):
 
     def test_without_data_nonce(self):
         """
-        Tests to create a share without data nonce
+        Tests to create a secret without data nonce
         """
 
         url = reverse('secret')
@@ -82,12 +110,14 @@ class UserCreateSecretTest(APITestCaseExtended):
 
     def test_create_secret(self):
         """
-        Tests to create a share successfully
+        Tests to create a secret successfully
         """
 
         url = reverse('secret')
 
         data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
             'data': '12345',
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }
@@ -106,6 +136,8 @@ class UserCreateSecretTest(APITestCaseExtended):
         url = reverse('secret')
 
         first_secret = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
             'data': '12345',
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }
@@ -116,8 +148,42 @@ class UserCreateSecretTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         second_secret = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
             'data': '123456',
             'data_nonce': first_secret['data_nonce'],
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, second_secret)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_duplicate_link_id(self):
+        """
+        Tests to create a share, while reusing a link id
+        """
+
+        url = reverse('secret')
+
+        first_secret = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, first_secret)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        second_secret = {
+            'link_id': first_secret['link_id'],
+            'parent_datastore_id': str(self.test_datastore_obj.id),
+            'data': '123456',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -351,14 +417,34 @@ class UserUpdateSecretTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_datastore_obj = models.Data_Store.objects.create(
+            user_id=self.test_user_obj.id,
+            type="my-type",
+            description= "my-description",
+            data= "12345",
+            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        )
+
+
+        url = reverse('secret')
+
+        data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.secret_id = response.data['secret_id']
+
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345',
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
-        )
-        self.test_secret2_obj = models.Secret.objects.create(
-            user_id=self.test_user2_obj.id,
             data='12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
@@ -399,7 +485,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.test_secret2_obj.id)})
+        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
 
         data = {}
 
@@ -411,10 +497,10 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
     def test_with_rights(self):
         """
-        Tests to get a specific share without rights
+        Tests to get a specific share with rights
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
+        url = reverse('secret', kwargs={'uuid': str(self.secret_id)})
 
         data = {
             'data': '123457',
@@ -426,7 +512,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        updated_secret = models.Secret.objects.get(pk=self.test_secret_obj.id)
+        updated_secret = models.Secret.objects.get(pk=self.secret_id)
 
         self.assertEqual(str(updated_secret.data), data['data'],
                             'data in secret was not updated')

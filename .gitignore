@@ -2,6 +2,7 @@
 *.py[cod]
 problemtest
 .coverage
+docs/
 htmlcov/
 
 # while developing and no final structure we wont push migration scripts

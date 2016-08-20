@@ -39,19 +39,25 @@ def get_datastore(datastore_id=None, user=None):
 
 class DatastoreView(GenericAPIView):
 
-    """
-    Check the REST Token and the object permissions and returns
-    the data store if the necessary access rights are granted
-
-    Accept the following POST parameters: datastore_id (optional)
-    Return a list of the data stores or the data store
-    """
-
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = DatastoreSerializer
 
     def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Lists all datastores of the user or returns a specific datastore with content
+
+        :param request:
+        :type request:
+        :param uuid: PK of the datastore
+        :type uuid: uuid
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         if not uuid:
             datastores = get_datastore(user=request.user)
@@ -67,6 +73,18 @@ class DatastoreView(GenericAPIView):
 
 
     def put(self, request, *args, **kwargs):
+        """
+        Creates a new datastore
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         #TODO Check if secret_key and nonce exist
 
@@ -92,6 +110,20 @@ class DatastoreView(GenericAPIView):
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
+        """
+        Updates a specific datastore
+
+        :param request:
+        :type request:
+        :param uuid:
+        :type uuid:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         datastore = get_datastore(uuid, request.user)
         if not datastore:

@@ -13,7 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import url
+from django.conf.urls import include, url
 from django.conf import settings
 import django
 import views
@@ -35,6 +35,9 @@ urlpatterns = [
 
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
+
+    url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
+    url(r'^secret/link/(?P<uuid>[^/]+)/$', views.SecretLinkView.as_view(), name='secret_link'),
 
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
     url(r'^secret/(?P<uuid>[^/]+)/$', views.SecretView.as_view(), name='secret'),
@@ -65,4 +68,6 @@ if settings.DEBUG:
     urlpatterns += [
         url(r'^demo/(?P<path>.*)$', django.views.static.serve,
             {'document_root':'/home/chickahoona/gits/password-manager-server/demo'}),
+        url(r'^doc/(?P<path>.*)$', django.views.static.serve,
+            {'document_root':'/home/chickahoona/gits/password-manager-server/docs/_build/html'}),
     ]

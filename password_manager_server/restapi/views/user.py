@@ -30,17 +30,6 @@ import hashlib
 
 
 class RegisterView(GenericAPIView):
-    """
-    Accepts the username, email and authkey and creates a new user
-    if the username (and email address) do not already exist
-
-    Method: POST
-
-    Fields: email, authkey
-
-    Returns: nothing
-    """
-
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
@@ -53,6 +42,19 @@ class RegisterView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Accepts the username, email and authkey and creates a new user
+        if the username (and email address) do not already exist
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         serializer = self.get_serializer(data=request.data)
 
@@ -96,15 +98,6 @@ class RegisterView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmailView(GenericAPIView):
-    """
-    Verifies the activation code sent via email and updates the user
-
-    Method: POST
-
-    Fields: activation_code
-
-    Returns: nothing
-    """
 
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
@@ -118,6 +111,18 @@ class VerifyEmailView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Verifies the activation code sent via email and updates the user
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         serializer = self.get_serializer(data=request.data)
 
@@ -135,20 +140,6 @@ class VerifyEmailView(GenericAPIView):
 
 
 class LoginView(GenericAPIView):
-
-    """
-    Check the credentials and return the REST Token
-    if the credentials are valid and authenticated.
-
-    Accepts the following POST parameters: email, authkey
-    Returns the token.
-
-    Clients should authenticate by passing the token key in the "Authorization"
-    HTTP header, prepended with the string "Token ". For example:
-
-        Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
-
-    """
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
     token_model = Token
@@ -160,6 +151,27 @@ class LoginView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Check the credentials and return the REST Token
+        if the credentials are valid and authenticated.
+
+        Accepts the following POST parameters: email, authkey
+        Returns the token.
+
+        Clients should authenticate by passing the token key in the "Authorization"
+        HTTP header, prepended with the string "Token ". For example:
+
+            Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
@@ -226,10 +238,6 @@ class LoginView(GenericAPIView):
 
 class ActivateTokenView(GenericAPIView):
 
-    """
-    Activates a token
-
-    """
     permission_classes = (AllowAny,)
     serializer_class = ActivateTokenSerializer
     token_model = Token
@@ -241,6 +249,18 @@ class ActivateTokenView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Activates a token
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
@@ -260,9 +280,6 @@ class ActivateTokenView(GenericAPIView):
 class LogoutView(APIView):
 
     """
-    Delete the current used token object.
-
-    Accepts/Returns nothing.
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
@@ -275,7 +292,16 @@ class LogoutView(APIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request):
-        #TODO Create this logout function
+        """
+        Delete the current used token object.
+
+        Accepts/Returns nothing.
+
+        :param request:
+        :type request:
+        :return:
+        :rtype:
+        """
         try:
             token_hash=TokenAuthentication.get_token_hash(request)
             self.token_model.objects.filter(key=token_hash).delete()
@@ -288,10 +314,6 @@ class LogoutView(APIView):
 
 class UserUpdate(GenericAPIView):
 
-    """
-    Checks the REST Token and updates the users email / authkey / secret and private key
-    """
-
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserUpdateSerializer
@@ -303,6 +325,18 @@ class UserUpdate(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Checks the REST Token and updates the users email / authkey / secret and private key
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         user = User.objects.get(pk=request.user.id)
 
@@ -356,13 +390,6 @@ class UserUpdate(GenericAPIView):
 
 class UserSearch(GenericAPIView):
 
-    """
-    Check the REST Token and returns the user's public key. To identify the user either the email or the user_id needs
-    to be provided
-
-    Return the user's public key
-    """
-
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserPublicKeySerializer
@@ -374,7 +401,21 @@ class UserSearch(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
+        """
+        Check the REST Token and returns the user's public key. To identify the user either the email or the user_id needs
+        to be provided
 
+        Return the user's public key
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
         if 'user_id' in request.data and request.data['user_id']:
             try:
                 user = User.objects.get(pk=str(request.data['user_id']))

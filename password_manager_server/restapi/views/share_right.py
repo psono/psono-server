@@ -1,5 +1,5 @@
 from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
-from share_tree import create_link
+from share_tree import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -312,8 +312,8 @@ class ShareRightAcceptView(GenericAPIView):
                 return Response({"message": "You don't have permission to access it or it does not exist or you already accepted or declined this share.",
                                 "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
-            if not create_link(request.data['link_id'], user_share_right_obj.share_id, parent_share_id,
-                               parent_datastore_id):
+            if not create_share_link(request.data['link_id'], user_share_right_obj.share_id, parent_share_id,
+                                     parent_datastore_id):
                 return Response({"message": "Link id already exists.",
                                  "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
@@ -389,3 +389,6 @@ class ShareRightDeclineView(GenericAPIView):
                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

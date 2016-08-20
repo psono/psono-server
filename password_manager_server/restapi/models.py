@@ -120,6 +120,26 @@ class Group(models.Model):
         abstract = False
 
 
+class Secret_Link(models.Model):
+    """
+    The link object for secrets, identifying the position of the Secret in a share or datastore
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The Secret, that this link links to.'))
+    link_id = models.UUIDField(unique=True)
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_links', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_links', null=True,
+                                         help_text=_('The datastore, where this link ends'))
+
+    class Meta:
+        abstract = False
+
+
 class Group_User_Right(models.Model):
     """
     The group user rights objects for to define rights for group of users and shares.
@@ -210,11 +230,11 @@ class Share_Tree(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
-                              help_text=_('The share, where this link ends and gets its permissions from'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='share_trees',
                               help_text=_('The share that this link grants permissions to'))
-    path = LtreeField(null=True, help_text=_('The ltree path to this share'))
+    path = LtreeField(unique=True, help_text=_('The ltree path to this share'))
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
 
     datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
                               help_text=_('The datastore, where this link ends'))

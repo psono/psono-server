@@ -1,5 +1,5 @@
 from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
-from share_tree import create_link
+from share_tree import create_share_link
 from datastore import get_datastore
 from rest_framework import status
 from rest_framework.response import Response
@@ -42,7 +42,7 @@ class ShareView(GenericAPIView):
         :param uuid:
         :param args:
         :param kwargs:
-        :return:
+        :return: 200 / 400 / 403
         """
         if not uuid:
 
@@ -203,9 +203,22 @@ class ShareView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        # TODO implement check for more shares for enterprise users
+        """
+        Creates a new share
 
-        #TODO Check if secret_key and nonce exist
+        Necessary Rights:
+            - write on new_parent_share
+            - write on new_datastore
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 201 / 400 / 403 / 404
+        :rtype:
+        """
 
         if 'data' not in request.data:
             return Response({"error": "NotInRequest", 'message': "Data not in request"},
@@ -267,12 +280,29 @@ class ShareView(GenericAPIView):
                 grant = True
             )
 
-        create_link(request.data['link_id'], share.id, parent_share_id, datastore_id)
+        if not create_share_link(request.data['link_id'], share.id, parent_share_id, datastore_id):
+            return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, uuid = None, *args, **kwargs):
-        # TODO update according to inherit share rights
+        """
+        Updates a share
+
+        Necessary Rights:
+            - write on share
+
+        :param request:
+        :type request:
+        :param uuid:
+        :type uuid:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 400 / 403
+        :rtype:
+        """
 
         try:
             share = Share.objects.get(pk=uuid)

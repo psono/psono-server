@@ -19,7 +19,7 @@ from django.db import connection
 from ..authentication import TokenAuthentication
 
 
-def create_link(link_id, share_id, parent_share_id, parent_datastore_id):
+def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
     """
     DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
     link paths to their children
@@ -106,7 +106,7 @@ def create_link(link_id, share_id, parent_share_id, parent_datastore_id):
 
     return True
 
-def delete_link(link_id):
+def delete_share_link(link_id):
     """
     DB wrapper to delete a link to a share (and all his child shares with the same link)
 
@@ -194,7 +194,7 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
 
-        if not create_link(uuid, share.id, parent_share_id, datastore_id):
+        if not create_share_link(uuid, share.id, parent_share_id, datastore_id):
             return Response({"message":"Link id already exists.",
                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
@@ -291,10 +291,10 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": new_parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
         # all checks passed, lets move the link with a delete and create at the new location
-        delete_link(uuid)
+        delete_share_link(uuid)
 
         for share_id in shares:
-            create_link(uuid, share_id, new_parent_share_id, new_parent_datastore_id)
+            create_share_link(uuid, share_id, new_parent_share_id, new_parent_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -363,6 +363,6 @@ class ShareLinkView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
-        delete_link(uuid)
+        delete_share_link(uuid)
 
         return Response(status=status.HTTP_200_OK)
