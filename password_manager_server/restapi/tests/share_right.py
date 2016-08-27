@@ -81,20 +81,6 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertNotIsInstance(response.data.get('share_rights', False), list,
                                  'We got some data even with a 401')
 
-    def test_post_list_share_right(self):
-        """
-        Tests POST method to list share rights
-        """
-
-        url = reverse('share_right')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
     def test_list_share_right(self):
         """
         Tests if the initial listing of share rights works
@@ -138,6 +124,8 @@ class UserShareRightTest(APITestCaseExtended):
             key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             title=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             title_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type= ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            type_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             read=True,
             write=True,
             grant=True,
@@ -356,6 +344,8 @@ class UserShareRightTest(APITestCaseExtended):
             'share_id': str(self.test_share1_obj.id),
             'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'read': True,
             'write': True,
             'grant': True,
@@ -365,7 +355,7 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_grant_share_right_with_right(self):
         """
@@ -398,6 +388,8 @@ class UserShareRightTest(APITestCaseExtended):
             'share_id': str(self.test_share1_obj.id),
             'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
             'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'read': True,
             'write': True,
             'grant': True,
@@ -450,6 +442,8 @@ class UserShareRightTest(APITestCaseExtended):
             'share_id': self.test_share1_obj.id,
             'title': initial_data['title'],
             'title_nonce': initial_data['title_nonce'],
+            'type': initial_data['type'],
+            'type_nonce': initial_data['type_nonce'],
             'read': True,
             'write': True,
             'grant': True,

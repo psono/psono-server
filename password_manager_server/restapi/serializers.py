@@ -1,6 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
-from utils import validate_activation_code, authenticate
+from utils import validate_activation_code, authenticate, user_has_rights_on_share, is_uuid
 from authentication import TokenAuthentication
 import uuid
 import re
@@ -413,10 +413,59 @@ class UserShareSerializer(serializers.Serializer):
     user = PublicUserDetailsSerializer()
 
 
-class UserShareRightSerializer(serializers.Serializer):
+class CreateUserShareRightSerializer(serializers.Serializer):
+    key = serializers.CharField(max_length=256, required=False)
+    key_nonce = serializers.CharField(max_length=64, required=False)
+    title = serializers.CharField(max_length=512, required=False)
+    title_nonce = serializers.CharField(max_length=64, required=False)
+    type = serializers.CharField(max_length=512, required=False)
+    type_nonce = serializers.CharField(max_length=64, required=False)
+    share_id = serializers.UUIDField(required=True)
+    user_id = serializers.UUIDField(required=True)
     read = serializers.BooleanField()
     write = serializers.BooleanField()
     grant = serializers.BooleanField()
+
+    def validate(self, attrs):
+
+        # check permissions on share
+        if not user_has_rights_on_share(self.context['request'].user.id, attrs['share_id'], grant=True):
+            msg = _("You don't have permission to access or it does not exist.")
+            raise exceptions.ValidationError(msg)
+
+        # check if user exists
+        try:
+            attrs['user'] = User.objects.get(pk=attrs['user_id'])
+        except User.DoesNotExist:
+            msg = _('Target user does not exist.".')
+            raise exceptions.ValidationError(msg)
+
+        return attrs
+
+
+class UpdateUserShareRightSerializer(serializers.Serializer):
+    share_id = serializers.UUIDField(required=True)
+    user_id = serializers.UUIDField(required=True)
+    read = serializers.BooleanField()
+    write = serializers.BooleanField()
+    grant = serializers.BooleanField()
+
+    def validate(self, attrs):
+
+        # check permissions on share
+        if not user_has_rights_on_share(self.context['request'].user.id, attrs['share_id'], grant=True):
+            msg = _("You don't have permission to access or it does not exist.")
+            raise exceptions.ValidationError(msg)
+
+        # check if user exists
+        try:
+            attrs['user'] = User.objects.get(pk=attrs['user_id'])
+        except User.DoesNotExist:
+            msg = _('Target user does not exist.".')
+            raise exceptions.ValidationError(msg)
+
+        return attrs
+
 
 class ShareTreeSerializer(serializers.Serializer):
 

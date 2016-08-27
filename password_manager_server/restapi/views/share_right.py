@@ -12,7 +12,8 @@ from ..models import (
 )
 
 from ..app_settings import (
-    UserShareRightSerializer
+    CreateUserShareRightSerializer,
+    UpdateUserShareRightSerializer,
 )
 
 from ..authentication import TokenAuthentication
@@ -30,11 +31,6 @@ class ShareRightView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserShareRightSerializer
-
-
-    def post(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get(self, request, uuid = None, *args, **kwargs):
         """
@@ -62,6 +58,8 @@ class ShareRightView(GenericAPIView):
                     'id': share_right.id,
                     'title': share_right.title,
                     'title_nonce': share_right.title_nonce,
+                    'type': share_right.type,
+                    'type_nonce': share_right.type_nonce,
                     'key': share_right.key,
                     'key_nonce': share_right.key_nonce,
                     'read': share_right.read,
@@ -78,6 +76,8 @@ class ShareRightView(GenericAPIView):
                     'id': share_right.id,
                     'title': share_right.share_right.title,
                     'title_nonce': share_right.share_right.title_nonce,
+                    'type': share_right.share_right.type,
+                    'type_nonce': share_right.share_right.type_nonce,
                     'key': share_right.share_right.key,
                     'key_nonce': share_right.share_right.key_nonce,
                     'read': share_right.share_right.read,
@@ -133,65 +133,91 @@ class ShareRightView(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 201 / 403
+        :return: 201 / 403
         """
 
-        # check permissions on share
-        if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
+        # it does not yet exist, so lets create it
+        serializer = CreateUserShareRightSerializer(data=request.data, context=self.get_serializer_context())
 
-        # check if user exists
-        try:
-            user = User.objects.get(pk=request.data['user_id'])
-        except User.DoesNotExist:
-            return Response({"message":"Target user does not exist.",
-                            "resource_id": request.data['user_id']}, status=status.HTTP_403_FORBIDDEN)
+        if not serializer.is_valid():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
         try:
-            # try to update it
-            user_share_right_obj = User_Share_Right.objects.get(share_id=request.data['share_id'],
-                                                                user_id=request.data['user_id'])
-            user_share_right_obj.owner = request.user
+            # Lets see if it already exists
+            User_Share_Right.objects.get(share_id=serializer.validated_data['share_id'],
+                                                                user_id=serializer.validated_data['user_id'])
 
-            serializer = UserShareRightSerializer(request.data)
-
-            user_share_right_obj.read = serializer.data['read']
-            user_share_right_obj.write = serializer.data['write']
-            user_share_right_obj.grant = serializer.data['grant']
-            user_share_right_obj.save()
-
-            return Response({"share_right_id": str(user_share_right_obj.id)},
-                            status=status.HTTP_200_OK)
+            return Response({"message": "User Share Right already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
 
         except User_Share_Right.DoesNotExist:
 
             # lets check if the user has already a path to access the share. if yes automatically approve rights
             accepted = None
-            if len(list(get_all_inherited_rights(user.id, request.data['share_id']))) > 0:
+            if len(list(get_all_inherited_rights(serializer.validated_data['user_id'], serializer.validated_data['share_id']))) > 0:
                 accepted = True
 
-            # it does not yet exist, so lets create it
-            serializer = UserShareRightSerializer(request.data)
-
             user_share_right_obj2 = User_Share_Right.objects.create(
-                key=str(request.data['key']),
-                key_nonce=str(request.data['key_nonce']),
-                title=str(request.data['title']),
-                title_nonce=str(request.data['title_nonce']),
-                share_id=request.data['share_id'],
+                key=serializer.validated_data['key'],
+                key_nonce=serializer.validated_data['key_nonce'],
+                title=serializer.validated_data['title'],
+                title_nonce=serializer.validated_data['title_nonce'],
+                type=serializer.validated_data['type'],
+                type_nonce=serializer.validated_data['type_nonce'],
+                share_id=serializer.validated_data['share_id'],
                 owner=request.user,
-                user=user,
-                read=serializer.data['read'],
-                write=serializer.data['write'],
-                grant=serializer.data['grant'],
+                user=serializer.validated_data['user'],
+                read=serializer.validated_data['read'],
+                write=serializer.validated_data['write'],
+                grant=serializer.validated_data['grant'],
                 accepted=accepted,
             )
 
         return Response({"share_right_id": str(user_share_right_obj2.id)},
             status=status.HTTP_201_CREATED)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Update Share_Right
+
+        Necessary Rights:
+            - grant on share
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 403
+        """
+
+        # it does not yet exist, so lets create it
+        serializer = UpdateUserShareRightSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+        try:
+            user_share_right_obj = User_Share_Right.objects.get(share_id=serializer.validated_data['share_id'],
+                                                                user_id=serializer.validated_data['user_id'])
+        except User_Share_Right.DoesNotExist:
+            return Response({"message": "You don't have permission to access or it does not exist."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        user_share_right_obj.owner = request.user
+
+        user_share_right_obj.read = serializer.validated_data['read']
+        user_share_right_obj.write = serializer.validated_data['write']
+        user_share_right_obj.grant = serializer.validated_data['grant']
+        user_share_right_obj.save()
+
+        return Response({"share_right_id": str(user_share_right_obj.id)},
+                        status=status.HTTP_200_OK)
+
+
+
 
 
     def delete(self, request, uuid=None, *args, **kwargs):
@@ -317,9 +343,14 @@ class ShareRightAcceptView(GenericAPIView):
                 return Response({"message": "Link id already exists.",
                                  "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
+            type = user_share_right_obj.type
+            type_nonce = user_share_right_obj.type_nonce
+
             user_share_right_obj.accepted = True
             user_share_right_obj.title = ''
             user_share_right_obj.title_nonce = ''
+            user_share_right_obj.type = ''
+            user_share_right_obj.type_nonce = ''
             user_share_right_obj.key_type = 'symmetric'
             user_share_right_obj.key = request.data['key']
             user_share_right_obj.key_nonce = request.data['key_nonce']
@@ -331,15 +362,18 @@ class ShareRightAcceptView(GenericAPIView):
                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
         if user_share_right_obj.read:
-            share = Share.objects.get(pk=user_share_right_obj.share_id)
             return Response({
-                "share_id": share.id,
-                "share_data": str(share.data),
-                "share_data_nonce": share.data_nonce
+                "share_id": user_share_right_obj.share.id,
+                "share_data": str(user_share_right_obj.share.data),
+                "share_data_nonce": user_share_right_obj.share.data_nonce,
+                "share_type": type,
+                "share_type_nonce": type_nonce
             }, status=status.HTTP_200_OK)
 
         return Response({
-            "share_id": user_share_right_obj.share_id
+            "share_id": user_share_right_obj.share.id,
+            "share_type": type,
+            "share_type_nonce": type_nonce
         }, status=status.HTTP_200_OK)
 
 
@@ -379,6 +413,8 @@ class ShareRightDeclineView(GenericAPIView):
             user_share_right_obj.accepted = False
             user_share_right_obj.title = ''
             user_share_right_obj.title_nonce = ''
+            user_share_right_obj.type = ''
+            user_share_right_obj.type_nonce = ''
             user_share_right_obj.key_type = ''
             user_share_right_obj.key = ''
             user_share_right_obj.key_nonce = ''

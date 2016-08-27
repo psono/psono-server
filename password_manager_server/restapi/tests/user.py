@@ -252,8 +252,7 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         self.test_email = "test@example.com"
-        self.test_email_bcrypt = "a"
-        self.test_username = "test6@psono.pw"
+        self.test_username = "test6@dev.psono.pw"
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
@@ -262,19 +261,31 @@ class LoginTests(APITestCaseExtended):
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_user_sauce = os.urandom(32).encode('hex')
-        self.user_obj = models.User.objects.create(
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            username=self.test_username,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
+
+
+        data = {
+            'username': self.test_username,
+            'email': self.test_email,
+            'authkey': self.test_authkey,
+            'public_key': self.test_public_key,
+            'private_key': self.test_private_key,
+            'private_key_nonce': self.test_private_key_nonce,
+            'secret_key': self.test_secret_key,
+            'secret_key_nonce': self.test_secret_key_nonce,
+            'user_sauce': self.test_user_sauce,
+        }
+
+        url = reverse('authentication_register')
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        self.user_obj = models.User.objects.get(username=self.test_username)
+        self.user_obj.is_email_active = True
+        self.user_obj.save()
+
+
 
     def test_unique_constraint_token(self):
         key = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
@@ -539,29 +550,43 @@ class LoginTests(APITestCaseExtended):
 
 class LogoutTests(APITestCaseExtended):
     def setUp(self):
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
         self.test_email = "test@example.com"
-        self.test_email_bcrypt = "a"
-        self.test_username = "test@psono.pw"
+        self.test_username = "test6@dev.psono.pw"
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
         self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_user_sauce = os.urandom(32).encode('hex')
-        models.User.objects.create(
-            username=self.test_username,
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
+
+
+        data = {
+            'username': self.test_username,
+            'email': self.test_email,
+            'authkey': self.test_authkey,
+            'public_key': self.test_public_key,
+            'private_key': self.test_private_key,
+            'private_key_nonce': self.test_private_key_nonce,
+            'secret_key': self.test_secret_key,
+            'secret_key_nonce': self.test_secret_key_nonce,
+            'user_sauce': self.test_user_sauce,
+        }
+
+        url = reverse('authentication_register')
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        self.user_obj = models.User.objects.get(username=self.test_username)
+        self.user_obj.is_email_active = True
+        self.user_obj.save()
 
         url = reverse('authentication_login')
 

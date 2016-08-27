@@ -9,7 +9,8 @@ from serializers import (
     SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
-    UserShareRightSerializer as DefaultUserShareRightSerializer,
+    CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
+    UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
     ShareTreeSerializer as DefaultShareTreeSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
@@ -74,12 +75,20 @@ UserUpdateSerializer = import_callable(
 )
 
 
-UserShareRightSerializer = import_callable(
+CreateUserShareRightSerializer = import_callable(
     serializers.get(
-        'SHARE_RIGHT_SERIALIZER',
-        DefaultUserShareRightSerializer
+        'CREATE_SHARE_RIGHT_SERIALIZER',
+        DefaultCreateUserShareRightSerializer
     )
 )
+
+UpdateUserShareRightSerializer = import_callable(
+    serializers.get(
+        'UPDATE_SHARE_RIGHT_SERIALIZER',
+        DefaultUpdateUserShareRightSerializer
+    )
+)
+
 ShareTreeSerializer = import_callable(
     serializers.get(
         'SHARE_RIGHT_INHERIT_SERIALIZER',

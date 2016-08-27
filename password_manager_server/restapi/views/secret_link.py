@@ -89,11 +89,11 @@ class SecretLinkView(GenericAPIView):
         old_datastores = []
 
         for s in Secret_Link.objects.filter(link_id=uuid).all():
-            secrets.append(s.share_id)
+            secrets.append(s.secret_id)
             if s.parent_share_id:
                 old_parents.append(s.parent_share_id)
-            if s.datastore_id:
-                old_datastores.append(s.datastore_id)
+            if s.parent_datastore_id:
+                old_datastores.append(s.parent_datastore_id)
 
         # remove duplicates
         secrets = list(unique_everseen(secrets))

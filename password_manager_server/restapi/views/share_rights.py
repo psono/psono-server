@@ -7,9 +7,6 @@ from ..models import (
     Share
 )
 
-from ..app_settings import (
-    UserShareRightSerializer
-)
 from rest_framework.exceptions import PermissionDenied
 
 from ..authentication import TokenAuthentication
@@ -26,7 +23,6 @@ class ShareRightsView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserShareRightSerializer
 
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

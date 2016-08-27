@@ -211,6 +211,12 @@ class LoginView(GenericAPIView):
         user_validator = encrypted[len(user_validator_nonce):]
         user_validator_hex = nacl.encoding.HexEncoder.encode(user_validator)
 
+        # decrypt user email address
+        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        encrypted_email = nacl.encoding.HexEncoder.decode(user.email)
+        decrypted_email = crypto_box.decrypt(encrypted_email)
+
 
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, user)
@@ -224,7 +230,7 @@ class LoginView(GenericAPIView):
             "user_validator_nonce": user_validator_nonce_hex,
             "user": {
                 "id": user.id,
-                "email": user.email,
+                "email": decrypted_email,
                 "public_key": user.public_key,
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
