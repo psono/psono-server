@@ -354,8 +354,6 @@ class LoginTests(APITestCaseExtended):
 
         self.assertTrue(response.data.get('token', False),
                         'Token does not exist in login response')
-        self.assertTrue(response.data.get('user', {}).get('id', False),
-                        'User ID does not exist in login response')
         self.assertEqual(response.data.get('user', {}).get('public_key', False),
                          self.test_public_key,
                          'Public key is wrong in response or does not exist')
@@ -365,12 +363,6 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(response.data.get('user', {}).get('private_key_nonce', False),
                          self.test_private_key_nonce,
                          'Private key nonce is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('secret_key', False),
-                         self.test_secret_key,
-                         'Secret key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('secret_key_nonce', False),
-                         self.test_secret_key_nonce,
-                         'Secret key is wrong in response or does not exist')
         self.assertEqual(response.data.get('user', {}).get('user_sauce', False),
                          self.test_user_sauce,
                          'Secret key nonce is wrong in response or does not exist')
@@ -468,6 +460,18 @@ class LoginTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(response.data.get('user', {}).get('id', False),
+                        'User ID does not exist in login response')
+        self.assertEqual(response.data.get('user', {}).get('email', False),
+                         self.test_email,
+                         'Email is wrong in response or does not exist')
+        self.assertEqual(response.data.get('user', {}).get('secret_key', False),
+                         self.test_secret_key,
+                         'Secret key is wrong in response or does not exist')
+        self.assertEqual(response.data.get('user', {}).get('secret_key_nonce', False),
+                         self.test_secret_key_nonce,
+                         'Secret key is wrong in response or does not exist')
 
 
 

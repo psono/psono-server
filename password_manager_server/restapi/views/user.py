@@ -211,12 +211,6 @@ class LoginView(GenericAPIView):
         user_validator = encrypted[len(user_validator_nonce):]
         user_validator_hex = nacl.encoding.HexEncoder.encode(user_validator)
 
-        # decrypt user email address
-        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_email = nacl.encoding.HexEncoder.decode(user.email)
-        decrypted_email = crypto_box.decrypt(encrypted_email)
-
 
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, user)
@@ -229,13 +223,9 @@ class LoginView(GenericAPIView):
             "user_validator": user_validator_hex,
             "user_validator_nonce": user_validator_nonce_hex,
             "user": {
-                "id": user.id,
-                "email": decrypted_email,
                 "public_key": user.public_key,
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
-                "secret_key": user.secret_key,
-                "secret_key_nonce": user.secret_key_nonce,
                 "user_sauce": user.user_sauce
             }
         },status=status.HTTP_200_OK)
@@ -280,7 +270,20 @@ class ActivateTokenView(GenericAPIView):
         token.user_validator = None
         token.save()
 
-        return Response(status=status.HTTP_200_OK)
+        # decrypt user email address
+        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        encrypted_email = nacl.encoding.HexEncoder.decode(token.user.email)
+        decrypted_email = crypto_box.decrypt(encrypted_email)
+
+        return Response({
+            "user": {
+                "id": token.user.id,
+                "email": decrypted_email,
+                "secret_key": token.user.secret_key,
+                "secret_key_nonce": token.user.secret_key_nonce
+            }
+        },status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
