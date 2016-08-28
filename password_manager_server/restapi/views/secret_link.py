@@ -153,7 +153,7 @@ class SecretLinkView(GenericAPIView):
 
 
 
-    def delete(self, request, uuid, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         """
         Delete Secret_Link obj
 
@@ -162,13 +162,12 @@ class SecretLinkView(GenericAPIView):
             - write on parent_datastore
 
         :param request:
-        :param uuid:
         :param args:
         :param kwargs:
         :return: 200 / 400/ 403
         """
 
-        if not uuid or not is_uuid(uuid):
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -176,7 +175,7 @@ class SecretLinkView(GenericAPIView):
         parents = []
         datastores = []
 
-        for s in Secret_Link.objects.filter(link_id=uuid).all():
+        for s in Secret_Link.objects.filter(link_id=request.data['link_id']).all():
             secrets.append(s.secret_id)
             if s.parent_share_id:
                 parents.append(s.parent_share_id)
@@ -191,7 +190,7 @@ class SecretLinkView(GenericAPIView):
 
         if not secrets and not parents and not datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check write permissions on parents
         for parent_share_id in parents:
@@ -207,6 +206,6 @@ class SecretLinkView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
-        delete_secret_link(uuid)
+        delete_secret_link(request.data['link_id'])
 
         return Response(status=status.HTTP_200_OK)

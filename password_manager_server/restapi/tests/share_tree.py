@@ -876,9 +876,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': 'b48cbd50-1aba-4389-90ce-3bed32c831e3'})
+        url = reverse('share_link')
 
-        request_data = {}
+        request_data = {
+            'link_id': 'b48cbd50-1aba-4389-90ce-3bed32c831e3'
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
@@ -917,9 +919,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
-        request_data = {}
+        request_data = {
+            'link_id': str(link_id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
@@ -965,9 +969,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
-        request_data = {}
+        request_data = {
+            'link_id': str(link_id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
@@ -1013,9 +1019,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
-        request_data = {}
+        request_data = {
+            'link_id': str(link_id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
@@ -1061,9 +1069,11 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
-        request_data = {}
+        request_data = {
+            'link_id': str(link_id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)

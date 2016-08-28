@@ -486,28 +486,30 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(models.User_Share_Right.objects.filter(pk=test_user_share_rights.id).count(), 1,
                          'Exactly one share right with this id should exist')
 
-        url = reverse('share_right', kwargs={'uuid': str(test_user_share_rights.id)})
+        url = reverse('share_right')
 
-        data = {}
+        data = {
+            'share_right_id': str(test_user_share_rights.id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_delete_share_right_with_uuid(self):
+    def test_delete_share_right_without_uuid(self):
         """
         Tests to delete something without uuid
         """
 
-        url = reverse('share_right', kwargs={})
+        url = reverse('share_right')
 
         data = {}
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_share_right_with_grant_rights(self):
         """
@@ -543,9 +545,11 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(models.User_Share_Right.objects.filter(pk=test_user_share_rights.id).count(), 1,
                          'Exactly one share right with this id should exist')
 
-        url = reverse('share_right', kwargs={'uuid': str(test_user_share_rights.id)})
+        url = reverse('share_right')
 
-        data = {}
+        data = {
+            'share_right_id': str(test_user_share_rights.id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)

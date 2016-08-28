@@ -220,7 +220,7 @@ class ShareRightView(GenericAPIView):
 
 
 
-    def delete(self, request, uuid=None, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         """
         Delete a Share_Right obj
 
@@ -235,20 +235,24 @@ class ShareRightView(GenericAPIView):
         :return: 200 / 403
         """
 
-        if not uuid:
+        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.data['share_right_id']:
             return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_403_FORBIDDEN)
 
         # check if share_right exists
         try:
-            share_right = User_Share_Right.objects.get(pk=uuid)
+            share_right = User_Share_Right.objects.get(pk=request.data['share_right_id'])
         except User_Share_Right.DoesNotExist:
             return Response({"message": "You don't have permission to access or it does not exist.",
-                         "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                         "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check permissions on parent
         if not user_has_rights_on_share(request.user.id, share_right.share_id, grant=True):
             return Response({"message": "You don't have permission to access or it does not exist.",
-                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                             "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # delete it
         share_right.delete()

@@ -300,7 +300,7 @@ class ShareLinkView(GenericAPIView):
 
 
 
-    def delete(self, request, uuid, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         """
         Delete Share_Tree obj
 
@@ -316,11 +316,12 @@ class ShareLinkView(GenericAPIView):
         :return: 200 / 400/ 403
         """
 
-        if not uuid or not is_uuid(uuid):
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        link_id = str(uuid).replace("-", "")
+
+        link_id = str(request.data['link_id']).replace("-", "")
 
         shares = []
         parents = []
@@ -341,7 +342,7 @@ class ShareLinkView(GenericAPIView):
 
         if not shares and not parents and not datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check grant permissions on share
         for share_id in shares:
@@ -363,6 +364,6 @@ class ShareLinkView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
-        delete_share_link(uuid)
+        delete_share_link(request.data['link_id'])
 
         return Response(status=status.HTTP_200_OK)
