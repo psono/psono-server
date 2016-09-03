@@ -428,9 +428,10 @@ class ShareTests(APITestCaseExtended):
 
         # Initial share set, so lets update it
 
-        url = reverse('share', kwargs={'uuid': new_share_id})
+        url = reverse('share')
 
         updated_data = {
+            'share_id': new_share_id,
             'data': "123456",
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         }
@@ -567,9 +568,11 @@ class UpdateShareTests(APITestCaseExtended):
         Tests to update a share with no valid uuid
         """
 
-        url = reverse('share', kwargs={'uuid': '3c2c0f4d'})
+        url = reverse('share')
 
-        initial_data = {}
+        initial_data = {
+            'share_id': '3c2c0f4d'
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, initial_data)
@@ -581,9 +584,11 @@ class UpdateShareTests(APITestCaseExtended):
         Tests to update a share with no valid uuid
         """
 
-        url = reverse('share', kwargs={'uuid': '93dd801d-e709-4e2a-b9bb-1e0ed582379c'})
+        url = reverse('share')
 
-        initial_data = {}
+        initial_data = {
+            'share_id': '93dd801d-e709-4e2a-b9bb-1e0ed582379c'
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, initial_data)
@@ -595,9 +600,11 @@ class UpdateShareTests(APITestCaseExtended):
         Tests to update a share with no rights
         """
 
-        url = reverse('share', kwargs={'uuid': self.test_share2_obj.id})
+        url = reverse('share')
 
-        initial_data = {}
+        initial_data = {
+            'share_id': self.test_share2_obj.id
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, initial_data)
@@ -609,9 +616,11 @@ class UpdateShareTests(APITestCaseExtended):
         Tests to update a share with no rights
         """
 
-        url = reverse('share', kwargs={'uuid': self.test_share3_obj.id})
+        url = reverse('share')
 
-        initial_data = {}
+        initial_data = {
+            'share_id': self.test_share3_obj.id
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, initial_data)
@@ -623,9 +632,10 @@ class UpdateShareTests(APITestCaseExtended):
         Tests to write data to database
         """
 
-        url = reverse('share', kwargs={'uuid': str(self.test_share1_obj.id)})
+        url = reverse('share')
 
         data = {
+            'share_id': str(self.test_share1_obj.id),
             'data': 'sdfvgibhsdf897',
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }

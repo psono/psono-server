@@ -455,9 +455,11 @@ class UserUpdateSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': "12345"})
+        url = reverse('secret')
 
-        data = {}
+        data = {
+            'secret_id': '12345'
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
@@ -470,9 +472,11 @@ class UserUpdateSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'})
+        url = reverse('secret')
 
-        data = {}
+        data = {
+            'secret_id': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
@@ -485,9 +489,11 @@ class UserUpdateSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
+        url = reverse('secret')
 
-        data = {}
+        data = {
+            'secret_id': str(self.test_secret_obj.id),
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
@@ -500,9 +506,10 @@ class UserUpdateSecretTest(APITestCaseExtended):
         Tests to get a specific share with rights
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.secret_id)})
+        url = reverse('secret')
 
         data = {
+            'secret_id': str(self.secret_id),
             'data': '123457',
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         }

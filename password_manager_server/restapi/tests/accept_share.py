@@ -116,7 +116,7 @@ class UserRightsAccept(APITestCaseExtended):
         """
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={})
+        url = reverse('share_right_accept')
 
         initial_data = {
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -125,7 +125,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_with_parent_share(self):
         """
@@ -168,9 +168,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -261,9 +262,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -276,9 +278,10 @@ class UserRightsAccept(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # lets try to create an inherited share right for share2 and other user
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': test_parent_share2_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -331,9 +334,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -386,9 +390,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': "123456",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -441,9 +446,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_datastore_id': "123456",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -487,9 +493,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': '581d7299-b818-48d5-984b-812b43522464'})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': "581d7299-b818-48d5-984b-812b43522464",
             'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
@@ -532,9 +539,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': '581d7299-b818-48d5-984b-812b43522464'})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': '581d7299-b818-48d5-984b-812b43522464',
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
@@ -588,9 +596,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': '581d7299-b818-48d5-984b-812b43522464'})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': '581d7299-b818-48d5-984b-812b43522464',
             'parent_share_id': test_parent_share1_obj.id,
             'parent_datastore_id': test_datastore1_obj.id,
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
@@ -685,9 +694,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_datastore_id': test_datastore1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -718,9 +728,10 @@ class UserRightsAccept(APITestCaseExtended):
         """
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': "c705baca-ea0f-4848-b16e-e95fe80652f2"})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': "c705baca-ea0f-4848-b16e-e95fe80652f2",
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': self.test_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
@@ -747,9 +758,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
@@ -776,9 +788,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
@@ -805,9 +818,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
@@ -844,9 +858,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
@@ -899,9 +914,10 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
+            'share_right_id': str(test_share_right1_obj.id),
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",

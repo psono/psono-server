@@ -137,7 +137,7 @@ class SecretView(GenericAPIView):
 
 
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Updates a secret
 
@@ -146,8 +146,6 @@ class SecretView(GenericAPIView):
 
         :param request:
         :type request:
-        :param uuid: pk of the secret that you want to update
-        :type uuid: uuid
         :param args:
         :type args:
         :param kwargs:
@@ -155,8 +153,15 @@ class SecretView(GenericAPIView):
         :return: 200 / 400 / 403
         :rtype:
         """
+
+
+        if 'secret_id' not in request.data or not is_uuid(request.data['secret_id']):
+            return Response({"error": "IdNoUUID", 'message': "Secret ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+
         try:
-            secret = Secret.objects.get(pk=uuid)
+            secret = Secret.objects.get(pk=request.data['secret_id'])
         except Secret.DoesNotExist:
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
         except ValueError:

@@ -533,9 +533,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
         # lets try to create the a link to a share without rights to a datastore
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore2_obj.id,
         }
@@ -554,9 +555,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the link to a share with a datastore without rights
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore2_obj.id,
         }
@@ -577,9 +579,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.responseB3.data.get('share_id'),
         }
@@ -599,9 +602,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the link to a share with a parent_share without rights
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.responseB3.data.get('share_id'),
         }
@@ -622,9 +626,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': '9289cd38-380d-416e-88db-de2880fd9ba7',
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -642,9 +647,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': '9289cd38-380d-416e-88db-de2880fd9ba7',
         }
@@ -673,6 +679,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         url = reverse('share_link', kwargs={'uuid': str(link_id)})
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -742,9 +749,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -755,6 +763,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -780,9 +789,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore1_obj.id,
         }
@@ -898,9 +908,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         expected_share_tree_count_after = 13
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -936,56 +947,6 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              share_trees.count()))
 
 
-    def test_delete_share_with_no_grant_rights_on_share(self):
-        """
-        Tests to delete a share_right with no grant rights on share
-        """
-
-        share_trees = models.Share_Tree.objects.all()
-        expected_share_tree_count_after = 13
-
-        link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
-
-        request_data = {
-            'share_id': self.response7.data.get('share_id'),
-            'parent_share_id': self.response5.data.get('share_id'),
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, request_data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-
-        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
-                         'Exactly ' + str(
-                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
-                             share_trees.count()))
-
-        # remove grant right on share
-        models.User_Share_Right.objects.filter(share_id=self.response7.data.get('share_id'), user=self.test_user_obj).update(grant=False)
-
-
-        # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link')
-
-        request_data = {
-            'link_id': str(link_id)
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, request_data)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        self.assertEqual(share_trees.count(), expected_share_tree_count_after,
-                         'Exactly ' + str(
-                             expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
-                             share_trees.count()))
-
-
     def test_delete_share_with_no_write_rights_on_parent_share(self):
         """
         Tests to delete a share_right with no write rights on parent share
@@ -995,9 +956,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         expected_share_tree_count_after = 13
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1045,9 +1007,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         expected_share_tree_count_after = 13
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
             'datastore_id': self.test_datastore1_obj.id,
         }
@@ -1092,9 +1055,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1106,9 +1070,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': 'd7d63a3a-d2ce-4c52-a9bb-37baf13d814f'})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': 'd7d63a3a-d2ce-4c52-a9bb-37baf13d814f',
             'new_parent_share_id': self.response6.data.get('share_id'),
         }
 
@@ -1124,9 +1089,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1138,9 +1104,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_share_id': self.response6.data.get('share_id'),
         }
 
@@ -1156,9 +1123,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1172,9 +1140,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         models.User_Share_Right.objects.filter(share_id=self.response6.data.get('share_id'), user=self.test_user_obj).update(write=False)
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_share_id': self.response6.data.get('share_id'),
         }
 
@@ -1190,9 +1159,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1206,9 +1176,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         models.User_Share_Right.objects.filter(share_id=self.response5.data.get('share_id'), user=self.test_user_obj).update(write=False)
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_share_id': self.response6.data.get('share_id'),
         }
 
@@ -1224,9 +1195,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1240,9 +1212,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         models.User_Share_Right.objects.filter(share_id=self.response8.data.get('share_id'), user=self.test_user_obj).update(grant=False)
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_share_id': self.response6.data.get('share_id'),
         }
 
@@ -1258,9 +1231,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1272,9 +1246,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_share_id': 'aefb1f49-d61f-411b-9d3d-8f6ef82a3014',
         }
 
@@ -1289,9 +1264,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1303,9 +1279,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_datastore_id': self.test_datastore1_obj.id,
         }
 
@@ -1320,9 +1297,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1334,9 +1312,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_datastore_id': self.test_datastore2_obj.id,
         }
 
@@ -1351,9 +1330,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'share_id': self.response8.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -1365,9 +1345,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(link_id),
             'new_parent_datastore_id': '598da51a-3c96-4f75-beec-dc91f92905ec',
         }
 
@@ -1384,9 +1365,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         models.User_Share_Right.objects.filter(share_id=self.responseB3.data.get('share_id'), user=self.test_user2_obj).update(user=self.test_user_obj)
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str(self.initial_dataB3['link_id'])})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str(self.initial_dataB3['link_id']),
             'new_parent_datastore_id': self.test_datastore1_obj.id,
         }
 
@@ -1402,9 +1384,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         """
 
         # lets try to move it
-        url = reverse('share_link', kwargs={'uuid': str('123456')})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': str('123456'),
             'new_parent_datastore_id': self.test_datastore1_obj.id,
         }
 

@@ -6,6 +6,8 @@ from ..models import (
     Data_Store,
 )
 
+from ..utils import is_uuid
+
 from ..app_settings import (
     DatastoreSerializer, DatastoreOverviewSerializer,
 )
@@ -109,14 +111,12 @@ class DatastoreView(GenericAPIView):
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Updates a specific datastore
 
         :param request:
         :type request:
-        :param uuid:
-        :type uuid:
         :param args:
         :type args:
         :param kwargs:
@@ -125,7 +125,11 @@ class DatastoreView(GenericAPIView):
         :rtype:
         """
 
-        datastore = get_datastore(uuid, request.user)
+        if 'datastore_id' not in request.data or not is_uuid(request.data['datastore_id']):
+            return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        datastore = get_datastore(request.data['datastore_id'], request.user)
         if not datastore:
             raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 

@@ -285,7 +285,7 @@ class ShareView(GenericAPIView):
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Updates a share
 
@@ -294,8 +294,6 @@ class ShareView(GenericAPIView):
 
         :param request:
         :type request:
-        :param uuid:
-        :type uuid:
         :param args:
         :type args:
         :param kwargs:
@@ -304,19 +302,23 @@ class ShareView(GenericAPIView):
         :rtype:
         """
 
+        if 'share_id' not in request.data or not is_uuid(request.data['share_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            share = Share.objects.get(pk=uuid)
+            share = Share.objects.get(pk=request.data['share_id'])
         except ValueError:
             return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
                             status=status.HTTP_400_BAD_REQUEST)
         except Share.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check permissions on share
-        if not user_has_rights_on_share(request.user.id, uuid, write=True):
+        if not user_has_rights_on_share(request.user.id, request.data['share_id'], write=True):
             return Response({"message": "You don't have permission to access or it does not exist.",
-                             "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         if 'data' in request.data:
             share.data = str(request.data['data'])

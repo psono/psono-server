@@ -275,24 +275,23 @@ class ShareRightAcceptView(GenericAPIView):
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def post(self, request, uuid=None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Mark a Share_right as accepted. In addition update the share right with the new encryption key and deletes now
         unnecessary information like title.
 
         :param request:
-        :param uuid: share_right_id
         :param args:
         :param kwargs:
         :return: 200 / 403
         """
 
+        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         parent_share_id = None
         parent_datastore_id = None
-
-        # Validate stuff
-        if not uuid:
-            return Response({"message": "UUID for share_right not specified."}, status=status.HTTP_404_NOT_FOUND)
 
         if 'link_id' not in request.data:
             return Response({"error": "IdNoUUID", 'message': "link_id not in request"},
@@ -336,7 +335,7 @@ class ShareRightAcceptView(GenericAPIView):
                                 "resource_id": parent_datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            user_share_right_obj = User_Share_Right.objects.get(pk=uuid, user=request.user, accepted=None)
+            user_share_right_obj = User_Share_Right.objects.get(pk=request.data['share_right_id'], user=request.user, accepted=None)
 
             if not user_share_right_obj.grant and 'parent_share_id' in request.data:
                 return Response({"message": "You don't have permission to access it or it does not exist or you already accepted or declined this share.",
@@ -345,7 +344,7 @@ class ShareRightAcceptView(GenericAPIView):
             if not create_share_link(request.data['link_id'], user_share_right_obj.share_id, parent_share_id,
                                      parent_datastore_id):
                 return Response({"message": "Link id already exists.",
-                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                 "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
 
             type = user_share_right_obj.type
             type_nonce = user_share_right_obj.type_nonce
@@ -363,7 +362,7 @@ class ShareRightAcceptView(GenericAPIView):
         except User_Share_Right.DoesNotExist:
             return Response({
                                 "message": "You don't have permission to access it or it does not exist or you already accepted or declined this share.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
 
         if user_share_right_obj.read:
             return Response({
@@ -397,7 +396,7 @@ class ShareRightDeclineView(GenericAPIView):
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Mark a Share_right as declined. In addition deletes now unnecessary information like title and encryption key.
 
@@ -408,11 +407,15 @@ class ShareRightDeclineView(GenericAPIView):
         :return: 200 / 403 / 404
         """
 
-        if not uuid:
+        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.data['share_right_id']:
             return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            user_share_right_obj = User_Share_Right.objects.get(id=uuid, user=request.user, accepted=None)
+            user_share_right_obj = User_Share_Right.objects.get(id=request.data['share_right_id'], user=request.user, accepted=None)
 
             user_share_right_obj.accepted = False
             user_share_right_obj.title = ''
@@ -426,7 +429,7 @@ class ShareRightDeclineView(GenericAPIView):
 
         except User_Share_Right.DoesNotExist:
             return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(status=status.HTTP_200_OK)
 

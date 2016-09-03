@@ -74,13 +74,13 @@ class UserRightsDecline(APITestCaseExtended):
         """
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={})
+        url = reverse('share_right_decline')
 
         initial_data = {}
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_decline_share_right(self):
         """
@@ -114,9 +114,11 @@ class UserRightsDecline(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+        url = reverse('share_right_decline')
 
-        initial_data = {}
+        initial_data = {
+            'share_right_id': str(self.test_share_right1_obj.id)
+        }
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
@@ -138,9 +140,11 @@ class UserRightsDecline(APITestCaseExtended):
         """
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={'uuid': "c705baca-ea0f-4848-b16e-e95fe80652f2"})
+        url = reverse('share_right_decline')
 
-        initial_data = {}
+        initial_data = {
+            'share_right_id': "c705baca-ea0f-4848-b16e-e95fe80652f2"
+        }
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)

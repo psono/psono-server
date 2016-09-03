@@ -307,9 +307,10 @@ class DatastoreTests(APITestCaseExtended):
 
         # Initial datastore set, so lets update it
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore')
 
         updated_data = {
+            'datastore_id': new_datastore_id,
             'data': "123456",
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
@@ -373,9 +374,10 @@ class DatastoreTests(APITestCaseExtended):
 
         # Initial datastore set, so lets update it
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore')
 
         updated_data = {
+            'datastore_id': new_datastore_id,
             'type': "my-try-to-change-the-type",
             'description': "my-try-to-change-the-description",
             'data': "123456",
@@ -435,9 +437,10 @@ class DatastoreTests(APITestCaseExtended):
 
         # Initial datastore set, so lets update it
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore')
 
         updated_data = {
+            'datastore_id': new_datastore_id,
             'type': "my-try-to-change-the-type",
             'description': "my-try-to-change-the-description",
             'data': "123456",

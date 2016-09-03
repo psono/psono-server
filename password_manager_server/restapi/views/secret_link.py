@@ -62,7 +62,7 @@ class SecretLinkView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, uuid, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Move Secret_Link obj
 
@@ -79,7 +79,7 @@ class SecretLinkView(GenericAPIView):
         :return: 200 / 403 / 404
         """
 
-        if not uuid or not is_uuid(uuid):
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -88,7 +88,7 @@ class SecretLinkView(GenericAPIView):
         old_parents = []
         old_datastores = []
 
-        for s in Secret_Link.objects.filter(link_id=uuid).all():
+        for s in Secret_Link.objects.filter(link_id=request.data['link_id']).all():
             secrets.append(s.secret_id)
             if s.parent_share_id:
                 old_parents.append(s.parent_share_id)
@@ -102,7 +102,7 @@ class SecretLinkView(GenericAPIView):
 
         if not secrets and not old_parents and not old_datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check write permissions on old_parents
         for old_parent_share_id in old_parents:
@@ -144,10 +144,10 @@ class SecretLinkView(GenericAPIView):
                             "resource_id": new_parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
         # all checks passed, lets move the link with a delete and create at the new location
-        delete_secret_link(uuid)
+        delete_secret_link(request.data['link_id'])
 
         for secret_id in secrets:
-            create_secret_link(uuid, secret_id, new_parent_share_id, new_parent_datastore_id)
+            create_secret_link(request.data['link_id'], secret_id, new_parent_share_id, new_parent_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 

@@ -28,16 +28,11 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
     var nacl = nacl_factory.instantiate();
 
-    /* Im afraid people will send/use shaXXX hashes of their password for other purposes, therefore I add this special
-     * sauce to every hash. This special sauce can be considered a constant and will never change. Its no secret but
-     * it should not be used for anything else besides the reasons below */
-    var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469';//sha256 of 'our-chosen-sexy-sauce'
-
     /**
-     * takes the sha512 of lowercase email (+ special sauce) as salt to generate scrypt password hash in hex called the
+     * takes the sha512 of lowercase email as salt to generate scrypt password hash in hex called the
      * authkey, so basically:
      *
-     * hex(scrypt(password, hex(sha512(lower(email)+special_sauce))))
+     * hex(scrypt(password, hex(sha512(lower(email)))))
      *
      * For compatibility reasons with other clients please use the following parameters if you create your own client:
      *
@@ -45,8 +40,6 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * var r = 8;
      * var p = 1;
      * var l = 64;
-     *
-     * var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469'
      *
      * @param {string} email - email address of the user
      * @param {string} password - password of the user
@@ -62,7 +55,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
         var scrypt = scrypt_module_factory();
 
         // takes the email address basically as salt. sha512 is used to enforce minimum length
-        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase() + special_sauce));
+        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase()));
 
         return scrypt.to_hex(scrypt.crypto_scrypt(scrypt.encode_utf8(password), scrypt.encode_utf8(salt), n, r, p, l));
     };

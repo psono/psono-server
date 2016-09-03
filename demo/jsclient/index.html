@@ -907,16 +907,14 @@
 
                 <p>Email and password are taken to generate the authkey for registration. The authkey is used like the
                 password in normal registration processes as we dont want to send the password or any "easy" hashs to
-                the server. We are using scrypt and a "special sauce" to generate this hash.</p>
+                the server. We are using scrypt to generate this hash.</p>
                 <p class="code">
                     var n = 16384 // 2^14 <br>
                     var r = 8 <br>
                     var p = 1 <br>
                     var l = 64 <br>
-
-                    var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469' <br>
                     <br>
-                    to_hex(scrypt(password, to_hex(sha512(lower(email)+special_sauce)), n, r, p, l))
+                    to_hex(scrypt(password, to_hex(sha512(lower(email))), n, r, p, l))
                 </p>
                 <h4>INPUT: </h4>
                 <label for="email_registration">E-Mail: </label><input size="30" type="email" name="email_registration"

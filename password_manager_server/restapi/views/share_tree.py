@@ -137,7 +137,7 @@ class ShareLinkView(GenericAPIView):
     serializer_class = ShareTreeSerializer
 
 
-    def put(self, request, uuid, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         """
         Insert Share_Tree obj
 
@@ -146,14 +146,13 @@ class ShareLinkView(GenericAPIView):
             - write on parent_share
 
         :param request:
-        :param uuid:
         :param args:
         :param kwargs:
         :return: 201 / 400 / 403
         """
 
-        if not uuid or not is_uuid(uuid):
-            return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         # check if share exists
@@ -194,13 +193,13 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
 
-        if not create_share_link(uuid, share.id, parent_share_id, datastore_id):
+        if not create_share_link(request.data['link_id'], share.id, parent_share_id, datastore_id):
             return Response({"message":"Link id already exists.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(status=status.HTTP_201_CREATED)
 
-    def post(self, request, uuid, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Move Share_Tree obj
 
@@ -212,17 +211,16 @@ class ShareLinkView(GenericAPIView):
             - write on new_datastore
 
         :param request:
-        :param uuid:
         :param args:
         :param kwargs:
         :return: 200 / 403 / 404
         """
 
-        if not uuid or not is_uuid(uuid):
-            return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
+        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        link_id = str(uuid).replace("-", "")
+        link_id = str(request.data['link_id']).replace("-", "")
 
         shares = []
         old_parents = []
@@ -242,7 +240,7 @@ class ShareLinkView(GenericAPIView):
 
         if not shares and not old_parents and not old_datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
-                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                            "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
 
         # check grant permissions on share
@@ -291,10 +289,10 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": new_parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
         # all checks passed, lets move the link with a delete and create at the new location
-        delete_share_link(uuid)
+        delete_share_link(request.data['link_id'])
 
         for share_id in shares:
-            create_share_link(uuid, share_id, new_parent_share_id, new_parent_datastore_id)
+            create_share_link(request.data['link_id'], share_id, new_parent_share_id, new_parent_datastore_id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -305,7 +303,6 @@ class ShareLinkView(GenericAPIView):
         Delete Share_Tree obj
 
         Necessary Rights:
-            - grant on share
             - write on parent_share
             - write on datastore
 
@@ -343,12 +340,6 @@ class ShareLinkView(GenericAPIView):
         if not shares and not parents and not datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # check grant permissions on share
-        for share_id in shares:
-            if not user_has_rights_on_share(request.user.id, share_id, grant=True):
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": share_id}, status=status.HTTP_403_FORBIDDEN)
 
         # check write permissions on parents
         for parent_share_id in parents:
