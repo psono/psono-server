@@ -252,7 +252,7 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         self.test_email = "test@example.com"
-        self.test_username = "test6@dev.psono.pw"
+        self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
@@ -559,7 +559,7 @@ class LogoutTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         self.test_email = "test@example.com"
-        self.test_username = "test6@dev.psono.pw"
+        self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
