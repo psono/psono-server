@@ -83,6 +83,10 @@ class SecretLinkView(GenericAPIView):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
+        if 'new_parent_share_id' not in request.data and 'new_parent_datastore_id' not in request.data:
+            return Response(
+                {"error": "NotInRequest", 'message': "No parent (share or datastore) has been provided as parent"},
+                status=status.HTTP_400_BAD_REQUEST)
 
         secrets = []
         old_parents = []
@@ -137,6 +141,7 @@ class SecretLinkView(GenericAPIView):
             except Data_Store.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                  "resource_id": request.data['new_parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+
 
         # check permissions on new_parent_share
         if new_parent_share_id and not user_has_rights_on_share(request.user.id, new_parent_share_id, write=True):

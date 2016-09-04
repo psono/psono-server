@@ -126,7 +126,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': '224c6e3d-667a-4f62-9300-e6f1773d1a2a',
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user1_obj)
@@ -142,7 +142,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': 'a6b609a0-5501-4c1f-a0ca-5c5a916ee68c',
-            'datastore_id': self.test_datastore2_obj.id,
+            'parent_datastore_id': self.test_datastore2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
@@ -158,7 +158,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': 'a4da7ed5-2963-4c8c-bcd7-6dcf879d7f9f',
-            'datastore_id': self.test_datastore3_obj.id,
+            'parent_datastore_id': self.test_datastore3_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user3_obj)

@@ -109,7 +109,7 @@ class ShareTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': '2711c138-21a3-4c46-8bec-ba70442fefe3',
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -223,7 +223,7 @@ class ShareTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': '2711c138-21a3-4c46-8bec-ba70442fefe3',
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -245,7 +245,7 @@ class ShareTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': initial_data1['link_id'],
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -363,7 +363,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': uuid4(),
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -418,7 +418,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': uuid4(),
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -473,7 +473,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': uuid4(),
-            'datastore_id': self.test_datastore2_obj.id,
+            'parent_datastore_id': self.test_datastore2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
@@ -502,7 +502,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': uuid4(),
-            'datastore_id': self.test_datastore2_obj.id,
+            'parent_datastore_id': self.test_datastore2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
@@ -538,7 +538,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         request_data = {
             'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
-            'datastore_id': self.test_datastore2_obj.id,
+            'parent_datastore_id': self.test_datastore2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
@@ -560,7 +560,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         request_data = {
             'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
-            'datastore_id': self.test_datastore2_obj.id,
+            'parent_datastore_id': self.test_datastore2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -568,7 +568,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        self.assertEqual(response.data.get('resource_id', False), str(request_data['datastore_id']),
+        self.assertEqual(response.data.get('resource_id', False), str(request_data['parent_datastore_id']),
                             'Should be declined because of no rights for datastore')
 
 
@@ -715,7 +715,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         self.assertEqual(share_trees[0].parent_share_id, request_data['parent_share_id'],
                          'Parent share is incorrect')
-        self.assertEqual(share_trees[0].datastore_id, None,
+        self.assertEqual(share_trees[0].parent_datastore_id, None,
                          'Datastore is incorrect')
 
         expected_path = str(self.initial_data5['link_id']).replace("-", "")+'.'+str(link_id).replace("-", "")
@@ -732,7 +732,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         self.assertEqual(share_trees[0].share_id, self.response8.data.get('share_id'),
                          'Share is incorrect')
-        self.assertEqual(share_trees[0].datastore_id, None,
+        self.assertEqual(share_trees[0].parent_datastore_id, None,
                          'Datastore is incorrect')
 
         expected_path = str(self.initial_data5['link_id']).replace("-", "")\
@@ -794,7 +794,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         request_data = {
             'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -828,7 +828,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         self.assertEqual(share_trees[0].parent_share_id, None,
                          'Parent share is incorrect')
-        self.assertEqual(share_trees[0].datastore_id, request_data['datastore_id'],
+        self.assertEqual(share_trees[0].parent_datastore_id, request_data['parent_datastore_id'],
                          'Datastore is incorrect')
 
         expected_path = str(link_id).replace("-", "")
@@ -845,7 +845,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         self.assertEqual(share_trees[0].share_id, self.response8.data.get('share_id'),
                          'Share is incorrect')
-        self.assertEqual(share_trees[0].datastore_id, None,
+        self.assertEqual(share_trees[0].parent_datastore_id, None,
                          'Datastore is incorrect')
 
         expected_path = str(link_id).replace("-", "")\
@@ -1012,7 +1012,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         request_data = {
             'link_id': str(link_id),
             'share_id': self.response7.data.get('share_id'),
-            'datastore_id': self.test_datastore1_obj.id,
+            'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)

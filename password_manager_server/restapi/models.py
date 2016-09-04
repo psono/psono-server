@@ -241,7 +241,7 @@ class Share_Tree(models.Model):
     parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
                               help_text=_('The share, where this link ends and gets its permissions from'))
 
-    datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
                               help_text=_('The datastore, where this link ends'))
 
     class Meta:

@@ -65,7 +65,7 @@ class UserCreateSecretTest(APITestCaseExtended):
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
             'link_id': '5993584d-bf73-4679-a92a-ea333640cfdd',
-            'datastore_id': self.test_datastore_obj.id,
+            'parent_datastore_id': self.test_datastore_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)

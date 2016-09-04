@@ -44,7 +44,7 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
 
     cursor = connection.cursor()
 
-    cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, datastore_id)
+    cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
     SELECT
       uuid_generate_v4() id,
       now() create_date,
@@ -61,9 +61,9 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
       CASE
         WHEN nlevel(one_old_parent.path) = nlevel(t.path) AND new_parent.share_id IS NOT NULL THEN NULL
         WHEN nlevel(one_old_parent.path) != nlevel(t.path) AND t.parent_share_id IS NOT NULL THEN NULL
-        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(parent_datastore_id)s, t.datastore_id) --replace this null with datastore id if specified
-        ELSE t.datastore_id
-      END datastore_id
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(parent_datastore_id)s, t.parent_datastore_id) --replace this null with datastore id if specified
+        ELSE t.parent_datastore_id
+      END parent_datastore_id
     FROM restapi_share_tree t
     JOIN (
       SELECT path
@@ -83,11 +83,11 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
         if parent_datastore_id:
             Share_Tree.objects.create(
                 share_id=share_id,
-                datastore_id=parent_datastore_id,
+                parent_datastore_id=parent_datastore_id,
                 path=link_id
             )
         else:
-            cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, datastore_id)
+            cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
             SELECT
                 uuid_generate_v4() id,
                 now() create_date,
@@ -95,7 +95,7 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
                 path || %(link_id)s path,
                 %(share_id)s share_id,
                 %(parent_share_id)s parent_share_id,
-                %(parent_datastore_id)s datastore_id
+                %(parent_datastore_id)s parent_datastore_id
                 FROM restapi_share_tree
                 WHERE share_id = %(parent_share_id)s""", {
                 'link_id': link_id,
@@ -173,14 +173,14 @@ class ShareLinkView(GenericAPIView):
                                  "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check if datastore exists
-        datastore_id = None
-        if 'datastore_id' in request.data and request.data['datastore_id']:
+        parent_datastore_id = None
+        if 'parent_datastore_id' in request.data and request.data['parent_datastore_id']:
             try:
-                datastore = Data_Store.objects.get(pk=request.data['datastore_id'], user=request.user)
-                datastore_id = datastore.id
+                datastore = Data_Store.objects.get(pk=request.data['parent_datastore_id'], user=request.user)
+                parent_datastore_id = datastore.id
             except Data_Store.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                 "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+                                 "resource_id": request.data['parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # check permissions on share
         if not user_has_rights_on_share(request.user.id, request.data['share_id'], grant=True):
@@ -193,7 +193,7 @@ class ShareLinkView(GenericAPIView):
                             "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
 
-        if not create_share_link(request.data['link_id'], share.id, parent_share_id, datastore_id):
+        if not create_share_link(request.data['link_id'], share.id, parent_share_id, parent_datastore_id):
             return Response({"message":"Link id already exists.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
@@ -230,8 +230,8 @@ class ShareLinkView(GenericAPIView):
             shares.append(s.share_id)
             if s.parent_share_id:
                 old_parents.append(s.parent_share_id)
-            if s.datastore_id:
-                old_datastores.append(s.datastore_id)
+            if s.parent_datastore_id:
+                old_datastores.append(s.parent_datastore_id)
 
         # remove duplicates
         shares = list(unique_everseen(shares))
@@ -328,8 +328,8 @@ class ShareLinkView(GenericAPIView):
             shares.append(s.share_id)
             if s.parent_share_id:
                 parents.append(s.parent_share_id)
-            if s.datastore_id:
-                datastores.append(s.datastore_id)
+            if s.parent_datastore_id:
+                datastores.append(s.parent_datastore_id)
 
         # remove duplicates
         shares = list(unique_everseen(shares))

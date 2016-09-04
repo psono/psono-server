@@ -208,7 +208,7 @@ class ShareView(GenericAPIView):
 
         Necessary Rights:
             - write on new_parent_share
-            - write on new_datastore
+            - write on new_parent_datastore
 
         :param request:
         :type request:
@@ -243,17 +243,17 @@ class ShareView(GenericAPIView):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
 
-        datastore = None
-        datastore_id = None
-        if 'datastore_id' in request.data and request.data['datastore_id']:
-            datastore = get_datastore(request.data['datastore_id'], request.user)
-            if not datastore:
+        parent_datastore = None
+        parent_datastore_id = None
+        if 'parent_datastore_id' in request.data and request.data['parent_datastore_id']:
+            parent_datastore = get_datastore(request.data['parent_datastore_id'], request.user)
+            if not parent_datastore:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
-            datastore_id = datastore.id
+                                "resource_id": request.data['parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+            parent_datastore_id = parent_datastore.id
 
-        if not parent_share and not datastore:
-            return Response({"message": "Either parent share or datastore need to be specified."},
+        if not parent_share and not parent_datastore:
+            return Response({"message": "Either parent share or parent datastore need to be specified."},
                             status=status.HTTP_404_NOT_FOUND)
 
         try:
@@ -280,7 +280,7 @@ class ShareView(GenericAPIView):
                 grant = True
             )
 
-        if not create_share_link(request.data['link_id'], share.id, parent_share_id, datastore_id):
+        if not create_share_link(request.data['link_id'], share.id, parent_share_id, parent_datastore_id):
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
