@@ -1,5 +1,7 @@
 # Password Manager
 
+[![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
+
 ## Preamble
 
 This whole guide is based on Ubuntu 14.04 LTS. Ubuntu 12.04+ LTS and Debian based systems should be similar if not even
