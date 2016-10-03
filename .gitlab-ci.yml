@@ -32,7 +32,7 @@ job-run-unittests:
   - postgres:latest
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run my-docker-image bash -c "./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
+    - docker run $CONTAINER_TEST_IMAGE bash -c "./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
 
 job-release-image:
   stage: release
