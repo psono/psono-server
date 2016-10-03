@@ -1,4 +1,4 @@
-# Password Manager
+# PSONO Server - Password Manager
 
 [![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
 
@@ -41,10 +41,10 @@ identical.
     
 3. Install the config
 
-        cp configs/mainconfig/settings.yaml /home/your-user/.password_manager_server/settings.yaml
+        cp configs/mainconfig/settings.yaml /home/your-user/.psono_server/settings.yaml
 
     **Update database credentials / secrets / paths and other settings you want to change in
-    /home/your-user/.password_manager_server/settings.yaml**
+    /home/your-user/.psono_server/settings.yaml**
     
 4. Create our database
 
@@ -60,7 +60,7 @@ instructions to get a production server running
 
 1. Disable Debug Mode
 
-    In /home/your-user/.password_manager_server/settings.yaml change
+    In /home/your-user/.psono_server/settings.yaml change
         
         DEBUG=True
         
@@ -233,7 +233,7 @@ or:
 
     In the following configuration file:
     
-    /home/your-user/.password_manager_server/settings.yaml
+    /home/your-user/.psono_server/settings.yaml
     
     debug needs to be false, so the following line needs to exist:
     

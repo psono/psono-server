@@ -17,7 +17,7 @@ import json
 import hashlib
 HOME = os.path.expanduser('~')
 
-with open(os.path.join(HOME, '.password_manager_server', 'settings.yaml'), 'r') as stream:
+with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
     config = yaml.load(stream)
 
 
