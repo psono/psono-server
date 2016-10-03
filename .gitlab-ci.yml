@@ -1,10 +1,33 @@
 before_script:
   - docker info
+  - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" registry.gitlab.com
 
-build_image:
+variables:
+  IMAGE: registry.gitlab.com/psono/psono-server
+
+stages:
+  - build
+  - test
+  - deploy
+
+unittests:
+  image: gitlab/dind
+  stage: build
   script:
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml kill
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml rm -f
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml build
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "pip install -r requirements-dev.txt && sleep 20 && ./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
-    - /usr/local/bin/docker-compose -f docker-compose-test.yml stop
+  - docker build -t "$IMAGE:image-dind" .
+  - docker push "$IMAGE:image-dind"
+
+
+
+# Own (old) gitlab runner config:
+#
+#before_script:
+#  - docker info
+#
+#build_image:
+#  script:
+#    - /usr/local/bin/docker-compose -f docker-compose-test.yml kill
+#    - /usr/local/bin/docker-compose -f docker-compose-test.yml rm -f
+#    - /usr/local/bin/docker-compose -f docker-compose-test.yml build
+#    - /usr/local/bin/docker-compose -f docker-compose-test.yml run password-server-image-test bash -c "pip install -r requirements-dev.txt && sleep 20 && ./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
+#    - /usr/local/bin/docker-compose -f docker-compose-test.yml stop
