@@ -2,5 +2,9 @@ README.md
 .gitignore
 .gitmodules
 Dockerfile
+configs/apache
+configs/nginx
+demo
+.coverage
 .dockerignore
 .git

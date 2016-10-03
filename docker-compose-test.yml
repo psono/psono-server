@@ -1,7 +1,7 @@
 version: '2'
 
 services:
-  db:
+  postgres:
     image: postgres
     networks:
       - password-manager-server-network-test
@@ -9,9 +9,9 @@ services:
   password-server-image-test:
     build: .
     depends_on:
-      - db
+      - postgres
     links:
-     - db
+     - postgres
     environment:
      - PSONO_EMAIL_HOST=172.17.0.1
      - PSONO_EMAIL_FROM=test@example.com

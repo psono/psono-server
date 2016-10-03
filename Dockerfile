@@ -11,6 +11,6 @@ RUN apt-get update && \
     cp /root/configs/mainconfig/settings.yaml /root/.password_manager_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.password_manager_server/settings.yaml && \
     sed -i s/YourPostgresUser/postgres/g /root/.password_manager_server/settings.yaml && \
-    sed -i s/YourPostgresHost/db/g /root/.password_manager_server/settings.yaml && \
+    sed -i s/YourPostgresHost/postgres/g /root/.password_manager_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.password_manager_server/settings.yaml && \
     sed -i s,path/to/password-manager-server,root,g /root/.password_manager_server/settings.yaml

@@ -3,23 +3,54 @@ before_script:
   - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" registry.gitlab.com
 
 variables:
-  IMAGE: registry.gitlab.com/psono/psono-server
+  CONTAINER_TEST_IMAGE: registry.gitlab.com/psono/psono-server:$CI_BUILD_REF_NAME
+  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/psono/psono-server:latest
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 stages:
   - build
   - test
   - deploy
 
-unittests:
+job-build-container:
+  stage: build
   image: docker:git
   services:
   - docker:dind
-  stage: build
   script:
-  - docker build -t "$IMAGE:service-dind" .
-  - docker push "$IMAGE:service-dind"
+  - docker build -t $CONTAINER_TEST_IMAGE .
+  - docker push $CONTAINER_TEST_IMAGE
 
+job-run-unittests:
+  stage: test
+  image: docker:git
+  services:
+  - docker:dind
+  - postgres:latest
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run my-docker-image bash -c "./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
 
+job-release-image:
+  stage: release
+  image: docker:git
+  services:
+  - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - master
+
+job-deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - master
 
 # Own (old) gitlab runner config:
 #
