@@ -9,9 +9,6 @@ variables:
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ""
 
-services:
-    - postgres
-
 stages:
   - build
   - test
@@ -32,9 +29,16 @@ job-run-unittests:
   image: docker:git
   services:
   - docker:dind
+  environment:
+   - PSONO_EMAIL_HOST=172.17.0.1
+   - PSONO_EMAIL_FROM=test@example.com
+   - PSONO_ACTIVATION_LINK_SECRET=9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+   - PSONO_SECRET_KEY=RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run $CONTAINER_TEST_IMAGE bash -c "./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
+    - docker run -d --name db postgres:9.6
+    - sleep 20
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE bash -c "pip install -r requirements-dev.txt && ./password_manager_server/manage.py presetup && ./password_manager_server/manage.py makemigrations restapi && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
 
 job-release-image:
   stage: release
