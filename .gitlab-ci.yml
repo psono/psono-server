@@ -11,11 +11,13 @@ stages:
   - deploy
 
 unittests:
-  image: gitlab/dind
+  image: docker:git
+  services:
+  - docker:dind
   stage: build
   script:
-  - docker build -t "$IMAGE:image-dind" .
-  - docker push "$IMAGE:image-dind"
+  - docker build -t "$IMAGE:service-dind" .
+  - docker push "$IMAGE:service-dind"
 
 
 
