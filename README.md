@@ -81,7 +81,7 @@ instructions to get a production server running
         
 4. Install Apache config
 
-        sudo ln -s /path/to/password-manager-server/configs/apache/dev.psono.pw.conf /etc/apache2/sites-enabled/
+        sudo ln -s /path/to/psono-server/configs/apache/dev.psono.pw.conf /etc/apache2/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our apache:
     
@@ -100,7 +100,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        */5 * * * * /path/to/password-manager-server/password_manager_server/manage.py cleartoken
+        */5 * * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
 
 #### (optional) Installation addition for production server (with Nginx)
 
@@ -110,7 +110,7 @@ instructions to get a production server running
         
     To test, issue the following command:
     
-        uwsgi --http :9966 --chdir /path/to/password-manager-server/password_manager_server -w password_manager_server.wsgi
+        uwsgi --http :9966 --chdir /path/to/psono-server/password_manager_server -w password_manager_server.wsgi
         
     and go to:
     
@@ -127,7 +127,7 @@ instructions to get a production server running
         
 3. Install nginx config
 
-        sudo ln -s /path/to/password-manager-server/configs/nginx/dev.psono.pw.conf /etc/nginx/sites-enabled/
+        sudo ln -s /path/to/psono-server/configs/nginx/dev.psono.pw.conf /etc/nginx/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our nginx:
     
@@ -152,7 +152,7 @@ instructions to get a production server running
         sudo mkdir /etc/uwsgi
         sudo mkdir /etc/uwsgi/vassals
         
-        sudo ln -s /path/to/password-manager-server/configs/nginx/password_manager_server.ini /etc/uwsgi/vassals/
+        sudo ln -s /path/to/psono-server/configs/nginx/password_manager_server.ini /etc/uwsgi/vassals/
 
     To test try (replace www-data-usr / -grp with the user you want):
     
@@ -175,7 +175,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        */5 * * * * /path/to/password-manager-server/password_manager_server/manage.py cleartoken
+        */5 * * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
 
 For more details about how to install nginx I would like to refer to the official django documentation (because it is so awesome!)
 http://uwsgi-docs.readthedocs.org/en/latest/tutorials/Django_and_nginx.html

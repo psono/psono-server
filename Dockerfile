@@ -13,4 +13,4 @@ RUN apt-get update && \
     sed -i s/YourPostgresUser/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
-    sed -i s,path/to/password-manager-server,root,g /root/.psono_server/settings.yaml
+    sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml

@@ -67,7 +67,7 @@ if settings.DEBUG:
     # URLs for development purposes only
     urlpatterns += [
         url(r'^demo/(?P<path>.*)$', django.views.static.serve,
-            {'document_root':'/home/chickahoona/gits/password-manager-server/demo'}),
+            {'document_root':'/home/chickahoona/gits/psono-server/demo'}),
         url(r'^doc/(?P<path>.*)$', django.views.static.serve,
-            {'document_root':'/home/chickahoona/gits/password-manager-server/docs/_build/html'}),
+            {'document_root':'/home/chickahoona/gits/psono-server/docs/_build/html'}),
     ]
