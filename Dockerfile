@@ -14,7 +14,7 @@ RUN apt-get update && \
         python-psycopg2 \
         nginx \
         supervisor \
-        postgresql-client && \
+        postgresql-client \
         net-tools && \
     pip install -r requirements.txt && \
     pip install uwsgi && \
