@@ -3,8 +3,10 @@ README.md
 .gitmodules
 Dockerfile
 configs/apache
-configs/nginx
+configs/nginx/psono.pw.conf
 demo
 .coverage
+.htmlcov
+.docs
 .dockerignore
 .git

@@ -2,12 +2,53 @@
 
 [![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
 
-## Preamble
+# Preamble
 
 This whole guide is based on Ubuntu 14.04 LTS. Ubuntu 12.04+ LTS and Debian based systems should be similar if not even
 identical.
 
-## Installation
+# Installation
+
+
+
+## Docker (in development)
+
+1. Login to the gitlab registry
+
+        docker login -u USERNAME registry.gitlab.com
+    
+    (replace USERNAME with your username and enter your password when prompted)
+    
+2. Run the docker image and expose the port
+
+        docker run --name psono-server -v /path/to/settings.yaml:/root/.psono_server/settings.yaml \
+            -d -p 10100:80 registry.gitlab.com/psono/psono-server:latest 
+        
+    Possible environment variables are:
+    
+        PSONO_SECRET_KEY
+        PSONO_ACTIVATION_LINK_SECRET
+        PSONO_EMAIL_SECRET
+        PSONO_EMAIL_SECRET_SALT
+        PSONO_DEBUG
+        PSONO_ALLOWED_HOSTS
+        PSONO_ALLOWED_DOMAINS
+        PSONO_DATABASES
+        PSONO_EMAIL_FROM
+        PSONO_EMAIL_HOST
+        PSONO_EMAIL_HOST_USER
+        PSONO_EMAIL_HOST_PASSWORD
+        PSONO_EMAIL_PORT
+        PSONO_EMAIL_SUBJECT_PREFIX
+        PSONO_EMAIL_USE_TLS
+        PSONO_EMAIL_USE_SSL
+        PSONO_EMAIL_SSL_CERTFILE
+        PSONO_EMAIL_SSL_KEYFILE
+        PSONO_EMAIL_TIMEOUT
+
+
+
+## Bare installation
 
 1. Install some generic stuff
 
@@ -81,7 +122,7 @@ instructions to get a production server running
         
 4. Install Apache config
 
-        sudo ln -s /path/to/psono-server/configs/apache/dev.psono.pw.conf /etc/apache2/sites-enabled/
+        sudo ln -s /path/to/psono-server/configs/apache/psono.pw.conf /etc/apache2/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our apache:
     
@@ -127,7 +168,7 @@ instructions to get a production server running
         
 3. Install nginx config
 
-        sudo ln -s /path/to/psono-server/configs/nginx/dev.psono.pw.conf /etc/nginx/sites-enabled/
+        sudo ln -s /path/to/psono-server/configs/nginx/psono.pw.conf /etc/nginx/sites-enabled/
         
     change the path specified in .conf according to your file structure and let's restart our nginx:
     
@@ -152,7 +193,7 @@ instructions to get a production server running
         sudo mkdir /etc/uwsgi
         sudo mkdir /etc/uwsgi/vassals
         
-        sudo ln -s /path/to/psono-server/configs/nginx/password_manager_server.ini /etc/uwsgi/vassals/
+        sudo ln -s /path/to/psono-server/configs/nginx/psono_uwsgi.ini /etc/uwsgi/vassals/
 
     To test try (replace www-data-usr / -grp with the user you want):
     
