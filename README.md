@@ -288,6 +288,11 @@ or:
     
     and let your website analyze
 
+3. Protect your settings.yaml
+
+    Your settings.yaml contains sensitive information. Use the proper access rights
+    
+        chmod 600 /home/your-user/.psono_server/settings.yaml
 
 ## LICENSE
 
