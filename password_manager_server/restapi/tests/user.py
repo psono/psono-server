@@ -149,6 +149,38 @@ class RegistrationTests(APITestCaseExtended):
         self.assertTrue(response.data.get('email', False),
                         'E-Mail in error message does not exist in registration response')
 
+    def test_no_authoritative_email(self):
+        """
+        Ensure we can not create an account with an authoritative email address
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = 'admin@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 
 class EmailVerificationTests(APITestCaseExtended):

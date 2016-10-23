@@ -146,6 +146,34 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_username(self, value):
 
+        # According to RFC2142 all "authoritative" email addresses are:
+        # ( https://www.ietf.org/rfc/rfc2142.txt )
+
+        forbidden_usernames = [
+            # SUPPORT MAILBOX NAMES FOR SPECIFIC INTERNET SERVICES
+            'postmaster',
+            'hostmaster',
+            'usenet',
+            'news',
+            'webmaster',
+            'www',
+            'uucp',
+            'ftp',
+            # BUSINESS-RELATED MAILBOX NAMES
+            'info',
+            'marketing',
+            'support',
+            'sales',
+            # BUSINESS-RELATED MAILBOX NAMES
+            'security',
+            'abuse',
+            'noc',
+            # OTHER NOT RFC2142 MAILBOX NAMES
+            'admin',
+            'administrator',
+            'contact',
+        ]
+
         value = value.lower().strip()
 
         username, domain = value.split('@', 1)
@@ -192,6 +220,10 @@ class RegisterSerializer(serializers.Serializer):
 
         if '-.' in username:
             msg = _('Usernames may not contain dashes followed by periods.')
+            raise exceptions.ValidationError(msg)
+
+        if username in forbidden_usernames:
+            msg = _('Usernames like admin@ info@ webmaster@ and so on are forbidden.')
             raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=value).exists():
