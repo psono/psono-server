@@ -15,6 +15,7 @@ RUN apt-get update && \
         nginx \
         supervisor \
         postgresql-client \
+        cron \
         net-tools && \
     pip install -r requirements.txt && \
     pip install uwsgi && \
@@ -22,7 +23,7 @@ RUN apt-get update && \
     mkdir /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron /etc/cron.d/ && \
-    chmod 0644 /etc/cron.d/worker-cron /etc/cron.d/ && \
+    chmod 0644 /etc/cron.d/worker-cron && \
     touch /var/log/cron.log && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/sites-available/default && \

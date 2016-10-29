@@ -1,1 +1,1 @@
-*/1 * * * *  /root/password_manager_server/manage.py cleartoken
+* * * * *  root /root/password_manager_server/manage.py cleartoken >> /var/log/cron.log 2>&1
