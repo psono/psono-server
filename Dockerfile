@@ -26,6 +26,7 @@ RUN apt-get update && \
     chmod 0644 /etc/cron.d/worker-cron && \
     touch /var/log/cron.log && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
+    cp /root/configs/docker/supervisor-psono-worker.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/sites-available/default && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \
@@ -36,4 +37,4 @@ RUN apt-get update && \
 
 EXPOSE 80
 
-CMD bash -c "export DOCKER_HOST_IP=$(route -n | awk '/UG[ \t]/{print $2}') && supervisord -n"
+CMD bash -c "supervisord -n"
