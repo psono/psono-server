@@ -1,0 +1,1 @@
+*/1 * * * *  /root/password_manager_server/manage.py cleartoken

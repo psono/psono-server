@@ -21,6 +21,9 @@ RUN apt-get update && \
     apt-get clean && \
     mkdir /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
+    cp /root/configs/docker/worker-cron /etc/cron.d/ && \
+    chmod 0644 /etc/cron.d/worker-cron /etc/cron.d/ && \
+    touch /var/log/cron.log && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/sites-available/default && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
