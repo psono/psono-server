@@ -141,7 +141,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        */5 * * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
+        30 2 * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
 
 #### (optional) Installation addition for production server (with Nginx)
 
@@ -216,7 +216,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        */5 * * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
+        30 2 * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
 
 For more details about how to install nginx I would like to refer to the official django documentation (because it is so awesome!)
 http://uwsgi-docs.readthedocs.org/en/latest/tutorials/Django_and_nginx.html
@@ -292,7 +292,7 @@ or:
 
     Your settings.yaml contains sensitive information. Use the proper access rights
     
-        chmod 600 /home/your-user/.psono_server/settings.yaml
+        chmod 600 /home/your-user/.psono_server/setting
 
 ## LICENSE
 
