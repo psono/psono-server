@@ -26,6 +26,16 @@ ALLOWED_DOMAINS: ['example.com']
 
 # The email used to send emails, e.g. for activation
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
+EMAIL_HOST: 'localhost'
+EMAIL_HOST_USER: ''
+EMAIL_HOST_PASSWORD : ''
+EMAIL_PORT: 25
+EMAIL_SUBJECT_PREFIX: ''
+EMAIL_USE_TLS: False
+EMAIL_USE_SSL: False
+EMAIL_SSL_CERTFILE: None
+EMAIL_SSL_KEYFILE: None
+EMAIL_TIMEOUT: None
 
 # Your Postgres Database credentials
 DATABASES:

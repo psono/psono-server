@@ -10,22 +10,79 @@ identical.
 
 # Installation
 
+## Postgres (if you do not already have one)
+
+We will be using postgres (tested with version 9.6, but every 9.x version should work):
+
+    sudo apt-get install postgresql postgresql-contrib
+    sudo su - postgres
+    createdb password_manager_server
+    psql password_manager_server
+    CREATE USER password_manager_server WITH PASSWORD 'password';
+    GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
+    CREATE EXTENSION IF NOT EXISTS ltree;
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+If you want to use this database for unit testing, you should also do:
+       
+    ALTER USER password_manager_server CREATEDB;
+    
+To exit this shell and return to your normal user do:
+    
+    \q
+    Ctrl + D
+
+Other databases are not supported because of missing ltree extension
 
 
-## Docker (in development)
+## Docker (easiest way)
+
+We assume that you already have a postgres database running. If not follow the guide above to install one.
 
 1. Login to the gitlab registry
 
         docker login -u USERNAME registry.gitlab.com
     
     (replace USERNAME with your username and enter your password when prompted)
-    
-2. Run the docker image and expose the port
 
-        docker run --name psono-server -v /path/to/settings.yaml:/root/.psono_server/settings.yaml \
+2. Prepare settings.yaml
+
+    Copy the settings.yaml to a location of your choice, e.g /opt/docker/psono/
+    
+        mkdir -p /opt/docker/psono
+        cp /path/to/settings.yaml /opt/docker/psono/settings.yaml
+    
+    **Update database credentials / secrets / paths like described in the comments of
+    /home/your-user/.psono_server/settings.yaml**
+
+3. Test E-Mail
+
+    The most tedious step is usually for me to get e-mail working.
+    To make this step easier, we offer a small test script which will
+    send a test e-mail.
+    
+    To send a test e-mail to `something@something.com` execute:
+
+        docker run --rm \
+          -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
+          -ti registry.gitlab.com/psono/psono-server:latest password_manager_server/manage.py sendtestmail something@something.com
+
+    If you receive this test e-mail, e-mail should be configured proper.
+    
+4. Prepare the database
+
+        docker run --rm \
+          -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
+          -ti registry.gitlab.com/psono/psono-server:latest password_manager_server/manage.py migrate
+    
+5. Run the dockered psono server image and expose the server port
+
+        docker run --name psono-server \
+            -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
             -d -p 10100:80 registry.gitlab.com/psono/psono-server:latest 
+            
         
-    Possible environment variables are:
+    Possible (optional) environment variables are:
     
         PSONO_SECRET_KEY
         PSONO_ACTIVATION_LINK_SECRET
@@ -48,47 +105,47 @@ identical.
         PSONO_EMAIL_TIMEOUT
 
 
+    If you open now http://your-ip:10100 you should see something like this:
 
-## Bare installation
+        {"detail":"Authentication credentials were not provided."}
+
+    If not, please make sure you have no firewall on the server blocking you.
+
+    Proceed with the the installation of the psono client here:
+    https://gitlab.com/psono/psono-client
+
+
+
+## Bare installation (if not Docker)
+
+We assume that you already have a postgres database running. If not follow the guide above to install one.
 
 1. Install some generic stuff
 
         sudo apt-get update
         sudo apt-get install libyaml-dev libpython2.7-dev libpq-dev libffi-dev python-dev python-pip python-psycopg2
         sudo pip install -r requirements.txt
- 
-2. Install a database
-
-    We will be using postgres (tested with version 9.5):
-
-        sudo apt-get install postgresql postgresql-contrib
-        sudo su - postgres
-        createdb password_manager_server
-        psql password_manager_server
-        CREATE USER password_manager_server WITH PASSWORD 'password';
-        GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
-        CREATE EXTENSION IF NOT EXISTS ltree;
-        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-        
-    If you want to use this database for unit testing, you should also do:
-           
-        ALTER USER password_manager_server CREATEDB;
-        
-    To exit this shell and return to your normal user do:
-        
-        \q
-        Ctrl + D
-    
-    Other databases are not supported because of missing ltree extension
     
 3. Install the config
 
         cp configs/mainconfig/settings.yaml /home/your-user/.psono_server/settings.yaml
 
-    **Update database credentials / secrets / paths and other settings you want to change in
+    **Update database credentials / secrets / paths like described in the comments of
     /home/your-user/.psono_server/settings.yaml**
     
-4. Create our database
+4. Test E-Mail
+
+    The most tedious step is usually for me to get e-mail working.
+    To make this step easier, we offer a small test script which will
+    send a test e-mail.
+    
+    To send a test e-mail to `something@something.com` execute:
+
+        ./password_manager_server/manage.py sendtestmail something@something.com
+
+    If you receive this test e-mail, e-mail should be configured proper.
+    
+5. Create our database
 
         ./password_manager_server/manage.py migrate
 
@@ -171,7 +228,7 @@ instructions to get a production server running
 
         sudo ln -s /path/to/psono-server/configs/nginx/psono.pw.conf /etc/nginx/sites-enabled/
         
-    change the path specified in .conf according to your file structure and let's restart our nginx:
+    change the domain and path specified in .conf accordingly and let's restart our nginx:
     
         sudo service nginx restart
         
@@ -196,11 +253,11 @@ instructions to get a production server running
         
         sudo ln -s /path/to/psono-server/configs/nginx/psono_uwsgi.ini /etc/uwsgi/vassals/
 
-    To test try (replace www-data-usr / -grp with the user you want):
+    To check if everything is configured correctly try the following (replace www-data-usr / -grp with the user you want):
     
         uwsgi --emperor /etc/uwsgi/vassals --uid www-data-usr --gid www-data-grp
         
-    You can now visit your 
+    If no errors are reported, everything should be fine.
     
     
 6. Automatic start on boot
@@ -293,7 +350,7 @@ or:
 
     Your settings.yaml contains sensitive information. Use the proper access rights
     
-        chmod 600 /home/your-user/.psono_server/setting
+        chmod 600 /home/your-user/.psono_server/settings.yaml
 
 ## LICENSE
 
