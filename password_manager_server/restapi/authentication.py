@@ -1,11 +1,13 @@
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework import exceptions
-from models import Token
+from models import Token, User
 from django.utils.translation import ugettext_lazy as _
+from utils import get_cache, set_cache
 from hashlib import sha512
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
+from django.core.cache import cache
 
 
 class TokenAuthentication(BaseAuthentication):
@@ -28,7 +30,15 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
         token_hash = self.get_token_hash(request)
-        user, token = self.authenticate_credentials(token_hash)
+        token = self.get_db_token(token_hash)
+
+        user = get_cache(User, token.user_id)
+
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
+
+        if not user.is_email_active:
+            raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
 
         request.user = user
         user.session_secret_key = token.secret_key
@@ -60,22 +70,22 @@ class TokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(msg)
         return TokenAuthentication.user_token_to_token_hash(token)
 
-    def authenticate_credentials(self, token_hash):
+    def get_db_token(self, token_hash):
 
         time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
 
-        try:
-            token = self.model.objects.select_related('user').get(key=token_hash, create_date__gte=time_threshold, active=True)
-        except self.model.DoesNotExist:
+        token = get_cache(Token, token_hash)
+
+        if token is None:
             raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
-        if not token.user.is_active:
-            raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
+        if not token.active:
+            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
-        if not token.user.is_email_active:
-            raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
+        if token.create_date < time_threshold:
+            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
-        return token.user, token
+        return token
 
     def authenticate_header(self, request):
         return 'Token'

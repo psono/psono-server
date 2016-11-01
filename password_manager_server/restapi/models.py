@@ -7,8 +7,14 @@ from fields import LtreeField
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
+from django.dispatch import receiver
+from django.core.cache import cache
+from django.conf import settings
+from django.utils import timezone
 import nacl.secret
 import nacl.utils
+
+from django.db.models.signals import post_save, post_delete
 
 
 class User(models.Model):
@@ -36,8 +42,13 @@ class User(models.Model):
                     'active. Unselect this instead of deleting accounts.'))
     user_sauce = models.CharField(_('user sauce'), max_length=64)
 
+    is_cachable = True
+
     class Meta:
         abstract = False
+
+    def get_cache_time(self):
+        return settings.TOKEN_TIME_VALID
 
     @staticmethod
     def is_authenticated():
@@ -261,6 +272,11 @@ class Token(models.Model):
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
 
+    is_cachable = True
+
+    def get_cache_time(self):
+        return settings.TOKEN_TIME_VALID - (timezone.now() - self.create_date).total_seconds()
+
     def save(self, *args, **kwargs):
         if not self.key:
             self._generate()
@@ -280,4 +296,29 @@ class Token(models.Model):
 
     class Meta:
         abstract = False
+
+
+@receiver(post_save, sender=Token)
+def token_post_save_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.set('psono_token_' + pk, kwargs['instance'], kwargs['instance'].get_cache_time())
+
+@receiver(post_delete, sender=Token)
+def token_post_delete_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.delete('psono_token_' + pk)
+
+@receiver(post_save, sender=User)
+def user_post_save_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.set('psono_user_' + pk, kwargs['instance'], kwargs['instance'].get_cache_time())
+
+@receiver(post_delete, sender=User)
+def user_post_delete_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.delete('psono_user_' + pk)
 

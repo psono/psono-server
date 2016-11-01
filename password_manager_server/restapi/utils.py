@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.core.cache import cache
 import bcrypt
 import time
 from uuid import UUID
@@ -192,6 +193,28 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
 
     return False
 
+def get_cache(model, pk):
+    pk = str(pk)
+    try:
+        cached_entity = None
+        if settings.CACHE_ENABLE:
+            cached_entity = cache.get('psono_' + model._meta.verbose_name + '_' + pk)
+
+        if cached_entity is None:
+            entity = model.objects.get(pk=pk)
+            if entity.is_cachable:
+                set_cache(entity, entity.get_cache_time())
+        else:
+            entity = cached_entity
+    except model.DoesNotExist:
+        return None
+
+    return entity
+
+def set_cache(obj, timeout=None):
+    pk = str(obj.pk)
+    if settings.CACHE_ENABLE:
+        cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
 
 def is_uuid(expr):
     """

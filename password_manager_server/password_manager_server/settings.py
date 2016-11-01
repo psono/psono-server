@@ -164,6 +164,19 @@ EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
 EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
 
+CACHE_ENABLE = config_get('CACHE_ENABLE', False)
+
+if config_get('CACHE_REDIS', False):
+    CACHES = {
+       "default": {
+           "BACKEND": "django_redis.cache.RedisCache",
+           "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
+           "OPTIONS": {
+               "CLIENT_CLASS": "django_redis.client.DefaultClient",
+           }
+       }
+    }
+
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
 USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)

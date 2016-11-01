@@ -4,6 +4,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from datetime import timedelta
 from django.db import IntegrityError
+from ..authentication import TokenAuthentication
 
 from rest_framework import status
 
@@ -531,6 +532,11 @@ class LoginTests(APITestCaseExtended):
         """
         Ensure expired tokens are invalid
         """
+
+        # lets delete all tokens
+        models.Token.objects.all().delete()
+
+        # lets create one new token
         url = reverse('authentication_login')
 
         data = {
@@ -538,8 +544,6 @@ class LoginTests(APITestCaseExtended):
             'authkey': self.test_authkey,
             'public_key': '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306',
         }
-
-        models.Token.objects.all().delete()
 
         response = self.client.post(url, data)
 
@@ -550,7 +554,12 @@ class LoginTests(APITestCaseExtended):
 
         token = response.data.get('token', False)
 
-        models.Token.objects.all().update(active=True, user_validator=None)
+
+        # lets fake activation for our token
+        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(token)).get()
+        tok.active = True
+        tok.user_validator=None
+        tok.save()
 
         # to test we first query our datastores with the valid token
 
@@ -636,7 +645,11 @@ class LogoutTests(APITestCaseExtended):
 
         self.test_token = response.data.get('token', False)
 
-        models.Token.objects.all().update(active=True, user_validator=None)
+        # lets fake activation for our token
+        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token)).get()
+        tok.active = True
+        tok.user_validator=None
+        tok.save()
 
     def test_logout_false_token(self):
         """
