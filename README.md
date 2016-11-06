@@ -77,7 +77,7 @@ We assume that you already have a postgres database running. If not follow the g
     
 5. Run the dockered psono server image and expose the server port
 
-        docker run --name psono-server \
+        docker rugname psono-server \
             -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
             -d -p 10100:80 registry.gitlab.com/psono/psono-server:latest 
             
