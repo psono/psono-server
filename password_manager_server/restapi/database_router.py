@@ -34,6 +34,6 @@ class MainRouter(object):
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """
-        All non-auth models end up in this pool.
+        All models end up in this pool.
         """
         return True
