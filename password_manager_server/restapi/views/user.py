@@ -74,13 +74,15 @@ class RegisterView(GenericAPIView):
                 'email': self.request.data.get('email', ''),
                 'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
-                'activation_link': activation_link
+                'activation_link': activation_link,
+                'host_url': settings.HOST_URL,
             })
             msg_html = render_to_string('email/registration_successful.html', {
                 'email': self.request.data.get('email', ''),
                 'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
-                'activation_link': activation_link
+                'activation_link': activation_link,
+                'host_url': settings.HOST_URL,
             })
 
             send_mail(

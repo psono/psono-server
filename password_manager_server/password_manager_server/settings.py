@@ -52,6 +52,7 @@ DEBUG = config_get('DEBUG')
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
+HOST_URL = config_get('HOST_URL')
 
 # Application definition
 

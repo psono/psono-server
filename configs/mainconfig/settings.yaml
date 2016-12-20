@@ -24,6 +24,10 @@ ALLOWED_HOSTS: ['*']
 # If you dont care about user data export (not implemented yet), you can put anything here that looks like a domain
 ALLOWED_DOMAINS: ['example.com']
 
+# Should be the URL of the host under which the host is reachable
+# If you open the url you should have a text similar to {"detail":"Authentication credentials were not provided."}
+HOST_URL: 'http://example.com'
+
 # The email used to send emails, e.g. for activation
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
 EMAIL_HOST: 'localhost'
