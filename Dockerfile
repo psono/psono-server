@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
+COPY password_manager_server/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
 RUN apt-get update && \
@@ -25,6 +26,7 @@ RUN apt-get update && \
     cp /root/configs/docker/worker-cron /etc/cron.d/ && \
     chmod 0644 /etc/cron.d/worker-cron && \
     touch /var/log/cron.log && \
+    mkdir /var/www/html/media && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/docker/supervisor-psono-worker.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/sites-available/default && \
