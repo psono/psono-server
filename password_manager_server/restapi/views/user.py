@@ -56,6 +56,10 @@ class RegisterView(GenericAPIView):
         :rtype:
         """
 
+        def splitAt(w, n):
+            for i in range(0, len(w), n):
+                yield w[i:i + n]
+
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -75,6 +79,7 @@ class RegisterView(GenericAPIView):
                 'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
                 'activation_link': activation_link,
+                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
                 'host_url': settings.HOST_URL,
             })
             msg_html = render_to_string('email/registration_successful.html', {
@@ -82,6 +87,7 @@ class RegisterView(GenericAPIView):
                 'username': self.request.data.get('username', ''),
                 'activation_code': activation_code,
                 'activation_link': activation_link,
+                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
                 'host_url': settings.HOST_URL,
             })
 

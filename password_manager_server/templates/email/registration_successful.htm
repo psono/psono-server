@@ -312,7 +312,9 @@
                           </tbody>
                         </table>
                         <p>Should the link not work, then please copy / paste the following link into your browser.</p>
-                        <p><pre>{{ activation_link }}</pre></p>
+                        <p style="font-family:monospace;">
+                            <a style="color: #b1b6c1">{{ activation_link_with_wbr | safe }}</a>
+                        </p>
                         <p>Best regards</p>
                         <p>Your Psono Team</p>
                       </td>
