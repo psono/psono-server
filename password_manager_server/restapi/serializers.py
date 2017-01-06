@@ -352,42 +352,77 @@ class UserPublicKeySerializer(serializers.Serializer):
 
 
 class UserUpdateSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
+    email = serializers.EmailField(required=False, allow_null=True)
+    authkey = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True)
     authkey_old = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
-    private_key = serializers.CharField(required=True, )
-    private_key_nonce = serializers.CharField(required=True, )
-    secret_key = serializers.CharField(required=True, )
-    secret_key_nonce = serializers.CharField(required=True, )
+    private_key = serializers.CharField(required=False, allow_null=True)
+    private_key_nonce = serializers.CharField(required=False, allow_null=True)
+    secret_key = serializers.CharField(required=False, allow_null=True)
+    secret_key_nonce = serializers.CharField(required=False, allow_null=True)
 
-    def validate_email(self, value):
+    def validate(self, attrs):
+        email = attrs.get('email')
+        authkey = attrs.get('authkey')
+        private_key = attrs.get('private_key')
+        secret_key = attrs.get('secret_key')
 
-        value = value.lower().strip()
 
-        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        if email:
+            email = email.lower().strip()
+            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(
+                settings.EMAIL_SECRET_SALT, '', 1)
+            if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=self.context['request'].user.pk).exists():
+                msg = _('E-Mail already exists.')
+                raise exceptions.ValidationError(msg)
+            attrs['email'] = email
 
-        if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=self.context['request'].user.pk).exists():
-            msg = _('E-Mail already exists.')
-            raise exceptions.ValidationError(msg)
+        if authkey:
+            authkey = authkey.strip()
 
-        return value
+            if len(authkey) < settings.AUTH_KEY_LENGTH_BYTES*2:
+                msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
+                raise exceptions.ValidationError(msg)
 
-    def validate_authkey(self, value):
+            if len(authkey) > settings.AUTH_KEY_LENGTH_BYTES*2:
+                msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
+                raise exceptions.ValidationError(msg)
 
-        value = value.strip()
+            attrs['authkey'] = authkey
 
-        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
 
-        if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
+            private_key = private_key.strip()
 
-        return value
+            if len(private_key) < settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
+                msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
+                raise exceptions.ValidationError(msg)
+
+            if len(private_key) > settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
+                msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
+                raise exceptions.ValidationError(msg)
+
+            attrs['private_key'] = private_key
+
+
+            secret_key = secret_key.strip()
+
+            if len(secret_key) < settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
+                msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
+                raise exceptions.ValidationError(msg)
+
+            if len(secret_key) > settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
+                msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
+                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
+                raise exceptions.ValidationError(msg)
+
+            attrs['secret_key'] = secret_key
+
+        return attrs
 
     def validate_authkey_old(self, value):
 
@@ -395,38 +430,6 @@ class UserUpdateSerializer(serializers.Serializer):
 
         if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2 or len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
             msg = _('Your old password was not right.')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_private_key(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
-            msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
-            msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_secret_key(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.USER_SECRET_KEY_LENGTH_BYTES*2:
-            msg = _('Your secret key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.USER_SECRET_KEY_LENGTH_BYTES*2:
-            msg = _('Your secret key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
             raise exceptions.ValidationError(msg)
 
         return value
