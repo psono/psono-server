@@ -177,6 +177,7 @@ instructions to get a production server running
 3. Install Apache modules
 
         sudo a2enmod headers
+        sudo a2enmod ssl
         
 4. Install Apache config
 
@@ -325,6 +326,14 @@ or:
     coverage html --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*
     
     The output of this command can be shown on https://your-ip/htmlcov/
+
+## Run local dummy smtp server
+
+If you want to debug e-mails, like those sent during the registration, one can start a
+local dummy smtp server with the following command
+
+    sudo python -m smtpd -n -c DebuggingServer localhost:25
+
 
 ## Production Server checks
 

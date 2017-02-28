@@ -105,6 +105,9 @@ class RegisterView(GenericAPIView):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 class VerifyEmailView(GenericAPIView):
 
     permission_classes = (AllowAny,)
@@ -145,12 +148,16 @@ class VerifyEmailView(GenericAPIView):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
     token_model = Token
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -238,6 +245,9 @@ class LoginView(GenericAPIView):
             }
         },status=status.HTTP_200_OK)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 
 class ActivateTokenView(GenericAPIView):
@@ -245,6 +255,7 @@ class ActivateTokenView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = ActivateTokenSerializer
     token_model = Token
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -293,6 +304,9 @@ class ActivateTokenView(GenericAPIView):
             }
         },status=status.HTTP_200_OK)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class LogoutView(APIView):
 
@@ -334,6 +348,7 @@ class UserUpdate(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserUpdateSerializer
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -405,12 +420,16 @@ class UserUpdate(GenericAPIView):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class UserSearch(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserPublicKeySerializer
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -455,3 +474,6 @@ class UserSearch(GenericAPIView):
 
         return Response({'id': user.id, 'public_key': user.public_key, 'username': user.username},
                 status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

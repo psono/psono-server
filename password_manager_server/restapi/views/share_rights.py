@@ -15,7 +15,8 @@ class ShareRightsView(GenericAPIView):
 
     """
     Check the REST Token and the object permissions and returns
-    the share rights of a specified share if the necessary access rights are granted
+    all share rights of a specified share. Including the share rights of other people as long as the user who requests
+    it has the "grant" right, and is allowed to see them.
 
     Accept the following GET parameters: share_id
     Return a list of the share rights for the specified share
@@ -23,6 +24,7 @@ class ShareRightsView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -121,3 +123,6 @@ class ShareRightsView(GenericAPIView):
 
             return Response(response,
                 status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

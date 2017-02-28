@@ -22,8 +22,7 @@ class ShareRightView(GenericAPIView):
 
     """
     Check the REST Token and the object permissions and returns
-    own share right if the necessary access rights are granted
-    and the user is the user of the share right
+    only the share right of the user who requested it.
 
     Accept the following GET parameters: share_id (optional)
     Return a list of the shares or the share and the access rights or a message for an update of rights
@@ -31,10 +30,11 @@ class ShareRightView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
         """
-        Returns a specific Share_Right or a list of all the users Share_Rights
+        Returns a specific Share_Right or a list of all the Share_Rights of the user who requested it
 
         :param request:
         :param uuid:
@@ -268,6 +268,7 @@ class ShareRightAcceptView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -379,6 +380,9 @@ class ShareRightAcceptView(GenericAPIView):
             "share_type_nonce": type_nonce
         }, status=status.HTTP_200_OK)
 
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class ShareRightDeclineView(GenericAPIView):
 
@@ -389,6 +393,7 @@ class ShareRightDeclineView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

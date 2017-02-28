@@ -20,6 +20,7 @@ class GroupView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
 
@@ -107,6 +108,12 @@ class GroupView(GenericAPIView):
         return Response({"group_id": group.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
+
+        #TODO Implement
+
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
 
         #TODO Implement
 

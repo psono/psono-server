@@ -135,6 +135,7 @@ class ShareLinkView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = ShareTreeSerializer
+    allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
 
     def put(self, request, *args, **kwargs):

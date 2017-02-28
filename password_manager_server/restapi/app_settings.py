@@ -11,6 +11,9 @@ from serializers import (
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
     UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
+    CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
+    EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
+    SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
     ShareTreeSerializer as DefaultShareTreeSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
@@ -86,6 +89,30 @@ UpdateUserShareRightSerializer = import_callable(
     serializers.get(
         'UPDATE_SHARE_RIGHT_SERIALIZER',
         DefaultUpdateUserShareRightSerializer
+    )
+)
+
+
+CreateRecoverycodeSerializer = import_callable(
+    serializers.get(
+        'CREATE_RECOVERYCODE_SERIALIZER',
+        DefaultCreateRecoverycodeSerializer
+    )
+)
+
+
+EnableNewPasswordSerializer = import_callable(
+    serializers.get(
+        'PASSWORD_SERIALIZER',
+        DefaultEnableNewPasswordSerializer
+    )
+)
+
+
+SetNewPasswordSerializer = import_callable(
+    serializers.get(
+        'PASSWORD_SERIALIZER',
+        DefaultSetNewPasswordSerializer
     )
 )
 

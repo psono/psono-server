@@ -59,6 +59,25 @@ class User(models.Model):
         return True
 
 
+class Recovery_Code(models.Model):
+    """
+    The recovery codes for the lost password recovery process.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recovery_code')
+    recovery_authkey = models.CharField(_('recovery auth key'), max_length=128)
+    recovery_data = models.BinaryField()
+    recovery_data_nonce = models.CharField(_('recovery data nonce'), max_length=64, unique=True)
+    verifier = models.CharField(_('last verifier'), max_length=256)
+    verifier_issue_date = models.DateTimeField(null=True, blank=True)
+    recovery_sauce = models.CharField(_('user sauce'), max_length=64)
+
+    class Meta:
+        abstract = False
+
+
 class Data_Store(models.Model):
     """
     The data storage where the folder structure is saved

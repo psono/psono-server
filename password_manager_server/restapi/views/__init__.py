@@ -7,3 +7,4 @@ from secret_link import *
 from share_tree import *
 from share_right import *
 from share_rights import *
+from recoverycode import *

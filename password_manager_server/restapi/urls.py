@@ -33,6 +33,9 @@ urlpatterns = [
     url(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
 
+    url(r'^password/$', views.PasswordView.as_view(), name='password'),
+    url(r'^recoverycode/$', views.RecoverycodeView.as_view(), name='recoverycode'),
+
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 

@@ -23,6 +23,7 @@ class SecretView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = SecretSerializer
+    allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
         """
@@ -181,3 +182,6 @@ class SecretView(GenericAPIView):
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

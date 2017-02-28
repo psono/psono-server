@@ -14,6 +14,7 @@ except:
     from django.utils.http import base36_to_int as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
+from django.core.validators import EmailValidator
 
 from rest_framework import serializers, exceptions
 from models import User, Token
@@ -24,7 +25,7 @@ import nacl.encoding
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=True)
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
     public_key = serializers.CharField(required=True)
 
@@ -116,7 +117,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=True)
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     email = serializers.EmailField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
@@ -502,11 +503,138 @@ class UpdateUserShareRightSerializer(serializers.Serializer):
         return attrs
 
 
+class CreateRecoverycodeSerializer(serializers.Serializer):
+
+    recovery_authkey = serializers.CharField(required=True)
+    recovery_data = serializers.CharField(required=True)
+    recovery_data_nonce = serializers.CharField(max_length=64, required=True)
+    recovery_sauce = serializers.CharField(max_length=64, required=True)
+
+
+    def validate_recovery_data(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery data seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_recovery_data_nonce(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery data nonce seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_recovery_authkey(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery authkey seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_recovery_sauce(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery authkey seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+
+class EnableNewPasswordSerializer(serializers.Serializer):
+
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
+    recovery_authkey = serializers.CharField(required=True)
+
+
+    def validate_recovery_authkey(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery authkey seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_username(self, value):
+
+        value = value.lower().strip()
+
+        if len(value) < 1:
+            msg = _('Your username seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
+    recovery_authkey = serializers.CharField(required=True)
+    update_data = serializers.CharField(required=True)
+    update_data_nonce = serializers.CharField(required=True)
+
+
+    def validate_recovery_authkey(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your recovery authkey seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+
+    def validate_update_data(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your update data seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+
+    def validate_update_data_nonce(self, value):
+
+        value = value.strip()
+
+        if len(value) < 1:
+            msg = _('Your update data nonce seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_username(self, value):
+
+        value = value.lower().strip()
+
+        if len(value) < 1:
+            msg = _('Your username seems to be empty')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
 class ShareTreeSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
     parent_share = PublicShareDetailsSerializer()
     child_share = PublicShareDetailsSerializer()
+
 
 class CreateShareSerializer(serializers.Serializer):
 

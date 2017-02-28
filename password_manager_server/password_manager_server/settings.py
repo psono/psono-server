@@ -189,6 +189,7 @@ EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 
 ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
 TOKEN_TIME_VALID = config_get('TOKEN_TIME_VALID', 86400) # in seconds
+RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) # in seconds
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
 

@@ -61,6 +61,7 @@ class SecretLinkView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('POST', 'DELETE', 'OPTIONS', 'HEAD')
 
     def post(self, request, *args, **kwargs):
         """
