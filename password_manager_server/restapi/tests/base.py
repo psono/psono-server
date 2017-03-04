@@ -13,7 +13,7 @@ class APITestCaseExtended(APITestCase):
             return result
         return result[:_MAX_LENGTH] + ' [truncated]...'
 
-    def assertIsUUIDString(self, expr, msg):
+    def assertIsUUIDString(self, expr, msg=None):
         """Check that the expression is a valid uuid"""
 
         if not is_uuid(expr):

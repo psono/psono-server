@@ -23,7 +23,7 @@ from ..models import (
 
 
 
-class RecoverycodeView(GenericAPIView):
+class RecoveryCodeView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
