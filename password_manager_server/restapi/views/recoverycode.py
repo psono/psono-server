@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 import nacl, json, datetime
 from nacl.public import PrivateKey, PublicKey, Box
 from nacl import encoding
@@ -49,7 +49,7 @@ class RecoveryCodeView(GenericAPIView):
 
         recovery_code = Recovery_Code.objects.create(
             user = request.user,
-            recovery_authkey = str(serializer.validated_data['recovery_authkey']),
+            recovery_authkey = make_password(str(serializer.validated_data['recovery_authkey'])),
             recovery_data = str(serializer.validated_data['recovery_data']),
             recovery_data_nonce = serializer.validated_data['recovery_data_nonce'],
             recovery_sauce = str(serializer.validated_data['recovery_sauce']),
@@ -65,7 +65,7 @@ class RecoveryCodeView(GenericAPIView):
 class PasswordView(GenericAPIView):
 
     permission_classes = (AllowAny,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ('PUT', 'POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -90,7 +90,11 @@ class PasswordView(GenericAPIView):
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            recovery_code = Recovery_Code.objects.get(user_id=user.id, recovery_authkey=recovery_authkey)
+            recovery_code = Recovery_Code.objects.get(user_id=user.id)
+
+            if not check_password(recovery_authkey, recovery_code.recovery_authkey):
+                return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
+
         except Recovery_Code.DoesNotExist:
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -144,7 +148,11 @@ class PasswordView(GenericAPIView):
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            recovery_code = Recovery_Code.objects.get(user_id=user.id, recovery_authkey=recovery_authkey)
+            recovery_code = Recovery_Code.objects.get(user_id=user.id)
+
+            if not check_password(recovery_authkey, recovery_code.recovery_authkey):
+                return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
+
         except Recovery_Code.DoesNotExist:
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -154,7 +162,7 @@ class PasswordView(GenericAPIView):
 
         verifier_issue_date = timezone.now()
 
-        recovery_code.verifier  = verifier_box.encode(encoder=encoding.HexEncoder)
+        recovery_code.verifier = verifier_box.encode(encoder=encoding.HexEncoder)
         recovery_code.verifier_issue_date  = verifier_issue_date
         recovery_code.save()
 
