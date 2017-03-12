@@ -69,7 +69,7 @@ class UserCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response1 = self.client.put(url, self.initial_data1)
+        self.response1 = self.client.post(url, self.initial_data1)
 
         self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
 

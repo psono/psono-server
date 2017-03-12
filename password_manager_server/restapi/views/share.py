@@ -205,6 +205,51 @@ class ShareView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
+        Updates a share
+
+        Necessary Rights:
+            - write on share
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 400 / 403
+        :rtype:
+        """
+
+        if 'share_id' not in request.data or not is_uuid(request.data['share_id']):
+            return Response({"error": "IdNoUUID", 'message': "Share ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            share = Share.objects.get(pk=request.data['share_id'])
+        except ValueError:
+            return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Share.DoesNotExist:
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # check permissions on share
+        if not user_has_rights_on_share(request.user.id, request.data['share_id'], write=True):
+            return Response({"message": "You don't have permission to access or it does not exist.",
+                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        if 'data' in request.data:
+            share.data = str(request.data['data'])
+        if 'data_nonce' in request.data:
+            share.data_nonce = str(request.data['data_nonce'])
+
+        share.save()
+
+        return Response({"success": "Data updated."},
+                        status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        """
         Creates a new share
 
         Necessary Rights:
@@ -285,51 +330,6 @@ class ShareView(GenericAPIView):
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Updates a share
-
-        Necessary Rights:
-            - write on share
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400 / 403
-        :rtype:
-        """
-
-        if 'share_id' not in request.data or not is_uuid(request.data['share_id']):
-            return Response({"error": "IdNoUUID", 'message': "Share ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            share = Share.objects.get(pk=request.data['share_id'])
-        except ValueError:
-            return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        except Share.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # check permissions on share
-        if not user_has_rights_on_share(request.user.id, request.data['share_id'], write=True):
-            return Response({"message": "You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        if 'data' in request.data:
-            share.data = str(request.data['data'])
-        if 'data_nonce' in request.data:
-            share.data_nonce = str(request.data['data_nonce'])
-
-        share.save()
-
-        return Response({"success": "Data updated."},
-                        status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

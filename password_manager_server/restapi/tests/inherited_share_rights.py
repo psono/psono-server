@@ -130,7 +130,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user1_obj)
-        self.response1 = self.client.put(url, self.initial_data1)
+        self.response1 = self.client.post(url, self.initial_data1)
 
         self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
 
@@ -146,7 +146,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
-        self.response2 = self.client.put(url, self.initial_data2)
+        self.response2 = self.client.post(url, self.initial_data2)
 
         self.assertEqual(self.response2.status_code, status.HTTP_201_CREATED)
 
@@ -162,7 +162,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user3_obj)
-        self.response3 = self.client.put(url, self.initial_data3)
+        self.response3 = self.client.post(url, self.initial_data3)
 
         self.assertEqual(self.response3.status_code, status.HTTP_201_CREATED)
 
@@ -182,7 +182,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user1_obj)
-        self.response11 = self.client.put(url, self.initial_data11)
+        self.response11 = self.client.post(url, self.initial_data11)
 
         self.assertEqual(self.response11.status_code, status.HTTP_201_CREATED)
 
@@ -259,7 +259,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user1_obj)
-        response111 = self.client.put(url, initial_data111)
+        response111 = self.client.post(url, initial_data111)
 
         self.assertEqual(response111.status_code, status.HTTP_201_CREATED)
 
@@ -328,7 +328,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user1_obj)
-        response111 = self.client.put(url, initial_data111)
+        response111 = self.client.post(url, initial_data111)
 
         self.assertEqual(response111.status_code, status.HTTP_201_CREATED)
 

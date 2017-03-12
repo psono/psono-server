@@ -239,7 +239,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
+        response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
@@ -370,7 +370,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
+        response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -393,7 +393,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
+        response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -416,7 +416,7 @@ class ShareTests(APITestCaseExtended):
             'parent_share_id': self.test_share1_obj.id,
         }
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
+        response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
@@ -437,7 +437,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, updated_data)
+        response = self.client.put(url, updated_data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -575,7 +575,7 @@ class UpdateShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, initial_data)
+        response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -591,7 +591,7 @@ class UpdateShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, initial_data)
+        response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -607,7 +607,7 @@ class UpdateShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, initial_data)
+        response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -623,7 +623,7 @@ class UpdateShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, initial_data)
+        response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -641,7 +641,7 @@ class UpdateShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

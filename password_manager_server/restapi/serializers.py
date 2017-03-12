@@ -14,7 +14,6 @@ except:
     from django.utils.http import base36_to_int as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
-from django.core.validators import EmailValidator
 
 from rest_framework import serializers, exceptions
 from models import User, Token
@@ -63,7 +62,7 @@ class LoginSerializer(serializers.Serializer):
 class ActivateTokenSerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
     verification = serializers.CharField(required=True)
-    verification_nonce = serializers.CharField(required=True)
+    verification_nonce = serializers.CharField(max_length=64, required=True)
 
     def validate(self, attrs):
         verification_hex = attrs.get('verification')
@@ -119,13 +118,21 @@ class VerifyEmailSerializeras(serializers.Serializer):
 class RegisterSerializer(serializers.Serializer):
     username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     email = serializers.EmailField(required=True)
-    authkey = serializers.CharField(style={'input_type': 'password'}, required=True, )
+    authkey = serializers.CharField(style={'input_type': 'password'}, required=True,
+                                    min_length=settings.AUTH_KEY_LENGTH_BYTES*2,
+                                    max_length=settings.AUTH_KEY_LENGTH_BYTES*2)
 
-    public_key = serializers.CharField(required=True, )
-    private_key = serializers.CharField(required=True, )
-    private_key_nonce = serializers.CharField(required=True, )
-    secret_key = serializers.CharField(required=True, )
-    secret_key_nonce = serializers.CharField(required=True, )
+    public_key = serializers.CharField(required=True,
+                                       min_length=settings.USER_PUBLIC_KEY_LENGTH_BYTES*2,
+                                       max_length=settings.USER_PUBLIC_KEY_LENGTH_BYTES*2)
+    private_key = serializers.CharField(required=True,
+                                        min_length=settings.USER_PRIVATE_KEY_LENGTH_BYTES*2,
+                                        max_length=settings.USER_PRIVATE_KEY_LENGTH_BYTES*2)
+    private_key_nonce = serializers.CharField(max_length=64, required=True, )
+    secret_key = serializers.CharField(required=True,
+                                       min_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2,
+                                       max_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2)
+    secret_key_nonce = serializers.CharField(max_length=64, required=True, )
     user_sauce = serializers.CharField(required=True, )
 
     def validate_email(self, value):
@@ -234,79 +241,7 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_authkey(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return make_password(value)
-
-    def validate_public_key(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.USER_PUBLIC_KEY_LENGTH_BYTES*2:
-            msg = _('Your public key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PUBLIC_KEY_LENGTH_BYTES), str(settings.USER_PUBLIC_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.USER_PUBLIC_KEY_LENGTH_BYTES*2:
-            msg = _('Your public key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PUBLIC_KEY_LENGTH_BYTES), str(settings.USER_PUBLIC_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_private_key(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
-            msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.USER_PRIVATE_KEY_LENGTH_BYTES*2:
-            msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_secret_key(self, value):
-
-        value = value.strip()
-
-        if len(value) < settings.USER_SECRET_KEY_LENGTH_BYTES*2:
-            msg = _('Your secret key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        if len(value) > settings.USER_SECRET_KEY_LENGTH_BYTES*2:
-            msg = _('Your secret key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_user_sauce(self, value):
-
-        value = value.strip()
-
-        if len(value) < 1:
-            msg = _('You forgot to specify a user sauce') % \
-                  (str(settings.USER_SECRET_KEY_LENGTH_BYTES), str(settings.USER_SECRET_KEY_LENGTH_BYTES*2), )
-            raise exceptions.ValidationError(msg)
-
-        return value
+        return make_password(value.strip())
 
     def create(self, validated_data):
 
@@ -354,20 +289,24 @@ class UserPublicKeySerializer(serializers.Serializer):
 
 class UserUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_null=True)
-    authkey = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True)
-    authkey_old = serializers.CharField(style={'input_type': 'password'}, required=True, )
+    authkey = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True,
+                                    max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
+                                    min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
+    authkey_old = serializers.CharField(style={'input_type': 'password'}, required=True,
+                                    max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
+                                    min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
 
-    private_key = serializers.CharField(required=False, allow_null=True)
-    private_key_nonce = serializers.CharField(required=False, allow_null=True)
-    secret_key = serializers.CharField(required=False, allow_null=True)
-    secret_key_nonce = serializers.CharField(required=False, allow_null=True)
+    private_key = serializers.CharField(required=False, allow_null=True,
+                                    max_length=settings.USER_PRIVATE_KEY_LENGTH_BYTES*2,
+                                    min_length=settings.USER_PRIVATE_KEY_LENGTH_BYTES*2)
+    private_key_nonce = serializers.CharField(max_length=64, required=False, allow_null=True)
+    secret_key = serializers.CharField(required=False, allow_null=True,
+                                    max_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2,
+                                    min_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2)
+    secret_key_nonce = serializers.CharField(max_length=64, required=False, allow_null=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
-        authkey = attrs.get('authkey')
-        private_key = attrs.get('private_key')
-        secret_key = attrs.get('secret_key')
-
 
         if email:
             email = email.lower().strip()
@@ -378,59 +317,44 @@ class UserUpdateSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
             attrs['email'] = email
 
-        if authkey:
-            authkey = authkey.strip()
-
-            if len(authkey) < settings.AUTH_KEY_LENGTH_BYTES*2:
-                msg = _('Your auth key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-                raise exceptions.ValidationError(msg)
-
-            if len(authkey) > settings.AUTH_KEY_LENGTH_BYTES*2:
-                msg = _('Your auth key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.AUTH_KEY_LENGTH_BYTES), str(settings.AUTH_KEY_LENGTH_BYTES*2), )
-                raise exceptions.ValidationError(msg)
-
-            attrs['authkey'] = authkey
-
-
-            private_key = private_key.strip()
-
-            if len(private_key) < settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
-                msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
-                raise exceptions.ValidationError(msg)
-
-            if len(private_key) > settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
-                msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
-                raise exceptions.ValidationError(msg)
-
-            attrs['private_key'] = private_key
-
-
-            secret_key = secret_key.strip()
-
-            if len(secret_key) < settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
-                msg = _('Your private key is too short. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
-                raise exceptions.ValidationError(msg)
-
-            if len(secret_key) > settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2:
-                msg = _('Your private key is too long. It needs to have %s Bytes (%s digits in hex)') % \
-                      (str(settings.USER_PRIVATE_KEY_LENGTH_BYTES), str(settings.USER_PRIVATE_KEY_LENGTH_BYTES * 2),)
-                raise exceptions.ValidationError(msg)
-
-            attrs['secret_key'] = secret_key
-
         return attrs
 
-    def validate_authkey_old(self, value):
+    def validate_private_key(self, value):
 
         value = value.strip()
 
-        if len(value) < settings.AUTH_KEY_LENGTH_BYTES*2 or len(value) > settings.AUTH_KEY_LENGTH_BYTES*2:
-            msg = _('Your old password was not right.')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('private_key must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_secret_key_nonce(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('secret_key_nonce must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_secret_key(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('secret_key must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_private_key_nonce(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('private_key_nonce must be in hex representation')
             raise exceptions.ValidationError(msg)
 
         return value
@@ -515,8 +439,8 @@ class CreateRecoverycodeSerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if len(value) < 1:
-            msg = _('Your recovery data seems to be empty')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('Recovery data must be in hex representation')
             raise exceptions.ValidationError(msg)
 
         return value
@@ -525,28 +449,8 @@ class CreateRecoverycodeSerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if len(value) < 1:
-            msg = _('Your recovery data nonce seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_recovery_authkey(self, value):
-
-        value = value.strip()
-
-        if len(value) < 1:
-            msg = _('Your recovery authkey seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_recovery_sauce(self, value):
-
-        value = value.strip()
-
-        if len(value) < 1:
-            msg = _('Your recovery authkey seems to be empty')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('Recovery data nonce must be in hex representation')
             raise exceptions.ValidationError(msg)
 
         return value
@@ -558,52 +462,21 @@ class EnableNewPasswordSerializer(serializers.Serializer):
     recovery_authkey = serializers.CharField(required=True)
 
 
-    def validate_recovery_authkey(self, value):
-
-        value = value.strip()
-
-        if len(value) < 1:
-            msg = _('Your recovery authkey seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_username(self, value):
-
-        value = value.lower().strip()
-
-        if len(value) < 1:
-            msg = _('Your username seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-
 class SetNewPasswordSerializer(serializers.Serializer):
 
     username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     recovery_authkey = serializers.CharField(required=True)
     update_data = serializers.CharField(required=True)
-    update_data_nonce = serializers.CharField(required=True)
+    update_data_nonce = serializers.CharField(max_length=64, required=True)
 
-
-    def validate_recovery_authkey(self, value):
-
-        value = value.strip()
-
-        if len(value) < 1:
-            msg = _('Your recovery authkey seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
 
 
     def validate_update_data(self, value):
 
         value = value.strip()
 
-        if len(value) < 1:
-            msg = _('Your update data seems to be empty')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('Update data must be in hex representation')
             raise exceptions.ValidationError(msg)
 
         return value
@@ -613,18 +486,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if len(value) < 1:
-            msg = _('Your update data nonce seems to be empty')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
-    def validate_username(self, value):
-
-        value = value.lower().strip()
-
-        if len(value) < 1:
-            msg = _('Your username seems to be empty')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('Update data nonce must be in hex representation')
             raise exceptions.ValidationError(msg)
 
         return value
@@ -639,21 +502,28 @@ class ShareTreeSerializer(serializers.Serializer):
 class CreateShareSerializer(serializers.Serializer):
 
     id = serializers.UUIDField(default=uuid.uuid4)
-    data = serializers.CharField()
-    data_nonce = serializers.CharField(max_length=64)
+    data = serializers.CharField(required=True)
+    data_nonce = serializers.CharField(required=True, max_length=64)
     key = serializers.CharField(max_length=256)
     key_nonce = serializers.CharField(max_length=64)
 
-    def validate(self, attrs):
-        data = attrs.get('data')
-        data_nonce = attrs.get('data_nonce')
+    def validate_data(self, value):
+        value = value.strip()
 
-        if not data or not data_nonce:
-            msg = _('Must include "data" and "data_nonce".')
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('data must be in hex representation')
             raise exceptions.ValidationError(msg)
 
-        return attrs
+        return value
 
+    def validate_data_nonce(self, value):
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('data_nonce must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
 
 class DatastoreOverviewSerializer(serializers.Serializer):
 

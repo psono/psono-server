@@ -777,9 +777,9 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_put_user_update(self):
+    def test_post_user_update(self):
         """
-        Tests PUT method on authentication_register
+        Tests POST method on authentication_register
         """
 
         url = reverse('user_update')
@@ -787,7 +787,7 @@ class UserModificationTests(APITestCaseExtended):
         data = {}
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -808,7 +808,149 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.client.post(url, data)
+        self.client.put(url, data)
+
+    def test_update_user_with_private_key_not_being_in_hex_format(self):
+        """
+        Tests to update the user with private key not being in hex format
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
+                      '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('private_key' in response.data)
+
+    def test_update_user_with_private_key_nonce_not_being_in_hex_format(self):
+        """
+        Tests to update the user with private key nonce not being in hex format
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('private_key_nonce' in response.data)
+
+    def test_update_user_with_secret_key_not_being_in_hex_format(self):
+        """
+        Tests to update the user with private key not being in hex format
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
+                      '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = os.urandom(32).encode('hex')
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('secret_key' in response.data)
+
+    def test_update_user_with_secret_key_nonce_not_being_in_hex_format(self):
+        """
+        Tests to update the user with private key nonce not being in hex format
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = self.test_authkey
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
+        user_sauce = os.urandom(32).encode('hex')
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('secret_key_nonce' in response.data)
 
     def test_update_user(self):
         """
@@ -840,7 +982,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -894,7 +1036,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -939,7 +1081,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -985,7 +1127,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

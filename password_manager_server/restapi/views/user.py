@@ -348,15 +348,12 @@ class UserUpdate(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = UserUpdateSerializer
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         """
         Checks the REST Token and updates the users email / authkey / secret and private key
 
@@ -419,6 +416,9 @@ class UserUpdate(GenericAPIView):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -367,7 +367,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response1 = self.client.put(url, self.initial_data1)
+        self.response1 = self.client.post(url, self.initial_data1)
 
         self.initial_data2 = {
             'data': "12345",
@@ -380,7 +380,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response2 = self.client.put(url, self.initial_data2)
+        self.response2 = self.client.post(url, self.initial_data2)
 
         self.initial_data3 = {
             'data': "12345",
@@ -393,7 +393,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response3 = self.client.put(url, self.initial_data3)
+        self.response3 = self.client.post(url, self.initial_data3)
 
         self.initial_data4 = {
             'data': "12345",
@@ -406,7 +406,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response4 = self.client.put(url, self.initial_data4)
+        self.response4 = self.client.post(url, self.initial_data4)
 
         # lets try to create a share chain of 4 other shares
         # DS1 -> 5 -> 6 -> 7 -> 8
@@ -422,7 +422,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response5 = self.client.put(url, self.initial_data5)
+        self.response5 = self.client.post(url, self.initial_data5)
 
         self.initial_data6 = {
             'data': "12345",
@@ -435,7 +435,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response6 = self.client.put(url, self.initial_data6)
+        self.response6 = self.client.post(url, self.initial_data6)
 
         self.initial_data7 = {
             'data': "12345",
@@ -448,7 +448,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response7 = self.client.put(url, self.initial_data7)
+        self.response7 = self.client.post(url, self.initial_data7)
 
         self.initial_data8 = {
             'data': "12345",
@@ -461,7 +461,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response8 = self.client.put(url, self.initial_data8)
+        self.response8 = self.client.post(url, self.initial_data8)
 
         # lets also give the other user a chain of 2 shares
         # DS2 -> B1 -> B2
@@ -477,7 +477,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
-        self.responseB1 = self.client.put(url, self.initial_dataB1)
+        self.responseB1 = self.client.post(url, self.initial_dataB1)
 
         self.initial_dataB2 = {
             'data': "12345",
@@ -493,7 +493,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         # DS2 -> B3
 
         self.client.force_authenticate(user=self.test_user2_obj)
-        self.responseB2 = self.client.put(url, self.initial_dataB2)
+        self.responseB2 = self.client.post(url, self.initial_dataB2)
 
         self.initial_dataB3 = {
             'data': "12345",
@@ -506,7 +506,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
-        self.responseB3 = self.client.put(url, self.initial_dataB3)
+        self.responseB3 = self.client.post(url, self.initial_dataB3)
 
 
     def test_link_of_share_to_other_parent_share_with_badly_formatted_uuid(self):
