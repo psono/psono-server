@@ -1,16 +1,60 @@
 before_script:
-  - apt-get update
-  - apt-get install -y libyaml-dev libpython2.7-dev libpq-dev libffi-dev python-dev python-pip python-psycopg2
-  - pip install -r requirements.txt
-  - apt-get clean
-  - mkdir .password_manager_server
-  - cp configs/mainconfig/settings.yaml .password_manager_server/settings.yaml
-  - sed -i s/YourPostgresDatabase/postgres/g .password_manager_server/settings.yaml
-  - sed -i s/YourPostgresUser/postgres/g .password_manager_server/settings.yaml
-  - sed -i s/YourPostgresHost/db/g .password_manager_server/settings.yaml
-  - sed -i s/YourPostgresPort/5432/g .password_manager_server/settings.yaml
-  - sed -i s,path/to/password-manager-server,root,g .password_manager_server/settings.yaml
+  - docker info
+  - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" registry.gitlab.com
 
-maintest:
+variables:
+  CONTAINER_TEST_IMAGE: registry.gitlab.com/psono/psono-server:$CI_BUILD_REF_NAME
+  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/psono/psono-server:latest
+
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+job-build-container:
+  stage: build
+  image: docker:git
+  services:
+  - docker:dind
   script:
-    - bash -c "./password_manager_server/manage.py test"
+  - docker build -t $CONTAINER_TEST_IMAGE .
+  - docker push $CONTAINER_TEST_IMAGE
+
+job-run-unittests:
+  stage: test
+  image: docker:git
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: ""
+    PSONO_EMAIL_HOST: 172.17.0.1
+    PSONO_EMAIL_FROM: test@example.com
+    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+  services:
+  - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run -d --name db postgres:9.6
+    - sleep 20
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE bash -c "pip install -r requirements-dev.txt && ./password_manager_server/manage.py presetup && ./password_manager_server/manage.py migrate && coverage run --source='.' ./password_manager_server/manage.py test restapi.tests && coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*"
+
+job-release-image:
+  stage: release
+  image: docker:git
+  services:
+  - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - master
+
+job-deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - master

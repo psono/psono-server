@@ -2,10 +2,19 @@ import binascii
 import os
 from hashlib import sha512
 import uuid
+from fields import LtreeField
 
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
+from django.dispatch import receiver
+from django.core.cache import cache
+from django.conf import settings
+from django.utils import timezone
+import nacl.secret
+import nacl.utils
+
+from django.db.models.signals import post_save, post_delete
 
 
 class User(models.Model):
@@ -15,7 +24,9 @@ class User(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    email = models.EmailField(_('email address'), unique=True)
+    username = models.EmailField(_('Username'), unique=True)
+    email = models.CharField(_('email address'), max_length=512, unique=True)
+    email_bcrypt = models.CharField(_('bcrypt of email address'), max_length=60, unique=True)
     authkey = models.CharField(_('auth key'), max_length=128)
     public_key = models.CharField(_('public key'), max_length=256)
     private_key = models.CharField(_('private key'), max_length=256)
@@ -31,8 +42,13 @@ class User(models.Model):
                     'active. Unselect this instead of deleting accounts.'))
     user_sauce = models.CharField(_('user sauce'), max_length=64)
 
+    is_cachable = True
+
     class Meta:
         abstract = False
+
+    def get_cache_time(self):
+        return settings.TOKEN_TIME_VALID
 
     @staticmethod
     def is_authenticated():
@@ -41,6 +57,25 @@ class User(models.Model):
         authenticated.
         """
         return True
+
+
+class Recovery_Code(models.Model):
+    """
+    The recovery codes for the lost password recovery process.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recovery_code')
+    recovery_authkey = models.CharField(_('recovery auth key'), max_length=128)
+    recovery_data = models.BinaryField()
+    recovery_data_nonce = models.CharField(_('recovery data nonce'), max_length=64, unique=True)
+    verifier = models.CharField(_('last verifier'), max_length=256)
+    verifier_issue_date = models.DateTimeField(null=True, blank=True)
+    recovery_sauce = models.CharField(_('user sauce'), max_length=64)
+
+    class Meta:
+        abstract = False
 
 
 class Data_Store(models.Model):
@@ -73,7 +108,7 @@ class Secret(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='secrets')
     data = models.BinaryField()
-    data_nonce = models.CharField(_('data nonce'), max_length=64)
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
     type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:
@@ -92,7 +127,6 @@ class Share(models.Model):
                                           'user always keeps full control.'))
     data = models.BinaryField()
     data_nonce = models.CharField(_('data nonce'), max_length=64)
-    type = models.CharField(max_length=64, db_index=True, default='password')
 
     class Meta:
         abstract = False
@@ -116,6 +150,26 @@ class Group(models.Model):
         abstract = False
 
 
+class Secret_Link(models.Model):
+    """
+    The link object for secrets, identifying the position of the Secret in a share or datastore
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The Secret, that this link links to.'))
+    link_id = models.UUIDField(unique=True)
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_links', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_links', null=True,
+                                         help_text=_('The datastore, where this link ends'))
+
+    class Meta:
+        abstract = False
+
+
 class Group_User_Right(models.Model):
     """
     The group user rights objects for to define rights for group of users and shares.
@@ -124,11 +178,9 @@ class Group_User_Right(models.Model):
         write: Designates whether this user has "write" rights and can update shares of this group
         add_share: Designates whether this user has "add share" rights and can add shares to this group
         remove_share: Designates whether this user has "remove share" rights and can remove shares of this group
-        grant: Designates whether this user has "grant" rights and can add users and rights of users of this
+        grant: Designates whether this user has "grant" rights and can add / remove users and rights of users of this
             group. The user is limited by his own rights, so e.g. he cannot grant write if he does not have
             write on his own.
-        revoke: Designates whether this user has "revoke" rights and can remove users and rights of users of
-            this group. The user of this group will always have full rights and cannot be shut out.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
@@ -140,16 +192,6 @@ class Group_User_Right(models.Model):
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
-    approved = models.BooleanField(_('approved'), default=True,
-                                        help_text=_('Designates whether this share has already been accepted or still '
-                                                    'needs approval.'))
-
-    encryption_type = models.CharField(max_length=6,
-                                       choices=(
-                                           ('public', 'Public-key encryption'),
-                                           ('secret', 'Secret-key encryption'),
-                                       ),
-                                       default='public')
 
     read = models.BooleanField(_('read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read shares of this group'))
@@ -163,9 +205,6 @@ class Group_User_Right(models.Model):
         help_text=_('Designates whether this user has "grant" rights and can add users and rights of users of this'
                     'group. The user is limited by his own rights, so e.g. he cannot grant write if he does not have '
                     'write on his own.'))
-    revoke = models.BooleanField(_('revoke right'), default=False,
-        help_text=_('Designates whether this user has "revoke" rights and can remove users and rights of users of '
-                    'this group. The user of this group will always have full rights and cannot be shut out.'))
 
 
     class Meta:
@@ -175,37 +214,68 @@ class Group_User_Right(models.Model):
 class User_Share_Right(models.Model):
     """
     The user-share relation (in contrast to group shares), linking the user and shares with rights
+
+    It is the request that is sent to the user to accept / refuse the share. It contains the encoded secret of the share
+    together with the rights and other "public" information of the share, like the title.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='own_user_share_rights',
-                              help_text=_('The guy who created this share'))
+                              help_text=_('The guy who created this share right'))
+    title = models.CharField(_('Title'), max_length=512,
+                             help_text=_('The public (yet encrypted) title of the share right.'),
+                             null=True)
+    title_nonce = models.CharField(_('Title nonce'), max_length=64, null=True)
+    type = models.CharField(_('Type'), max_length=512,
+                             help_text=_('The public (yet encrypted) type of the share right.'),
+                             null=True)
+    type_nonce = models.CharField(_('Type nonce'), max_length=64, null=True)
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='foreign_user_share_rights',
-                              help_text=_('The guy who will receive this share'))
+                              help_text=_('The guy who will receive this share right'))
     share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='user_share_rights',
-                              help_text=_('The guy who created this share'))
+                              help_text=_('The share that this share right grants permissions to'))
     key = models.CharField(_('Key'), max_length=256,
                            help_text=_('The (public or secret) encrypted key with which the share is encrypted.'))
     key_nonce = models.CharField(_('Key nonce'), max_length=64)
-    approved = models.BooleanField(_('approved'), default=True,
-                                        help_text=_('Designates whether this share has already been accepted or still '
-                                                    'needs approval.'))
-    encryption_type = models.CharField(max_length=6,
-                                       choices=(
-                                           ('public', 'Public-key encryption'),
-                                           ('secret', 'Secret-key encryption'),
-                                       ),
-                                       default='public')
+    key_type = models.CharField(_('Key type'), default="asymmetric",
+                                help_text=_('Key type, either "symmetric", or "asymmetric"'), max_length=16)
     read = models.BooleanField(_('Read right'), default=True,
         help_text=_('Designates whether this user has "read" rights and can read this share'))
     write = models.BooleanField(_('Wright right'), default=False,
         help_text=_('Designates whether this user has "write" rights and can update this share'))
     grant = models.BooleanField(_('Grant right'), default=False,
         help_text=_('Designates whether this user has "grant" rights and can re-share this share'))
-    revoke = models.BooleanField(_('Revoke right'), default=False,
-        help_text=_('Designates whether this user has "revoke" rights and can remove/reduce other users access rights'))
+    accepted = models.NullBooleanField(_('Accepted'), null=True, blank=True, default=None,
+        help_text=_('Defines if the share has been accepted, declined, or still waits for approval'))
+
+    class Meta:
+        abstract = False
+        unique_together = ('user', 'share',)
+
+
+class Share_Tree(models.Model):
+    """
+    This tree structure links shares to other (parent) shares or datastores
+
+    Multiple parents for one child share can exist, same as multiple children can exist for one parent
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='share_trees',
+                              help_text=_('The share that this link grants permissions to'))
+    path = LtreeField(unique=True, help_text=_('The ltree path to this share'))
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='parent_share_trees', null=True,
+                              help_text=_('The datastore, where this link ends'))
+
+    class Meta:
+        abstract = False
 
 
 @python_2_unicode_compatible
@@ -215,7 +285,16 @@ class Token(models.Model):
     """
     create_date = models.DateTimeField(auto_now_add=True)
     key = models.CharField(max_length=128, primary_key=True)
+    secret_key = models.CharField(max_length=64)
+    user_validator = models.CharField(max_length=64, null=True)
     user = models.ForeignKey(User, related_name='auth_tokens')
+    active = models.BooleanField(_('Activated'), default=False,
+        help_text=_('Specifies if the token has already been activated'))
+
+    is_cachable = True
+
+    def get_cache_time(self):
+        return settings.TOKEN_TIME_VALID - (timezone.now() - self.create_date).total_seconds()
 
     def save(self, *args, **kwargs):
         if not self.key:
@@ -228,9 +307,37 @@ class Token(models.Model):
         self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
         self.key = sha512(self.clear_text_key).hexdigest()
 
+        self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
+        self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
+
     def __str__(self):
         return self.key
 
     class Meta:
         abstract = False
+
+
+@receiver(post_save, sender=Token)
+def token_post_save_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.set('psono_token_' + pk, kwargs['instance'], kwargs['instance'].get_cache_time())
+
+@receiver(post_delete, sender=Token)
+def token_post_delete_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.delete('psono_token_' + pk)
+
+@receiver(post_save, sender=User)
+def user_post_save_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.set('psono_user_' + pk, kwargs['instance'], kwargs['instance'].get_cache_time())
+
+@receiver(post_delete, sender=User)
+def user_post_delete_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.delete('psono_user_' + pk)
 

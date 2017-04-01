@@ -1,7 +1,60 @@
+#
+# Backup this config and keep it secret
+# You need it if you ever need to restore your database
+#
+
+# Replace SECRET_KEY and ACTIVATION_LINK_SECRET and EMAIL_SECRET with something unique (best random)
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+EMAIL_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+
+# static salt for bcrypt. I know its bad, but better than storing cleartext emails in databases
+# can be generated e.g. in ipython with:
+# import bcrypt
+# bcrypt.gensalt()
+EMAIL_SECRET_SALT: '$2b$12$XUG.sKxC2jmkUvWQjg53.e'
+
+# Switch DEBUG to false if you go into production
 DEBUG: True
+
+# Adjust this according to Django Documentation https://docs.djangoproject.com/en/1.10/ref/settings/
 ALLOWED_HOSTS: ['*']
+
+# Should be your domain without "www."
+# If you dont care about user data export (not implemented yet), you can put anything here that looks like a domain
+ALLOWED_DOMAINS: ['example.com']
+
+# Should be the URL of the host under which the host is reachable
+# If you open the url you should have a text similar to {"detail":"Authentication credentials were not provided."}
+HOST_URL: 'http://example.com'
+
+# The email used to send emails, e.g. for activation
 EMAIL_FROM: 'the-mail-for-for-example-useraccount-activations@test.com'
+EMAIL_HOST: 'localhost'
+EMAIL_HOST_USER: ''
+EMAIL_HOST_PASSWORD : ''
+EMAIL_PORT: 25
+EMAIL_SUBJECT_PREFIX: ''
+EMAIL_USE_TLS: False
+EMAIL_USE_SSL: False
+EMAIL_SSL_CERTFILE: None
+EMAIL_SSL_KEYFILE: None
+EMAIL_TIMEOUT: None
+
+# Cache enabled without belows Redis may lead to unexpected behaviour
+CACHE_ENABLE: False
+
+# Cache with Redis
+# By deault you should use something different than database 0 or 1, e.g. 13 (deault max is 16, can be configured in redis.conf)
+# possible URLS are:
+#    redis://[:password]@localhost:6379/0
+#    rediss://[:password]@localhost:6379/0
+#    unix://[:password]@/path/to/socket.sock?db=0
+CACHE_REDIS: False
+CACHE_REDIS_LOCATION: 'redis://127.0.0.1:6379/13'
+
+
+# Your Postgres Database credentials
 DATABASES:
     default:
         'ENGINE': 'django.db.backends.postgresql_psycopg2'
@@ -10,12 +63,20 @@ DATABASES:
         'PASSWORD': 'YourPostgresPassword'
         'HOST': 'YourPostgresHost'
         'PORT': 'YourPostgresPort'
-        'ATOMIC_REQUESTS': True
+# for master / slave replication setup comment in the following (all reads will be redirected to the slave
+#    slave:
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2'
+#        'NAME': 'YourPostgresDatabase'
+#        'USER': 'YourPostgresUser'
+#        'PASSWORD': 'YourPostgresPassword'
+#        'HOST': 'YourPostgresHost'
+#        'PORT': 'YourPostgresPort'
 
+# Your path to your templates folder
 TEMPLATES: [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/path/to/password-manager-server/password_manager_server/templates'],
+        'DIRS': ['/path/to/psono-server/password_manager_server/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -27,4 +88,3 @@ TEMPLATES: [
         },
     },
 ]
-ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'

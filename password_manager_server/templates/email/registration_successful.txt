@@ -1,8 +1,12 @@
 Hello,
-You registered for an account with:
-{{ email }}
+You registered for an account with username:
+{{ username }}
 
 Your activation link is:
 {{ activation_link }}
 
 If you registered with a browser extension, make sure to open the link in the browser with the extension.
+
+
+Best regards
+Your Psono Team

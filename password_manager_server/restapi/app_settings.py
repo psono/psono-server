@@ -2,13 +2,20 @@ from django.conf import settings
 
 from serializers import (
     LoginSerializer as DefaultLoginSerializer,
+    ActivateTokenSerializer as DefaultActivateTokenSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     DatastoreSerializer as DefaultDatastoreSerializer,
     SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
-    ShareSerializer as DefaultShareSerializer,
+    CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
+    UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
+    CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
+    EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
+    SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
+    ShareTreeSerializer as DefaultShareTreeSerializer,
+    CreateShareSerializer as DefaultCreateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer)
@@ -19,6 +26,10 @@ serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
 
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
+)
+
+ActivateTokenSerializer = import_callable(
+    serializers.get('ACTIVATE_TOKEN_SERIALIZER', DefaultActivateTokenSerializer)
 )
 
 
@@ -67,10 +78,56 @@ UserUpdateSerializer = import_callable(
 )
 
 
-ShareSerializer = import_callable(
+CreateUserShareRightSerializer = import_callable(
     serializers.get(
-        'SHARE_SERIALIZER',
-        DefaultShareSerializer
+        'CREATE_SHARE_RIGHT_SERIALIZER',
+        DefaultCreateUserShareRightSerializer
+    )
+)
+
+UpdateUserShareRightSerializer = import_callable(
+    serializers.get(
+        'UPDATE_SHARE_RIGHT_SERIALIZER',
+        DefaultUpdateUserShareRightSerializer
+    )
+)
+
+
+CreateRecoverycodeSerializer = import_callable(
+    serializers.get(
+        'CREATE_RECOVERYCODE_SERIALIZER',
+        DefaultCreateRecoverycodeSerializer
+    )
+)
+
+
+EnableNewPasswordSerializer = import_callable(
+    serializers.get(
+        'PASSWORD_SERIALIZER',
+        DefaultEnableNewPasswordSerializer
+    )
+)
+
+
+SetNewPasswordSerializer = import_callable(
+    serializers.get(
+        'PASSWORD_SERIALIZER',
+        DefaultSetNewPasswordSerializer
+    )
+)
+
+ShareTreeSerializer = import_callable(
+    serializers.get(
+        'SHARE_RIGHT_INHERIT_SERIALIZER',
+        DefaultShareTreeSerializer
+    )
+)
+
+
+CreateShareSerializer = import_callable(
+    serializers.get(
+        'CREATE_SHARE_SERIALIZER',
+        DefaultCreateShareSerializer
     )
 )
 

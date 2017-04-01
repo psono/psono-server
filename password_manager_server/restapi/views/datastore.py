@@ -6,6 +6,8 @@ from ..models import (
     Data_Store,
 )
 
+from ..utils import is_uuid
+
 from ..app_settings import (
     DatastoreSerializer, DatastoreOverviewSerializer,
 )
@@ -14,46 +16,78 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
+def get_datastore(datastore_id=None, user=None):
+
+    if user and not datastore_id:
+        try:
+            datastores = Data_Store.objects.filter(user=user)
+        except Data_Store.DoesNotExist:
+            datastores = []
+        return datastores
+
+    datastore = None
+    try:
+        if user and datastore_id:
+            datastore = Data_Store.objects.get(pk=datastore_id, user=user)
+        else:
+            datastore = Data_Store.objects.get(pk=datastore_id)
+    except Data_Store.DoesNotExist:
+        pass
+    except ValueError:
+        pass
+
+    return datastore
+
 
 class DatastoreView(GenericAPIView):
 
-    """
-    Check the REST Token and the object permissions and returns
-    the data store if the necessary access rights are granted
-
-    Accept the following POST parameters: datastore_id (optional)
-    Return a list of the data stores or the data store
-    """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     serializer_class = DatastoreSerializer
+    allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Lists all datastores of the user or returns a specific datastore with content
+
+        :param request:
+        :type request:
+        :param uuid: PK of the datastore
+        :type uuid: uuid
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         if not uuid:
-            try:
-                storages = Data_Store.objects.filter(user=request.user)
-            except Data_Store.DoesNotExist:
-                storages = []
-
-            return Response({'datastores': DatastoreOverviewSerializer(storages, many=True).data},
+            datastores = get_datastore(user=request.user)
+            return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
         else:
-            try:
-                datastore = Data_Store.objects.get(pk=uuid)
-            except Data_Store.DoesNotExist:
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-            except ValueError:
-                return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            if not datastore.user_id == request.user.pk:
+            datastore = get_datastore(uuid, request.user)
+            if not datastore:
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
 
+
     def put(self, request, *args, **kwargs):
+        """
+        Creates a new datastore
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
         #TODO Check if secret_key and nonce exist
 
@@ -78,19 +112,27 @@ class DatastoreView(GenericAPIView):
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
-    def post(self, request, uuid = None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        """
+        Updates a specific datastore
 
-        try:
-            datastore = Data_Store.objects.get(pk=uuid)
-        except Data_Store.DoesNotExist:
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-        except ValueError:
-            return Response({"error": "IdNoUUID", 'message': "Datastore ID is badly formed and no uuid"},
-                            status=status.HTTP_400_BAD_REQUEST)
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
 
+        if 'datastore_id' not in request.data or not is_uuid(request.data['datastore_id']):
+            return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        if not datastore.user_id == request.user.pk:
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+        datastore = get_datastore(request.data['datastore_id'], request.user)
+        if not datastore:
+            raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
             datastore.data = str(request.data['data'])
@@ -105,3 +147,6 @@ class DatastoreView(GenericAPIView):
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

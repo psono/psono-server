@@ -20,6 +20,7 @@ class GroupView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
 
@@ -52,28 +53,25 @@ class GroupView(GenericAPIView):
                 group = Group.objects.get(pk=uuid)
             except Group.DoesNotExist:
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_404_NOT_FOUND)
+                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
 
-            user_share_rights = []
+            user_share_right = []
 
             for u in group.group_user_rights.filter(user=request.user):
-                user_share_rights.append({
+                user_share_right.append({
                     'id': u.id,
                     'user': u.user_id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
-                    'encryption_type': u.encryption_type,
-                    'approved': u.approved,
                     'read': u.read,
                     'write': u.write,
                     'add_share': u.add_share,
                     'remove_share': u.remove_share,
                     'grant': u.grant,
-                    'revoke': u.revoke,
                 })
 
-            if not user_share_rights:
+            if not user_share_right:
                 raise PermissionDenied({"message":"You don't have permission to access",
                                 "resource_id": group.id})
 
@@ -81,7 +79,7 @@ class GroupView(GenericAPIView):
                 'id': group.id,
                 'name': group.name,
                 'user_id': group.user_id,
-                'user_share_rights': user_share_rights
+                'user_share_right': user_share_right
             }
 
             return Response(response,
@@ -98,14 +96,11 @@ class GroupView(GenericAPIView):
                 user = request.user,
                 owner = request.user,
                 group = group,
-                approved = True,
-                encryption_type = 'secret',
                 key = str(request.data['secret_key']),
                 key_nonce = str(request.data['secret_key_nonce']),
                 read = True,
                 write = True,
                 grant = True,
-                revoke = True,
                 add_share=True,
                 remove_share=True,
             )
@@ -113,6 +108,12 @@ class GroupView(GenericAPIView):
         return Response({"group_id": group.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
+
+        #TODO Implement
+
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
 
         #TODO Implement
 

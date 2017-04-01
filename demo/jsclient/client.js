@@ -20,7 +20,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
     /* Start of Config*/
 
     // Use current url, but should be hardcoded in production to something like:
-    // 'https://dev.sanso.pw' or 'http://dev.sanso.pw:8001'
+    // 'https://dev.psono.pw' or 'http://dev.psono.pw:8001'
     // Please only use http instead of https for development purposes only and NEVER in production!
     var backend = location.origin;
 
@@ -28,16 +28,11 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
 
     var nacl = nacl_factory.instantiate();
 
-    /* Im afraid people will send/use shaXXX hashes of their password for other purposes, therefore I add this special
-     * sauce to every hash. This special sauce can be considered a constant and will never change. Its no secret but
-     * it should not be used for anything else besides the reasons below */
-    var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469';//sha256 of 'our-chosen-sexy-sauce'
-
     /**
-     * takes the sha512 of lowercase email (+ special sauce) as salt to generate scrypt password hash in hex called the
+     * takes the sha512 of lowercase email as salt to generate scrypt password hash in hex called the
      * authkey, so basically:
      *
-     * hex(scrypt(password, hex(sha512(lower(email)+special_sauce))))
+     * hex(scrypt(password, hex(sha512(lower(email)))))
      *
      * For compatibility reasons with other clients please use the following parameters if you create your own client:
      *
@@ -45,8 +40,6 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * var r = 8;
      * var p = 1;
      * var l = 64;
-     *
-     * var special_sauce = 'b6acbb9b2077ba2011643b17c24bafea3b8d7066565546cfbde020790a64b469'
      *
      * @param {string} email - email address of the user
      * @param {string} password - password of the user
@@ -62,7 +55,7 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
         var scrypt = scrypt_module_factory();
 
         // takes the email address basically as salt. sha512 is used to enforce minimum length
-        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase() + special_sauce));
+        var salt = nacl.to_hex(nacl.crypto_hash_string(email.toLowerCase()));
 
         return scrypt.to_hex(scrypt.crypto_scrypt(scrypt.encode_utf8(password), scrypt.encode_utf8(salt), n, r, p, l));
     };
@@ -186,14 +179,20 @@ var ClassClient = function (location, nacl_factory, jQuery, scrypt_module_factor
      * @param {string} data
      * @param {string} public_key
      * @param {string} private_key
+     * @param {string} nonce (optional, should be unique and only provided for fix testing)
      * @returns {{nonce: string, ciphertext: string}}
      */
-    this.encrypt_data_public_key = function (data, public_key, private_key) {
+    this.encrypt_data_public_key = function (data, public_key, private_key, nonce) {
 
         var p = nacl.from_hex(public_key);
         var s = nacl.from_hex(private_key);
         var m = nacl.encode_utf8(data);
-        var n = nacl.crypto_box_random_nonce();
+        var n;
+        if (typeof(nonce) === 'undefined') {
+            n = nacl.crypto_box_random_nonce();
+        } else {
+            n = nacl.from_hex(nonce);
+        }
         var c = nacl.crypto_box(m, n, p, s);
 
         return {

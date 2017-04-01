@@ -10,6 +10,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
 
-        Token.objects.filter(create_date__lt=time_threshold).delete()
+        deleted_token = Token.objects.filter(create_date__lt=time_threshold).delete()
 
-        self.stdout.write('Successfully cleared token' )
+        self.stdout.write('Cleared token: ' + str(deleted_token[0]) )
