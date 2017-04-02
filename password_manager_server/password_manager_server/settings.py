@@ -165,6 +165,10 @@ EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
 EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
 
+EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+MAILGUN_ACCESS_KEY = config_get('MAILGUN_ACCESS_KEY', '')
+MAILGUN_SERVER_NAME = config_get('MAILGUN_SERVER_NAME', '')
+
 CACHE_ENABLE = config_get('CACHE_ENABLE', False)
 
 if config_get('CACHE_REDIS', False):
