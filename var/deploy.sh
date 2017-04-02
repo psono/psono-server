@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 mkdir -p /root/.docker
 cat > /root/.docker/config.json <<- "EOF"
 {

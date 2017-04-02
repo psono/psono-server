@@ -58,6 +58,6 @@ job-deploy:
   services:
   - docker:dind
   script:
-    - ./var/deploy.sh
+    - sh ./var/deploy.sh
   only:
     - master
