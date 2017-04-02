@@ -12,3 +12,4 @@ psycopg2
 more_itertools
 pynacl
 django-redis
+django-mailgun

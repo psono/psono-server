@@ -37,6 +37,7 @@ RUN apt-get update && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
     rm -Rf /root/password_manager_server/static && \
+    rm -Rf /root/var && \
     rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 
 EXPOSE 80

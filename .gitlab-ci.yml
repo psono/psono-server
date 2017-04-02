@@ -54,7 +54,10 @@ job-release-image:
 
 job-deploy:
   stage: deploy
+  image: docker:git
+  services:
+  - docker:dind
   script:
-    - ./deploy.sh
+    - ./var/deploy.sh
   only:
     - master
