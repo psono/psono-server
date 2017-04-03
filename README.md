@@ -39,13 +39,7 @@ Other databases are not supported because of missing ltree extension
 
 We assume that you already have a postgres database running. If not follow the guide above to install one.
 
-1. Login to the gitlab registry
-
-        docker login -u USERNAME registry.gitlab.com
-    
-    (replace USERNAME with your username and enter your password when prompted)
-
-2. Prepare settings.yaml
+1. Prepare settings.yaml
 
     Copy the settings.yaml to a location of your choice, e.g /opt/docker/psono/
     
@@ -55,7 +49,7 @@ We assume that you already have a postgres database running. If not follow the g
     **Update database credentials / secrets / paths like described in the comments of
     /home/your-user/.psono_server/settings.yaml**
 
-3. Test E-Mail
+2. Test E-Mail
 
     The most tedious step is usually for me to get e-mail working.
     To make this step easier, we offer a small test script which will
@@ -65,21 +59,21 @@ We assume that you already have a postgres database running. If not follow the g
 
         docker run --rm \
           -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-          -ti registry.gitlab.com/psono/psono-server:latest password_manager_server/manage.py sendtestmail something@something.com
+          -ti psono/psono-server:latest password_manager_server/manage.py sendtestmail something@something.com
 
     If you receive this test e-mail, e-mail should be configured proper.
     
-4. Prepare the database
+3. Prepare the database
 
         docker run --rm \
           -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-          -ti registry.gitlab.com/psono/psono-server:latest password_manager_server/manage.py migrate
+          -ti psono/psono-server:latest password_manager_server/manage.py migrate
     
-5. Run the dockered psono server image and expose the server port
+4. Run the dockered psono server image and expose the server port
 
-        docker rugname psono-server \
+        docker run --name psono-server \
             -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-            -d -p 10100:80 registry.gitlab.com/psono/psono-server:latest 
+            -d -p 10100:80 psono/psono-server:latest 
             
         
     Possible (optional) environment variables are:
