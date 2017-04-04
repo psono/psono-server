@@ -9,5 +9,5 @@ class Command(BaseCommand):
         cursor = connection.cursor()
         cursor.execute('''CREATE EXTENSION IF NOT EXISTS ltree''')
         self.stdout.write('success: CREATE EXTENSION IF NOT EXISTS ltree' )
-        cursor.execute('''CREATE EXTENSION IF NOT EXISTS "uuid-ossp"''')
-        self.stdout.write('success: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"' )
+        cursor.execute('''CREATE EXTENSION IF NOT EXISTS "pgcrypto"''')
+        self.stdout.write('success: CREATE EXTENSION IF NOT EXISTS "pgcrypto"' )
