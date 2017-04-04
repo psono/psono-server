@@ -17,6 +17,7 @@ RUN apt-get update && \
         supervisor \
         postgresql-client \
         cron \
+        haveged \
         net-tools && \
     pip install -r requirements.txt && \
     pip install uwsgi && \
