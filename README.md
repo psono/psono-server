@@ -14,25 +14,42 @@ identical.
 
 We will be using postgres (tested with version 9.6, but every 9.x version should work):
 
-    sudo apt-get install postgresql postgresql-contrib
-    sudo su - postgres
-    createdb password_manager_server
-    psql password_manager_server
-    CREATE USER password_manager_server WITH PASSWORD 'password';
-    GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
-    CREATE EXTENSION IF NOT EXISTS ltree;
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+1. First install some requirements
     
-If you want to use this database for unit testing, you should also do:
-       
-    ALTER USER password_manager_server CREATEDB;
+        sudo apt-get install postgresql postgresql-contrib
+   
+2. Now lets switch the postgres user
     
-To exit this shell and return to your normal user do:
-    
-    \q
-    Ctrl + D
+        sudo su - postgres
 
-Other databases are not supported because of missing ltree extension
+3. Create our new DB
+    
+        createdb password_manager_server
+
+4. Now switch the command prompt to postgres command prompt
+
+        psql password_manager_server
+    
+5. Followed by some nice postgres commands to create the user and grant all privileges:
+        
+        CREATE USER password_manager_server WITH PASSWORD 'password';
+        GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
+
+6. Install some extensions:
+
+        CREATE EXTENSION IF NOT EXISTS ltree;
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+7. (optional) If you want to use this database for unit testing, you should also do:
+           
+        ALTER USER password_manager_server CREATEDB;
+    
+8. To exit this shell and return to your normal user do:
+        
+        \q
+        Ctrl + D
+    
+    Other databases are not supported because of missing ltree extension
 
 
 ## Docker (easiest way)

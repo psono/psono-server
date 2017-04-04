@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 from datastore import get_datastore
 from secret_link import create_secret_link
 from ..utils import user_has_rights_on_share, user_has_rights_on_secret, is_uuid
@@ -54,11 +55,11 @@ class SecretView(GenericAPIView):
         else:
             try:
                 secret = Secret.objects.get(pk=uuid)
-            except Secret.DoesNotExist:
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-            except ValueError:
+            except ValidationError:
                 return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
                                 status=status.HTTP_400_BAD_REQUEST)
+            except Secret.DoesNotExist:
+                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
             if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
