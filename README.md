@@ -38,7 +38,7 @@ We will be using postgres (tested with version 9.6, but every 9.x version should
 6. Install some extensions:
 
         CREATE EXTENSION IF NOT EXISTS ltree;
-        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        CREATE EXTENSION IF NOT EXISTS "pgcrypto";
     
 7. (optional) If you want to use this database for unit testing, you should also do:
            

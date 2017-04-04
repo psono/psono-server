@@ -46,7 +46,7 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
 
     cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
     SELECT
-      uuid_generate_v4() id,
+      gen_random_uuid() id,
       now() create_date,
       now() write_date,
       CASE
@@ -89,7 +89,7 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
         else:
             cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
             SELECT
-                uuid_generate_v4() id,
+                gen_random_uuid() id,
                 now() create_date,
                 now() write_date,
                 path || %(link_id)s path,
