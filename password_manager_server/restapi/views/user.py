@@ -16,6 +16,7 @@ from ..app_settings import (
     UserUpdateSerializer, UserPublicKeySerializer
 )
 from rest_framework.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -456,7 +457,7 @@ class UserSearch(GenericAPIView):
         if 'user_id' in request.data and request.data['user_id']:
             try:
                 user = User.objects.get(pk=str(request.data['user_id']))
-            except ValueError:
+            except ValidationError:
                 return Response({"error": "IdNoUUID", 'message': "User ID is badly formed and no uuid"},
                                 status=status.HTTP_400_BAD_REQUEST)
             except User.DoesNotExist:

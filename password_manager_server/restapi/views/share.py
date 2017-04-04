@@ -14,6 +14,7 @@ from ..app_settings import (
     CreateShareSerializer
 )
 from rest_framework.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
@@ -143,7 +144,7 @@ class ShareView(GenericAPIView):
 
             try:
                 share = Share.objects.get(pk=uuid)
-            except ValueError:
+            except ValidationError:
                 return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
                                 status=status.HTTP_400_BAD_REQUEST)
             except Share.DoesNotExist:
