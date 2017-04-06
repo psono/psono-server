@@ -13,4 +13,5 @@ sed -i 's/docker_hub_credentials/'"$docker_hub_credentials"'/g' /root/.docker/co
 docker pull registry.gitlab.com/psono/psono-server:latest
 docker tag registry.gitlab.com/psono/psono-server:latest psono/psono-server:latest
 docker push psono/psono-server:latest
-curl -X POST curl https://hooks.microbadger.com/images/psono/psono-server/8BDLpDMSMHR-Ias4JAPRhy0f-cg=
+curl -X POST https://hooks.microbadger.com/images/psono/psono-server/8BDLpDMSMHR-Ias4JAPRhy0f-cg=
+curl -X POST $psono_image_updater_url
