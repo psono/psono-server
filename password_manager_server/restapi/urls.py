@@ -69,8 +69,6 @@ urlpatterns = [
 if settings.DEBUG:
     # URLs for development purposes only
     urlpatterns += [
-        url(r'^demo/(?P<path>.*)$', django.views.static.serve,
-            {'document_root':'/home/chickahoona/gits/psono-server/demo'}),
         url(r'^doc/(?P<path>.*)$', django.views.static.serve,
             {'document_root':'/home/chickahoona/gits/psono-server/docs/_build/html'}),
     ]
