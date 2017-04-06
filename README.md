@@ -1,6 +1,6 @@
 # PSONO Server - Password Manager
 
-Master: [![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
+Master: [![build status](https://images.microbadger.com/badges/image/psono/psono-server.svg)](https://hub.docker.com/r/psono/psono-server/) [![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
 Develop: [![build status](https://gitlab.com/psono/psono-server/badges/develop/build.svg)](https://gitlab.com/psono/psono-server/commits/develop) [![coverage report](https://gitlab.com/psono/psono-server/badges/develop/coverage.svg)](https://gitlab.com/psono/psono-server/commits/develop)
 
 # Preamble
