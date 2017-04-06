@@ -302,10 +302,6 @@ or nginx / uwsgi.
 
 visit http://your-ip:8001 You should see something :)
 
-The demo jsclient can be found http://your-ip:8001/demo/jsclient/index.html
-
-Directory listing doesn't work, so don't be surprised that /demo/jsclient/ throws an error
-
 #### Production Server (Apache)
 
     sudo service apache2 start
@@ -315,8 +311,6 @@ Directory listing doesn't work, so don't be surprised that /demo/jsclient/ throw
     sudo service nginx start
     
 visit https://your-ip You should see something :)
-
-The demo jsclient can be found https://your-ip/demo/jsclient/index.html
 
 ## Update Server (Test or Production)
 
