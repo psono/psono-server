@@ -64,6 +64,9 @@ urlpatterns = [
     url(r'^group/(?P<uuid>[^/]+)/$', views.GroupView.as_view(), name='group'),
 
     # url(r'^$', views.api_root),
+
+    url(r'^healthcheck/$', views.HealthCheckView.as_view(), name='healthcheck'),
+
 ]
 
 if settings.DEBUG:

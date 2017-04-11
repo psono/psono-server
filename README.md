@@ -90,7 +90,7 @@ We assume that you already have a postgres database running. If not follow the g
 
         docker run --name psono-server \
             -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-            -d -p 10100:80 psono/psono-server:latest 
+            -d --restart=unless-stopped -p 10100:80 psono/psono-server:latest 
             
         
     Possible (optional) environment variables are:
@@ -365,6 +365,12 @@ local dummy smtp server with the following command
     Your settings.yaml contains sensitive information. Use the proper access rights
     
         chmod 600 /home/your-user/.psono_server/settings.yaml
+
+4. Healthchecks
+
+    Healthschecks are implemented for the ressource /healthcheck/.
+    In case of a failure the ressource will return something different than 200 with usually some details about whats
+    wrong.
 
 ## LICENSE
 
