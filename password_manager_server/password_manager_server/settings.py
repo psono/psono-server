@@ -107,11 +107,13 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '50/day',
-        'user': '4320/day'
+        'anon': '240/day',
+        'user': '28800/day',
+        'health_check': '13/hour'
     },
     'PAGE_SIZE': 10
 }
