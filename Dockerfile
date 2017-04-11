@@ -25,7 +25,9 @@ RUN apt-get update && \
     mkdir /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron /etc/cron.d/ && \
+    cp /root/configs/docker/worker-automigrate-cron /etc/cron.d/ && \
     chmod 0644 /etc/cron.d/worker-cron && \
+    chmod 0644 /etc/cron.d/worker-automigrate-cron && \
     touch /var/log/cron.log && \
     mkdir /var/www/html/media && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \

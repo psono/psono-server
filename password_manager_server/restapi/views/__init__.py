@@ -8,3 +8,4 @@ from share_tree import *
 from share_right import *
 from share_rights import *
 from recoverycode import *
+from health_check import *
