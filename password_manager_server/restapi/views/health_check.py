@@ -13,6 +13,7 @@ from django.db import connections, DEFAULT_DB_ALIAS
 class HealthCheckView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    throttle_scope = 'health_check'
 
     def get(self, request, *args, **kwargs):
         """
