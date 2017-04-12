@@ -16,10 +16,10 @@ job-build-container:
   stage: build
   image: docker:git
   services:
-  - docker:dind
+    - docker:dind
   script:
-  - docker build -t $CONTAINER_TEST_IMAGE .
-  - docker push $CONTAINER_TEST_IMAGE
+    - docker build -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
 
 job-run-unittests:
   stage: test
@@ -33,7 +33,7 @@ job-run-unittests:
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
   services:
-  - docker:dind
+    - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -d --name db postgres:9.6
@@ -44,7 +44,7 @@ job-release-image:
   stage: release
   image: docker:git
   services:
-  - docker:dind
+    - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
@@ -56,8 +56,12 @@ job-deploy:
   stage: deploy
   image: docker:git
   services:
-  - docker:dind
+    - docker:dind
   script:
     - sh ./var/deploy.sh
+  environment:
+    name: production
+    url: https://psono.pw
+
   only:
     - master
