@@ -173,6 +173,14 @@ MAILGUN_SERVER_NAME = config_get('MAILGUN_SERVER_NAME', '')
 
 CACHE_ENABLE = config_get('CACHE_ENABLE', False)
 
+if config_get('CACHE_DB', False):
+    CACHES = {
+        "default": {
+            "BACKEND": 'django.core.cache.backends.db.DatabaseCache',
+            "LOCATION": 'restapi_cache',
+        }
+    }
+
 if config_get('CACHE_REDIS', False):
     CACHES = {
        "default": {
