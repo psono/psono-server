@@ -111,9 +111,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '240/day',
+        'anon': '312/day',
         'user': '28800/day',
-        'health_check': '13/hour'
+        'health_check': '13/hour',
+        'registration': '6/day',
     },
     'PAGE_SIZE': 10
 }
@@ -190,6 +191,13 @@ if config_get('CACHE_REDIS', False):
                "CLIENT_CLASS": "django_redis.client.DefaultClient",
            }
        }
+    }
+
+if not config_get('THROTTLING', True):
+    CACHES = {
+        "default": {
+            "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
+        }
     }
 
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)

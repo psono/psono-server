@@ -33,6 +33,7 @@ import hashlib
 class RegisterView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    throttle_scope = 'registration'
 
     serializer_class = RegisterSerializer
 
