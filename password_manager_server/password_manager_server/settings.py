@@ -111,9 +111,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '240/day',
+        'anon': '312/day',
         'user': '28800/day',
-        'health_check': '13/hour'
+        'health_check': '13/hour',
+        'registration': '6/day',
     },
     'PAGE_SIZE': 10
 }
