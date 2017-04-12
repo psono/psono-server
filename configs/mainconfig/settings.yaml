@@ -59,6 +59,9 @@ CACHE_ENABLE: False
 CACHE_REDIS: False
 CACHE_REDIS_LOCATION: 'redis://127.0.0.1:6379/13'
 
+# Disables Throttling (necessary for unittests to pass) by overriding the cache with a dummy cache
+# https://docs.djangoproject.com/en/1.11/topics/cache/#dummy-caching-for-development
+THROTTLING: False
 
 # Your Postgres Database credentials
 DATABASES:

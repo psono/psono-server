@@ -193,6 +193,13 @@ if config_get('CACHE_REDIS', False):
        }
     }
 
+if not config_get('THROTTLING', True):
+    CACHES = {
+        "default": {
+            "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
 USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
