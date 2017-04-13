@@ -111,13 +111,18 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '312/day',
+        'anon': '1440/day',
         'user': '28800/day',
-        'health_check': '13/hour',
+        'health_check': '60/hour',
         'registration': '6/day',
     },
     'PAGE_SIZE': 10
 }
+
+
+for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
+    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value
+
 
 ROOT_URLCONF = 'password_manager_server.urls'
 SITE_ID = 1
