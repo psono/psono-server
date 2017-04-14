@@ -3,6 +3,10 @@
 Master: [![build status](https://images.microbadger.com/badges/image/psono/psono-server.svg)](https://hub.docker.com/r/psono/psono-server/) [![build status](https://gitlab.com/psono/psono-server/badges/master/build.svg)](https://gitlab.com/psono/psono-server/commits/master) [![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master)
 Develop: [![build status](https://gitlab.com/psono/psono-server/badges/develop/build.svg)](https://gitlab.com/psono/psono-server/commits/develop) [![coverage report](https://gitlab.com/psono/psono-server/badges/develop/coverage.svg)](https://gitlab.com/psono/psono-server/commits/develop)
 
+# Canonical source
+
+The canonical source of PSONO Server is [hosted on GitLab.com](https://gitlab.com/psono/psono-server).
+
 # Preamble
 
 This whole guide is based on Ubuntu 14.04 LTS. Ubuntu 12.04+ LTS and Debian based systems should be similar if not even
