@@ -22,7 +22,7 @@ curl -X POST $psono_image_updater_url
 # Deploy to GitHub
 mkdir -p /root/.ssh
 echo $github_deploy_key > /root/.ssh/id_rsa
-git clone https://gitlab.com/psono/psono-client.git
-cd psono-client
+git clone https://gitlab.com/psono/psono-server.git
+cd psono-server
 git remote set-url origin git@github.com:psono/psono-server.git
 git push -u origin master
