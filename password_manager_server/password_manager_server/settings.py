@@ -28,7 +28,7 @@ def config_get(key, *args):
         val = os.environ.get('PSONO_' + key)
         try:
             json_object = json.loads(val)
-        except ValueError, e:
+        except ValueError:
             return val
         return json_object
     if key in config:

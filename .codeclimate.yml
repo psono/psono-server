@@ -2,8 +2,14 @@
 engines:
   csslint:
     enabled: true
+    checks:
+      box-sizing:
+        enabled: false
   duplication:
     enabled: true
+    checks:
+      Identical code:
+        enabled: false
     config:
       languages:
       - javascript
@@ -12,6 +18,9 @@ engines:
     enabled: true
   fixme:
     enabled: true
+    checks:
+      TODO:
+        enabled: false
   radon:
     enabled: true
 ratings:
