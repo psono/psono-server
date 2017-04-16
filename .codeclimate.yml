@@ -1,0 +1,6 @@
+exclude_paths:
+- configs/**/*
+- var/**/*
+- password_manager_server/restapi/tests/**/*
+- password_manager_server/restapi/migrations/**/*
+- password_manager_server/static/**/*
