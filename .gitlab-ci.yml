@@ -50,7 +50,7 @@ job-release-image:
     - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
     - docker push $CONTAINER_RELEASE_IMAGE
   only:
-    - /^v*$/
+    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
 job-deploy:
   stage: deploy
@@ -63,4 +63,4 @@ job-deploy:
     name: production
     url: https://psono.pw
   only:
-    - /^v*$/
+    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
