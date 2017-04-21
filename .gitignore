@@ -4,3 +4,5 @@ problemtest
 .coverage
 docs/
 htmlcov/
+password_manager_server/static/admin
+password_manager_server/static/rest_framework
