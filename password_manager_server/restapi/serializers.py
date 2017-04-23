@@ -16,11 +16,12 @@ except:
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import User, Token
+from models import User, Token, Google_Authenticator
 import nacl.utils
 from nacl.exceptions import CryptoError
 import nacl.secret
 import nacl.encoding
+import pyotp
 
 
 class LoginSerializer(serializers.Serializer):
@@ -59,6 +60,48 @@ class LoginSerializer(serializers.Serializer):
         attrs['user_session_public_key'] = public_key
         return attrs
 
+class GAVerifySerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    ga_token = serializers.CharField(max_length=6, min_length=6, required=True)
+
+    def validate(self, attrs):
+
+        ga_token = attrs.get('ga_token').lower().strip()
+
+        if not ga_token.isdigit():
+            msg = _('GA Tokens only contain digits.')
+            raise exceptions.ValidationError(msg)
+
+        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+
+        try:
+            token = Token.objects.filter(key=token_hash, active=False).get()
+        except Token.DoesNotExist:
+            msg = _('Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+
+        # decrypt user Google Authenticator Secret
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+
+
+        token_correct = False
+        for ga in Google_Authenticator.objects.filter(user=token.user):
+            encrypted_ga_secret = nacl.encoding.HexEncoder.decode(ga.secret)
+            decrypted_ga_secret = crypto_box.decrypt(encrypted_ga_secret)
+            totp = pyotp.TOTP(decrypted_ga_secret)
+            if totp.verify(ga_token):
+                token_correct = True
+                break
+
+        if not token_correct:
+            msg = _('GA Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        attrs['token'] = token
+        return attrs
+
 class ActivateTokenSerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
     verification = serializers.CharField(required=True)
@@ -76,6 +119,10 @@ class ActivateTokenSerializer(serializers.Serializer):
             token = Token.objects.filter(key=token_hash, active=False).get()
         except Token.DoesNotExist:
             msg = _('Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        if token.google_authenticator_2fa:
+            msg = _('GA challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
         crypto_box = nacl.secret.SecretBox(token.secret_key, encoder=nacl.encoding.HexEncoder)
@@ -248,7 +295,7 @@ class RegisterSerializer(serializers.Serializer):
         validated_data['email_bcrypt'] = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = crypto_box.encrypt(validated_data['email'].encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
         validated_data['email'] = nacl.encoding.HexEncoder.encode(encrypted_email)
@@ -358,6 +405,10 @@ class UserUpdateSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         return value
+
+
+class NewGASerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=256)
 
 
 class UserShareSerializer(serializers.Serializer):

@@ -3,10 +3,10 @@
 # You need it if you ever need to restore your database
 #
 
-# Replace SECRET_KEY and ACTIVATION_LINK_SECRET and EMAIL_SECRET with something unique (best random)
+# Replace SECRET_KEY and ACTIVATION_LINK_SECRET and DB_SECRET with something unique (best random)
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
-EMAIL_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+DB_SECRET: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 
 # static salt for bcrypt. I know its bad, but better than storing cleartext emails in databases
 # can be generated e.g. in ipython with:
