@@ -1,6 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
-from utils import validate_activation_code, authenticate, user_has_rights_on_share, is_uuid
+from utils import validate_activation_code, authenticate, user_has_rights_on_share, yubikey_authenticate, yubikey_get_yubikey_id
 from authentication import TokenAuthentication
 import uuid
 import re
@@ -16,7 +16,7 @@ except:
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from models import User, Token, Google_Authenticator
+from models import User, Token, Google_Authenticator, Yubikey_OTP
 import nacl.utils
 from nacl.exceptions import CryptoError
 import nacl.secret
@@ -80,11 +80,9 @@ class GAVerifySerializer(serializers.Serializer):
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
-
-        # decrypt user Google Authenticator Secret
+        # prepare decryption
         secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-
 
         token_correct = False
         for ga in Google_Authenticator.objects.filter(user=token.user):
@@ -97,6 +95,54 @@ class GAVerifySerializer(serializers.Serializer):
 
         if not token_correct:
             msg = _('GA Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        attrs['token'] = token
+        return attrs
+
+class YubikeyOTPVerifySerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    yubikey_otp = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+
+        yubikey_otp = attrs.get('yubikey_otp').strip()
+
+        yubikey_is_valid = yubikey_authenticate(yubikey_otp)
+
+        if yubikey_is_valid is None:
+            msg = _('Server does not support YubiKeys.')
+            raise exceptions.ValidationError(msg)
+
+        if not yubikey_is_valid:
+            msg = _('YubiKey OTP incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+
+        try:
+            token = Token.objects.filter(key=token_hash, active=False).get()
+        except Token.DoesNotExist:
+            msg = _('Token incorrect.')
+            raise exceptions.ValidationError(msg)
+
+        # prepare decryption
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+
+        yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
+
+        token_correct = False
+        for yk in Yubikey_OTP.objects.filter(user=token.user):
+            encrypted_yubikey_id = nacl.encoding.HexEncoder.decode(yk.yubikey_id)
+            decrypted_yubikey_id = crypto_box.decrypt(encrypted_yubikey_id)
+
+            if yubikey_id == decrypted_yubikey_id:
+                token_correct = True
+                break
+
+        if not token_correct:
+            msg = _('YubiKey OTP incorrect.')
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token
@@ -123,6 +169,10 @@ class ActivateTokenSerializer(serializers.Serializer):
 
         if token.google_authenticator_2fa:
             msg = _('GA challenge unsolved.')
+            raise exceptions.ValidationError(msg)
+
+        if token.google_authenticator_2fa:
+            msg = _('YubiKey challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
         crypto_box = nacl.secret.SecretBox(token.secret_key, encoder=nacl.encoding.HexEncoder)
@@ -410,6 +460,9 @@ class UserUpdateSerializer(serializers.Serializer):
 class NewGASerializer(serializers.Serializer):
     title = serializers.CharField(max_length=256)
 
+class NewYubikeyOTPSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=256)
+    yubikey_otp = serializers.CharField(max_length=64)
 
 class UserShareSerializer(serializers.Serializer):
 

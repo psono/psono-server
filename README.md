@@ -119,6 +119,8 @@ We assume that you already have a postgres database running. If not follow the g
         PSONO_EMAIL_SSL_CERTFILE
         PSONO_EMAIL_SSL_KEYFILE
         PSONO_EMAIL_TIMEOUT
+        PSONO_YUBIKEY_CLIENT_ID
+        PSONO_YUBIKEY_SECRET_KEY
 
 
     If you open now http://your-ip:10100 you should see something like this:

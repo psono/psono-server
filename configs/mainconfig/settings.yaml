@@ -41,6 +41,12 @@ EMAIL_SSL_CERTFILE: None
 EMAIL_SSL_KEYFILE: None
 EMAIL_TIMEOUT: None
 
+# In case you want to offer Yubikey support, create a pair of credentials here https://upgrade.yubico.com/getapikey/
+# and update the following two lines before commenting them in
+# YUBIKEY_CLIENT_ID: '123456'
+# YUBIKEY_SECRET_KEY: '8I65IA6ASDFIUHGIH5021FKJA='
+
+
 # In case one wants to use mailgun, replace email backend with
 # 'django_mailgun.MailgunBackend' and provide the mailgun access key and server name
 EMAIL_BACKEND: 'django.core.mail.backends.smtp.EmailBackend'

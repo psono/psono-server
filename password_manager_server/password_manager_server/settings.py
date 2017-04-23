@@ -114,6 +114,8 @@ REST_FRAMEWORK = {
         'anon': '1440/day',
         'user': '28800/day',
         'health_check': '60/hour',
+        'ga_verify': '10/minute',
+        'yubikey_otp_verify': '10/minute',
         'registration': '6/day',
     },
     'PAGE_SIZE': 10
@@ -172,6 +174,9 @@ EMAIL_USE_SSL = config_get('EMAIL_USE_SSL', False)
 EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
 EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
+
+YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
+YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 MAILGUN_ACCESS_KEY = config_get('MAILGUN_ACCESS_KEY', '')
