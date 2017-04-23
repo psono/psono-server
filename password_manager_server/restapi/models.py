@@ -61,14 +61,29 @@ class User(models.Model):
 
 class Google_Authenticator(models.Model):
     """
-    The Google authenticators
+    The Google authenticator model
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_authenticator')
     title = models.CharField(_('title'), max_length=256)
-    secret = models.CharField(_('secret as hex'), max_length=1024)
+    secret = models.CharField(_('secret as hex'), max_length=256)
+
+    class Meta:
+        abstract = False
+
+
+class Yubikey_OTP(models.Model):
+    """
+    The Yubikey OTP model
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='yubikey_otp')
+    title = models.CharField(_('Title'), max_length=256)
+    yubikey_id = models.CharField(_('YubiKey ID'), max_length=128)
 
     class Meta:
         abstract = False
@@ -307,6 +322,9 @@ class Token(models.Model):
         help_text=_('Specifies if the token has already been activated'))
     google_authenticator_2fa = models.BooleanField(_('Google Authenticator Required'), default=False,
         help_text=_('Specifies if Google Authenticator is required or not'))
+
+    yubikey_otp_2fa = models.BooleanField(_('Yubikey Required'), default=False,
+        help_text=_('Specifies if Yubikey is required or not'))
 
     is_cachable = True
 

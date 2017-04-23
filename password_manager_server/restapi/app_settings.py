@@ -3,6 +3,7 @@ from django.conf import settings
 from serializers import (
     LoginSerializer as DefaultLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
+    YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
@@ -11,6 +12,7 @@ from serializers import (
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     NewGASerializer as DefaultNewGASerializer,
+    NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
     CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
     UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
@@ -32,6 +34,10 @@ LoginSerializer = import_callable(
 
 GAVerifySerializer = import_callable(
     serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
+)
+
+YubikeyOTPVerifySerializer = import_callable(
+    serializers.get('YUBIKEY_OTP_VERIFY_SERIALIZER', DefaultYubikeyOTPVerifySerializer)
 )
 
 ActivateTokenSerializer = import_callable(
@@ -87,6 +93,13 @@ NewGASerializer = import_callable(
     serializers.get(
         'NEW_GA_SERIALIZER',
         DefaultNewGASerializer
+    )
+)
+
+NewYubikeyOTPSerializer = import_callable(
+    serializers.get(
+        'NEW_YUBIKEY_OTP_SERIALIZER',
+        DefaultNewYubikeyOTPSerializer
     )
 )
 

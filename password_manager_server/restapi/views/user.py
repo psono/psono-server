@@ -7,14 +7,15 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from ..models import (
-    Token, User, Google_Authenticator
+    Token, User, Google_Authenticator, Yubikey_OTP
 )
 
 from ..app_settings import (
-    LoginSerializer, GAVerifySerializer, ActivateTokenSerializer,
+    LoginSerializer, GAVerifySerializer,
+    YubikeyOTPVerifySerializer, ActivateTokenSerializer,
     RegisterSerializer, VerifyEmailSerializer,
     UserUpdateSerializer, NewGASerializer,
-    UserPublicKeySerializer
+    NewYubikeyOTPSerializer, UserPublicKeySerializer
 )
 from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
@@ -206,7 +207,16 @@ class LoginView(GenericAPIView):
         else:
             google_authenticator_2fa = False
 
-        token = self.token_model.objects.create(user=user, google_authenticator_2fa=google_authenticator_2fa)
+        if Yubikey_OTP.objects.filter(user=user).exists():
+            yubikey_otp_2fa = True
+        else:
+            yubikey_otp_2fa = False
+
+        token = self.token_model.objects.create(
+            user=user,
+            google_authenticator_2fa=google_authenticator_2fa,
+            yubikey_otp_2fa=yubikey_otp_2fa
+        )
 
         # our public / private key box
         box = PrivateKey.generate()
@@ -246,6 +256,9 @@ class LoginView(GenericAPIView):
         if token.google_authenticator_2fa:
             required_multifactors.append('google_authenticator_2fa')
 
+        if token.yubikey_otp_2fa:
+            required_multifactors.append('yubikey_otp_2fa')
+
         return Response({
             "token": token.clear_text_key,
             "required_multifactors": required_multifactors,
@@ -273,6 +286,7 @@ class GAVerifyView(GenericAPIView):
     serializer_class = GAVerifySerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    throttle_scope = 'ga_verify'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -303,6 +317,52 @@ class GAVerifyView(GenericAPIView):
         # Google Authenticator challenge has been solved, so lets update the token
         token = serializer.validated_data['token']
         token.google_authenticator_2fa = False
+        token.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+class YubikeyOTPVerifyView(GenericAPIView):
+
+    permission_classes = (AllowAny,)
+    serializer_class = YubikeyOTPVerifySerializer
+    token_model = Token
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    throttle_scope = 'yubikey_otp_verify'
+
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Validates a Yubikey OTP
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        serializer = self.get_serializer(data=self.request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Yubikey OTP challenge has been solved, so lets update the token
+        token = serializer.validated_data['token']
+        token.yubikey_otp_2fa = False
         token.save()
 
         return Response(status=status.HTTP_200_OK)
@@ -592,6 +652,119 @@ class UserGA(GenericAPIView):
 
         # delete it
         google_authenticator.delete()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class UserYubikeyOTP(GenericAPIView):
+
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = NewYubikeyOTPSerializer
+    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get(self, request, *args, **kwargs):
+        """
+        Checks the REST Token and returns a list of a all YubiKey OTPs
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        yubikey_otps = []
+
+        for ga in Yubikey_OTP.objects.filter(user=user).all():
+            yubikey_otps.append({
+                'id': ga.id,
+                'title': ga.title,
+            })
+
+        return Response({
+            "yubikey_otps": yubikey_otps
+        },
+            status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        """
+        Checks the REST Token and sets a new YubiKey OTP for multifactor authentication
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+
+            yubikey_otp = serializer.validated_data.get('yubikey_otp')
+
+            yubikey_id = yubikey_otp[:12]
+
+            # normally encrypt secrets, so they are not stored in plaintext with a random nonce
+            secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+            crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+            encrypted_yubikey_id = crypto_box.encrypt(str(yubikey_id), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+            encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
+
+            new_yubikey = Yubikey_OTP.objects.create(
+                user=user,
+                title= serializer.validated_data.get('title'),
+                yubikey_id = encrypted_yubikey_id_hex
+            )
+
+            return Response({
+                "id": new_yubikey.id,
+            },
+                status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes an Yubikey
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400 / 403
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        if 'yubikey_otp_id' not in request.data or not is_uuid(request.data['yubikey_otp_id']):
+            return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+
+        # check if the YubiKey exists
+        try:
+            yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=user)
+        except Yubikey_OTP.DoesNotExist:
+            return Response({"message": "YubiKey does not exist.",
+                         "resource_id": request.data['yubikey_otp_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # delete it
+        yubikey_otp.delete()
 
         return Response(status=status.HTTP_200_OK)
 
