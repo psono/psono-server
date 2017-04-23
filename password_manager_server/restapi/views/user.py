@@ -7,13 +7,14 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from ..models import (
-    Token, User
+    Token, User, Google_Authenticator
 )
 
 from ..app_settings import (
-    LoginSerializer, ActivateTokenSerializer,
+    LoginSerializer, GAVerifySerializer, ActivateTokenSerializer,
     RegisterSerializer, VerifyEmailSerializer,
-    UserUpdateSerializer, UserPublicKeySerializer
+    UserUpdateSerializer, NewGASerializer,
+    UserPublicKeySerializer
 )
 from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
@@ -22,12 +23,14 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
 from ..authentication import TokenAuthentication
+from ..utils import is_uuid
 import nacl.encoding
 import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 import bcrypt
 import hashlib
+import pyotp
 
 
 class RegisterView(GenericAPIView):
@@ -197,7 +200,13 @@ class LoginView(GenericAPIView):
             )
 
         user = serializer.validated_data['user']
-        token = self.token_model.objects.create(user=user)
+
+        if Google_Authenticator.objects.filter(user=user).exists():
+            google_authenticator_2fa = True
+        else:
+            google_authenticator_2fa = False
+
+        token = self.token_model.objects.create(user=user, google_authenticator_2fa=google_authenticator_2fa)
 
         # our public / private key box
         box = PrivateKey.generate()
@@ -232,8 +241,14 @@ class LoginView(GenericAPIView):
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
         #     login(self.request, user)
 
+        required_multifactors = []
+
+        if token.google_authenticator_2fa:
+            required_multifactors.append('google_authenticator_2fa')
+
         return Response({
             "token": token.clear_text_key,
+            "required_multifactors": required_multifactors,
             "session_public_key": server_session_public_key_hex,
             "session_secret_key": session_secret_key_hex,
             "session_secret_key_nonce": session_secret_key_nonce_hex,
@@ -250,6 +265,50 @@ class LoginView(GenericAPIView):
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
+
+class GAVerifyView(GenericAPIView):
+
+    permission_classes = (AllowAny,)
+    serializer_class = GAVerifySerializer
+    token_model = Token
+    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+
+    def get(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Validates a Google Authenticator based OATH-TOTP
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        serializer = self.get_serializer(data=self.request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Google Authenticator challenge has been solved, so lets update the token
+        token = serializer.validated_data['token']
+        token.google_authenticator_2fa = False
+        token.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ActivateTokenView(GenericAPIView):
@@ -292,7 +351,7 @@ class ActivateTokenView(GenericAPIView):
         token.save()
 
         # decrypt user email address
-        secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = nacl.encoding.HexEncoder.decode(token.user.email)
         decrypted_email = crypto_box.decrypt(encrypted_email)
@@ -392,7 +451,7 @@ class UserUpdate(GenericAPIView):
                 user.email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
                 # normally encrypt emails, so they are not stored in plaintext with a random nonce
-                secret_key = hashlib.sha256(settings.EMAIL_SECRET).hexdigest()
+                secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
                 crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
                 encrypted_email = crypto_box.encrypt(email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
                 user.email = nacl.encoding.HexEncoder.encode(encrypted_email)
@@ -424,6 +483,117 @@ class UserUpdate(GenericAPIView):
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class UserGA(GenericAPIView):
+
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    serializer_class = NewGASerializer
+    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get(self, request, *args, **kwargs):
+        """
+        Checks the REST Token and returns a list of a all google authenticators
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        google_authenticators = []
+
+        for ga in Google_Authenticator.objects.filter(user=user).all():
+            google_authenticators.append({
+                'id': ga.id,
+                'title': ga.title,
+            })
+
+        return Response({
+            "google_authenticators": google_authenticators
+        },
+            status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        """
+        Checks the REST Token and sets a new google authenticator for multifactor authentication
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            secret = pyotp.random_base32()
+
+            # normally encrypt secrets, so they are not stored in plaintext with a random nonce
+            secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+            crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+            encrypted_secret = crypto_box.encrypt(str(secret), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+            encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
+
+            new_ga = Google_Authenticator.objects.create(
+                user=user,
+                title= serializer.validated_data.get('title'),
+                secret = encrypted_secret_hex
+            )
+
+            return Response({
+                "id": new_ga.id,
+                "secret": str(secret)
+            },
+                status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes an Google Authenticator
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400 / 403
+        """
+
+        user = User.objects.get(pk=request.user.id)
+
+        if 'google_authenticator_id' not in request.data or not is_uuid(request.data['google_authenticator_id']):
+            return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+
+        # check if google authenticator exists
+        try:
+            google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=user)
+        except Google_Authenticator.DoesNotExist:
+            return Response({"message": "Google authenticator does not exist.",
+                         "resource_id": request.data['google_authenticator_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # delete it
+        google_authenticator.delete()
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class UserSearch(GenericAPIView):

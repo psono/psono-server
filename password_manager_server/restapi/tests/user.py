@@ -90,7 +90,7 @@ class RegistrationTests(APITestCaseExtended):
         user = models.User.objects.get()
 
         email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)
@@ -139,7 +139,7 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
 
@@ -187,7 +187,7 @@ class RegistrationTests(APITestCaseExtended):
 class EmailVerificationTests(APITestCaseExtended):
     def setUp(self):
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
@@ -713,7 +713,7 @@ class LogoutTests(APITestCaseExtended):
 class UserModificationTests(APITestCaseExtended):
     def setUp(self):
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
@@ -990,7 +990,7 @@ class UserModificationTests(APITestCaseExtended):
 
 
         email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.EMAIL_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)

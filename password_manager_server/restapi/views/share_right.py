@@ -232,7 +232,7 @@ class ShareRightView(GenericAPIView):
         :param uuid: share_right_id
         :param args:
         :param kwargs:
-        :return: 200 / 403
+        :return: 200 / 400 / 403
         """
 
         if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
@@ -284,7 +284,7 @@ class ShareRightAcceptView(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 403
+        :return: 200 / 400 / 403
         """
 
         if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):

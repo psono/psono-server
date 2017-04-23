@@ -59,6 +59,21 @@ class User(models.Model):
         return True
 
 
+class Google_Authenticator(models.Model):
+    """
+    The Google authenticators
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_authenticator')
+    title = models.CharField(_('title'), max_length=256)
+    secret = models.CharField(_('secret as hex'), max_length=1024)
+
+    class Meta:
+        abstract = False
+
+
 class Recovery_Code(models.Model):
     """
     The recovery codes for the lost password recovery process.
@@ -290,6 +305,8 @@ class Token(models.Model):
     user = models.ForeignKey(User, related_name='auth_tokens')
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
+    google_authenticator_2fa = models.BooleanField(_('Google Authenticator Required'), default=False,
+        help_text=_('Specifies if Google Authenticator is required or not'))
 
     is_cachable = True
 
@@ -299,6 +316,7 @@ class Token(models.Model):
     def save(self, *args, **kwargs):
         if not self.key:
             self._generate()
+
         return super(Token, self).save(*args, **kwargs)
 
     def _generate(self):

@@ -13,3 +13,4 @@ more_itertools
 pynacl
 django-redis
 django-mailgun
+pyotp

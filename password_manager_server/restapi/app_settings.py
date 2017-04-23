@@ -2,6 +2,7 @@ from django.conf import settings
 
 from serializers import (
     LoginSerializer as DefaultLoginSerializer,
+    GAVerifySerializer as DefaultGAVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
@@ -9,6 +10,7 @@ from serializers import (
     SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
+    NewGASerializer as DefaultNewGASerializer,
     CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
     UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
@@ -26,6 +28,10 @@ serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
 
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
+)
+
+GAVerifySerializer = import_callable(
+    serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
 )
 
 ActivateTokenSerializer = import_callable(
@@ -74,6 +80,13 @@ UserUpdateSerializer = import_callable(
     serializers.get(
         'USER_UPDATE_SERIALIZER',
         DefaultUserUpdateSerializer
+    )
+)
+
+NewGASerializer = import_callable(
+    serializers.get(
+        'NEW_GA_SERIALIZER',
+        DefaultNewGASerializer
     )
 )
 

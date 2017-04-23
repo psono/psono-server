@@ -308,7 +308,6 @@ class ShareLinkView(GenericAPIView):
             - write on datastore
 
         :param request:
-        :param uuid:
         :param args:
         :param kwargs:
         :return: 200 / 400/ 403

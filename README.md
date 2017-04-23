@@ -102,7 +102,7 @@ We assume that you already have a postgres database running. If not follow the g
     
         PSONO_SECRET_KEY
         PSONO_ACTIVATION_LINK_SECRET
-        PSONO_EMAIL_SECRET
+        PSONO_DB_SECRET
         PSONO_EMAIL_SECRET_SALT
         PSONO_DEBUG
         PSONO_ALLOWED_HOSTS
