@@ -2189,7 +2189,7 @@ class UserYubikeyOTPTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('yubikey_otp', ''), [u'Yubikey token invalid'])
+        self.assertNotEqual(response.data.get('yubikey_otp', False), False)
 
     def test_put_user_yubikey_otp_no_yubikey_otp(self):
         """
