@@ -28,25 +28,17 @@ import pyotp
 class LoginSerializer(serializers.Serializer):
     username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
-    public_key = serializers.CharField(required=True)
+    public_key = serializers.CharField(required=True, min_length=64, max_length=64)
 
     def validate(self, attrs):
         username = attrs.get('username').lower().strip()
         authkey = attrs.get('authkey')
         public_key = attrs.get('public_key')
 
-        if username and authkey:
-            user = authenticate(username=username, authkey=authkey)
-        else:
-            msg = _('Must include "username" and "authkey".')
-            raise exceptions.ValidationError(msg)
+        user = authenticate(username=username, authkey=authkey)
 
         if not user:
             msg = _('Username or password wrong.')
-            raise exceptions.ValidationError(msg)
-
-        if len(public_key) != 64:
-            msg = _('Session public key seems invalid.')
             raise exceptions.ValidationError(msg)
 
         if not user.is_active:
@@ -212,11 +204,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
     def validate(self, attrs):
         activation_code = attrs.get('activation_code').strip()
 
-        if activation_code:
-            user = validate_activation_code(activation_code)
-        else:
-            msg = _('Must include "activation_code".')
-            raise exceptions.ValidationError(msg)
+        user = validate_activation_code(activation_code)
 
         if not user:
             msg = _('Activation code incorrect or already activated.')
@@ -309,24 +297,12 @@ class RegisterSerializer(serializers.Serializer):
             msg = _('Usernames may not be shorter than 3 chars.')
             raise exceptions.ValidationError(msg)
 
-        if username.startswith('.'):
-            msg = _('Usernames may not start with a period.')
-            raise exceptions.ValidationError(msg)
-
         if username.startswith('-'):
             msg = _('Usernames may not start with a dash.')
             raise exceptions.ValidationError(msg)
 
-        if username.endswith('.'):
-            msg = _('Usernames may not end with a period.')
-            raise exceptions.ValidationError(msg)
-
         if username.endswith('-'):
             msg = _('Usernames may not end with a dash.')
-            raise exceptions.ValidationError(msg)
-
-        if '..' in username:
-            msg = _('Usernames may not contain consecutive periods.')
             raise exceptions.ValidationError(msg)
 
         if '--' in username:

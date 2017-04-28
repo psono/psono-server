@@ -25,7 +25,7 @@ import hashlib
 import pyotp
 
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.ERROR)
 
 class RegistrationTests(APITestCaseExtended):
 
@@ -196,6 +196,450 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_account_email_no_email_syntax(self):
+        """
+        Test to register with a email without email syntax
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('email'), [u'Enter a valid email address.'])
+
+
+    def test_create_account_username_no_email_syntax(self):
+        """
+        Test to register with a username without email syntax
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+
+
+    def test_create_account_username_not_in_allowed_domains(self):
+        """
+        Test to register with a username that is not in allowed domains
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@nugrsiojuhsgd.com'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'The provided domain in your username is not allowed for the registration on this server.'])
+
+
+    def test_create_account_username_with_not_allowed_chars(self):
+        """
+        Test to register with a username that contains not allowed characters
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '!@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may only contain letters, numbers, periods and dashes.'])
+
+
+    def test_create_account_username_start_with_a_period(self):
+        """
+        Test to register with a username that starts with a period
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        username = '.' + username
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+
+
+    def test_create_account_username_start_with_a_dash(self):
+        """
+        Test to register with a username that starts with a dash
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        username = '-' + username
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not start with a dash.'])
+
+
+    def test_create_account_username_end_with_a_period(self):
+        """
+        Test to register with a username that ends with a period
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '.@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+
+
+    def test_create_account_username_not_contain_consecutive_periods(self):
+        """
+        Test to register with a username that contains consecutive periods
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = 'njfgdopnsrgipojr..threhtr@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+
+
+    def test_create_account_username_not_contain_consecutive_dashes(self):
+        """
+        Test to register with a username that contains consecutive dashes
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = 'njfgdopnsrgipojr--threhtr@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not contain consecutive dashes.'])
+
+
+    def test_create_account_username_periods_following_dashes(self):
+        """
+        Test to register with a username that contains periods following dashes
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = 'njfgdopnsrgipojr-.threhtr@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not contain dashes followed by periods.'])
+
+
+    def test_create_account_username_dashes_following_periods(self):
+        """
+        Test to register with a username that contains dashes following periods
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = 'njfgdopnsrgipojr.-threhtr@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not contain periods followed by dashes.'])
+
+
+    def test_create_account_username_end_with_a_dash(self):
+        """
+        Test to register with a username that ends with a dash
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '-@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not end with a dash.'])
+
+
+    def test_create_account_username_with_only_two_chars(self):
+        """
+        Test to register with a username that only has 2 chars
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(2)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'Usernames may not be shorter than 3 chars.'])
 
 
 
@@ -464,6 +908,42 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
+    def test_login_with_no_username(self):
+        """
+        Test to login with no username
+        """
+        url = reverse('authentication_login')
+
+        data = {
+            'authkey': self.test_authkey,
+            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('username'), [u'This field is required.'])
+
+    def test_login_with_no_authkey(self):
+        """
+        Test to login with no authkey
+        """
+        url = reverse('authentication_login')
+
+        data = {
+            'username': self.test_username,
+            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('authkey'), [u'This field is required.'])
+
     def test_logi_with_google_authenticator(self):
         """
         Ensure we can login with google authenticator
@@ -688,6 +1168,7 @@ class LoginTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'authkey': make_password(os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')),
+            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
         }
 
         models.Token.objects.all().delete()
@@ -695,6 +1176,7 @@ class LoginTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('non_field_errors'), [u'Username or password wrong.'])
 
         self.assertEqual(models.Token.objects.count(), 0)
 
