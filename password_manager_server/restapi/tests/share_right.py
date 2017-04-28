@@ -49,7 +49,7 @@ class UserShareRightTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='082202ea53a9f64459b8217ebbdea19f6cb385d8d529327053f54a9b9861dcf1',
             is_email_active=True
         )
 
@@ -62,7 +62,7 @@ class UserShareRightTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='2a6792ec2ae557f1ba8b5ec5e64a495bde07fa1a69104ce1fb80b1e779fcb8dd',
             is_email_active=True
         )
 

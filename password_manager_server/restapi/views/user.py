@@ -13,6 +13,7 @@ from ..models import (
 from ..app_settings import (
     LoginSerializer, GAVerifySerializer,
     YubikeyOTPVerifySerializer, ActivateTokenSerializer,
+    LogoutSerializer,
     RegisterSerializer, VerifyEmailSerializer,
     UserUpdateSerializer, NewGASerializer,
     NewYubikeyOTPSerializer, UserPublicKeySerializer
@@ -429,12 +430,13 @@ class ActivateTokenView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class LogoutView(APIView):
+class LogoutView(GenericAPIView):
 
     """
     """
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
+    serializer_class = LogoutSerializer
     token_model = Token
 
     def get(self, *args, **kwargs):
@@ -454,9 +456,17 @@ class LogoutView(APIView):
         :return:
         :rtype:
         """
+
+
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            token_hash=TokenAuthentication.get_token_hash(request)
-            self.token_model.objects.filter(key=token_hash).delete()
+            token_hash = serializer.validated_data['token_hash']
+            self.token_model.objects.filter(key=token_hash, user=request.user).delete()
         except:
             pass
 

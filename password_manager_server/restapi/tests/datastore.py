@@ -46,7 +46,7 @@ class DatastoreTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7',
             is_email_active=True
         )
 
@@ -60,7 +60,7 @@ class DatastoreTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01',
             is_email_active=True
         )
 

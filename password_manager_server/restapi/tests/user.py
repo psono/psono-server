@@ -5,7 +5,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
-
 from rest_framework import status
 
 from restapi import models
@@ -25,6 +24,8 @@ import bcrypt
 import hashlib
 import pyotp
 
+import logging
+logging.basicConfig()
 
 class RegistrationTests(APITestCaseExtended):
 
@@ -82,7 +83,7 @@ class RegistrationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
             'username': username,
@@ -132,7 +133,7 @@ class RegistrationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'bbd90b581b9c956e9077a8c71f61ecd9bf9355bd1aac3590bd995028ed224ae0'
 
         data = {
             'username': username,
@@ -178,7 +179,7 @@ class RegistrationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '05aa27037cf893e2a4113ddbe8836e1bf395556669904902643670fbf3841338'
 
         data = {
             'username': username,
@@ -212,7 +213,7 @@ class EmailVerificationTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '0ee09a1a2c32b240d4ac9642b218adf01c88948aa2a90f1466a8217623fc1b7e'
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
             email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
@@ -320,7 +321,7 @@ class LoginTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '0865977160de11fe18806e6843bc14663433982fdeadc45c217d6127f260ff33'
 
 
         data = {
@@ -778,7 +779,7 @@ class LogoutTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '24350a638726c0073ec43c8c84ac110bfc2c45e7a430a257f768837f1470c9c7'
 
 
         data = {
@@ -817,6 +818,16 @@ class LogoutTests(APITestCaseExtended):
 
         # lets fake activation for our token
         tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token)).get()
+        tok.active = True
+        tok.user_validator=None
+        tok.save()
+
+        response = self.client.post(url, data)
+
+        self.test_token2 = response.data.get('token', False)
+
+        # lets fake activation for our token
+        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token2)).get()
         tok.active = True
         tok.user_validator=None
         tok.save()
@@ -879,6 +890,28 @@ class LogoutTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Logout has no real affect, Token not deleted')
 
+    def test_logout_other_token(self):
+        """
+        Ensure we can logout other token
+        """
+
+        url = reverse('authentication_logout')
+
+
+        updated_data = {
+            'token': self.test_token2,
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        response = self.client.post(url, updated_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK,
+                         'Cannot logout with correct credentials')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token2)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
+                         'Logout has no real affect, Token not deleted')
+
 
 class UserModificationTests(APITestCaseExtended):
     def setUp(self):
@@ -894,7 +927,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = 'b4ce697723a93e3ba36e6da23c8728c2372069fdffc2d29c02f77cd14a106c45'
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
             email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
@@ -918,7 +951,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce2 = os.urandom(32).encode('hex')
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
             email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email2.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
@@ -1010,7 +1043,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
 
         data = {
             'username': username,
@@ -1045,7 +1078,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '78caff718e1454de52a4ae09b68e969101203e2bced4f5a6ceaa2e8ece10c02c'
 
         data = {
             'username': username,
@@ -1081,7 +1114,7 @@ class UserModificationTests(APITestCaseExtended):
         secret_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
                       '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e76c0fe2a16a0bebbdcbef2b7c1d95b57d6a2c4f3f8c3c60259c3b6105c29865'
 
         data = {
             'username': username,
@@ -1116,7 +1149,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e2b048a26ba19c5ca3c923f1ec86d49f2204bbdca2f91292a045f7ad83a545f2'
 
         data = {
             'username': username,
@@ -1151,7 +1184,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
 
         data = {
             'username': username,
@@ -1188,6 +1221,40 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    def test_update_user_wrong_password(self):
+        """
+        Tests to update the user with wrong password
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = '6acc5e9cd89d5fc6b45fe4f2e6b064aa8acf1a8c7736238ada52a408f4853fe1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_update_user_with_email_duplicate(self):
         """
         Tests to update the user with an email address that already exists
@@ -1204,7 +1271,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e6efde814fae7744df7490a2b55522d541ebafef562572e6565b17f79f6e0823'
 
         data = {
             'username': username,
@@ -1251,7 +1318,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '12a9ef69f08060aab5fc3a2cecc851871bde511261a33241663aff74e35b8b6e'
 
         data = {
             'username': username,
@@ -1296,7 +1363,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '49c9fffb9332eb75bb1862f579f9913432c88ffc4ecf7ee53ce4c7d3e9b9c861'
 
         data = {
             'email': email,
@@ -1340,7 +1407,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '7d3fcc0a89f26e0f1277d0095620a10897c03becfb2f2b27684a55b8758a0020'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1364,7 +1431,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce2 = os.urandom(32).encode('hex')
+        self.test_user_sauce2 = '5ca7f80a0e09fe13e02102f48a88c56b2c239056b86bb2694f7923d654651ab7'
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
@@ -1559,7 +1626,7 @@ class UserGAVerifyTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '33afce78b0152075457e2a4d58b80312162f08ee932551c833b3d08d58574f03'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1572,6 +1639,27 @@ class UserGAVerifyTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
             is_email_active=True
+        )
+
+        self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+        models.Token.objects.create(
+            key= hashlib.sha512(self.token).hexdigest(),
+            user=self.test_user_obj
+        )
+
+        secret = pyotp.random_base32()
+        self.totp = pyotp.TOTP(secret)
+
+        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        encrypted_secret = crypto_box.encrypt(str(secret), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
+
+        models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypted_secret_hex
         )
 
     def test_get_authentication_ga_verify(self):
@@ -1606,38 +1694,72 @@ class UserGAVerifyTests(APITestCaseExtended):
         """
         Tests POST method on authentication_ga_verify
         """
-        secret = pyotp.random_base32()
-        totp = pyotp.TOTP(secret)
-
-        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_secret = crypto_box.encrypt(str(secret), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
-
-        models.Google_Authenticator.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            secret = encrypted_secret_hex
-        )
-
-        token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-        models.Token.objects.create(
-            key= hashlib.sha512(token).hexdigest(),
-            user=self.test_user_obj
-        )
 
         url = reverse('authentication_ga_verify')
 
         data = {
-            'token': token,
-            'ga_token': totp.now()
+            'token': self.token,
+            'ga_token': self.totp.now()
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_post_authentication_ga_verify_invalid_token(self):
+        """
+        Tests POST method on authentication_ga_verify with invalid token
+        """
+
+        url = reverse('authentication_ga_verify')
+
+        data = {
+            'token': '12345',
+            'ga_token': self.totp.now()
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(response.data.get('non_field_errors', False), False)
+
+    def test_post_authentication_ga_verify_no_proper_formatted_ga_token(self):
+        """
+        Tests POST method on authentication_ga_verify with no proper formatted ga_token
+        """
+
+        url = reverse('authentication_ga_verify')
+
+        data = {
+            'token': self.token,
+            'ga_token': 'ABCDEF'
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('non_field_errors'), [u'GA Tokens only contain digits.'])
+
+    def test_post_authentication_ga_verify_invalid_ga_token(self):
+        """
+        Tests POST method on authentication_ga_verify with an invalid ga_token
+        """
+
+        url = reverse('authentication_ga_verify')
+
+        data = {
+            'token': self.token,
+            'ga_token': '012345'
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(response.data.get('non_field_errors', False), False)
 
     def test_delete_authentication_ga_verify(self):
         """
@@ -1667,7 +1789,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '7a1815d667e15d6310174e4b41c22fe618e18f1748091d07c4d79eef6ec02dd2'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1720,6 +1842,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         data = {}
 
         self.client.force_authenticate(user=self.test_user_obj)
+
         # TODO Do something useful here
         # response = self.client.put(url, data)
         #
@@ -1753,7 +1876,7 @@ class UserYubikeyOTPVerifyTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = 'd22f5797cfd438f212bb0830da488f0555487697ad4041bbcbf5b08bc297e117'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1824,7 +1947,7 @@ class UserGATests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1883,6 +2006,21 @@ class UserGATests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('id', False), False)
         self.assertNotEqual(response.data.get('secret', False), False)
+
+    def test_put_user_ga_no_title(self):
+        """
+        Tests PUT method on user_ga with no title
+        """
+
+        url = reverse('user_ga')
+
+        data = {
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_user_ga(self):
         """
@@ -1993,7 +2131,7 @@ class UserYubikeyOTPTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '32a34bd9d7ae7fde45906bce0e7b04c3f81e4b6c05d888468e717e173ee6655a'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -2008,9 +2146,9 @@ class UserYubikeyOTPTests(APITestCaseExtended):
             is_email_active=True
         )
 
-    def test_get_user_ga(self):
+    def test_get_user_yubikey_otp(self):
         """
-        Tests GET method on user_ga
+        Tests GET method on yubikey_otp
         """
 
         yubikey = models.Yubikey_OTP.objects.create(
@@ -2035,9 +2173,9 @@ class UserYubikeyOTPTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_put_user_yubikey_otp(self):
+    def test_put_user_yubikey_otp_with_no_valid_yubikey(self):
         """
-        Tests PUT method on user_yubikey_otp
+        Tests PUT method on user_yubikey_otp with no valid yubikey
         """
 
         url = reverse('user_yubikey_otp')
@@ -2050,8 +2188,42 @@ class UserYubikeyOTPTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertNotEqual(response.data.get('id', False), False)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('yubikey_otp', ''), [u'Yubikey token invalid'])
+
+    def test_put_user_yubikey_otp_no_yubikey_otp(self):
+        """
+        Tests PUT method on user_yubikey_otp with no yubikey_otp
+        """
+
+        url = reverse('user_yubikey_otp')
+
+        data = {
+            'title': 'asdu5zz53',
+        }
+
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_put_user_yubikey_otp_no_title(self):
+        """
+        Tests PUT method on user_yubikey_otp with no title
+        """
+
+        url = reverse('user_yubikey_otp')
+
+        data = {
+            'yubikey_otp': '123456789',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_post_user_yubikey_otp(self):

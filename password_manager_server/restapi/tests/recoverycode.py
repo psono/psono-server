@@ -38,7 +38,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = 'ef37b3192178b9a97b551572314388058c14a4dabdbf63d022bcba9951809b6d'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -351,7 +351,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '1f3f3c0f4c8a52fb0d83144bb4e7aaf04d552d43ec7a60792654ef664af17dad'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -374,7 +374,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce2 = os.urandom(32).encode('hex')
+        self.test_user_sauce2 = 'fbcd7106abf5ef076af9a1ab59e98ff5f4f81f524ede6d7155500e059b25b8b0'
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
@@ -397,7 +397,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_private_key_nonce3 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key3 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce3 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce3 = os.urandom(32).encode('hex')
+        self.test_user_sauce3 = 'de6096562c48b5f58aaabfa9dfab3a59930daf57aa50f53a4d80d8205a91ba17'
         self.test_user_obj3 = models.User.objects.create(
             email=self.test_email3,
             email_bcrypt=self.test_email_bcrypt3,

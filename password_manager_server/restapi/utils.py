@@ -11,6 +11,7 @@ import nacl.utils
 import nacl.secret
 import hashlib
 from yubico_client import Yubico
+import re
 
 from six import string_types
 import sys

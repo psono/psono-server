@@ -10,3 +10,4 @@ from user import *
 from datastore import *
 from share import *
 from recoverycode import *
+from health_check import *

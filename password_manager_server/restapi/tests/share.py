@@ -47,7 +47,7 @@ class EmptyShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='e1acaa936aba823ec09933f8213e39b9e4d58d3ccfbf6aca57cd7eb039549677',
             is_email_active=True
         )
 
@@ -136,7 +136,7 @@ class ShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='101e54acafea8a138916e33fcc631364eba744c7f7f76ecd1741e421e2d54de5',
             is_email_active=True
         )
 
@@ -166,7 +166,7 @@ class ShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='f08ec82fa3ddd3f0948bcd2b7aa00ecca13412ab1263cfe76ab92a0bfb87d9c1',
             is_email_active=True
         )
 
@@ -509,7 +509,7 @@ class UpdateShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='dc7165dc8960960bf74058737849fcd3514d536a2513b6bd85d03802894efef9',
             is_email_active=True
         )
 
@@ -539,7 +539,7 @@ class UpdateShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='2cdb1751d210edde10eaf10158070afbd2bd20917fe8a823a2a5e0cd85ac6574',
             is_email_active=True
         )
         self.test_share2_obj = models.Share.objects.create(
