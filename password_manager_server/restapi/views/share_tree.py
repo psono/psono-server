@@ -1,6 +1,6 @@
 from  more_itertools import unique_everseen
 
-from ..utils import user_has_rights_on_share, is_uuid
+from ..utils import user_has_rights_on_share, request_misses_uuid
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -152,7 +152,7 @@ class ShareLinkView(GenericAPIView):
         :return: 201 / 400 / 403
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -217,7 +217,7 @@ class ShareLinkView(GenericAPIView):
         :return: 200 / 403 / 404
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -313,7 +313,7 @@ class ShareLinkView(GenericAPIView):
         :return: 200 / 400/ 403
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 

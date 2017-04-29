@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 
 
 from ..authentication import TokenAuthentication
-from ..utils import is_uuid
+from ..utils import request_misses_uuid
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -201,7 +201,7 @@ class UserGA(GenericAPIView):
 
         user = User.objects.get(pk=request.user.id)
 
-        if 'google_authenticator_id' not in request.data or not is_uuid(request.data['google_authenticator_id']):
+        if request_misses_uuid(request, 'google_authenticator_id'):
             return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -314,7 +314,7 @@ class UserYubikeyOTP(GenericAPIView):
 
         user = User.objects.get(pk=request.user.id)
 
-        if 'yubikey_otp_id' not in request.data or not is_uuid(request.data['yubikey_otp_id']):
+        if request_misses_uuid(request, 'yubikey_otp_id'):
             return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 

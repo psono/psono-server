@@ -6,6 +6,7 @@ from decline_share import *
 from share_rights import *
 from share_right import *
 from secret import *
+from secret_link import *
 from user import *
 from authentication import *
 from datastore import *

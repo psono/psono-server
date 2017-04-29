@@ -1,4 +1,4 @@
-from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
+from ..utils import user_has_rights_on_share, request_misses_uuid, get_all_inherited_rights
 from share_tree import create_share_link
 from datastore import get_datastore
 from rest_framework import status
@@ -221,7 +221,7 @@ class ShareView(GenericAPIView):
         :rtype:
         """
 
-        if 'share_id' not in request.data or not is_uuid(request.data['share_id']):
+        if request_misses_uuid(request, 'share_id'):
             return Response({"error": "IdNoUUID", 'message': "Share ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -271,7 +271,7 @@ class ShareView(GenericAPIView):
             return Response({"error": "NotInRequest", 'message': "Data not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 

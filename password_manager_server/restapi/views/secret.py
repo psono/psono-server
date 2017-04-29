@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
 from datastore import get_datastore
 from secret_link import create_secret_link
-from ..utils import user_has_rights_on_share, user_has_rights_on_secret, is_uuid
+from ..utils import user_has_rights_on_share, user_has_rights_on_secret, request_misses_uuid
 from ..models import (
     Secret, Share
 )
@@ -91,7 +91,7 @@ class SecretView(GenericAPIView):
             return Response({"error": "NotInRequest", 'message': "data_nonce not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -157,7 +157,7 @@ class SecretView(GenericAPIView):
         """
 
 
-        if 'secret_id' not in request.data or not is_uuid(request.data['secret_id']):
+        if request_misses_uuid(request, 'secret_id'):
             return Response({"error": "IdNoUUID", 'message': "Secret ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
