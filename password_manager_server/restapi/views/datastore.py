@@ -6,7 +6,7 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import is_uuid
+from ..utils import request_misses_uuid
 
 from ..app_settings import (
     DatastoreSerializer, DatastoreOverviewSerializer,
@@ -126,7 +126,7 @@ class DatastoreView(GenericAPIView):
         :rtype:
         """
 
-        if 'datastore_id' not in request.data or not is_uuid(request.data['datastore_id']):
+        if request_misses_uuid(request, 'datastore_id'):
             return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 

@@ -1,4 +1,4 @@
-from ..utils import user_has_rights_on_share, is_uuid, get_all_inherited_rights
+from ..utils import user_has_rights_on_share, is_uuid, request_misses_uuid, get_all_inherited_rights
 from share_tree import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
@@ -235,7 +235,7 @@ class ShareRightView(GenericAPIView):
         :return: 200 / 400 / 403
         """
 
-        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+        if request_misses_uuid(request, 'share_right_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -287,7 +287,7 @@ class ShareRightAcceptView(GenericAPIView):
         :return: 200 / 400 / 403
         """
 
-        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+        if request_misses_uuid(request, 'share_right_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -412,7 +412,7 @@ class ShareRightDeclineView(GenericAPIView):
         :return: 200 / 403 / 404
         """
 
-        if 'share_right_id' not in request.data or not is_uuid(request.data['share_right_id']):
+        if request_misses_uuid(request, 'share_right_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 

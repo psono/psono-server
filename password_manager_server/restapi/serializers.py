@@ -6,6 +6,7 @@ import uuid
 import re
 import bcrypt
 import hashlib
+from yubico_client import Yubico
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -27,25 +28,17 @@ import pyotp
 class LoginSerializer(serializers.Serializer):
     username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
-    public_key = serializers.CharField(required=True)
+    public_key = serializers.CharField(required=True, min_length=64, max_length=64)
 
     def validate(self, attrs):
         username = attrs.get('username').lower().strip()
         authkey = attrs.get('authkey')
         public_key = attrs.get('public_key')
 
-        if username and authkey:
-            user = authenticate(username=username, authkey=authkey)
-        else:
-            msg = _('Must include "username" and "authkey".')
-            raise exceptions.ValidationError(msg)
+        user = authenticate(username=username, authkey=authkey)
 
         if not user:
             msg = _('Username or password wrong.')
-            raise exceptions.ValidationError(msg)
-
-        if len(public_key) != 64:
-            msg = _('Session public key seems invalid.')
             raise exceptions.ValidationError(msg)
 
         if not user.is_active:
@@ -84,16 +77,16 @@ class GAVerifySerializer(serializers.Serializer):
         secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
 
-        token_correct = False
+        ga_token_correct = False
         for ga in Google_Authenticator.objects.filter(user=token.user):
             encrypted_ga_secret = nacl.encoding.HexEncoder.decode(ga.secret)
             decrypted_ga_secret = crypto_box.decrypt(encrypted_ga_secret)
             totp = pyotp.TOTP(decrypted_ga_secret)
             if totp.verify(ga_token):
-                token_correct = True
+                ga_token_correct = True
                 break
 
-        if not token_correct:
+        if not ga_token_correct:
             msg = _('GA Token incorrect.')
             raise exceptions.ValidationError(msg)
 
@@ -132,17 +125,17 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
 
-        token_correct = False
+        otp_token_correct = False
         for yk in Yubikey_OTP.objects.filter(user=token.user):
             encrypted_yubikey_id = nacl.encoding.HexEncoder.decode(yk.yubikey_id)
             decrypted_yubikey_id = crypto_box.decrypt(encrypted_yubikey_id)
 
             if yubikey_id == decrypted_yubikey_id:
-                token_correct = True
+                otp_token_correct = True
                 break
 
-        if not token_correct:
-            msg = _('YubiKey OTP incorrect.')
+        if not otp_token_correct:
+            msg = _('YubiKey OTP not attached to this account.')
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token
@@ -191,6 +184,19 @@ class ActivateTokenSerializer(serializers.Serializer):
         attrs['token'] = token
         return attrs
 
+class LogoutSerializer(serializers.Serializer):
+    token = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+
+        token = attrs.get('token', False)
+        if token:
+            attrs['token_hash'] = TokenAuthentication.user_token_to_token_hash(token)
+        else:
+            attrs['token_hash'] = TokenAuthentication.get_token_hash(self.context['request'])
+
+        return attrs
+
 
 class VerifyEmailSerializeras(serializers.Serializer):
     activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )
@@ -198,11 +204,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
     def validate(self, attrs):
         activation_code = attrs.get('activation_code').strip()
 
-        if activation_code:
-            user = validate_activation_code(activation_code)
-        else:
-            msg = _('Must include "activation_code".')
-            raise exceptions.ValidationError(msg)
+        user = validate_activation_code(activation_code)
 
         if not user:
             msg = _('Activation code incorrect or already activated.')
@@ -295,24 +297,12 @@ class RegisterSerializer(serializers.Serializer):
             msg = _('Usernames may not be shorter than 3 chars.')
             raise exceptions.ValidationError(msg)
 
-        if username.startswith('.'):
-            msg = _('Usernames may not start with a period.')
-            raise exceptions.ValidationError(msg)
-
         if username.startswith('-'):
             msg = _('Usernames may not start with a dash.')
             raise exceptions.ValidationError(msg)
 
-        if username.endswith('.'):
-            msg = _('Usernames may not end with a period.')
-            raise exceptions.ValidationError(msg)
-
         if username.endswith('-'):
             msg = _('Usernames may not end with a dash.')
-            raise exceptions.ValidationError(msg)
-
-        if '..' in username:
-            msg = _('Usernames may not contain consecutive periods.')
             raise exceptions.ValidationError(msg)
 
         if '--' in username:
@@ -463,6 +453,28 @@ class NewGASerializer(serializers.Serializer):
 class NewYubikeyOTPSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=256)
     yubikey_otp = serializers.CharField(max_length=64)
+
+
+    def validate_yubikey_otp(self, value):
+
+        value = value.strip()
+
+        if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
+            msg = _('Server does not support Yubikeys')
+            raise exceptions.ValidationError(msg)
+
+        client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY)
+        try:
+            yubikey_is_valid = client.verify(value)
+        except:
+            yubikey_is_valid = False
+
+        if not yubikey_is_valid:
+            msg = _('Yubikey token invalid')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
 
 class UserShareSerializer(serializers.Serializer):
 

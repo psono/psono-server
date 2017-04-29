@@ -56,7 +56,7 @@ class ShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='af8d7c6e835a4e378655e8e11fa0b09afc2f08acf0be1d71d9fa048a2b09d2eb',
             is_email_active=True
         )
 
@@ -70,7 +70,7 @@ class ShareTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='f2b5314ccdd726c3f4deabf5efccb0de5183796a9ecc691565aff2edf8c60249',
             is_email_active=True
         )
 
@@ -299,7 +299,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='ada037674acdbc7d82446c0f8b8a39ebaaee596f42d205012796dc07bbd7c45a',
             is_email_active=True
         )
 
@@ -313,7 +313,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='081c20d33eb13a953e35ef785daefd945bd0af0a568be0dab01b235d4e610234',
             is_email_active=True
         )
 
@@ -327,7 +327,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce3,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce3,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='64657a91c8c38b0a05cbd12f8ac9531aa7f2846cae15a1537d4f5579290f1454',
             is_email_active=True
         )
 

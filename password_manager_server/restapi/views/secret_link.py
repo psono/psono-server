@@ -1,6 +1,6 @@
 from  more_itertools import unique_everseen
 
-from ..utils import user_has_rights_on_share, is_uuid
+from ..utils import user_has_rights_on_share, request_misses_uuid
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -80,11 +80,11 @@ class SecretLinkView(GenericAPIView):
         :return: 200 / 403 / 404
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        if 'new_parent_share_id' not in request.data and 'new_parent_datastore_id' not in request.data:
+        if request_misses_uuid(request, 'new_parent_share_id') and request_misses_uuid(request, 'new_parent_datastore_id'):
             return Response(
                 {"error": "NotInRequest", 'message': "No parent (share or datastore) has been provided as parent"},
                 status=status.HTTP_400_BAD_REQUEST)
@@ -173,39 +173,39 @@ class SecretLinkView(GenericAPIView):
         :return: 200 / 400/ 403
         """
 
-        if 'link_id' not in request.data or not is_uuid(request.data['link_id']):
+        if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         secrets = []
-        parents = []
-        datastores = []
+        parent_shares = []
+        parent_datastores = []
 
         for s in Secret_Link.objects.filter(link_id=request.data['link_id']).all():
             secrets.append(s.secret_id)
             if s.parent_share_id:
-                parents.append(s.parent_share_id)
+                parent_shares.append(s.parent_share_id)
             if s.parent_datastore_id:
-                datastores.append(s.parent_datastore_id)
+                parent_datastores.append(s.parent_datastore_id)
 
         # remove duplicates
         secrets = list(unique_everseen(secrets))
-        parents = list(unique_everseen(parents))
-        datastores = list(unique_everseen(datastores))
+        parent_shares = list(unique_everseen(parent_shares))
+        parent_datastores = list(unique_everseen(parent_datastores))
 
 
-        if not secrets and not parents and not datastores:
+        if not secrets and not parent_shares and not parent_datastores:
             return Response({"message":"You don't have permission to access or it does not exist.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
-        # check write permissions on parents
-        for parent_share_id in parents:
+        # check write permissions on parent_shares
+        for parent_share_id in parent_shares:
             if not user_has_rights_on_share(request.user.id, parent_share_id, write=True):
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": parent_share_id}, status=status.HTTP_403_FORBIDDEN)
 
-        # check write permissions on datastores
-        for datastore_id in datastores:
+        # check write permissions on parent_datastores
+        for datastore_id in parent_datastores:
             try:
                 Data_Store.objects.get(pk=datastore_id, user=request.user)
             except Data_Store.DoesNotExist:

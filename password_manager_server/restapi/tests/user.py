@@ -1,17 +1,12 @@
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
-from django.utils import timezone
-from datetime import timedelta
-from django.db import IntegrityError
-from ..authentication import TokenAuthentication
-
 from rest_framework import status
 
 from restapi import models
-from restapi.utils import generate_activation_code
 
 from base import APITestCaseExtended
+
 
 import random
 import string
@@ -23,861 +18,10 @@ import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 import bcrypt
 import hashlib
-import pyotp
 
+import logging
+logging.basicConfig(level=logging.ERROR)
 
-class RegistrationTests(APITestCaseExtended):
-
-    def test_get_authentication_register(self):
-        """
-        Tests GET method on authentication_register
-        """
-
-        url = reverse('authentication_register')
-
-        data = {}
-
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_register(self):
-        """
-        Tests PUT method on authentication_register
-        """
-
-        url = reverse('authentication_register')
-
-        data = {}
-
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_authentication_register(self):
-        """
-        Tests DELETE method on authentication_register
-        """
-
-        url = reverse('authentication_register')
-
-        data = {}
-
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-    def test_create_account(self):
-        """
-        Ensure we can create a new account object.
-        """
-        url = reverse('authentication_register')
-
-        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
-
-        data = {
-            'username': username,
-            'email': email,
-            'authkey': authkey,
-            'public_key': public_key,
-            'private_key': private_key,
-            'private_key_nonce': private_key_nonce,
-            'secret_key': secret_key,
-            'secret_key_nonce': secret_key_nonce,
-            'user_sauce': user_sauce,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(models.User.objects.count(), 1)
-
-        user = models.User.objects.get()
-
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
-
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
-        self.assertEqual(user.email_bcrypt, email_bcrypt)
-        self.assertTrue(check_password(authkey, user.authkey))
-        self.assertEqual(user.public_key, public_key)
-        self.assertEqual(user.private_key, private_key)
-        self.assertEqual(user.private_key_nonce, private_key_nonce)
-        self.assertEqual(user.secret_key, secret_key)
-        self.assertEqual(user.secret_key_nonce, secret_key_nonce)
-        self.assertEqual(user.user_sauce, user_sauce)
-        self.assertTrue(user.is_active)
-        self.assertFalse(user.is_email_active)
-
-    def test_not_same_email(self):
-        """
-        Ensure we can not create an account with the same email address twice
-        """
-        url = reverse('authentication_register')
-
-        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
-
-        data = {
-            'username': username,
-            'email': email,
-            'authkey': authkey,
-            'public_key': public_key,
-            'private_key': private_key,
-            'private_key_nonce': private_key_nonce,
-            'secret_key': secret_key,
-            'secret_key_nonce': secret_key_nonce,
-            'user_sauce': user_sauce,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(models.User.objects.count(), 1)
-
-        user = models.User.objects.get()
-
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
-
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(models.User.objects.count(), 1)
-        self.assertTrue(response.data.get('email', False),
-                        'E-Mail in error message does not exist in registration response')
-
-    def test_no_authoritative_email(self):
-        """
-        Ensure we can not create an account with an authoritative email address
-        """
-        url = reverse('authentication_register')
-
-        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = 'admin@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
-
-        data = {
-            'username': username,
-            'email': email,
-            'authkey': authkey,
-            'public_key': public_key,
-            'private_key': private_key,
-            'private_key_nonce': private_key_nonce,
-            'secret_key': secret_key,
-            'secret_key_nonce': secret_key_nonce,
-            'user_sauce': user_sauce,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-
-class EmailVerificationTests(APITestCaseExtended):
-    def setUp(self):
-
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
-
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-        self.test_user_obj = models.User.objects.create(
-            username=self.test_username,
-            email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
-            email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=False
-        )
-
-    def test_get_authentication_verify_email(self):
-        """
-        Tests GET method on authentication_register
-        """
-
-        url = reverse('authentication_verify_email')
-
-        data = {}
-
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_verify_email(self):
-        """
-        Tests PUT method on authentication_register
-        """
-
-        url = reverse('authentication_verify_email')
-
-        data = {}
-
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_authentication_verify_email(self):
-        """
-        Tests DELETE method on authentication_register
-        """
-
-        url = reverse('authentication_verify_email')
-
-        data = {}
-
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_verify_email(self):
-        """
-        Ensure we can verify the email
-        """
-        url = reverse('authentication_verify_email')
-        activation_code = generate_activation_code(self.test_email)
-
-        data = {
-            'activation_code': activation_code,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        user = models.User.objects.filter(email=self.test_user_obj.email).get()
-
-        self.assertTrue(user.is_email_active)
-
-    def test_verify_email_wrong_code(self):
-        """
-        Ensure we don't verify emails with wrong codes
-        """
-        url = reverse('authentication_verify_email')
-        activation_code = generate_activation_code(self.test_email + 'changedit')
-
-        data = {
-            'activation_code': activation_code,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        user = models.User.objects.filter(email=self.test_user_obj.email).get()
-
-        self.assertFalse(user.is_email_active)
-
-
-class LoginTests(APITestCaseExtended):
-    def setUp(self):
-
-        # our public / private key box
-        box = PrivateKey.generate()
-
-        self.test_email = "test@example.com"
-        self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-
-
-        data = {
-            'username': self.test_username,
-            'email': self.test_email,
-            'authkey': self.test_authkey,
-            'public_key': self.test_public_key,
-            'private_key': self.test_private_key,
-            'private_key_nonce': self.test_private_key_nonce,
-            'secret_key': self.test_secret_key,
-            'secret_key_nonce': self.test_secret_key_nonce,
-            'user_sauce': self.test_user_sauce,
-        }
-
-        url = reverse('authentication_register')
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-        self.user_obj = models.User.objects.get(username=self.test_username)
-        self.user_obj.is_email_active = True
-        self.user_obj.save()
-
-
-
-    def test_unique_constraint_token(self):
-        key = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-
-        models.Token.objects.create(
-            key=key,
-            user=self.user_obj
-        )
-
-        error_thrown = False
-
-        try:
-            models.Token.objects.create(
-                key=key,
-                user=self.user_obj
-            )
-        except IntegrityError:
-            error_thrown = True
-
-        self.assertTrue(error_thrown,
-                        'Unique constraint lifted for Tokens which can lead to security problems')
-
-    def test_get_authentication_login(self):
-        """
-        Tests GET method on authentication_register
-        """
-
-        url = reverse('authentication_login')
-
-        data = {}
-
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_authentication_login(self):
-        """
-        Tests DELETE method on authentication_register
-        """
-
-        url = reverse('authentication_login')
-
-        data = {}
-
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_login(self):
-        """
-        Tests PUT method on authentication_register
-        """
-
-        url = reverse('authentication_login')
-
-        data = {}
-
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_login(self):
-        """
-        Ensure we can login
-        """
-        url = reverse('authentication_login')
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
-        }
-
-        models.Token.objects.all().delete()
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertTrue(response.data.get('token', False),
-                        'Token does not exist in login response')
-
-        self.assertEqual(response.data.get('required_multifactors', False),
-                         [],
-                        'required_multifactors not part of the return value or not an empty list')
-
-        self.assertEqual(response.data.get('user', {}).get('public_key', False),
-                         self.test_public_key,
-                         'Public key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key', False),
-                         self.test_private_key,
-                         'Private key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key_nonce', False),
-                         self.test_private_key_nonce,
-                         'Private key nonce is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('user_sauce', False),
-                         self.test_user_sauce,
-                         'Secret key nonce is wrong in response or does not exist')
-
-        self.assertNotEqual(response.data.get('session_public_key', False),
-                         False,
-                         'Session public key does not exist')
-        self.assertNotEqual(response.data.get('user_validator', False),
-                            False,
-                            'User validator does not exist')
-        self.assertNotEqual(response.data.get('user_validator_nonce', False),
-                            False,
-                            'User validator nonce does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key', False),
-                         False,
-                         'Session secret key does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key_nonce', False),
-                         False,
-                         'Session secret key nonce does not exist')
-
-        self.assertEqual(models.Token.objects.count(), 1)
-
-    def test_logi_with_google_authenticator(self):
-        """
-        Ensure we can login with google authenticator
-        """
-        url = reverse('authentication_login')
-
-        models.Google_Authenticator.objects.create(
-                user=self.user_obj,
-                title= 'My TItle',
-                secret = '1234'
-        )
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
-        }
-
-        models.Token.objects.all().delete()
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertTrue(response.data.get('token', False),
-                        'Token does not exist in login response')
-
-        self.assertEqual(response.data.get('required_multifactors', False),
-                         ['google_authenticator_2fa'],
-                        'google_authenticator_2fa not part of the required_multifactors')
-
-        self.assertEqual(response.data.get('user', {}).get('public_key', False),
-                         self.test_public_key,
-                         'Public key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key', False),
-                         self.test_private_key,
-                         'Private key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key_nonce', False),
-                         self.test_private_key_nonce,
-                         'Private key nonce is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('user_sauce', False),
-                         self.test_user_sauce,
-                         'Secret key nonce is wrong in response or does not exist')
-
-        self.assertNotEqual(response.data.get('session_public_key', False),
-                         False,
-                         'Session public key does not exist')
-        self.assertNotEqual(response.data.get('user_validator', False),
-                            False,
-                            'User validator does not exist')
-        self.assertNotEqual(response.data.get('user_validator_nonce', False),
-                            False,
-                            'User validator nonce does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key', False),
-                         False,
-                         'Session secret key does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key_nonce', False),
-                         False,
-                         'Session secret key nonce does not exist')
-
-        self.assertEqual(models.Token.objects.count(), 1)
-
-    def test_logi_with_yubikey_otp(self):
-        """
-        Ensure we can login with YubiKey OTP
-        """
-        url = reverse('authentication_login')
-
-        models.Yubikey_OTP.objects.create(
-                user=self.user_obj,
-                title= 'My TItle',
-                yubikey_id = '1234'
-        )
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': 'ac3a6b1354523ff1deb48f50773005b6b7e7aea7e2639568a02c8488796dcc3f',
-        }
-
-        models.Token.objects.all().delete()
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertTrue(response.data.get('token', False),
-                        'Token does not exist in login response')
-
-        self.assertEqual(response.data.get('required_multifactors', False),
-                         ['yubikey_otp_2fa'],
-                        'yubikey_otp_2fa not part of the required_multifactors')
-
-        self.assertEqual(response.data.get('user', {}).get('public_key', False),
-                         self.test_public_key,
-                         'Public key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key', False),
-                         self.test_private_key,
-                         'Private key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('private_key_nonce', False),
-                         self.test_private_key_nonce,
-                         'Private key nonce is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('user_sauce', False),
-                         self.test_user_sauce,
-                         'Secret key nonce is wrong in response or does not exist')
-
-        self.assertNotEqual(response.data.get('session_public_key', False),
-                         False,
-                         'Session public key does not exist')
-        self.assertNotEqual(response.data.get('user_validator', False),
-                            False,
-                            'User validator does not exist')
-        self.assertNotEqual(response.data.get('user_validator_nonce', False),
-                            False,
-                            'User validator nonce does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key', False),
-                         False,
-                         'Session secret key does not exist')
-        self.assertNotEqual(response.data.get('session_secret_key_nonce', False),
-                         False,
-                         'Session secret key nonce does not exist')
-
-        self.assertEqual(models.Token.objects.count(), 1)
-
-
-    def test_activate_token(self):
-        """
-        Ensure we can activate our token
-        """
-
-        # our public / private key box
-        box = PrivateKey.generate()
-
-        # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-
-        url = reverse('authentication_login')
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': user_session_public_key_hex,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        token = response.data.get('token', False)
-
-        server_public_key_hex = response.data.get('session_public_key', False)
-
-        # lets encrypt our token
-        user_private_key = PrivateKey(self.test_real_private_key,
-                          encoder=nacl.encoding.HexEncoder)
-        user_session_private_key = PrivateKey(user_session_private_key_hex,
-                          encoder=nacl.encoding.HexEncoder)
-        server_public_key = PublicKey(server_public_key_hex,
-                        encoder=nacl.encoding.HexEncoder)
-
-        # create both our crypto boxes
-        user_crypto_box = Box(user_private_key, server_public_key)
-        session_crypto_box = Box(user_session_private_key, server_public_key)
-
-        # decrypt session secret
-        session_secret_key_nonce_hex = response.data.get('session_secret_key_nonce', False)
-        session_secret_key_nonce = nacl.encoding.HexEncoder.decode(session_secret_key_nonce_hex)
-        session_secret_key_hex = response.data.get('session_secret_key', False)
-        session_secret_key = nacl.encoding.HexEncoder.decode(session_secret_key_hex)
-        decrypted_session_key_hex = session_crypto_box.decrypt(session_secret_key, session_secret_key_nonce)
-
-        # decrypt user validator
-        user_validator_nonce_hex = response.data.get('user_validator_nonce', False)
-        user_validator_nonce = nacl.encoding.HexEncoder.decode(user_validator_nonce_hex)
-        user_validator_hex = response.data.get('user_validator', False)
-        user_validator = nacl.encoding.HexEncoder.decode(user_validator_hex)
-
-        decrypted_user_validator = user_crypto_box.decrypt(user_validator, user_validator_nonce)
-
-        # encrypt user validator with session key
-        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
-        verification_nonce_hex = nacl.encoding.HexEncoder.encode(verification_nonce)
-        decrypted_session_key = nacl.encoding.HexEncoder.decode(decrypted_session_key_hex)
-        secret_box = nacl.secret.SecretBox(decrypted_session_key)
-        encrypted = secret_box.encrypt(decrypted_user_validator, verification_nonce)
-        verification = encrypted[len(verification_nonce):]
-        verification_hex = nacl.encoding.HexEncoder.encode(verification)
-
-        url = reverse('authentication_activate_token')
-
-        data = {
-            'token': token,
-            'verification': verification_hex,
-            'verification_nonce': verification_nonce_hex,
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertTrue(response.data.get('user', {}).get('id', False),
-                        'User ID does not exist in login response')
-        self.assertEqual(response.data.get('user', {}).get('email', False),
-                         self.test_email,
-                         'Email is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('secret_key', False),
-                         self.test_secret_key,
-                         'Secret key is wrong in response or does not exist')
-        self.assertEqual(response.data.get('user', {}).get('secret_key_nonce', False),
-                         self.test_secret_key_nonce,
-                         'Secret key is wrong in response or does not exist')
-
-
-
-    def test_login_with_wrong_password(self):
-        """
-        Ensure we cannot login with wrong authkey
-        """
-        url = reverse('authentication_login')
-
-        data = {
-            'username': self.test_username,
-            'authkey': make_password(os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')),
-        }
-
-        models.Token.objects.all().delete()
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        self.assertEqual(models.Token.objects.count(), 0)
-
-
-    def test_token_expiration(self):
-        """
-        Ensure expired tokens are invalid
-        """
-
-        # lets delete all tokens
-        models.Token.objects.all().delete()
-
-        # lets create one new token
-        url = reverse('authentication_login')
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306',
-        }
-
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertTrue(response.data.get('token', False),
-                        'Token does not exist in login response')
-
-        token = response.data.get('token', False)
-
-
-        # lets fake activation for our token
-        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(token)).get()
-        tok.active = True
-        tok.user_validator=None
-        tok.save()
-
-        # to test we first query our datastores with the valid token
-
-        url = reverse('datastore')
-
-        data = {}
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # seems to work, so lets now put the token back into the past
-
-        token_obj = models.Token.objects.get()
-        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID + 1)
-
-        token_obj.create_date = time_threshold
-
-        token_obj.save()
-
-        # ... and try again
-
-        url = reverse('datastore')
-
-        data = {}
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-
-class LogoutTests(APITestCaseExtended):
-    def setUp(self):
-
-        # our public / private key box
-        box = PrivateKey.generate()
-
-        self.test_email = "test@example.com"
-        self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-
-
-        data = {
-            'username': self.test_username,
-            'email': self.test_email,
-            'authkey': self.test_authkey,
-            'public_key': self.test_public_key,
-            'private_key': self.test_private_key,
-            'private_key_nonce': self.test_private_key_nonce,
-            'secret_key': self.test_secret_key,
-            'secret_key_nonce': self.test_secret_key_nonce,
-            'user_sauce': self.test_user_sauce,
-        }
-
-        url = reverse('authentication_register')
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-        self.user_obj = models.User.objects.get(username=self.test_username)
-        self.user_obj.is_email_active = True
-        self.user_obj.save()
-
-        url = reverse('authentication_login')
-
-        data = {
-            'username': self.test_username,
-            'authkey': self.test_authkey,
-            'public_key': '0146c666573f09db6466d8615dcf7bea8bdc8d232a74d1f83a22367637343306',
-        }
-
-        response = self.client.post(url, data)
-
-        self.test_token = response.data.get('token', False)
-
-        # lets fake activation for our token
-        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token)).get()
-        tok.active = True
-        tok.user_validator=None
-        tok.save()
-
-    def test_logout_false_token(self):
-        """
-        Try to use a fake token
-        """
-
-        url = reverse('authentication_logout')
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token + 'hackIT')
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
-                         'Any login is accepted')
-
-
-    def test_get_authentication_logout(self):
-        """
-        Tests GET method on authentication_register
-        """
-
-        url = reverse('authentication_logout')
-
-        data = {}
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_logout(self):
-        """
-        Tests PUT method on authentication_register
-        """
-
-        url = reverse('authentication_logout')
-
-        data = {}
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_logout(self):
-        """
-        Ensure we can logout
-        """
-
-        url = reverse('authentication_logout')
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK,
-                         'Cannot logout with correct credentials')
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
-                         'Logout has no real affect, Token not deleted')
 
 
 class UserModificationTests(APITestCaseExtended):
@@ -894,7 +38,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = 'b4ce697723a93e3ba36e6da23c8728c2372069fdffc2d29c02f77cd14a106c45'
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
             email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
@@ -918,7 +62,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce2 = os.urandom(32).encode('hex')
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
             email=nacl.encoding.HexEncoder.encode(crypto_box.encrypt(self.test_email2.encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))),
@@ -1010,7 +154,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
 
         data = {
             'username': username,
@@ -1045,7 +189,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '78caff718e1454de52a4ae09b68e969101203e2bced4f5a6ceaa2e8ece10c02c'
 
         data = {
             'username': username,
@@ -1081,7 +225,7 @@ class UserModificationTests(APITestCaseExtended):
         secret_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
                       '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e76c0fe2a16a0bebbdcbef2b7c1d95b57d6a2c4f3f8c3c60259c3b6105c29865'
 
         data = {
             'username': username,
@@ -1116,7 +260,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e2b048a26ba19c5ca3c923f1ec86d49f2204bbdca2f91292a045f7ad83a545f2'
 
         data = {
             'username': username,
@@ -1151,7 +295,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
 
         data = {
             'username': username,
@@ -1188,6 +332,40 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    def test_update_user_wrong_password(self):
+        """
+        Tests to update the user with wrong password
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey_old = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        user_sauce = '6acc5e9cd89d5fc6b45fe4f2e6b064aa8acf1a8c7736238ada52a408f4853fe1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_update_user_with_email_duplicate(self):
         """
         Tests to update the user with an email address that already exists
@@ -1204,7 +382,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = 'e6efde814fae7744df7490a2b55522d541ebafef562572e6565b17f79f6e0823'
 
         data = {
             'username': username,
@@ -1251,7 +429,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '12a9ef69f08060aab5fc3a2cecc851871bde511261a33241663aff74e35b8b6e'
 
         data = {
             'username': username,
@@ -1296,7 +474,7 @@ class UserModificationTests(APITestCaseExtended):
         private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = '49c9fffb9332eb75bb1862f579f9913432c88ffc4ecf7ee53ce4c7d3e9b9c861'
 
         data = {
             'email': email,
@@ -1340,7 +518,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '7d3fcc0a89f26e0f1277d0095620a10897c03becfb2f2b27684a55b8758a0020'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -1364,7 +542,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce2 = os.urandom(32).encode('hex')
+        self.test_user_sauce2 = '5ca7f80a0e09fe13e02102f48a88c56b2c239056b86bb2694f7923d654651ab7'
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
@@ -1548,139 +726,43 @@ class UserSearchTests(APITestCaseExtended):
 
 
 
-class UserGAVerifyTests(APITestCaseExtended):
-    def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-        self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            username=self.test_username,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
-
-    def test_get_authentication_ga_verify(self):
-        """
-        Tests GET method on authentication_ga_verify
-        """
-
-        url = reverse('authentication_ga_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_ga_verify(self):
-        """
-        Tests PUT method on authentication_ga_verify
-        """
-
-        url = reverse('authentication_ga_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_post_authentication_ga_verify(self):
-        """
-        Tests POST method on authentication_ga_verify
-        """
-        secret = pyotp.random_base32()
-        totp = pyotp.TOTP(secret)
-
-        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_secret = crypto_box.encrypt(str(secret), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
-
-        models.Google_Authenticator.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            secret = encrypted_secret_hex
-        )
-
-        token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-        models.Token.objects.create(
-            key= hashlib.sha512(token).hexdigest(),
-            user=self.test_user_obj
-        )
-
-        url = reverse('authentication_ga_verify')
-
-        data = {
-            'token': token,
-            'ga_token': totp.now()
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_delete_authentication_ga_verify(self):
-        """
-        Tests DELETE method on authentication_ga_verify
-        """
-
-        url = reverse('authentication_ga_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-
-
 class UserActivateTokenTests(APITestCaseExtended):
     def setUp(self):
+
+        # encrypt user email address
+        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        self.test_email_decrypted = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_encrypted = crypto_box.encrypt(self.test_email_decrypted, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        self.test_email_encrypted_hex = nacl.encoding.HexEncoder.encode(self.test_email_encrypted)
+
+
+        box = PrivateKey.generate()
+
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        self.test_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
         self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
         self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
         self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
+        self.test_user_sauce = '7a1815d667e15d6310174e4b41c22fe618e18f1748091d07c4d79eef6ec02dd2'
         self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
+            email=self.test_email_encrypted_hex,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
-            private_key=self.test_private_key,
+            private_key=self.test_private_key, # usually this one is encrypted with the user password
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
             is_email_active=True
         )
+
 
     def test_get_authentication_activate_token(self):
         """
@@ -1715,15 +797,273 @@ class UserActivateTokenTests(APITestCaseExtended):
         Tests POST method on authentication_activate_token
         """
 
+        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        box = PrivateKey.generate()
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+
+        url = reverse('authentication_login')
+
+        data = {
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+            'public_key': user_session_public_key_hex,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Ok now lets solve the validation challenge
+        # First lets decrypt our shared session secret key with the users private_session_key and the servers
+        # public_session_key
+        session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        session_secret_key = session_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+        )
+
+        # Second step is to decrypt the user_validator with the users private key and the servers session key
+        user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
+                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        user_validator = user_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+        )
+
+        # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
+        verification_crypto_box = nacl.secret.SecretBox(session_secret_key,
+                                           encoder=nacl.encoding.HexEncoder)
+
+        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = verification_crypto_box.encrypt(user_validator, verification_nonce)
+        verification = encrypted[len(verification_nonce):]
+
         url = reverse('authentication_activate_token')
 
-        data = {}
+        data = {
+            'token': response.data.get('token'),
+            'verification': nacl.encoding.HexEncoder.encode(verification),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        # TODO Do something useful here
-        # response = self.client.put(url, data)
-        #
-        # self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('user'), {
+            'secret_key_nonce': self.test_secret_key_nonce,
+            'secret_key': self.test_secret_key,
+            'id': self.test_user_obj.id,
+            'email': self.test_email_decrypted})
+
+    def test_post_authentication_activate_token_incorrect_token(self):
+        """
+        Tests POST method on authentication_activate_token with incorrect token
+        """
+
+        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        box = PrivateKey.generate()
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+
+        url = reverse('authentication_login')
+
+        data = {
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+            'public_key': user_session_public_key_hex,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Ok now lets solve the validation challenge
+        # First lets decrypt our shared session secret key with the users private_session_key and the servers
+        # public_session_key
+        session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        session_secret_key = session_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+        )
+
+        # Second step is to decrypt the user_validator with the users private key and the servers session key
+        user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
+                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        user_validator = user_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+        )
+
+        # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
+        verification_crypto_box = nacl.secret.SecretBox(session_secret_key,
+                                           encoder=nacl.encoding.HexEncoder)
+
+        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = verification_crypto_box.encrypt(user_validator, verification_nonce)
+        verification = encrypted[len(verification_nonce):]
+
+        url = reverse('authentication_activate_token')
+
+        data = {
+            'token': 'ABC',
+            'verification': nacl.encoding.HexEncoder.encode(verification),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('non_field_errors'), [u'Token incorrect.'])
+
+    def test_post_authentication_activate_token_verification_decrypt_fail(self):
+        """
+        Tests POST method on authentication_activate_token with a failing verification decrypt (we test with a wrong nonce)
+        """
+
+        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        box = PrivateKey.generate()
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+
+        url = reverse('authentication_login')
+
+        data = {
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+            'public_key': user_session_public_key_hex,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Ok now lets solve the validation challenge
+        # First lets decrypt our shared session secret key with the users private_session_key and the servers
+        # public_session_key
+        session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        session_secret_key = session_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+        )
+
+        # Second step is to decrypt the user_validator with the users private key and the servers session key
+        user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
+                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        user_validator = user_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+        )
+
+        # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
+        verification_crypto_box = nacl.secret.SecretBox(session_secret_key,
+                                           encoder=nacl.encoding.HexEncoder)
+
+        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = verification_crypto_box.encrypt(user_validator, verification_nonce)
+        verification = encrypted[len(verification_nonce):]
+
+        url = reverse('authentication_activate_token')
+
+        data = {
+            'token': response.data.get('token'),
+            'verification': nacl.encoding.HexEncoder.encode(verification),
+            'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('non_field_errors'), [u'Verification code incorrect.'])
+
+    def test_post_authentication_activate_token_wrong_user_validator(self):
+        """
+        Tests POST method on authentication_activate_token with a wrong user_validator
+        """
+
+        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        box = PrivateKey.generate()
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+
+        url = reverse('authentication_login')
+
+        data = {
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+            'public_key': user_session_public_key_hex,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Ok now lets solve the validation challenge
+        # First lets decrypt our shared session secret key with the users private_session_key and the servers
+        # public_session_key
+        session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        session_secret_key = session_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+        )
+
+        # Second step is to decrypt the user_validator with the users private key and the servers session key
+        user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
+                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+
+        user_validator = user_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+        )
+
+        # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
+        verification_crypto_box = nacl.secret.SecretBox(session_secret_key,
+                                           encoder=nacl.encoding.HexEncoder)
+
+        verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = verification_crypto_box.encrypt('asdf', verification_nonce)
+        verification = encrypted[len(verification_nonce):]
+
+        url = reverse('authentication_activate_token')
+
+        data = {
+            'token': response.data.get('token'),
+            'verification': nacl.encoding.HexEncoder.encode(verification),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('non_field_errors'), [u'Verification code incorrect.'])
+
 
     def test_delete_authentication_activate_token(self):
         """
@@ -1742,409 +1082,3 @@ class UserActivateTokenTests(APITestCaseExtended):
 
 
 
-class UserYubikeyOTPVerifyTests(APITestCaseExtended):
-    def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-        self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            username=self.test_username,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
-
-    def test_get_authentication_yubikey_otp_verify(self):
-        """
-        Tests GET method on authentication_yubikey_otp_verify
-        """
-
-        url = reverse('authentication_yubikey_otp_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_put_authentication_yubikey_otp_verify(self):
-        """
-        Tests PUT method on authentication_yubikey_otp_verify
-        """
-
-        url = reverse('authentication_yubikey_otp_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_authentication_yubikey_otp_verify(self):
-        """
-        Tests DELETE method on authentication_yubikey_otp_verify
-        """
-
-        url = reverse('authentication_yubikey_otp_verify')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-
-
-class UserGATests(APITestCaseExtended):
-    def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-        self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            username=self.test_username,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
-
-    def test_get_user_ga(self):
-        """
-        Tests GET method on user_ga
-        """
-
-        ga = models.Google_Authenticator.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            secret = '1234'
-        )
-
-        url = reverse('user_ga')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.data, {
-            "google_authenticators":[{
-                "id":ga.id,
-                "title":"My Sweet Title"
-            }]
-        })
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_put_user_ga(self):
-        """
-        Tests PUT method on user_ga
-        """
-
-        url = reverse('user_ga')
-
-        data = {
-            'title': 'asdu5zz53',
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertNotEqual(response.data.get('id', False), False)
-        self.assertNotEqual(response.data.get('secret', False), False)
-
-    def test_post_user_ga(self):
-        """
-        Tests POST method on user_ga
-        """
-
-        url = reverse('user_ga')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_user_ga(self):
-        """
-        Tests DELETE method on user_ga
-        """
-
-        ga = models.Google_Authenticator.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            secret = '1234'
-        )
-
-        url = reverse('user_ga')
-
-        data = {
-            'google_authenticator_id': ga.id
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.data, {
-            "google_authenticators":[]
-        })
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_delete_user_ga_no_google_authenticator_id (self):
-        """
-        Tests DELETE method on user_ga with no google_authenticator_id
-        """
-
-        url = reverse('user_ga')
-
-        data = {
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_delete_user_ga_google_authenticator_id_no_uuid(self):
-        """
-        Tests DELETE method on user_ga with google_authenticator_id not being a uuid
-        """
-
-        url = reverse('user_ga')
-
-        data = {
-            'google_authenticator_id': '12345'
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
-
-
-    def test_delete_user_ga_google_authenticator_id_not_exist(self):
-        """
-        Tests DELETE method on user_ga with google_authenticator_id not existing
-        """
-
-        url = reverse('user_ga')
-
-        data = {
-            'google_authenticator_id': '7e866c32-3e4d-4421-8a7d-3ac62f980fd3'
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-
-
-
-class UserYubikeyOTPTests(APITestCaseExtended):
-    def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_user_sauce = os.urandom(32).encode('hex')
-        self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
-            email_bcrypt=self.test_email_bcrypt,
-            username=self.test_username,
-            authkey=make_password(self.test_authkey),
-            public_key=self.test_public_key,
-            private_key=self.test_private_key,
-            private_key_nonce=self.test_private_key_nonce,
-            secret_key=self.test_secret_key,
-            secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=self.test_user_sauce,
-            is_email_active=True
-        )
-
-    def test_get_user_ga(self):
-        """
-        Tests GET method on user_ga
-        """
-
-        yubikey = models.Yubikey_OTP.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            yubikey_id = '1234'
-        )
-
-        url = reverse('user_yubikey_otp')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.data, {
-            "yubikey_otps":[{
-                "id":yubikey.id,
-                "title":"My Sweet Title"
-            }]
-        })
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_put_user_yubikey_otp(self):
-        """
-        Tests PUT method on user_yubikey_otp
-        """
-
-        url = reverse('user_yubikey_otp')
-
-        data = {
-            'title': 'asdu5zz53',
-            'yubikey_otp': '123456789',
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertNotEqual(response.data.get('id', False), False)
-
-
-    def test_post_user_yubikey_otp(self):
-        """
-        Tests POST method on user_yubikey_otp
-        """
-
-        url = reverse('user_yubikey_otp')
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_delete_user_yubikey_otp(self):
-        """
-        Tests DELETE method on user_yubikey_otp
-        """
-
-        yubikey = models.Yubikey_OTP.objects.create(
-            user=self.test_user_obj,
-            title= 'My Sweet Title',
-            yubikey_id = '1234'
-        )
-
-        url = reverse('user_yubikey_otp')
-
-        data = {
-            'yubikey_otp_id': yubikey.id
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.data, {
-            "yubikey_otps":[]
-        })
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_delete_user_yubikey_otp_no_yubikey_otp_id (self):
-        """
-        Tests DELETE method on user_yubikey_otp with no google_authenticator_id
-        """
-
-        url = reverse('user_yubikey_otp')
-
-        data = {
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_delete_user_yubikey_otp_yubikey_otp_id_no_uuid(self):
-        """
-        Tests DELETE method on user_yubikey_otp with yubikey_otp_id not being a uuid
-        """
-
-        url = reverse('user_yubikey_otp')
-
-        data = {
-            'yubikey_otp_id': '12345'
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
-
-
-    def test_delete_user_yubikey_otp_yubikey_otp_id_not_exist(self):
-        """
-        Tests DELETE method on user_yubikey_otp with yubikey_otp_id not existing
-        """
-
-        url = reverse('user_yubikey_otp')
-
-        data = {
-            'yubikey_otp_id': '7e866c32-3e4d-4421-8a7d-3ac62f980fd3'
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

@@ -225,6 +225,7 @@ RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) #
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
 
+TIME_SERVER = config_get('TIME_SERVER', 'time.google.com')
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

@@ -57,7 +57,7 @@ class UserRightsAccept(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='07442887c295d119c2ceab107bf5cdefa0d19e674fcb50adc7f476d04878e2b0',
             is_email_active=True
         )
 
@@ -78,7 +78,7 @@ class UserRightsAccept(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='ecb4617eaa0aee3c49c237e55c5604c30161e42a727ebb95182065039ea3bd4e',
             is_email_active=True
         )
 
@@ -99,7 +99,7 @@ class UserRightsAccept(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce3,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce3,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='bd7904f40dfc49326a255266f16f0685fc24cc08e9a314c918525167b3c3eec8',
             is_email_active=True
         )
 
@@ -981,5 +981,60 @@ class UserRightsAccept(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_accept_share_right(self):
+        """
+        Tests DELETE method to accept a share right
+        """
+
+        models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            read=True,
+            write=False,
+            grant=True,
+            accepted=True
+        )
+
+        test_share_right1_obj = models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            owner_id=self.test_user_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=True,
+            write=False,
+            grant=True
+        )
+
+        test_parent_share1_obj = models.Share.objects.create(
+            user_id=self.test_user2_obj.id,
+            data="my-data",
+            data_nonce="12345"
+        )
+
+        models.User_Share_Right.objects.create(
+            share_id=test_parent_share1_obj.id,
+            owner_id=self.test_user2_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=False,
+            write=True,
+            grant=False,
+            accepted=True
+        )
+
+        # lets try to create an inherited share right for share2
+        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+
+        initial_data = {
+            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
+            'parent_share_id': test_parent_share1_obj.id,
+            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
+            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
+        }
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

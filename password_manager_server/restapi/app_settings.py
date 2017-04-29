@@ -5,6 +5,7 @@ from serializers import (
     GAVerifySerializer as DefaultGAVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
+    LogoutSerializer as DefaultLogoutSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     DatastoreSerializer as DefaultDatastoreSerializer,
@@ -42,6 +43,10 @@ YubikeyOTPVerifySerializer = import_callable(
 
 ActivateTokenSerializer = import_callable(
     serializers.get('ACTIVATE_TOKEN_SERIALIZER', DefaultActivateTokenSerializer)
+)
+
+LogoutSerializer = import_callable(
+    serializers.get('LOGOUT_SERIALIZER', DefaultLogoutSerializer)
 )
 
 

@@ -54,7 +54,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='4c36bb1c6a33a5f3159afc2af6f6cda5391e85120ab5b7a7b18c0c9b7ef66c3d',
             is_email_active=True
         )
 
@@ -68,7 +68,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='7a3323247ce6de08b4631f2e5e87df1ed39a203610718101ece8a524f30211d4',
             is_email_active=True
         )
 
@@ -82,7 +82,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce3,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce3,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='2658403bcbbac0bb6dfe617b20a23d1fa9d2e8e074d06d6859481e4689fc6471',
             is_email_active=True
         )
 

@@ -11,6 +11,7 @@ import nacl.utils
 import nacl.secret
 import hashlib
 from yubico_client import Yubico
+import re
 
 from six import string_types
 import sys
@@ -232,6 +233,20 @@ def is_uuid(expr):
         val = False
 
     return not not val
+
+def request_misses_uuid(request, attribute):
+    """
+    check if a given request misses an attribute or the attribute is not valid uuid
+    
+    :param request: The request to check
+    :type request: 
+    :param attribute: The Attribute to check
+    :type attribute: str
+    :return: True or False
+    :rtype: bool
+    """
+
+    return attribute not in request.data or not is_uuid(request.data[attribute])
 
 
 def yubikey_authenticate(yubikey_otp):

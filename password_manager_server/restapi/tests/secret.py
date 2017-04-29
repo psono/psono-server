@@ -41,7 +41,7 @@ class UserCreateSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='90272aaf01a2d525223f192aca069e7f5661b3a0f1b1a91f9b16d493fdf15295',
             is_email_active=True
         )
 
@@ -235,7 +235,7 @@ class UserGetSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='6b84c6bca05de45714f224e4707fa4e02a59fa21b1e6539f5f3f35fdbf914022',
             is_email_active=True
         )
         self.test_user2_obj = models.User.objects.create(
@@ -248,7 +248,7 @@ class UserGetSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='4b01f5914b95005b011442ff6a88039627909e77e67f84066973b22131958ac2',
             is_email_active=True
         )
         self.test_user3_obj = models.User.objects.create(
@@ -261,7 +261,7 @@ class UserGetSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce3,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce3,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='dd8e55859b0542320fc4c442cfa7d751ef16ffcabbbefd0129c10cdc0ea79b00',
             is_email_active=True
         )
         self.test_secret_obj = models.Secret.objects.create(
@@ -400,7 +400,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='8b32efae0a4940bafa236ee35ee975f71833860b7fa747d44659717b18719d84',
             is_email_active=True
         )
         self.test_user2_obj = models.User.objects.create(
@@ -413,7 +413,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce=os.urandom(32).encode('hex'),
+            user_sauce='14f79675e9b28c25d633b0e4511beb041cca41da864bd36c94c67d60c1d3f716',
             is_email_active=True
         )
 
