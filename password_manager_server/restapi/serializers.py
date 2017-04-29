@@ -135,7 +135,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
                 break
 
         if not otp_token_correct:
-            msg = _('YubiKey OTP incorrect.')
+            msg = _('YubiKey OTP not attached to this account.')
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

@@ -342,6 +342,52 @@ class DatastoreTests(APITestCaseExtended):
             'secret_key_nonce': updated_data['secret_key_nonce'],
         })
 
+    def test_update_datastore_no_datastore_id(self):
+        """
+        Tests to update the datastore with no datastore_id
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-sexy-type",
+            'description': "my-sexy-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(response.data.get('datastore_id', False), False,
+                            'Datastore id does not exist in datastore PUT answer')
+        self.assertIsUUIDString(str(response.data.get('datastore_id', '')),
+                                'Datastore id is no valid UUID')
+
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # Initial datastore set, so lets update it
+
+        url = reverse('datastore')
+
+        updated_data = {
+            'data': "123456",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, updated_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('error'), 'IdNoUUID')
+
+
     def test_change_datastore_type_or_description(self):
         """
         Tests to update the datastore with a type or description which should not work, because its not allwed to change
@@ -453,3 +499,20 @@ class DatastoreTests(APITestCaseExtended):
         response = self.client.post(url, updated_data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete(self):
+        """
+        Tests to delete the datastore
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        data = {
+
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
