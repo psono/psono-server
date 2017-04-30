@@ -16,4 +16,4 @@ django-mailgun
 pyotp
 ntplib
 yubico-client
-
+pyscrypt
