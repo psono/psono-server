@@ -122,4 +122,4 @@ class Command(BaseCommand):
             user_sauce=user_sauce
         )
 
-        self.stdout.write('Created user.')
+        self.stdout.write('Created user "' + username + '" with password "' + password + '" and email "' + email + '"' )
