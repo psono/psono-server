@@ -209,8 +209,8 @@ class LoginView(GenericAPIView):
             user=user,
             google_authenticator_2fa=google_authenticator_2fa,
             yubikey_otp_2fa=yubikey_otp_2fa,
-            device_fingerprint=serializer.validated_data['device_fingerprint'],
-            device_description=serializer.validated_data['device_description'],
+            device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
+            device_description=serializer.validated_data.get('device_description', ''),
         )
 
         # our public / private key box

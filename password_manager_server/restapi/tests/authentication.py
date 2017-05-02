@@ -1506,7 +1506,7 @@ class SessionTests(APITestCaseExtended):
                 found_device2 = True
                 self.assertEqual(session['current_session'], False)
                 continue
-        
+
         self.assertTrue(found_device1)
         self.assertTrue(found_device2)
 
