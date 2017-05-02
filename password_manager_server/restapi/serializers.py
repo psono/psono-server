@@ -30,6 +30,10 @@ class LoginSerializer(serializers.Serializer):
     authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
     public_key = serializers.CharField(required=True, min_length=64, max_length=64)
 
+    # Not required at the moment to not break backward compatibility but should be set to required in a later version
+    device_fingerprint = serializers.CharField(required=False)
+    device_description = serializers.CharField(required=False)
+
     def validate(self, attrs):
         username = attrs.get('username').lower().strip()
         authkey = attrs.get('authkey')

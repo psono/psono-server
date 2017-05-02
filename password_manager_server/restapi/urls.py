@@ -29,6 +29,8 @@ urlpatterns = [
     url(r'^authentication/ga-verify/$', views.GAVerifyView.as_view(), name='authentication_ga_verify'),
     url(r'^authentication/yubikey-otp-verify/$', views.YubikeyOTPVerifyView.as_view(), name='authentication_yubikey_otp_verify'),
     url(r'^authentication/activate-token/$', views.ActivateTokenView.as_view(), name='authentication_activate_token'),
+    url(r'^authentication/sessions/$', views.SessionView.as_view(), name='authentication_session'),
+
     url(r'^authentication/register/$', views.RegisterView.as_view(), name='authentication_register'),
     url(r'^authentication/verify-email/$', views.VerifyEmailView.as_view(), name='authentication_verify_email'),
 

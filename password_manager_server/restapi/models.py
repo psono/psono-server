@@ -313,10 +313,13 @@ class Token(models.Model):
     """
     The custom authorization token model.
     """
+    id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     key = models.CharField(max_length=128, primary_key=True)
     secret_key = models.CharField(max_length=64)
     user_validator = models.CharField(max_length=64, null=True)
+    device_fingerprint = models.CharField(max_length=128, null=True)
+    device_description = models.CharField(max_length=256, null=True)
     user = models.ForeignKey(User, related_name='auth_tokens')
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
