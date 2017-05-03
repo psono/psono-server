@@ -1309,10 +1309,10 @@ class LogoutTests(APITestCaseExtended):
         self.test_token2 = response.data.get('token', False)
 
         # lets fake activation for our token
-        tok = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token2)).get()
-        tok.active = True
-        tok.user_validator=None
-        tok.save()
+        self.tok2 = models.Token.objects.filter(key=TokenAuthentication.user_token_to_token_hash(self.test_token2)).get()
+        self.tok2.active = True
+        self.tok2.user_validator=None
+        self.tok2.save()
 
     def test_logout_false_token(self):
         """
@@ -1381,7 +1381,7 @@ class LogoutTests(APITestCaseExtended):
 
 
         updated_data = {
-            'token': self.test_token2,
+            'session_id': self.tok2.id,
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)

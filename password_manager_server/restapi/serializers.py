@@ -190,14 +190,11 @@ class ActivateTokenSerializer(serializers.Serializer):
 
 class LogoutSerializer(serializers.Serializer):
     token = serializers.CharField(required=False)
+    session_id = serializers.CharField(required=False)
 
     def validate(self, attrs):
 
-        token = attrs.get('token', False)
-        if token:
-            attrs['token_hash'] = TokenAuthentication.user_token_to_token_hash(token)
-        else:
-            attrs['token_hash'] = TokenAuthentication.get_token_hash(self.context['request'])
+        attrs['token_hash'] = TokenAuthentication.get_token_hash(self.context['request'])
 
         return attrs
 
