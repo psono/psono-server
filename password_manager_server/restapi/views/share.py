@@ -35,36 +35,24 @@ class ShareView(GenericAPIView):
     serializer_class = CreateShareSerializer
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
-        """
-        Returns a list of all shares with all own share rights on that share or
-        returns a share with all rights existing on the share
-
-        :param request:
-        :param uuid:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400 / 403
-        """
-        if not uuid:
+    def get_shares(self, user):
 
             # Generates a list of shares wherever the user has any rights for it and joins the user_share objects
 
             #TODO optimize query. this way its too inefficient ...
 
-            response = []
             specific_right_share_index = {}
             share_index = {}
 
             try:
-                shares = Share.objects.filter(user_share_rights__user=request.user).distinct()
+                shares = Share.objects.filter(user_share_rights__user=user).distinct()
             except Share.DoesNotExist:
                 shares = []
 
 
             for s in shares:
 
-                for u in s.user_share_rights.filter(user=request.user):
+                for u in s.user_share_rights.filter(user=user):
 
                     share = {
                         'id': s.id,
@@ -92,7 +80,6 @@ class ShareView(GenericAPIView):
 
             # TODO get inherited share rights
             inherited_user_share_rights = []
-
 
             for s in inherited_user_share_rights:
 
@@ -132,32 +119,40 @@ class ShareView(GenericAPIView):
                 share_index[s.id]['share_right_create_user_username'].append(s.share_right.owner.username)
                 share_index[s.id]['share_right_create_user_public_key'].append(s.share_right.owner.public_key)
 
-            for share_id, share in share_index.items():
-                response.append(share)
 
-            return Response({'shares': response},
-                status=status.HTTP_200_OK)
+            return [share for share_id, share in share_index.items()]
 
-        else:
-            # UUID specified
-            # Returns the specified share if the user has any rights for it and joins the user_share objects
+    def get_share(self, user, uuid):
 
-            try:
-                share = Share.objects.get(pk=uuid)
-            except ValidationError:
-                return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            except Share.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            share = Share.objects.get(pk=uuid)
+        except ValidationError:
+            return None
+        except Share.DoesNotExist:
+            return None
 
+        user_share_rights = []
+        user_share_rights_inherited = []
+        has_read_right = False
 
-            user_share_rights = []
-            user_share_rights_inherited = []
-            has_read_right = False
+        for u in share.user_share_rights.filter(user=user):
+            user_share_rights.append({
+                'id': u.id,
+                'key': u.key,
+                'key_nonce': u.key_nonce,
+                'key_type': u.key_type,
+                'read': u.read,
+                'write': u.write,
+                'grant': u.grant,
+                'user_id': u.user_id,
+            })
 
-            for u in share.user_share_rights.filter(user=request.user):
-                user_share_rights.append({
+            has_read_right = has_read_right or u.read
+
+        if not user_share_rights:
+            inherited_rights = get_all_inherited_rights(user.id, uuid)
+            for u in inherited_rights:
+                user_share_rights_inherited.append({
                     'id': u.id,
                     'key': u.key,
                     'key_nonce': u.key_nonce,
@@ -169,36 +164,48 @@ class ShareView(GenericAPIView):
                 })
 
                 has_read_right = has_read_right or u.read
+        if not has_read_right:
+            return None
+        
+        return {
+            'share': share,
+            'user_share_rights': user_share_rights,
+            'user_share_rights_inherited': user_share_rights_inherited,
+        }
 
+    def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Returns a list of all shares with all own share rights on that share or
+        returns a share with all rights existing on the share
 
-            if not user_share_rights:
-                inherited_rights = get_all_inherited_rights(request.user.id, uuid)
-                for u in inherited_rights:
-                    user_share_rights_inherited.append({
-                        'id': u.id,
-                        'key': u.key,
-                        'key_nonce': u.key_nonce,
-                        'key_type': u.key_type,
-                        'read': u.read,
-                        'write': u.write,
-                        'grant': u.grant,
-                        'user_id': u.user_id,
-                    })
+        :param request:
+        :param uuid:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+        if not uuid:
 
-                    has_read_right = has_read_right or u.read
+            return Response({'shares': self.get_shares(request.user)},
+                status=status.HTTP_200_OK)
 
+        else:
+            # UUID specified
+            # Returns the specified share if the user has any rights for it and joins the user_share objects
 
-            if not has_read_right:
-                raise PermissionDenied({"message":"You don't have permission to read the share",
-                                "resource_id": share.id})
+            share = self.get_share(request.user, uuid)
+
+            if share is None:
+                return Response("The share does not exist or you don't have read permissions",
+                                status=status.HTTP_400_BAD_REQUEST)
 
             response = {
-                'id': share.id,
-                'data': str(share.data) if share.data else '',
-                'data_nonce': share.data_nonce if share.data_nonce else '',
-                'user_id': share.user_id,
-                'user_share_rights': user_share_rights,
-                'user_share_rights_inherited': user_share_rights_inherited,
+                'id': share['share'].id,
+                'data': str(share['share'].data) if share['share'].data else '',
+                'data_nonce': share['share'].data_nonce if share['share'].data_nonce else '',
+                'user_id': share['share'].user_id,
+                'user_share_rights': share['user_share_rights'],
+                'user_share_rights_inherited': share['user_share_rights_inherited'],
             }
 
             return Response(response,
