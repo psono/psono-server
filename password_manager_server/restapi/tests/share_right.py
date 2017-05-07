@@ -320,7 +320,7 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_grant_share_right_with_no_rights(self):
         """

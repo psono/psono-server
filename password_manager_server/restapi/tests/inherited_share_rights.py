@@ -201,7 +201,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # setup: create rights for share1 for user2
         url = reverse('share_right')
@@ -271,7 +271,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # setup: create rights for share1 for user2
         url = reverse('share_right')
@@ -340,7 +340,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # setup: create rights for share1 for user2
         url = reverse('share_right')
@@ -407,7 +407,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     # TODO Test everything with write

@@ -88,7 +88,6 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
 
 
     def test_delete_with_not_existing_link_id(self):
@@ -107,9 +106,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get('message'), "You don't have permission to access or it does not exist.")
-        self.assertEqual(response.data.get('resource_id'), link_id)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 class UserMoveSecretLinkTest(APITestCaseExtended):
     """
@@ -190,7 +187,6 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
 
 
     def test_move_without_new_parent_share_id_nor_new_parent_datastore_id(self):
@@ -208,8 +204,6 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'NotInRequest')
-        self.assertEqual(response.data.get('message'), 'No parent (share or datastore) has been provided as parent')
 
 
     def test_move_without_existing_link_id(self):
@@ -227,5 +221,4 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get('message'), "You don't have permission to access or it does not exist.")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

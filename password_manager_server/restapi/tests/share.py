@@ -97,7 +97,7 @@ class EmptyShareTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -332,7 +332,7 @@ class ShareTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # lets also check list view for another user
 

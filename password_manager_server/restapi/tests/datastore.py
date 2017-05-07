@@ -9,7 +9,6 @@ from base import APITestCaseExtended
 
 import random
 import string
-import os
 
 class DatastoreTests(APITestCaseExtended):
     def setUp(self):
