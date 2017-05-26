@@ -71,7 +71,11 @@ class RegisterView(GenericAPIView):
             # if len(self.request.data.get('base_url', '')) < 1:
             #    raise exceptions.ValidationError(msg)
 
-            activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
+
+            if settings.WEB_CLIENT_URL:
+                activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code
+            else:
+                activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
 
             msg_plain = render_to_string('email/registration_successful.txt', {
                 'email': self.request.data.get('email', ''),
