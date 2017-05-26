@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+apk add --update curl
 # Deploy to Docker Hub
 mkdir -p /root/.docker
 cat > /root/.docker/config.json <<- "EOF"

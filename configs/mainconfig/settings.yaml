@@ -8,6 +8,9 @@ SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS L
 ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET ACTIVATION LINK SECRET THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 DB_SECRET: 'SOME SUPER SECRET DB SECRET THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 
+# The URL of the web client (path to e.g activate.html without the trailing slash)
+# WEB_CLIENT_URL: 'https://www.psono.pw'
+
 # static salt for bcrypt. I know its bad, but better than storing cleartext emails in databases
 # can be generated e.g. in ipython with:
 # import bcrypt
