@@ -11,7 +11,8 @@ import nacl.utils
 import nacl.secret
 import hashlib
 from yubico_client import Yubico
-import re
+
+import pyscrypt
 
 from six import string_types
 import sys
@@ -283,3 +284,24 @@ def yubikey_get_yubikey_id(yubikey_otp):
     yubikey_otp = str(yubikey_otp).strip()
 
     return yubikey_otp[:12]
+
+def generate_authkey(username, password):
+    """
+    Generates the authkey that is sent to the server instead of the cleartext password
+
+    :param username: The username of the user
+    :type username: str
+    :param password: The password of the user
+    :type password: str
+    :return: authkey: The authkey of the user
+    :rtype: str
+    """
+
+    salt = hashlib.sha512(username.lower()).hexdigest()
+
+    return pyscrypt.hash(password=password,
+                         salt=salt,
+                         N=16384,
+                         r=8,
+                         p=1,
+                         dkLen=64).encode('hex')
