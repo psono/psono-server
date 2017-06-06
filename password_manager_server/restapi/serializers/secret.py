@@ -10,6 +10,8 @@ from rest_framework import serializers
 
 class SecretSerializer(serializers.Serializer):
 
+    create_date = serializers.DateTimeField()
+    write_date = serializers.DateTimeField()
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)
     type = serializers.CharField(max_length=64, default='password')
