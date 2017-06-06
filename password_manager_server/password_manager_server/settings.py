@@ -35,7 +35,7 @@ def config_get(key, *args):
         return config.get(key)
     if len(args) > 0:
         return args[0]
-    raise Exception("Setting missing", "Couldn't find the setting for %s (maybe you forget the 'PSONO_' prefix in the environment variable" % (key,))
+    raise Exception("Setting missing", "Couldn't find the setting for %s (maybe you forgot the 'PSONO_' prefix in the environment variable" % (key,))
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

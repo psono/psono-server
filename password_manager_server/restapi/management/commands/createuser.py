@@ -1,12 +1,12 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
-from django.db import IntegrityError
 from restapi import models
 
 import pyscrypt
 import bcrypt
 import hashlib
+from restapi.utils import generate_authkey
 import os
 from nacl.public import PrivateKey, PublicKey, Box
 import nacl.secret
@@ -20,27 +20,6 @@ class Command(BaseCommand):
         parser.add_argument('username', nargs='+')
         parser.add_argument('password', nargs='+')
         parser.add_argument('email', nargs='+')
-
-    def generate_authkey(self, username, password):
-        """
-        Generates the authkey that is sent to the server instead of the cleartext password
-        
-        :param username: The username of the user
-        :type username: str
-        :param password: The password of the user
-        :type password: str
-        :return: authkey: The authkey of the user
-        :rtype: str
-        """
-
-        salt = hashlib.sha512(username.lower()).hexdigest()
-
-        return pyscrypt.hash(password=password,
-                             salt=salt,
-                             N=16384,
-                             r=8,
-                             p=1,
-                             dkLen=64).encode('hex')
 
 
     def encrypt_secret(self, secret, password, user_sauce):
@@ -76,9 +55,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        username = options['username'][0]
-        password = options['password'][0]
-        email = options['email'][0]
+        username = str(options['username'][0])
+        password = str(options['password'][0])
+        email = str(options['email'][0])
+
         email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if models.User.objects.filter(email_bcrypt=email_bcrypt).exists():
@@ -90,7 +70,7 @@ class Command(BaseCommand):
             return
 
         user_sauce = os.urandom(32).encode('hex')
-        authkey = make_password(str(self.generate_authkey(username, password)))
+        authkey = make_password(str(generate_authkey(username, password)))
 
         box = PrivateKey.generate()
         public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)

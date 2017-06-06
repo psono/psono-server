@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    User, Google_Authenticator, Yubikey_OTP
+    User, Google_Authenticator, Yubikey_OTP, Recovery_Code
 )
 
 from ..app_settings import (
@@ -380,7 +380,17 @@ class UserSearch(GenericAPIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'id': user.id, 'public_key': user.public_key, 'username': user.username},
+        user_details = {
+            'id': user.id,
+            'public_key': user.public_key,
+            'username': user.username
+        }
+        
+        if user.id == request.user.id:
+            user_details['multifactor_auth_enabled'] = Google_Authenticator.objects.filter(user=user).exists() or Yubikey_OTP.objects.filter(user=user).exists()
+            user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
+
+        return Response(user_details,
                 status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
