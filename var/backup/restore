@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+source .env
+
+# http://stackoverflow.com/a/39398359/4582775
+
+# As long as there is at least one more argument, keep looping
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+        # This is an arg value type option. Will catch -o value or --output-file value
+        -b|--backup)
+        shift # past the key and to the value
+        backup_folder="$1"
+        ;;
+        # This is an arg=value type option. Will catch -o=value or --output-file=value
+        -b=*|--backup=*)
+        # No need to shift here since the value is part of the same string
+        backup_folder="${key#*=}"
+        ;;
+        *)
+        # Do whatever you want with extra options
+        echo "Unknown option '$key'"
+        ;;
+    esac
+    # Shift after checking all the cases to get the next option
+    shift
+done
+
+if [ -z "$backup_folder" ]; then
+	echo -e "backup variable not specified. usage: \n    ./restore --backup=/path/to/backup_12345..." >&2
+	exit 1
+fi
+
+# Ensure trailing slash
+backup_folder=${backup_folder%/}/
+db_file="${backup_folder}db.sql.gz"
+settings_file="${backup_folder}settings.yaml"
+
+errors=0
+
+if [ ! -f "$db_file" ]; then
+    errors=1
+    echo "No valid backup, db.sql.gz is missing."
+fi
+
+if [ ! -f "$settings_file" ]; then
+    errors=1
+    echo "No valid backup, settings.yaml is missing."
+fi
+
+if ! psql -U "$PSONO_BACKUP_DATABASE_USER" -lqt | cut -d \| -f 1 | grep -qw "$PSONO_BACKUP_DATABASE_NAME"; then
+    errors=1
+    echo "Database does not exist."
+fi
+
+if [ "$( psql -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME -tAc "SELECT 1 FROM  information_schema.tables  WHERE table_name = 'django_migrations'" )" = '1' ]
+then
+    errors=1
+    echo "Database already has another django installation. Please delete all content first."
+fi
+
+if [ "$errors" -eq "1" ]; then
+	echo -e "Errors detected, aborted." >&2
+	exit 1
+fi
+
+gunzip -c $db_file | psql -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME
+cp "$settings_file" "$PSONO_BACKUP_PATH_TO_SETTINGS_YML"
+
+echo "Backup restored."
