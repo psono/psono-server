@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+source .env
+
+export PGPASSWORD="$PSONO_BACKUP_DATABASE_PASSWORD"
+
+backup_folder_running="${PSONO_BACKUP_PATH}/backup_${PSONO_BACKUP_TIMESTAMP}.running"
+backup_folder_complete="${PSONO_BACKUP_PATH}/backup_${PSONO_BACKUP_TIMESTAMP}.complete"
+
+mkdir -p $backup_folder_running
+pg_dump -U $PSONO_BACKUP_DATABASE_USER $PSONO_BACKUP_DATABASENAME | gzip > "${backup_folder_running}/db.sql.gz"
+cp $PSONO_BACKUP_PATH_TO_SETTINGS_YML "${backup_folder_running}/settings.yaml"
+mv "$backup_folder_running" "$backup_folder_complete"

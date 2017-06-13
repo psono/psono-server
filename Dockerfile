@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
-COPY password_manager_server/static/email /var/www/html/static/email
+COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
 RUN apt-get update && \
@@ -39,7 +39,7 @@ RUN apt-get update && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
-    rm -Rf /root/password_manager_server/static && \
+    rm -Rf /root/psono/static && \
     rm -Rf /root/var && \
     rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 

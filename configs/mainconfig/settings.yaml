@@ -94,7 +94,7 @@ DATABASES:
 TEMPLATES: [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/path/to/psono-server/password_manager_server/templates'],
+        'DIRS': ['/path/to/psono-server/psono/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

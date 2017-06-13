@@ -19,10 +19,6 @@ from nacl.public import PrivateKey, PublicKey, Box
 import bcrypt
 import hashlib
 
-import logging
-logging.basicConfig(level=logging.ERROR)
-
-
 
 class UserModificationTests(APITestCaseExtended):
     def setUp(self):
