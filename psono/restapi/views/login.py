@@ -57,6 +57,18 @@ class LoginView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'LOGIN_STARTED_ERROR',
+                    'errors': serializer.errors
+                })
+
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -124,7 +136,15 @@ class LoginView(GenericAPIView):
             required_multifactors.append('yubikey_otp_2fa')
 
         if settings.LOGGING_AUDIT:
-            logger.info({'request_method':request.stream.method, 'request_url':request.stream.path, 'success': 'yes', 'status': 'HTTP_200_OK', 'event': 'LOGIN_STARTED', 'user': user.username}, extra={'audit_log_entry': True})
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method':request.META['REQUEST_METHOD'],
+                'request_url':request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_200_OK',
+                'event': 'LOGIN_STARTED_SUCCESS',
+                'user': user.username
+            })
 
         return Response({
             "token": token.clear_text_key,

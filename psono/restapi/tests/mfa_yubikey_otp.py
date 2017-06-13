@@ -17,9 +17,6 @@ import string
 import os
 import hashlib
 
-import logging
-logging.basicConfig(level=logging.ERROR)
-
 
 def yubikey_authenticate_true(yubikey_otp):
     """

@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -10,6 +11,10 @@ from ..app_settings import (
     LogoutSerializer,
 )
 from ..authentication import TokenAuthentication
+
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 
 class LogoutView(GenericAPIView):
@@ -41,6 +46,18 @@ class LogoutView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'LOGOUT_ERROR',
+                    'errors': serializer.errors
+                })
+
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -56,6 +73,17 @@ class LogoutView(GenericAPIView):
                 self.token_model.objects.filter(key=token_hash, user=request.user).delete()
             except:
                 pass
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_200_OK',
+                'event': 'LOGOUT_SUCCESS',
+                'user': request.user.username
+            })
 
         return Response({"success": "Successfully logged out."},
                         status=status.HTTP_200_OK)

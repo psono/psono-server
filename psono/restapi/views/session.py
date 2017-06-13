@@ -15,6 +15,9 @@ from ..authentication import TokenAuthentication
 
 from datetime import timedelta
 
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 class SessionView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
@@ -34,6 +37,17 @@ class SessionView(GenericAPIView):
                 "create_date": session.create_date.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 "device_description": session.device_description,
                 "current_session": session.id == request.auth.id,
+            })
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_200_OK',
+                'event': 'LIST_SESSIONS_SUCCESS',
+                'user': request.user.username
             })
 
         return Response({

@@ -26,6 +26,7 @@ class InfoView(GenericAPIView):
         return Response({
             'status': 'ok',
             'version': settings.VERSION,
+            'api': 1,
             'log_audit': settings.LOGGING_AUDIT,
         }, status=status.HTTP_200_OK)
 

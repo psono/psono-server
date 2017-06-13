@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
@@ -13,7 +14,9 @@ from ..models import (
     Recovery_Code
 )
 
-
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 
 class RecoveryCodeView(GenericAPIView):
@@ -33,6 +36,19 @@ class RecoveryCodeView(GenericAPIView):
         serializer = CreateRecoverycodeSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'CREATE_RECOVERY_CODE_ERROR',
+                    'errors': serializer.errors,
+                    'user': request.user.username
+                })
+
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -47,6 +63,17 @@ class RecoveryCodeView(GenericAPIView):
             recovery_data_nonce = serializer.validated_data['recovery_data_nonce'],
             recovery_sauce = str(serializer.validated_data['recovery_sauce']),
         )
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_200_OK',
+                'event': 'CREATE_RECOVERY_CODE_SUCCESS',
+                'user': request.user.username
+            })
 
         return Response({
             'recovery_code_id': recovery_code.id

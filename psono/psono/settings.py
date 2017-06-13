@@ -124,6 +124,7 @@ REST_FRAMEWORK = {
 
 LOGGING_AUDIT = config_get('LOGGING_AUDIT', False)
 LOGGING_AUDIT_FOLDER = config_get('LOGGING_AUDIT_FOLDER', os.path.join(BASE_DIR, os.pardir, "log"))
+LOGGING_AUDIT_TIME = config_get('LOGGING_AUDIT_TIME', 'time_utc')
 
 LOGGING = {
     'version': 1,
@@ -131,7 +132,7 @@ LOGGING = {
     'formatters': {
         'restapi_formatter': {
             '()': 'restapi.log.AuditFormatter',
-            'format': '%(asctime)s module=%(module)s, %(message)s'
+            'format': '%('+LOGGING_AUDIT_TIME+')s logger=%(name)s, %(message)s'
         }
     },
     'filters': {

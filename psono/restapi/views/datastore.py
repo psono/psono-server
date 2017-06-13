@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -15,6 +16,10 @@ from rest_framework.exceptions import PermissionDenied
 
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
+
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 def get_datastore(datastore_id=None, user=None):
 
@@ -64,12 +69,48 @@ class DatastoreView(GenericAPIView):
 
         if not uuid:
             datastores = get_datastore(user=request.user)
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': True,
+                    'status': 'HTTP_200_OK',
+                    'event': 'LIST_ALL_DATASTORES_SUCCESS',
+                    'user': request.user.username
+                })
+
             return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
         else:
             datastore = get_datastore(uuid, request.user)
             if not datastore:
+
+                if settings.LOGGING_AUDIT:
+                    logger.info({
+                        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                        'request_method': request.META['REQUEST_METHOD'],
+                        'request_url': request.META['PATH_INFO'],
+                        'success': False,
+                        'status': 'HTTP_403_FORBIDDEN',
+                        'request_ressource': uuid,
+                        'event': 'LIST_DATASTORE_ERROR',
+                        'user': request.user.username
+                    })
+
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': True,
+                    'status': 'HTTP_200_OK',
+                    'event': 'LIST_DATASTORE_SUCCESS',
+                    'user': request.user.username
+                })
 
             return Response(self.serializer_class(datastore).data,
                 status=status.HTTP_200_OK)
@@ -102,6 +143,19 @@ class DatastoreView(GenericAPIView):
                 user = request.user
             )
         except IntegrityError as e:
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'error': 'IntegrityError',
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'CREATE_DATASTORE_ERROR',
+                    'user': request.user.username
+                })
+
             if '(user_id, type, description)' in e.message:
                 return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
                                                                                  "description must be unique"},
@@ -109,6 +163,17 @@ class DatastoreView(GenericAPIView):
             else:
                 return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
                             status=status.HTTP_400_BAD_REQUEST)
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_201_CREATED',
+                'event': 'CREATE_DATASTORE_SUCCESS',
+                'user': request.user.username
+            })
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
@@ -127,11 +192,32 @@ class DatastoreView(GenericAPIView):
         """
 
         if request_misses_uuid(request, 'datastore_id'):
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'UPDATE_DATASTORE_NO_DATASTORE_ID_ERROR',
+                    'user': request.user.username
+                })
             return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         datastore = get_datastore(request.data['datastore_id'], request.user)
         if not datastore:
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'request_ressource': request.data['datastore_id'],
+                    'status': 'HTTP_403_FORBIDDEN',
+                    'event': 'UPDATE_DATASTORE_PERMISSIONS_ERROR',
+                    'user': request.user.username
+                })
             raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
@@ -144,6 +230,18 @@ class DatastoreView(GenericAPIView):
             datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
 
         datastore.save()
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'request_ressource': request.data['datastore_id'],
+                'status': 'HTTP_200_OK',
+                'event': 'UPDATE_DATASTORE_SUCCESS',
+                'user': request.user.username
+            })
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

@@ -1,5 +1,8 @@
 import logging
+import datetime
+import re
 
+from six import iteritems
 from django.conf import settings
 from django.core.management.color import color_style
 
@@ -8,10 +11,23 @@ class AuditFormatter(logging.Formatter):
         self.style = color_style()
         super(AuditFormatter, self).__init__(*args, **kwargs)
 
-    def format(self, record):
-        msg = record.msg
+    def escape(self, string):
+        string = str(string)
+        string = string.replace("\\", "\\\\")
+        string = string.replace("\"", "\\\"")
+        if re.search(r"\s", string):
+            return '"'+string+'"'
+        return string
 
-        record.msg = msg
+    def format(self, record):
+
+        new_message = []
+        for (key, value) in iteritems(record.msg):
+            new_message.append(self.escape(key) + '=' + self.escape(value))
+
+        record.msg = ", ".join(new_message)
+        record.time_utc = datetime.datetime.utcnow().isoformat()
+        record.time_server = datetime.datetime.now().isoformat()
 
         return super(AuditFormatter, self).format(record)
 

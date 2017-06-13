@@ -11,7 +11,9 @@ from ..app_settings import (
 )
 from ..utils import generate_activation_code
 
-
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 class RegisterView(GenericAPIView):
     permission_classes = (AllowAny,)
@@ -47,52 +49,75 @@ class RegisterView(GenericAPIView):
 
         serializer = self.get_serializer(data=request.data)
 
-        if serializer.is_valid():
+        if not serializer.is_valid():
 
-            activation_code = generate_activation_code(serializer.validated_data['email'])
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'errors': serializer.errors,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'REGISTER_ERROR',
+                    'user': self.request.data.get('username', '')
+                })
 
-            # serializer.validated_data['email'] gets now encrypted
-            serializer.save()
-
-            # if len(self.request.data.get('base_url', '')) < 1:
-            #    raise exceptions.ValidationError(msg)
-
-
-            if settings.WEB_CLIENT_URL:
-                activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code
-            else:
-                activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
-
-            msg_plain = render_to_string('email/registration_successful.txt', {
-                'email': self.request.data.get('email', ''),
-                'username': self.request.data.get('username', ''),
-                'activation_code': activation_code,
-                'activation_link': activation_link,
-                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
-                'host_url': settings.HOST_URL,
-            })
-            msg_html = render_to_string('email/registration_successful.html', {
-                'email': self.request.data.get('email', ''),
-                'username': self.request.data.get('username', ''),
-                'activation_code': activation_code,
-                'activation_link': activation_link,
-                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
-                'host_url': settings.HOST_URL,
-            })
-
-            send_mail(
-                'Registration successful',
-                msg_plain,
-                settings.EMAIL_FROM,
-                [self.request.data.get('email', '')],
-                html_message=msg_html,
-            )
-
-            return Response({"success": "Successfully registered."},
-                            status=status.HTTP_201_CREATED)
-        else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+        activation_code = generate_activation_code(serializer.validated_data['email'])
+
+        # serializer.validated_data['email'] gets now encrypted
+        serializer.save()
+
+        # if len(self.request.data.get('base_url', '')) < 1:
+        #    raise exceptions.ValidationError(msg)
+
+
+        if settings.WEB_CLIENT_URL:
+            activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code
+        else:
+            activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
+
+        msg_plain = render_to_string('email/registration_successful.txt', {
+            'email': self.request.data.get('email', ''),
+            'username': self.request.data.get('username', ''),
+            'activation_code': activation_code,
+            'activation_link': activation_link,
+            'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
+            'host_url': settings.HOST_URL,
+        })
+        msg_html = render_to_string('email/registration_successful.html', {
+            'email': self.request.data.get('email', ''),
+            'username': self.request.data.get('username', ''),
+            'activation_code': activation_code,
+            'activation_link': activation_link,
+            'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
+            'host_url': settings.HOST_URL,
+        })
+
+        send_mail(
+            'Registration successful',
+            msg_plain,
+            settings.EMAIL_FROM,
+            [self.request.data.get('email', '')],
+            html_message=msg_html,
+        )
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_201_CREATED',
+                'event': 'REGISTER_SUCCESS',
+                'user': self.request.data.get('username', '')
+            })
+
+        return Response({"success": "Successfully registered."},
+                        status=status.HTTP_201_CREATED)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

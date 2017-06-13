@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -9,6 +10,10 @@ from ..models import (
 from ..app_settings import (
     YubikeyOTPVerifySerializer
 )
+
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 
 class YubikeyOTPVerifyView(GenericAPIView):
@@ -41,6 +46,19 @@ class YubikeyOTPVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'LOGIN_YUBIKEY_OTP_VERIFY_ERROR',
+                    'errors': serializer.errors,
+                    'user': request.user.username
+                })
+
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -49,6 +67,17 @@ class YubikeyOTPVerifyView(GenericAPIView):
         token = serializer.validated_data['token']
         token.yubikey_otp_2fa = False
         token.save()
+
+        if settings.LOGGING_AUDIT:
+            logger.info({
+                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                'request_method': request.META['REQUEST_METHOD'],
+                'request_url': request.META['PATH_INFO'],
+                'success': True,
+                'status': 'HTTP_200_OK',
+                'event': 'LOGIN_YUBIKEY_OTP_VERIFY_SUCCESS',
+                'user': token.user.username
+            })
 
         return Response(status=status.HTTP_200_OK)
 

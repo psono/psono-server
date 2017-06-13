@@ -24,9 +24,6 @@ from nacl.public import PrivateKey, PublicKey, Box
 import bcrypt
 import hashlib
 
-import logging
-logging.basicConfig(level=logging.ERROR)
-
 class RegistrationTests(APITestCaseExtended):
 
     def test_get_authentication_register(self):
