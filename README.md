@@ -29,16 +29,16 @@ We will be using postgres (tested with version 9.6, but every 9.x version should
 
 3. Create our new DB
     
-        createdb password_manager_server
+        createdb psono
 
 4. Now switch the command prompt to postgres command prompt
 
-        psql password_manager_server
+        psql psono
     
 5. Followed by some nice postgres commands to create the user and grant all privileges:
         
-        CREATE USER password_manager_server WITH PASSWORD 'password';
-        GRANT ALL PRIVILEGES ON DATABASE "password_manager_server" to password_manager_server;
+        CREATE USER psono WITH PASSWORD 'password';
+        GRANT ALL PRIVILEGES ON DATABASE "psono" to psono;
 
 6. Install some extensions:
 
@@ -47,7 +47,7 @@ We will be using postgres (tested with version 9.6, but every 9.x version should
     
 7. (optional) If you want to use this database for unit testing, you should also do:
            
-        ALTER USER password_manager_server CREATEDB;
+        ALTER USER psono CREATEDB;
     
 8. To exit this shell and return to your normal user do:
         
@@ -81,7 +81,7 @@ We assume that you already have a postgres database running. If not follow the g
 
         docker run --rm \
           -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-          -ti psono/psono-server:latest password_manager_server/manage.py sendtestmail something@something.com
+          -ti psono/psono-server:latest psono/manage.py sendtestmail something@something.com
 
     If you receive this test e-mail, e-mail should be configured proper.
     
@@ -89,7 +89,7 @@ We assume that you already have a postgres database running. If not follow the g
 
         docker run --rm \
           -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-          -ti psono/psono-server:latest password_manager_server/manage.py migrate
+          -ti psono/psono-server:latest psono/manage.py migrate
     
 4. Run the dockered psono server image and expose the server port
 
@@ -160,13 +160,13 @@ We assume that you already have a postgres database running. If not follow the g
     
     To send a test e-mail to `something@something.com` execute:
 
-        ./password_manager_server/manage.py sendtestmail something@something.com
+        ./psono/manage.py sendtestmail something@something.com
 
     If you receive this test e-mail, e-mail should be configured proper.
     
 5. Create our database
 
-        ./password_manager_server/manage.py migrate
+        ./psono/manage.py migrate
 
 
 From this point on you should already be ready to run a test server. If you want to run this in production you should
@@ -219,7 +219,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        30 2 * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
+        30 2 * * * /path/to/psono-server/psono/manage.py cleartoken
 
 #### (optional) Installation addition for production server (with Nginx)
 
@@ -229,7 +229,7 @@ instructions to get a production server running
         
     To test, issue the following command:
     
-        uwsgi --http :9966 --chdir /path/to/psono-server/password_manager_server -w password_manager_server.wsgi
+        uwsgi --http :9966 --chdir /path/to/psono-server/psono -w psono.wsgi
         
     and go to:
     
@@ -294,7 +294,7 @@ instructions to get a production server running
 
     ... to clear all expired tokens regulary
     
-        30 2 * * * /path/to/psono-server/password_manager_server/manage.py cleartoken
+        30 2 * * * /path/to/psono-server/psono/manage.py cleartoken
 
 For more details about how to install nginx I would like to refer to the official django documentation (because it is so awesome!)
 http://uwsgi-docs.readthedocs.org/en/latest/tutorials/Django_and_nginx.html
@@ -306,7 +306,7 @@ It depends if you only have a test server or a production server running. The pr
 or nginx / uwsgi.
 
 #### Test Server
-    ./password_manager_server/manage.py runserver 0.0.0.0:8001
+    ./psono/manage.py runserver 0.0.0.0:8001
 
 visit http://your-ip:8001 You should see something :)
 
@@ -322,21 +322,21 @@ visit https://your-ip You should see something :)
 
 ## Update Server (Test or Production)
 
-    ./password_manager_server/manage.py makemigrations restapi [only while developing]
-    ./password_manager_server/manage.py migrate
+    ./psono/manage.py makemigrations restapi [only while developing]
+    ./psono/manage.py migrate
 
 ## Run Unit Tests (with coverage)
 To run unit tests, the database user needs CREATEDB rights.
 
-    coverage run --source='.' ./password_manager_server/manage.py test restapi.tests
+    coverage run --source='.' ./psono/manage.py test restapi.tests
     
 To get a nice report one can do:
     
-    coverage report --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*
+    coverage report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*
     
 or:
 
-    coverage html --omit=password_manager_server/restapi/migrations/*,password_manager_server/middleware/*,password_manager_server/restapi/tests*
+    coverage html --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*
     
     The output of this command can be shown on https://your-ip/htmlcov/
 
@@ -346,6 +346,21 @@ If you want to debug e-mails, like those sent during the registration, one can s
 local dummy smtp server with the following command
 
     sudo python -m smtpd -n -c DebuggingServer localhost:25
+
+## Audit Logging
+
+For companies audibility is a big point. To enable audit logs add the following two lines to your settings.yml:
+
+    LOGGING_AUDIT: True
+    LOGGING_AUDIT_FOLDER: '/path/to/audit/log/folder'
+    
+This will show report to the client in the `info/` request, that audit logging is enabled.
+The client will show this as a warning to the user before login and requires the users approval.
+Afterwards the client will send some additional data for audibility purposes.
+
+>INFO: This feature is not enabled on the psono.pw server and is not enabled by default
+
+>WARNING: This feature may be removed without notice in any future version.
 
 
 ## Production Server checks

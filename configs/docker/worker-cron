@@ -1,1 +1,1 @@
-30 2 * * *  root /root/password_manager_server/manage.py cleartoken >> /var/log/cron.log 2>&1
+30 2 * * *  root /root/psono/manage.py cleartoken >> /var/log/cron.log 2>&1

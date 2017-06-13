@@ -3,6 +3,7 @@ from datastore import *
 from ga_verify import *
 from group import *
 from health_check import *
+from info import *
 from login import *
 from logout import *
 from password import *

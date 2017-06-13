@@ -9,8 +9,6 @@ from django.db.migrations.executor import MigrationExecutor
 from django.db import connections, DEFAULT_DB_ALIAS
 
 import ntplib
-from time import ctime
-
 
 
 class HealthCheckView(GenericAPIView):

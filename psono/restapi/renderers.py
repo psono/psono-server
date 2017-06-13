@@ -3,13 +3,7 @@ from __future__ import unicode_literals
 import nacl.encoding
 import nacl.utils
 import nacl.secret
-import json
-from django.utils import six
 from rest_framework.renderers import JSONRenderer
-
-from rest_framework.compat import (
-    INDENT_SEPARATORS, LONG_SEPARATORS, SHORT_SEPARATORS
-)
 
 from rest_framework.settings import api_settings
 from rest_framework.utils import encoders

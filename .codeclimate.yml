@@ -36,6 +36,6 @@ ratings:
 exclude_paths:
 - configs/**/*
 - var/**/*
-- password_manager_server/restapi/tests/**/*
-- password_manager_server/restapi/migrations/**/*
-- password_manager_server/static/**/*
+- psono/restapi/tests/**/*
+- psono/restapi/migrations/**/*
+- psono/static/**/*

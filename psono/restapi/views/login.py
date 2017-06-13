@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -15,6 +16,9 @@ import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
 
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
@@ -118,6 +122,9 @@ class LoginView(GenericAPIView):
 
         if token.yubikey_otp_2fa:
             required_multifactors.append('yubikey_otp_2fa')
+
+        if settings.LOGGING_AUDIT:
+            logger.info({'request_method':request.stream.method, 'request_url':request.stream.path, 'success': 'yes', 'status': 'HTTP_200_OK', 'event': 'LOGIN_STARTED', 'user': user.username}, extra={'audit_log_entry': True})
 
         return Response({
             "token": token.clear_text_key,

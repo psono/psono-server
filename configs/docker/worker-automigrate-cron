@@ -1,1 +1,1 @@
-@reboot root /root/password_manager_server/manage.py migrate >> /var/log/cron.log 2>&1
+@reboot root /root/psono/manage.py migrate >> /var/log/cron.log 2>&1

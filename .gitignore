@@ -2,7 +2,8 @@
 *.py[cod]
 problemtest
 .coverage
+log
 docs/
 htmlcov/
-password_manager_server/static/admin
-password_manager_server/static/rest_framework
+psono/static/admin
+psono/static/rest_framework
