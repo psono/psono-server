@@ -297,4 +297,4 @@ if not os.path.exists(LOGGING_AUDIT_FOLDER):
     os.makedirs(LOGGING_AUDIT_FOLDER)
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
-    VERSION = f.readline()
+    VERSION = f.readline().rstrip()
