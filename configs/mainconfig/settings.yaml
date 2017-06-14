@@ -1,21 +1,19 @@
-#
+#########################################
 # Backup this config and keep it secret
-# You need it if you ever need to restore your database
-#
+# You need it if you ever need to restore
+# your system with your old database
+########################################
 
-# Replace SECRET_KEY and ACTIVATION_LINK_SECRET and DB_SECRET with something unique (best random)
+# Generate the following four parameters with:
+# ./psono/manage.py generateserverkeys
+
 SECRET_KEY: 'SOME SUPER SECRET KEY THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 ACTIVATION_LINK_SECRET: 'SOME SUPER SECRET ACTIVATION LINK SECRET THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
 DB_SECRET: 'SOME SUPER SECRET DB SECRET THAT SHOULD BE RANDOM AND 32 OR MORE DIGITS LONG'
+EMAIL_SECRET_SALT: '$2b$12$XUG.sKxC2jmkUvWQjg53.e'
 
 # The URL of the web client (path to e.g activate.html without the trailing slash)
 # WEB_CLIENT_URL: 'https://www.psono.pw'
-
-# static salt for bcrypt. I know its bad, but better than storing cleartext emails in databases
-# can be generated e.g. in ipython with:
-# import bcrypt
-# bcrypt.gensalt()
-EMAIL_SECRET_SALT: '$2b$12$XUG.sKxC2jmkUvWQjg53.e'
 
 # Switch DEBUG to false if you go into production
 DEBUG: True

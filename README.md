@@ -70,6 +70,10 @@ We assume that you already have a postgres database running. If not follow the g
     
     **Update database credentials / secrets / paths like described in the comments of
     /home/your-user/.psono_server/settings.yaml**
+    
+    To generate the secrets in that config you can use:
+    
+        ./psono/manage.py generateserverkeys
 
 2. Test E-Mail
 
@@ -151,6 +155,10 @@ We assume that you already have a postgres database running. If not follow the g
 
     **Update database credentials / secrets / paths like described in the comments of
     /home/your-user/.psono_server/settings.yaml**
+    
+    To generate the secrets in that config you can use:
+    
+        ./psono/manage.py generateserverkeys
     
 4. Test E-Mail
 
