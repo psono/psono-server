@@ -21,6 +21,7 @@ class TokenAuthentication(BaseAuthentication):
     """
 
     model = Token
+    allow_inactive = False
     """
     A custom token model may be used, but must have the following properties.
 
@@ -79,7 +80,7 @@ class TokenAuthentication(BaseAuthentication):
         if token is None:
             raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
-        if not token.active:
+        if not self.allow_inactive and not token.active:
             raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
         if token.create_date < time_threshold:
@@ -89,3 +90,8 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate_header(self, request):
         return 'Token'
+
+class TokenAuthenticationAllowInactive(TokenAuthentication):
+    allow_inactive = True
+
+

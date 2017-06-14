@@ -2,7 +2,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from ..models import (
     Token
 )
@@ -10,6 +10,8 @@ from ..models import (
 from ..app_settings import (
     ActivateTokenSerializer,
 )
+from ..authentication import TokenAuthenticationAllowInactive
+
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -21,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 class ActivateTokenView(GenericAPIView):
 
-    permission_classes = (AllowAny,)
+    authentication_classes = (TokenAuthenticationAllowInactive, )
+    permission_classes = (IsAuthenticated,)
     serializer_class = ActivateTokenSerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')

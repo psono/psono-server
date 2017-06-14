@@ -15,6 +15,9 @@ import os
 import yaml
 import json
 import hashlib
+import nacl.encoding
+import nacl.signing
+import binascii
 from six import iteritems
 HOME = os.path.expanduser('~')
 
@@ -46,6 +49,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config_get('SECRET_KEY')
+PRIVATE_KEY  = config_get('PRIVATE_KEY', '')
+PUBLIC_KEY  = config_get('PUBLIC_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config_get('DEBUG')
@@ -298,3 +303,29 @@ if not os.path.exists(LOGGING_AUDIT_FOLDER):
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
+
+def generate_signature():
+    info = {
+        'version': VERSION,
+        'api': 1,
+        'log_audit': LOGGING_AUDIT,
+        'public_key': PUBLIC_KEY,
+    }
+
+    info = json.dumps(info)
+    if PRIVATE_KEY != '':
+        signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
+        verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
+        # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
+        signature = binascii.hexlify(signing_box.sign(info))[:128]
+    else:
+        verify_key = None
+        signature = None
+
+    return {
+        'info': info,
+        'signature': signature,
+        'verify_key': verify_key,
+    }
+
+SIGNATURE = generate_signature()

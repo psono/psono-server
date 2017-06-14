@@ -1,5 +1,11 @@
+from django.conf import settings
 from ..utils import authenticate
 
+import nacl.encoding
+import nacl.utils
+from nacl.public import PrivateKey, PublicKey, Box
+
+import json
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
 except:
@@ -12,18 +18,38 @@ from rest_framework import serializers, exceptions
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
-    authkey = serializers.CharField(style={'input_type': 'password'},  required=True)
-    public_key = serializers.CharField(required=True, min_length=64, max_length=64)
 
-    # Not required at the moment to not break backward compatibility but should be set to required in a later version
-    device_fingerprint = serializers.CharField(required=False)
-    device_description = serializers.CharField(required=False)
+    public_key = serializers.CharField(required=True, min_length=64, max_length=64)
+    login_info = serializers.CharField(required=False)
+    login_info_nonce = serializers.CharField(required=False)
 
     def validate(self, attrs):
-        username = attrs.get('username').lower().strip()
-        authkey = attrs.get('authkey')
+
+        login_info = attrs.get('login_info', False)
+        login_info_nonce = attrs.get('login_info_nonce', False)
         public_key = attrs.get('public_key')
+
+        crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(public_key, encoder=nacl.encoding.HexEncoder))
+        try:
+            request_data = json.loads(crypto_box.decrypt(
+                nacl.encoding.HexEncoder.decode(login_info),
+                nacl.encoding.HexEncoder.decode(login_info_nonce)
+            ))
+        except:
+            msg = _('Login info cannot be decrypted')
+            raise exceptions.ValidationError(msg)
+
+        if not request_data.get('username', False):
+            msg = _('No username specified.')
+            raise exceptions.ValidationError(msg)
+
+        if not request_data.get('authkey', False):
+            msg = _('No authkey specified.')
+            raise exceptions.ValidationError(msg)
+
+        username = request_data.get('username').lower().strip()
+        authkey = request_data.get('authkey')
 
         user = authenticate(username=username, authkey=authkey)
 
@@ -41,4 +67,6 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         attrs['user_session_public_key'] = public_key
+
+
         return attrs
