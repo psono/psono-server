@@ -92,7 +92,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
             key= hashlib.sha512(self.token).hexdigest(),
-            user=self.test_user_obj
+            user=self.test_user_obj,
+            secret_key = os.urandom(32).encode('hex')
         )
 
         self.yubikey_token = 'fdnjhhfdkljhfdjhfdkljhfdjklhfdkjlhfdg'
@@ -165,6 +166,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -183,6 +185,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -202,6 +205,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -221,6 +225,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -241,6 +246,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': '12345678',
         }
 
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

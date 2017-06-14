@@ -16,6 +16,8 @@ import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 
+import json
+
 # import the logging
 import logging
 logger = logging.getLogger(__name__)
@@ -145,8 +147,7 @@ class LoginView(GenericAPIView):
                 'event': 'LOGIN_STARTED_SUCCESS',
                 'user': user.username
             })
-
-        return Response({
+        response = {
             "token": token.clear_text_key,
             "required_multifactors": required_multifactors,
             "session_public_key": server_session_public_key_hex,
@@ -160,7 +161,23 @@ class LoginView(GenericAPIView):
                 "private_key_nonce": user.private_key_nonce,
                 "user_sauce": user.user_sauce
             }
+        }
+
+        server_crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        login_info_nonce_hex = nacl.encoding.HexEncoder.encode(login_info_nonce)
+        encrypted = server_crypto_box.encrypt(json.dumps(response), login_info_nonce)
+        encrypted_login_info = encrypted[len(login_info_nonce):]
+        encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
+
+        return Response({
+            'login_info': encrypted_login_info_hex,
+            'login_info_nonce': login_info_nonce_hex
         },status=status.HTTP_200_OK)
+
+
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

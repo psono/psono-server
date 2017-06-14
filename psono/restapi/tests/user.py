@@ -11,6 +11,7 @@ from base import APITestCaseExtended
 import random
 import string
 import os
+import json
 
 import nacl.encoding
 import nacl.utils
@@ -793,18 +794,30 @@ class UserActivateTokenTests(APITestCaseExtended):
         Tests POST method on authentication_activate_token
         """
 
-        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        # our public / private key box
         box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
         user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
         user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
 
-        url = reverse('authentication_login')
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
 
-        data = {
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
+        }), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
             'public_key': user_session_public_key_hex,
         }
+
+        url = reverse('authentication_login')
 
         models.Token.objects.all().delete()
 
@@ -812,24 +825,29 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        request_data = json.loads(server_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
+        ))
+
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
         # public_session_key
         session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                 PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         session_secret_key = session_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key_nonce'))
         )
 
         # Second step is to decrypt the user_validator with the users private key and the servers session key
         user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
-                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                   PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         user_validator = user_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator_nonce'))
         )
 
         # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
@@ -843,7 +861,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         url = reverse('authentication_activate_token')
 
         data = {
-            'token': response.data.get('token'),
+            'token': request_data.get('token'),
             'verification': nacl.encoding.HexEncoder.encode(verification),
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
         }
@@ -864,18 +882,30 @@ class UserActivateTokenTests(APITestCaseExtended):
         Tests POST method on authentication_activate_token with incorrect token
         """
 
-        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        # our public / private key box
         box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
         user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
         user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
 
-        url = reverse('authentication_login')
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
 
-        data = {
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
+        }), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
             'public_key': user_session_public_key_hex,
         }
+
+        url = reverse('authentication_login')
 
         models.Token.objects.all().delete()
 
@@ -883,24 +913,29 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        request_data = json.loads(server_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
+        ))
+
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
         # public_session_key
         session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                 PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         session_secret_key = session_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key_nonce'))
         )
 
         # Second step is to decrypt the user_validator with the users private key and the servers session key
         user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
-                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                   PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         user_validator = user_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator_nonce'))
         )
 
         # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
@@ -931,18 +966,30 @@ class UserActivateTokenTests(APITestCaseExtended):
         Tests POST method on authentication_activate_token with a failing verification decrypt (we test with a wrong nonce)
         """
 
-        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        # our public / private key box
         box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
         user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
         user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
 
-        url = reverse('authentication_login')
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
 
-        data = {
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
+        }), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
             'public_key': user_session_public_key_hex,
         }
+
+        url = reverse('authentication_login')
 
         models.Token.objects.all().delete()
 
@@ -950,24 +997,29 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        request_data = json.loads(server_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
+        ))
+
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
         # public_session_key
         session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                 PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         session_secret_key = session_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key_nonce'))
         )
 
         # Second step is to decrypt the user_validator with the users private key and the servers session key
         user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
-                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                   PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         user_validator = user_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator_nonce'))
         )
 
         # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
@@ -981,7 +1033,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         url = reverse('authentication_activate_token')
 
         data = {
-            'token': response.data.get('token'),
+            'token': request_data.get('token'),
             'verification': nacl.encoding.HexEncoder.encode(verification),
             'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'),
         }
@@ -998,18 +1050,30 @@ class UserActivateTokenTests(APITestCaseExtended):
         Tests POST method on authentication_activate_token with a wrong user_validator
         """
 
-        # The session public and private keys of the user for the exchange and validation of the validator and session secret
+        # our public / private key box
         box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
         user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
         user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
 
-        url = reverse('authentication_login')
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
 
-        data = {
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
+        }), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
             'public_key': user_session_public_key_hex,
         }
+
+        url = reverse('authentication_login')
 
         models.Token.objects.all().delete()
 
@@ -1017,24 +1081,29 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        request_data = json.loads(server_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
+        ))
+
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
         # public_session_key
         session_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                 PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                 PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         session_secret_key = session_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key')),
-            nacl.encoding.HexEncoder.decode(response.data.get('session_secret_key_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key')),
+            nacl.encoding.HexEncoder.decode(request_data.get('session_secret_key_nonce'))
         )
 
         # Second step is to decrypt the user_validator with the users private key and the servers session key
         user_crypto_box = Box(PrivateKey(self.test_private_key, encoder=nacl.encoding.HexEncoder),
-                                   PublicKey(response.data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
+                                   PublicKey(request_data.get('session_public_key'), encoder=nacl.encoding.HexEncoder))
 
         user_validator = user_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator')),
-            nacl.encoding.HexEncoder.decode(response.data.get('user_validator_nonce'))
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator')),
+            nacl.encoding.HexEncoder.decode(request_data.get('user_validator_nonce'))
         )
 
         # Third step is to encrypt the decrypted validator with the decrypted shared session secret key
@@ -1048,7 +1117,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         url = reverse('authentication_activate_token')
 
         data = {
-            'token': response.data.get('token'),
+            'token': request_data.get('token'),
             'verification': nacl.encoding.HexEncoder.encode(verification),
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
         }

@@ -23,12 +23,7 @@ class InfoView(GenericAPIView):
         :rtype:
         """
 
-        return Response({
-            'status': 'ok',
-            'version': settings.VERSION,
-            'api': 1,
-            'log_audit': settings.LOGGING_AUDIT,
-        }, status=status.HTTP_200_OK)
+        return Response(settings.SIGNATURE, status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
