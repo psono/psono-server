@@ -98,8 +98,9 @@ We assume that you already have a postgres database running. If not follow the g
 4. Run the dockered psono server image and expose the server port
 
         docker run --name psono-server \
+            --sysctl net.core.somaxconn=65535 \
             -v /path/to/modified/settings.yaml:/root/.psono_server/settings.yaml \
-            -d --restart=unless-stopped -p 10100:80 psono/psono-server:latest 
+            -d --restart=unless-stopped -p 10100:80 psono/psono-server:latest
             
         
     Possible (optional) environment variables are:
