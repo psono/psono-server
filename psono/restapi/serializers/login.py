@@ -68,5 +68,7 @@ class LoginSerializer(serializers.Serializer):
         attrs['user'] = user
         attrs['user_session_public_key'] = public_key
 
+        attrs['device_fingerprint'] = request_data.get('device_fingerprint', '')
+        attrs['device_description'] = request_data.get('device_description', '')
 
         return attrs
