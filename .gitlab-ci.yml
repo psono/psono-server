@@ -3,8 +3,11 @@ before_script:
   - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" registry.gitlab.com
 
 variables:
-  CONTAINER_TEST_IMAGE: registry.gitlab.com/psono/psono-server:$CI_BUILD_REF_NAME
-  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/psono/psono-server:latest
+  CONTAINER_TEST_IMAGE2: registry.gitlab.com/psono/psono-server:python2-$CI_BUILD_REF_NAME
+  CONTAINER_TEST_IMAGE3: registry.gitlab.com/psono/psono-server:python3-$CI_BUILD_REF_NAME
+  CONTAINER_RELEASE_IMAGE2: registry.gitlab.com/psono/psono-server:python2-latest
+  CONTAINER_RELEASE_IMAGE3: registry.gitlab.com/psono/psono-server:python3-latest
+  CONTAINER_LATEST_IMAGE: registry.gitlab.com/psono/psono-server:latest
 
 stages:
   - build
@@ -12,17 +15,28 @@ stages:
   - release
   - deploy
 
-job-build-container:
+build-container-python2:
   stage: build
   image: docker:git
   services:
     - docker:dind
   script:
     - sh ./var/update_version.sh
-    - docker build -t $CONTAINER_TEST_IMAGE .
-    - docker push $CONTAINER_TEST_IMAGE
+    - docker build -f Dockerfile2 -t $CONTAINER_TEST_IMAGE2 .
+    - docker push $CONTAINER_TEST_IMAGE2
 
-job-run-unittests:
+build-container-python3:
+  stage: build
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - sh ./var/update_version.sh
+    - docker build -f Dockerfile3 -t $CONTAINER_TEST_IMAGE3 .
+    - docker push $CONTAINER_TEST_IMAGE3
+  allow_failure: true
+
+run-unittests-python2:
   stage: test
   image: docker:git
   variables:
@@ -36,24 +50,60 @@ job-run-unittests:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE
+    - docker pull $CONTAINER_TEST_IMAGE2
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE bash -c "pip install -r requirements-dev.txt && ./psono/manage.py presetup && ./psono/manage.py migrate && coverage run --source='.' ./psono/manage.py test restapi.tests && coverage report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && python2 ./psono/manage.py presetup && python2 ./psono/manage.py migrate && coverage2 run --source='.' ./psono/manage.py test restapi.tests && coverage2 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
-job-release-image:
+
+run-unittests-python3:
+  stage: test
+  image: docker:git
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: ""
+    PSONO_EMAIL_HOST: 172.17.0.1
+    PSONO_EMAIL_FROM: test@example.com
+    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+  services:
+    - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE3
+    - docker run -d --name db postgres:9.6
+    - sleep 20
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+  allow_failure: true
+
+release-container-python2:
   stage: release
   image: docker:git
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE
-    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
-    - docker push $CONTAINER_RELEASE_IMAGE
+    - docker pull $CONTAINER_TEST_IMAGE2
+    - docker tag $CONTAINER_TEST_IMAGE2 $CONTAINER_RELEASE_IMAGE2
+    - docker push $CONTAINER_RELEASE_IMAGE2
+    - docker tag $CONTAINER_TEST_IMAGE2 $CONTAINER_LATEST_IMAGE
+    - docker push $CONTAINER_LATEST_IMAGE
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
-job-deploy:
+release-container-python3:
+  stage: release
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE3
+    - docker tag $CONTAINER_TEST_IMAGE3 $CONTAINER_RELEASE_IMAGE3
+    - docker push $CONTAINER_RELEASE_IMAGE3
+  only:
+    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
+  allow_failure: true
+
+deploy:
   stage: deploy
   image: docker:git
   services:

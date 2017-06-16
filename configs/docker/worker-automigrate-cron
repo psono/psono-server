@@ -1,1 +1,0 @@
-@reboot root /root/psono/manage.py migrate >> /var/log/cron.log 2>&1

@@ -1,3 +1,4 @@
+# PSONO Dockerfile for python 3
 FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
@@ -7,27 +8,28 @@ WORKDIR /root
 RUN apt-get update && \
     apt-get install -y \
         libyaml-dev \
-        libpython2.7-dev \
+        libpython3-dev \
         libpq-dev \
         libffi-dev \
-        python-dev \
-        python-pip \
-        python-psycopg2 \
+        python3-dev \
+        python3-pip \
+        python3-psycopg2 \
         nginx \
         supervisor \
         postgresql-client \
         cron \
         haveged \
         net-tools && \
-    pip install -r requirements.txt && \
-    pip install uwsgi && \
+    pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt && \
+    pip3 install uwsgi && \
     apt-get clean && \
     mkdir /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
-    cp /root/configs/docker/worker-cron /etc/cron.d/ && \
-    cp /root/configs/docker/worker-automigrate-cron /etc/cron.d/ && \
-    chmod 0644 /etc/cron.d/worker-cron && \
-    chmod 0644 /etc/cron.d/worker-automigrate-cron && \
+    cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
+    cp /root/configs/docker/worker-automigrate-cron3 /etc/cron.d/ && \
+    chmod 0644 /etc/cron.d/worker-cron3 && \
+    chmod 0644 /etc/cron.d/worker-automigrate-cron3 && \
     touch /var/log/cron.log && \
     mkdir /var/www/html/media && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
