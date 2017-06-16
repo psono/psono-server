@@ -1,6 +1,7 @@
 from django.conf import settings
 from ..utils import authenticate
 
+import six
 import nacl.encoding
 import nacl.utils
 from nacl.public import PrivateKey, PublicKey, Box
@@ -31,14 +32,15 @@ class LoginSerializer(serializers.Serializer):
 
         crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
                          PublicKey(public_key, encoder=nacl.encoding.HexEncoder))
-        try:
-            request_data = json.loads(crypto_box.decrypt(
-                nacl.encoding.HexEncoder.decode(login_info),
-                nacl.encoding.HexEncoder.decode(login_info_nonce)
-            ))
-        except:
-            msg = _('Login info cannot be decrypted')
-            raise exceptions.ValidationError(msg)
+
+        request_data = json.loads(crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(login_info),
+            nacl.encoding.HexEncoder.decode(login_info_nonce)
+        ).decode())
+        # try:
+        # except:
+        #     msg = _('Login info cannot be decrypted')
+        #     raise exceptions.ValidationError(msg)
 
         if not request_data.get('username', False):
             msg = _('No username specified.')

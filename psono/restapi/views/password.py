@@ -18,6 +18,8 @@ from ..models import (
     Recovery_Code, User
 )
 
+from ..utils import readbuffer
+
 # import the logging
 import logging
 logger = logging.getLogger(__name__)
@@ -119,7 +121,7 @@ class PasswordView(GenericAPIView):
             crypto_box = Box(PrivateKey(recovery_code.verifier, encoder=nacl.encoding.HexEncoder),
                              PublicKey(user.public_key, encoder=nacl.encoding.HexEncoder))
 
-            update_data_dec = json.loads(crypto_box.decrypt(update_data, update_data_nonce))
+            update_data_dec = json.loads(crypto_box.decrypt(update_data, update_data_nonce).decode())
 
             authkey = make_password(str(update_data_dec['authkey']))
             private_key = update_data_dec['private_key']
@@ -243,7 +245,7 @@ class PasswordView(GenericAPIView):
             })
 
         return Response({
-            'recovery_data': str(recovery_code.recovery_data),
+            'recovery_data': readbuffer(recovery_code.recovery_data),
             'recovery_data_nonce': recovery_code.recovery_data_nonce,
             'recovery_sauce': recovery_code.recovery_sauce,
             'user_sauce': user.user_sauce,

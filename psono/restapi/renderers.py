@@ -51,7 +51,6 @@ class EncryptJSONRenderer(JSONRenderer):
         Render `data` into JSON, returning a bytestring.
         """
         decrypted_data = super(EncryptJSONRenderer, self).render(data, accepted_media_type, renderer_context)
-
         if renderer_context['request'].auth is None:
             return decrypted_data
 

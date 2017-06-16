@@ -2,29 +2,24 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
-from datetime import timedelta
-from django.db import IntegrityError
-from ..authentication import TokenAuthentication
 
 from rest_framework import status
 
 from restapi import models
-from restapi.utils import generate_activation_code
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
+from ..utils import readbuffer
 import random
 import string
 import os
 import datetime
 import json
+import binascii
 
-from nacl import encoding
 import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
-import bcrypt
-import hashlib
 
 
 class RecoveryCodeTests(APITestCaseExtended):
@@ -32,12 +27,12 @@ class RecoveryCodeTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = 'ef37b3192178b9a97b551572314388058c14a4dabdbf63d022bcba9951809b6d'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -346,11 +341,11 @@ class PasswordTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '1f3f3c0f4c8a52fb0d83144bb4e7aaf04d552d43ec7a60792654ef664af17dad'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -369,11 +364,11 @@ class PasswordTests(APITestCaseExtended):
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt2 = 'b'
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce2 = 'fbcd7106abf5ef076af9a1ab59e98ff5f4f81f524ede6d7155500e059b25b8b0'
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
@@ -392,11 +387,11 @@ class PasswordTests(APITestCaseExtended):
         self.test_email3 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt3 = 'c'
         self.test_username3 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey3 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key3 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce3 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key3 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce3 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey3 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key3 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce3 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key3 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce3 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce3 = 'de6096562c48b5f58aaabfa9dfab3a59930daf57aa50f53a4d80d8205a91ba17'
         self.test_user_obj3 = models.User.objects.create(
             email=self.test_email3,
@@ -420,7 +415,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey),
-            recovery_data = self.test_recovery_data,
+            recovery_data = readbuffer(self.test_recovery_data),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),
@@ -435,7 +430,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_recovery_code_obj_expired = models.Recovery_Code.objects.create(
             user = self.test_user_obj3,
             recovery_authkey = make_password(self.test_recovery_authkey2),
-            recovery_data = self.test_recovery_data2,
+            recovery_data = readbuffer(self.test_recovery_data2),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now() - datetime.timedelta(0, settings.RECOVERY_VERIFIER_TIME_VALID),
@@ -613,7 +608,7 @@ class PasswordTests(APITestCaseExtended):
             'private_key_nonce': 'private_key_nonce',
             'secret_key': 'secret_key',
             'secret_key_nonce': 'secret_key_nonce',
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -621,8 +616,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -650,7 +645,7 @@ class PasswordTests(APITestCaseExtended):
             'private_key_nonce': 'private_key_nonce',
             'secret_key': 'secret_key',
             'secret_key_nonce': 'secret_key_nonce',
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -658,8 +653,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -687,7 +682,7 @@ class PasswordTests(APITestCaseExtended):
             'private_key': 'private_key',
             'secret_key': 'secret_key',
             'secret_key_nonce': 'secret_key_nonce',
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -695,8 +690,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -724,7 +719,7 @@ class PasswordTests(APITestCaseExtended):
             'private_key': 'private_key',
             'private_key_nonce': 'private_key_nonce',
             'secret_key_nonce': 'secret_key_nonce',
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -732,8 +727,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -761,7 +756,7 @@ class PasswordTests(APITestCaseExtended):
             'private_key': 'private_key',
             'private_key_nonce': 'private_key_nonce',
             'secret_key': 'secret_key',
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -769,8 +764,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -793,7 +788,7 @@ class PasswordTests(APITestCaseExtended):
                          PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
 
 
-        update_data_dec = crypto_box.encrypt('narf', update_data_nonce)
+        update_data_dec = crypto_box.encrypt('narf'.encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
         update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
@@ -801,8 +796,8 @@ class PasswordTests(APITestCaseExtended):
         data = {
             'username': self.test_username,
             'recovery_authkey': self.test_recovery_authkey,
-            'update_data': update_data_hex,
-            'update_data_nonce': update_data_nonce_hex,
+            'update_data': update_data_hex.decode(),
+            'update_data_nonce': update_data_nonce_hex.decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -882,7 +877,7 @@ class PasswordTests(APITestCaseExtended):
         url = reverse('password')
 
         update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
-        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
 
         crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
                          PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
@@ -899,10 +894,10 @@ class PasswordTests(APITestCaseExtended):
             'private_key_nonce': new_private_key_nonce,
             'secret_key': new_secret_key,
             'secret_key_nonce': new_secret_key_nonce,
-        }), update_data_nonce)
+        }).encode("utf-8"), update_data_nonce)
 
         update_data = update_data_dec[len(update_data_nonce):]
-        update_data_hex = nacl.encoding.HexEncoder.encode(update_data)
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
 
         data = {
             'username': self.test_username,

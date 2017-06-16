@@ -4,26 +4,26 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
-from datastore import get_datastore
-from secret_link import create_secret_link
-from ..utils import user_has_rights_on_share, user_has_rights_on_secret, request_misses_uuid
+from .datastore import get_datastore
+from .secret_link import create_secret_link
+from ..utils import user_has_rights_on_share, user_has_rights_on_secret, request_misses_uuid, readbuffer
 from ..models import (
     Secret, Share
 )
 
 from ..app_settings import (
-    SecretSerializer, SecretOverviewSerializer,
+    SecretOverviewSerializer,
 )
 
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
+import six
 
 class SecretView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = SecretSerializer
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
@@ -64,8 +64,13 @@ class SecretView(GenericAPIView):
             if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-            return Response(self.serializer_class(secret).data,
-                status=status.HTTP_200_OK)
+            return Response({
+                'create_date': secret.create_date,
+                'write_date': secret.write_date,
+                'data': readbuffer(secret.data),
+                'data_nonce': secret.data_nonce if secret.data_nonce else '',
+                'type': secret.type,
+            }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
@@ -125,7 +130,7 @@ class SecretView(GenericAPIView):
 
         try:
             secret = Secret.objects.create(
-                data = str(request.data['data']),
+                data = readbuffer(str(request.data['data'])),
                 data_nonce = str(request.data['data_nonce']),
                 user = request.user
             )
@@ -175,7 +180,7 @@ class SecretView(GenericAPIView):
                             "resource_id": secret.id})
 
         if 'data' in request.data:
-            secret.data = str(request.data['data'])
+            secret.data = six.b(str(request.data['data']))
         if 'data_nonce' in request.data:
             secret.data_nonce = str(request.data['data_nonce'])
 

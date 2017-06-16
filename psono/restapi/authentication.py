@@ -1,8 +1,8 @@
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework import exceptions
-from models import Token, User
+from .models import Token, User
 from django.utils.translation import ugettext_lazy as _
-from utils import get_cache, set_cache
+from .utils import get_cache, set_cache
 from hashlib import sha512
 from django.utils import timezone
 from django.conf import settings
@@ -48,7 +48,7 @@ class TokenAuthentication(BaseAuthentication):
 
     @staticmethod
     def user_token_to_token_hash(token):
-        return sha512(token).hexdigest()
+        return sha512(token.encode('utf-8')).hexdigest()
 
     @staticmethod
     def get_token_hash(request):

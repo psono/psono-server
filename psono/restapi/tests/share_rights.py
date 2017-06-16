@@ -2,15 +2,10 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
+from ..utils import readbuffer
 
 from restapi import models
-
-import random
-import string
-import os
-
-from uuid import UUID
 
 class UserShareRightsTest(APITestCaseExtended):
     """
@@ -59,14 +54,14 @@ class UserShareRightsTest(APITestCaseExtended):
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
 
         # ... and our second dummy share with no grant rights
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data="my-data_2",
+            data=readbuffer("my-data_2"),
             data_nonce="12345_2"
         )
 
@@ -83,7 +78,7 @@ class UserShareRightsTest(APITestCaseExtended):
         # ... and our third dummy share with grant rights
         self.test_share3_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data="my-data_2",
+            data=readbuffer("my-data_2"),
             data_nonce="12345_2"
         )
 

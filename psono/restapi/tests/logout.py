@@ -5,10 +5,11 @@ from rest_framework import status
 
 from restapi import models
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
 import os
 import json
+import binascii
 
 import nacl.encoding
 import nacl.utils
@@ -23,13 +24,13 @@ class LogoutTests(APITestCaseExtended):
 
         self.test_email = "test@example.com"
         self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '24350a638726c0073ec43c8c84ac110bfc2c45e7a430a257f768837f1470c9c7'
 
 
@@ -61,8 +62,8 @@ class LogoutTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -71,12 +72,12 @@ class LogoutTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -85,7 +86,7 @@ class LogoutTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.test_token = request_data.get('token', False)
 
@@ -100,7 +101,7 @@ class LogoutTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.test_token2 = request_data.get('token', False)
 

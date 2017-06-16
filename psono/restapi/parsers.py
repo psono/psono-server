@@ -45,6 +45,6 @@ class DecryptJSONParser(JSONParser):
         decrypted_data = decrypt(stream.auth.secret_key, data['text'], data['nonce'])
 
         try:
-            return json.loads(decrypted_data)
+            return json.loads(decrypted_data.decode())
         except ValueError as exc:
             raise ParseError('JSON parse error - %s' % six.text_type(exc))

@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from restapi import models
 
+import binascii
 import pyscrypt
 import bcrypt
 import hashlib
@@ -38,12 +39,12 @@ class Command(BaseCommand):
 
         salt = hashlib.sha512(user_sauce).hexdigest()
 
-        k = hashlib.sha256(pyscrypt.hash(password=password,
-                             salt=salt,
+        k = hashlib.sha256(binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+                             salt=salt.encode("utf-8"),
                              N=16384,
                              r=8,
                              p=1,
-                             dkLen=64).encode('hex')).hexdigest()
+                             dkLen=64))).hexdigest()
         crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
         nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
@@ -59,7 +60,7 @@ class Command(BaseCommand):
         password = str(options['password'][0])
         email = str(options['email'][0])
 
-        email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if models.User.objects.filter(email_bcrypt=email_bcrypt).exists():
             self.stdout.write('Email already exists.' )
@@ -69,7 +70,7 @@ class Command(BaseCommand):
             self.stdout.write('Username already exists.' )
             return
 
-        user_sauce = os.urandom(32).encode('hex')
+        user_sauce = binascii.hexlify(os.urandom(32))
         authkey = make_password(str(generate_authkey(username, password)))
 
         box = PrivateKey.generate()
@@ -77,29 +78,29 @@ class Command(BaseCommand):
         private_key_decrypted = box.encode(encoder=nacl.encoding.HexEncoder)
         (private_key, private_key_nonce) = self.encrypt_secret(private_key_decrypted, password, user_sauce)
 
-        secret_key_decrypted = os.urandom(32).encode('hex')
+        secret_key_decrypted = binascii.hexlify(os.urandom(32))
         (secret_key, secret_key_nonce) = self.encrypt_secret(secret_key_decrypted, password, user_sauce)
 
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
-        db_secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        db_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_email = crypto_box.encrypt(email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
         email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
         models.User.objects.create(
             username=username,
-            email=email,
+            email=email.decode(),
             email_bcrypt=email_bcrypt,
             authkey=authkey,
-            public_key=public_key,
-            private_key=private_key,
-            private_key_nonce=private_key_nonce,
-            secret_key=secret_key,
-            secret_key_nonce=secret_key_nonce,
+            public_key=public_key.decode(),
+            private_key=private_key.decode(),
+            private_key_nonce=private_key_nonce.decode(),
+            secret_key=secret_key.decode(),
+            secret_key_nonce=secret_key_nonce.decode(),
             is_email_active=True,
             is_active=True,
-            user_sauce=user_sauce
+            user_sauce=user_sauce.decode()
         )
 
-        self.stdout.write('Created user "' + username + '" with password "' + password + '" and email "' + email + '"' )
+        self.stdout.write('Created user "' + username + '" with password "' + password + '" and email "' + email.decode() + '"' )

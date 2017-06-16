@@ -18,7 +18,7 @@ import hashlib
 import nacl.encoding
 import nacl.signing
 import binascii
-from six import iteritems
+import six
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
@@ -209,8 +209,8 @@ WSGI_APPLICATION = 'psono.wsgi.application'
 
 DATABASES = config_get('DATABASES')
 
-for (db_name, db_values) in iteritems(DATABASES):
-    for (db_configname, db_value) in iteritems(db_values):
+for (db_name, db_values) in six.iteritems(DATABASES):
+    for (db_configname, db_value) in six.iteritems(db_values):
         DATABASES[db_name][db_configname] = config_get('DATABASES_' + db_name.upper() + '_' + db_configname.upper(), DATABASES[db_name][db_configname])
 
 
@@ -313,11 +313,12 @@ def generate_signature():
     }
 
     info = json.dumps(info)
+
     if PRIVATE_KEY != '':
         signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
         verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
         # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
-        signature = binascii.hexlify(signing_box.sign(info))[:128]
+        signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
     else:
         verify_key = None
         signature = None

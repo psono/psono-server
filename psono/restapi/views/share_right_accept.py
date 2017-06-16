@@ -1,5 +1,5 @@
 from ..utils import user_has_rights_on_share, is_uuid, request_misses_uuid
-from share_tree import create_share_link
+from .share_tree import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import (
     User_Share_Right, Data_Store
 )
-
+from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
 
@@ -121,7 +121,7 @@ class ShareRightAcceptView(GenericAPIView):
         if user_share_right_obj.read:
             return Response({
                 "share_id": user_share_right_obj.share.id,
-                "share_data": str(user_share_right_obj.share.data),
+                "share_data": readbuffer(user_share_right_obj.share.data),
                 "share_data_nonce": user_share_right_obj.share.data_nonce,
                 "share_type": type,
                 "share_type_nonce": type_nonce

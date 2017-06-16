@@ -2,7 +2,7 @@ import binascii
 import os
 from hashlib import sha512
 import uuid
-from fields import LtreeField
+from .fields import LtreeField
 
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -344,7 +344,7 @@ class Token(models.Model):
         # clear_text_key will not be saved in db but set as property so a "one-time-access" is possible while this
         # object instance is still alive
         self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
-        self.key = sha512(self.clear_text_key).hexdigest()
+        self.key = sha512(self.clear_text_key.encode('utf-8')).hexdigest()
 
         self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
         self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))

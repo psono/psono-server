@@ -1,7 +1,7 @@
 from django.core import mail
 from django.conf import settings
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
 """
 # Tests that don't pass in gitlabs.com's CI / CD

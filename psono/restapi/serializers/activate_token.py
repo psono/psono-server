@@ -45,7 +45,7 @@ class ActivateTokenSerializer(serializers.Serializer):
         crypto_box = nacl.secret.SecretBox(token.secret_key, encoder=nacl.encoding.HexEncoder)
 
         try:
-            decrypted = crypto_box.decrypt(verification, verification_nonce)
+            decrypted = crypto_box.decrypt(verification, verification_nonce).decode()
         except CryptoError:
             msg = _('Verification code incorrect.')
             raise exceptions.ValidationError(msg)

@@ -79,9 +79,9 @@ class UserGA(GenericAPIView):
             secret = pyotp.random_base32()
 
             # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-            secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+            secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
             crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-            encrypted_secret = crypto_box.encrypt(str(secret), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+            encrypted_secret = crypto_box.encrypt(str(secret).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
             encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
 
             new_ga = Google_Authenticator.objects.create(

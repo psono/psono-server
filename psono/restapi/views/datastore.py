@@ -7,15 +7,17 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import request_misses_uuid
+from ..utils import request_misses_uuid, readbuffer
 
 from ..app_settings import (
-    DatastoreSerializer, DatastoreOverviewSerializer,
+    DatastoreOverviewSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
 
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
+
+import six
 
 # import the logging
 import logging
@@ -48,7 +50,6 @@ class DatastoreView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = DatastoreSerializer
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, uuid = None, *args, **kwargs):
@@ -112,8 +113,16 @@ class DatastoreView(GenericAPIView):
                     'user': request.user.username
                 })
 
-            return Response(self.serializer_class(datastore).data,
-                status=status.HTTP_200_OK)
+
+
+            return Response({
+                'data': readbuffer(datastore.data),
+                'data_nonce': datastore.data_nonce if datastore.data_nonce else '',
+                'type': datastore.type,
+                'description': datastore.description,
+                'secret_key': datastore.secret_key,
+                'secret_key_nonce': datastore.secret_key_nonce,
+            },status=status.HTTP_200_OK)
 
 
     def put(self, request, *args, **kwargs):
@@ -136,7 +145,7 @@ class DatastoreView(GenericAPIView):
             datastore = Data_Store.objects.create(
                 type = str(request.data['type']),
                 description = str(request.data['description']),
-                data = str(request.data['data']),
+                data = readbuffer(request.data['data']),
                 data_nonce = str(request.data['data_nonce']),
                 secret_key = str(request.data['secret_key']),
                 secret_key_nonce = str(request.data['secret_key_nonce']),
@@ -156,7 +165,12 @@ class DatastoreView(GenericAPIView):
                     'user': request.user.username
                 })
 
-            if '(user_id, type, description)' in e.message:
+            if hasattr(e, 'message') and '(user_id, type, description)' in e.message:
+                return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
+                                                                                 "description must be unique"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+            if hasattr(e, 'args') and '(user_id, type, description)' in e.args[0]:
                 return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
                                                                                  "description must be unique"},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -221,7 +235,7 @@ class DatastoreView(GenericAPIView):
             raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
-            datastore.data = str(request.data['data'])
+            datastore.data = six.b(str(request.data['data']))
         if 'data_nonce' in request.data:
             datastore.data_nonce = str(request.data['data_nonce'])
         if 'secret_key' in request.data:

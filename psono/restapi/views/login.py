@@ -17,6 +17,7 @@ import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 
 import json
+import six
 
 # import the logging
 import logging
@@ -150,11 +151,11 @@ class LoginView(GenericAPIView):
         response = {
             "token": token.clear_text_key,
             "required_multifactors": required_multifactors,
-            "session_public_key": server_session_public_key_hex,
-            "session_secret_key": session_secret_key_hex,
-            "session_secret_key_nonce": session_secret_key_nonce_hex,
-            "user_validator": user_validator_hex,
-            "user_validator_nonce": user_validator_nonce_hex,
+            "session_public_key": server_session_public_key_hex.decode('utf-8'),
+            "session_secret_key": session_secret_key_hex.decode('utf-8'),
+            "session_secret_key_nonce": session_secret_key_nonce_hex.decode('utf-8'),
+            "user_validator": user_validator_hex.decode('utf-8'),
+            "user_validator_nonce": user_validator_nonce_hex.decode('utf-8'),
             "user": {
                 "public_key": user.public_key,
                 "private_key": user.private_key,
@@ -168,7 +169,7 @@ class LoginView(GenericAPIView):
 
         login_info_nonce = nacl.utils.random(Box.NONCE_SIZE)
         login_info_nonce_hex = nacl.encoding.HexEncoder.encode(login_info_nonce)
-        encrypted = server_crypto_box.encrypt(json.dumps(response), login_info_nonce)
+        encrypted = server_crypto_box.encrypt(six.b(json.dumps(response)), login_info_nonce)
         encrypted_login_info = encrypted[len(login_info_nonce):]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
 

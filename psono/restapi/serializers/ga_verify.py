@@ -38,7 +38,7 @@ class GAVerifySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # prepare decryption
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
 
         ga_token_correct = False

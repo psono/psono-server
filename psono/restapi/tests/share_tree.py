@@ -1,24 +1,16 @@
 from django.core.urlresolvers import reverse
-from django.core import mail
-from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
-from django.utils import timezone
-from datetime import timedelta
-from django.db import IntegrityError
+from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
 
 from restapi import models
-from restapi.utils import generate_activation_code
-
-from base import APITestCaseExtended
+from ..utils import readbuffer
+from .base import APITestCaseExtended
 
 import random
 import string
-import os
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 class ShareTests(APITestCaseExtended):
     def setUp(self):
@@ -78,7 +70,7 @@ class ShareTests(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= "12345",
+            data= readbuffer("12345"),
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -88,7 +80,7 @@ class ShareTests(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= "12345",
+            data= readbuffer("12345"),
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -335,7 +327,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description="my-description",
-            data="12345",
+            data=readbuffer("12345"),
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -345,7 +337,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description="my-description",
-            data="12345",
+            data=readbuffer("12345"),
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
