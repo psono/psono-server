@@ -1119,8 +1119,8 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         data = {
             'token': request_data.get('token'),
-            'verification': nacl.encoding.HexEncoder.encode(verification),
-            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+            'verification': nacl.encoding.HexEncoder.encode(verification).decode(),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
