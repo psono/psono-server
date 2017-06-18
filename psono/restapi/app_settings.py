@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from serializers import (
+from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
@@ -8,8 +8,6 @@ from serializers import (
     LogoutSerializer as DefaultLogoutSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
-    DatastoreSerializer as DefaultDatastoreSerializer,
-    SecretSerializer as DefaultSecretSerializer,
     UserPublicKeySerializer as DefaultUserPublicKeySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     NewGASerializer as DefaultNewGASerializer,
@@ -65,20 +63,6 @@ VerifyEmailSerializer = import_callable(
     serializers.get(
         'VERIFY_EMAIL_SERIALIZER',
         DefaultVerifyEmailSerializer
-    )
-)
-
-DatastoreSerializer = import_callable(
-    serializers.get(
-        'DATASTORE_SERIALIZER',
-        DefaultDatastoreSerializer
-    )
-)
-
-SecretSerializer = import_callable(
-    serializers.get(
-        'SECRET_SERIALIZER',
-        DefaultSecretSerializer
     )
 )
 

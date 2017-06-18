@@ -1,6 +1,6 @@
 from ..utils import user_has_rights_on_share, request_misses_uuid, get_all_inherited_rights
-from share_tree import create_share_link
-from datastore import get_datastore
+from .share_tree import create_share_link
+from .datastore import get_datastore
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -17,7 +17,10 @@ from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
 
 from django.db import IntegrityError
+from ..utils import readbuffer
 from ..authentication import TokenAuthentication
+
+import six
 
 
 class ShareView(GenericAPIView):
@@ -201,7 +204,7 @@ class ShareView(GenericAPIView):
 
             response = {
                 'id': share['share'].id,
-                'data': str(share['share'].data) if share['share'].data else '',
+                'data': readbuffer(share['share'].data),
                 'data_nonce': share['share'].data_nonce if share['share'].data_nonce else '',
                 'user_id': share['share'].user_id,
                 'user_share_rights': share['user_share_rights'],
@@ -247,7 +250,7 @@ class ShareView(GenericAPIView):
                              "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
 
         if 'data' in request.data:
-            share.data = str(request.data['data'])
+            share.data = six.b(str(request.data['data']))
         if 'data_nonce' in request.data:
             share.data_nonce = str(request.data['data_nonce'])
 
@@ -312,7 +315,7 @@ class ShareView(GenericAPIView):
 
         try:
             share = Share.objects.create(
-                data = str(request.data['data']),
+                data = six.b(str(request.data['data'])),
                 data_nonce = str(request.data['data_nonce']),
                 user = request.user
             )

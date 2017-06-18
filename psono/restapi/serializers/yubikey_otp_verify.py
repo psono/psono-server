@@ -2,6 +2,7 @@ from django.conf import settings
 from ..utils import yubikey_authenticate, yubikey_get_yubikey_id
 from ..authentication import TokenAuthentication
 import hashlib
+import six
 
 try:
     from django.utils.http import urlsafe_base64_decode as uid_decoder
@@ -44,7 +45,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # prepare decryption
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
 
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
@@ -54,7 +55,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
             encrypted_yubikey_id = nacl.encoding.HexEncoder.decode(yk.yubikey_id)
             decrypted_yubikey_id = crypto_box.decrypt(encrypted_yubikey_id)
 
-            if yubikey_id == decrypted_yubikey_id:
+            if six.b(yubikey_id) == decrypted_yubikey_id:
                 otp_token_correct = True
                 break
 

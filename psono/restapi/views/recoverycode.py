@@ -14,6 +14,8 @@ from ..models import (
     Recovery_Code
 )
 
+from ..utils import readbuffer
+
 # import the logging
 import logging
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ class RecoveryCodeView(GenericAPIView):
         recovery_code = Recovery_Code.objects.create(
             user = request.user,
             recovery_authkey = make_password(str(serializer.validated_data['recovery_authkey'])),
-            recovery_data = str(serializer.validated_data['recovery_data']),
+            recovery_data = readbuffer(serializer.validated_data['recovery_data']),
             recovery_data_nonce = serializer.validated_data['recovery_data_nonce'],
             recovery_sauce = str(serializer.validated_data['recovery_sauce']),
         )

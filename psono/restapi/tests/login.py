@@ -9,12 +9,14 @@ from rest_framework import status
 
 from restapi import models
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
 import json
 import random
 import string
+import binascii
 import os
+import six
 
 import nacl.encoding
 import nacl.utils
@@ -31,13 +33,13 @@ class LoginTests(APITestCaseExtended):
 
         self.test_email = "test@example.com"
         self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '0865977160de11fe18806e6843bc14663433982fdeadc45c217d6127f260ff33'
 
 
@@ -138,8 +140,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -148,12 +150,12 @@ class LoginTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -168,7 +170,7 @@ class LoginTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.assertTrue(request_data.get('token', False),
                         'Token does not exist in login response')
@@ -220,8 +222,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -229,12 +231,12 @@ class LoginTests(APITestCaseExtended):
         login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
         encrypted = server_crypto_box.encrypt(json.dumps({
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -261,8 +263,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -270,12 +272,12 @@ class LoginTests(APITestCaseExtended):
         login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -306,8 +308,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -316,12 +318,12 @@ class LoginTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -332,7 +334,7 @@ class LoginTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -390,8 +392,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -400,12 +402,12 @@ class LoginTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -416,7 +418,7 @@ class LoginTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -468,8 +470,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -478,12 +480,12 @@ class LoginTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -492,9 +494,9 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         request_data = json.loads(server_crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
-            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info').decode()),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce').decode())
+        ).decode())
 
         token = request_data.get('token', False)
 
@@ -540,8 +542,8 @@ class LoginTests(APITestCaseExtended):
 
         data = {
             'token': token,
-            'verification': verification_hex,
-            'verification_nonce': verification_nonce_hex,
+            'verification': verification_hex.decode(),
+            'verification_nonce': verification_nonce_hex.decode(),
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -552,7 +554,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(response.data.get('user', {}).get('id', False),
                         'User ID does not exist in login response')
         self.assertEqual(response.data.get('user', {}).get('email', False),
-                         self.test_email,
+                         six.b(self.test_email),
                          'Email is wrong in response or does not exist')
         self.assertEqual(response.data.get('user', {}).get('secret_key', False),
                          self.test_secret_key,
@@ -572,8 +574,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -581,13 +583,13 @@ class LoginTests(APITestCaseExtended):
         login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
-            'authkey': make_password(os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')),
-        }), login_info_nonce)
+            'authkey': make_password(binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()),
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -612,8 +614,8 @@ class LoginTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -622,12 +624,12 @@ class LoginTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -644,7 +646,7 @@ class LoginTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         self.assertTrue(request_data.get('token', False),
                         'Token does not exist in login response')

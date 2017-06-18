@@ -75,7 +75,7 @@ class ActivateTokenView(GenericAPIView):
         token.save()
 
         # decrypt user email address
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = nacl.encoding.HexEncoder.decode(token.user.email)
         decrypted_email = crypto_box.decrypt(encrypted_email)

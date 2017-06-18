@@ -5,13 +5,14 @@ from rest_framework import status
 
 from restapi import models
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
-
+import six
 import random
 import string
 import os
 import json
+import binascii
 
 import nacl.encoding
 import nacl.utils
@@ -24,17 +25,17 @@ import hashlib
 class UserModificationTests(APITestCaseExtended):
     def setUp(self):
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = 'b4ce697723a93e3ba36e6da23c8728c2372069fdffc2d29c02f77cd14a106c45'
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
@@ -51,14 +52,14 @@ class UserModificationTests(APITestCaseExtended):
         )
 
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key2 = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
@@ -144,13 +145,13 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
         private_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
                       '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
 
         data = {
@@ -180,12 +181,12 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         private_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = '78caff718e1454de52a4ae09b68e969101203e2bced4f5a6ceaa2e8ece10c02c'
 
         data = {
@@ -215,13 +216,13 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         secret_key = '693352a2d9af8a601e102944c19a7566e179b926450d5e00798bf3bfe1edbf00208ac3f2993db3ee3b6210cc2192ad' \
                       '39e9229f49d9bb7a0ac60d4c3c11e8ef9f05a50e9c172b2a93a267ead1b3f8121Z'
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'e76c0fe2a16a0bebbdcbef2b7c1d95b57d6a2c4f3f8c3c60259c3b6105c29865'
 
         data = {
@@ -251,11 +252,11 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
         secret_key_nonce = 'aa819eb039993c382449db124b5767a67738dd59e81318cZ'
         user_sauce = 'e2b048a26ba19c5ca3c923f1ec86d49f2204bbdca2f91292a045f7ad83a545f2'
 
@@ -286,12 +287,12 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
 
         data = {
@@ -314,10 +315,10 @@ class UserModificationTests(APITestCaseExtended):
         user = models.User.objects.get(pk=self.test_user_obj.pk)
 
 
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertNotEqual(user.username, username)
         self.assertTrue(check_password(authkey, user.authkey))
@@ -338,12 +339,12 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        authkey_old = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        authkey_old = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = '6acc5e9cd89d5fc6b45fe4f2e6b064aa8acf1a8c7736238ada52a408f4853fe1'
 
         data = {
@@ -373,12 +374,12 @@ class UserModificationTests(APITestCaseExtended):
         email = self.test_email2
         email_bcrypt = self.test_email_bcrypt2
         username = self.test_username2
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         authkey_old = self.test_authkey
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'e6efde814fae7744df7490a2b55522d541ebafef562572e6565b17f79f6e0823'
 
         data = {
@@ -421,11 +422,11 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = '12a9ef69f08060aab5fc3a2cecc851871bde511261a33241663aff74e35b8b6e'
 
         data = {
@@ -466,11 +467,11 @@ class UserModificationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = '49c9fffb9332eb75bb1862f579f9913432c88ffc4ecf7ee53ce4c7d3e9b9c861'
 
         data = {
@@ -509,12 +510,12 @@ class UserSearchTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '7d3fcc0a89f26e0f1277d0095620a10897c03becfb2f2b27684a55b8758a0020'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -533,12 +534,12 @@ class UserSearchTests(APITestCaseExtended):
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt2 = 'b'
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey2 = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key2 = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key2 = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        self.test_private_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key2 = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce2 = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce2 = '5ca7f80a0e09fe13e02102f48a88c56b2c239056b86bb2694f7923d654651ab7'
         self.test_user_obj2 = models.User.objects.create(
             email=self.test_email2,
@@ -727,10 +728,10 @@ class UserActivateTokenTests(APITestCaseExtended):
     def setUp(self):
 
         # encrypt user email address
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         self.test_email_decrypted = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_encrypted = crypto_box.encrypt(self.test_email_decrypted, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        self.test_email_encrypted = crypto_box.encrypt(self.test_email_decrypted.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
         self.test_email_encrypted_hex = nacl.encoding.HexEncoder.encode(self.test_email_encrypted)
 
 
@@ -739,12 +740,12 @@ class UserActivateTokenTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key = box.encode(encoder=nacl.encoding.HexEncoder)
-        self.test_private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        self.test_secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        self.test_secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '7a1815d667e15d6310174e4b41c22fe618e18f1748091d07c4d79eef6ec02dd2'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email_encrypted_hex,
@@ -798,8 +799,8 @@ class UserActivateTokenTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -808,12 +809,12 @@ class UserActivateTokenTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -828,7 +829,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
@@ -862,8 +863,8 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         data = {
             'token': request_data.get('token'),
-            'verification': nacl.encoding.HexEncoder.encode(verification),
-            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+            'verification': nacl.encoding.HexEncoder.encode(verification).decode(),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -875,7 +876,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'secret_key_nonce': self.test_secret_key_nonce,
             'secret_key': self.test_secret_key,
             'id': self.test_user_obj.id,
-            'email': self.test_email_decrypted})
+            'email': six.b(self.test_email_decrypted)})
 
     def test_post_authentication_activate_token_incorrect_token(self):
         """
@@ -886,8 +887,8 @@ class UserActivateTokenTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -896,12 +897,12 @@ class UserActivateTokenTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -916,7 +917,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
@@ -950,8 +951,8 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         data = {
             'token': 'ABC',
-            'verification': nacl.encoding.HexEncoder.encode(verification),
-            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce),
+            'verification': nacl.encoding.HexEncoder.encode(verification).decode(),
+            'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -970,8 +971,8 @@ class UserActivateTokenTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -980,12 +981,12 @@ class UserActivateTokenTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -1000,7 +1001,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
@@ -1034,8 +1035,8 @@ class UserActivateTokenTests(APITestCaseExtended):
 
         data = {
             'token': request_data.get('token'),
-            'verification': nacl.encoding.HexEncoder.encode(verification),
-            'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'),
+            'verification': nacl.encoding.HexEncoder.encode(verification).decode(),
+            'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'.encode("utf-8")),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1054,8 +1055,8 @@ class UserActivateTokenTests(APITestCaseExtended):
         box = PrivateKey.generate()
 
         # our hex encoded public / private keys
-        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
@@ -1064,12 +1065,12 @@ class UserActivateTokenTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
-        }), login_info_nonce)
+        }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
         data = {
-            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted),
-            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce),
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
             'public_key': user_session_public_key_hex,
         }
 
@@ -1084,7 +1085,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
-        ))
+        ).decode())
 
         # Ok now lets solve the validation challenge
         # First lets decrypt our shared session secret key with the users private_session_key and the servers
@@ -1111,7 +1112,7 @@ class UserActivateTokenTests(APITestCaseExtended):
                                            encoder=nacl.encoding.HexEncoder)
 
         verification_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
-        encrypted = verification_crypto_box.encrypt('asdf', verification_nonce)
+        encrypted = verification_crypto_box.encrypt('asdf'.encode("utf-8"), verification_nonce)
         verification = encrypted[len(verification_nonce):]
 
         url = reverse('authentication_activate_token')

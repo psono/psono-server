@@ -16,6 +16,7 @@ import nacl.utils
 import nacl.secret
 import bcrypt
 import hashlib
+import six
 
 class CommandCreateuserTestCase(TestCase):
 
@@ -33,10 +34,10 @@ class CommandCreateuserTestCase(TestCase):
 
         user = models.User.objects.get(username=username)
 
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(str(generate_authkey(username, password)), user.authkey))
         self.assertTrue(user.is_active)

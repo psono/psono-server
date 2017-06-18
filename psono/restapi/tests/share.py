@@ -5,11 +5,11 @@ from rest_framework import status
 
 from restapi import models
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
+from ..utils import readbuffer
 
 import random
 import string
-import os
 
 from uuid import UUID
 
@@ -142,7 +142,7 @@ class ShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
 
@@ -172,7 +172,7 @@ class ShareTests(APITestCaseExtended):
 
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
 
@@ -515,7 +515,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
 
@@ -544,12 +544,12 @@ class UpdateShareTests(APITestCaseExtended):
         )
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
         self.test_share3_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data="my-data",
+            data=readbuffer("my-data"),
             data_nonce="12345"
         )
 
@@ -647,7 +647,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         updated_share = models.Share.objects.get(pk=str(self.test_share1_obj.id))
 
-        self.assertEqual(str(updated_share.data), data['data'],
+        self.assertEqual(readbuffer(updated_share.data), data['data'],
                          'data was not saved proper')
         self.assertEqual(updated_share.data_nonce, data['data_nonce'],
                          'data_nonce was not saved proper')

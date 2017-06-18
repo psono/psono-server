@@ -10,8 +10,8 @@ The canonical source of PSONO Server is [hosted on GitLab.com](https://gitlab.co
 
 # Preamble
 
-This whole guide is based on Ubuntu 16.04 LTS. Ubuntu 12.04+ LTS and Debian based systems should be similar if not even
-identical.
+This whole guide is based on Ubuntu 16.04 LTS with python 2.7. Ubuntu 12.04+ LTS and Debian based systems should be similar if not even
+identical. Our current supported python versions are python 2.7 and python 3.5+.
 
 # Installation
 

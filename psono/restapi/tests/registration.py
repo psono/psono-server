@@ -5,12 +5,13 @@ from rest_framework import status
 
 from restapi import models
 
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
-import json
+import binascii
 import random
 import string
 import os
+import six
 
 import nacl.encoding
 import nacl.utils
@@ -68,12 +69,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -95,10 +96,10 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(authkey, user.authkey))
         self.assertEqual(user.public_key, public_key)
@@ -118,12 +119,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'bbd90b581b9c956e9077a8c71f61ecd9bf9355bd1aac3590bd995028ed224ae0'
 
         data = {
@@ -145,9 +146,9 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), email)
+        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
 
         response = self.client.post(url, data)
 
@@ -164,12 +165,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = 'admin@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = '05aa27037cf893e2a4113ddbe8836e1bf395556669904902643670fbf3841338'
 
         data = {
@@ -197,12 +198,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -231,12 +232,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -265,12 +266,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@nugrsiojuhsgd.com'
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -299,12 +300,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '!@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -334,12 +335,12 @@ class RegistrationTests(APITestCaseExtended):
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
         username = '.' + username
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -369,12 +370,12 @@ class RegistrationTests(APITestCaseExtended):
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
         username = '-' + username
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -403,12 +404,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '.@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -437,12 +438,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = 'njfgdopnsrgipojr..threhtr@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -471,12 +472,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = 'njfgdopnsrgipojr--threhtr@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -505,12 +506,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = 'njfgdopnsrgipojr-.threhtr@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -539,12 +540,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = 'njfgdopnsrgipojr.-threhtr@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -573,12 +574,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '-@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {
@@ -607,12 +608,12 @@ class RegistrationTests(APITestCaseExtended):
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
         username = ''.join(random.choice(string.ascii_lowercase) for _ in range(2)) + '@' + settings.ALLOWED_DOMAINS[0]
-        authkey = os.urandom(settings.AUTH_KEY_LENGTH_BYTES).encode('hex')
-        public_key = os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).encode('hex')
-        private_key = os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).encode('hex')
-        private_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
-        secret_key = os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).encode('hex')
-        secret_key_nonce = os.urandom(settings.NONCE_LENGTH_BYTES).encode('hex')
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
 
         data = {

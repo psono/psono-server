@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import six
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -51,11 +52,10 @@ class EncryptJSONRenderer(JSONRenderer):
         Render `data` into JSON, returning a bytestring.
         """
         decrypted_data = super(EncryptJSONRenderer, self).render(data, accepted_media_type, renderer_context)
-
         if renderer_context['request'].auth is None:
             return decrypted_data
 
-        if decrypted_data == '':
+        if decrypted_data == six.b(''):
             return decrypted_data
 
         session_secret_key = renderer_context['request'].auth.secret_key

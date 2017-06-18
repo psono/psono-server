@@ -48,7 +48,8 @@ class RegisterSerializer(serializers.Serializer):
         # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
         # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
         # if you have a better solution, please let me know.
-        email_bcrypt = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt_full = bcrypt.hashpw(value.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8'))
+        email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exists():
             msg = _('E-Mail already exists.')
@@ -137,10 +138,11 @@ class RegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
 
-        validated_data['email_bcrypt'] = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt_full = bcrypt.hashpw(validated_data['email'].encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8'))
+        validated_data['email_bcrypt'] = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = crypto_box.encrypt(validated_data['email'].encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
         validated_data['email'] = nacl.encoding.HexEncoder.encode(encrypted_email)

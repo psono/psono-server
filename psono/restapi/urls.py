@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url
 from django.conf import settings
 import django
-import views
+from . import views
 
 urlpatterns = [
     # URLs that do not require a session or valid token

@@ -1,4 +1,4 @@
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id
 from mock import patch
 

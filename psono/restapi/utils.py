@@ -4,12 +4,13 @@ from django.core.cache import cache
 import bcrypt
 import time
 from uuid import UUID
-from models import User, User_Share_Right, Secret_Link, Data_Store
+from .models import User, User_Share_Right, Secret_Link, Data_Store
 
 import nacl.encoding
 import nacl.utils
 import nacl.secret
 import hashlib
+import binascii
 from yubico_client import Yubico
 
 import pyscrypt
@@ -45,11 +46,11 @@ def generate_activation_code(email):
     time_stamp = str(int(time.time()))
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET).hexdigest()
+    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    validation_secret = crypto_box.encrypt(time_stamp + '#' + email,
+    validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
                                          nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-    return nacl.encoding.HexEncoder.encode(validation_secret)
+    return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
 def validate_activation_code(activation_code):
@@ -64,15 +65,15 @@ def validate_activation_code(activation_code):
     """
 
     try:
-        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET).hexdigest()
+        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code))
+        validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code)).decode()
 
         time_stamp, email = validation_secret.split("#", 1)
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
             email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT).replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:
@@ -297,11 +298,31 @@ def generate_authkey(username, password):
     :rtype: str
     """
 
-    salt = hashlib.sha512(username.lower()).hexdigest()
+    salt = hashlib.sha512(username.lower().encode('utf-8')).hexdigest()
 
-    return pyscrypt.hash(password=password,
-                         salt=salt,
+    return binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+                         salt=salt.encode("utf-8"),
                          N=16384,
                          r=8,
                          p=1,
-                         dkLen=64).encode('hex')
+                         dkLen=64))
+
+# Python 3 Helper functions
+
+
+def readbuffer(data):
+    """
+    Reads an arbitary data objects and returns the byte representation (in python 3) or str (in python2)
+    :param data:
+    :type data:
+    :return:
+    :rtype:
+    """
+    if not data:
+        return ''
+    if str(type(data)) == "<type 'buffer'>":
+        return str(data)
+    elif str(type(data)) == "<class 'memoryview'>":
+        return data.tobytes().decode()
+    else:
+        return str(data).encode("utf-8")

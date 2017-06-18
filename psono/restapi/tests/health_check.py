@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
-from base import APITestCaseExtended
+from .base import APITestCaseExtended
 
 from restapi import models
 
