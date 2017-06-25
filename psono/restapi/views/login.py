@@ -94,6 +94,7 @@ class LoginView(GenericAPIView):
             yubikey_otp_2fa=yubikey_otp_2fa,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
+            client_date=serializer.validated_data.get('device_time'),
         )
 
         # our public / private key box

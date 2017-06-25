@@ -315,6 +315,7 @@ class Token(models.Model):
     """
     id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
     key = models.CharField(max_length=128, primary_key=True)
     secret_key = models.CharField(max_length=64)
     user_validator = models.CharField(max_length=64, null=True)
@@ -328,6 +329,7 @@ class Token(models.Model):
 
     yubikey_otp_2fa = models.BooleanField(_('Yubikey Required'), default=False,
         help_text=_('Specifies if Yubikey is required or not'))
+    client_date = models.DateTimeField(null=True)
 
     is_cachable = True
 
