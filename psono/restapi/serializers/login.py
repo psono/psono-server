@@ -72,5 +72,6 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['device_fingerprint'] = request_data.get('device_fingerprint', '')
         attrs['device_description'] = request_data.get('device_description', '')
+        attrs['device_time'] = request_data.get('device_time', None)
 
         return attrs
