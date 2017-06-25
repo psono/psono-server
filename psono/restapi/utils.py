@@ -15,7 +15,7 @@ from yubico_client import Yubico
 
 import pyscrypt
 
-from six import string_types
+import six
 import sys
 if sys.version_info < (2, 7):
     from django.utils.importlib import import_module
@@ -27,7 +27,7 @@ def import_callable(path_or_callable):
     if hasattr(path_or_callable, '__call__'):
         return path_or_callable
     else:
-        assert isinstance(path_or_callable, string_types)
+        assert isinstance(path_or_callable, six.string_types)
         package, attr = path_or_callable.rsplit('.', 1)
         return getattr(import_module(package), attr)
 
@@ -319,7 +319,7 @@ def readbuffer(data):
     :rtype:
     """
     if not data:
-        return ''
+        return six.b('')
     if str(type(data)) == "<type 'buffer'>":
         return str(data)
     elif str(type(data)) == "<class 'memoryview'>":
