@@ -122,6 +122,7 @@ class DatastoreView(GenericAPIView):
                 'description': datastore.description,
                 'secret_key': datastore.secret_key,
                 'secret_key_nonce': datastore.secret_key_nonce,
+                'is_default': datastore.is_default,
             },status=status.HTTP_200_OK)
 
 
@@ -142,6 +143,7 @@ class DatastoreView(GenericAPIView):
         #TODO Check if secret_key and nonce exist
 
         try:
+
             datastore = Data_Store.objects.create(
                 type = str(request.data['type']),
                 description = str(request.data['description']),
@@ -149,8 +151,13 @@ class DatastoreView(GenericAPIView):
                 data_nonce = str(request.data['data_nonce']),
                 secret_key = str(request.data['secret_key']),
                 secret_key_nonce = str(request.data['secret_key_nonce']),
-                user = request.user
+                user = request.user,
+                is_default = request.data.get('is_default', True)
             )
+
+            if request.data.get('is_default', True):
+                Data_Store.objects.filter(user=request.user, type=str(request.data['type'])).exclude(pk=datastore.pk).update(is_default=False)
+
         except IntegrityError as e:
 
             if settings.LOGGING_AUDIT:

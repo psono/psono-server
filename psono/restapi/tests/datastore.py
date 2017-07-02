@@ -149,6 +149,7 @@ class DatastoreTests(APITestCaseExtended):
                     'id': new_datastore_id,
                     'type': initial_data['type'],
                     'description': initial_data['description'],
+                    'is_default': True,
                 })
 
         self.assertTrue(found, 'Did not find the datastore in the datastore list call')
@@ -170,6 +171,7 @@ class DatastoreTests(APITestCaseExtended):
             'description': initial_data['description'],
             'secret_key': initial_data['secret_key'],
             'secret_key_nonce': initial_data['secret_key_nonce'],
+            'is_default': True,
         })
 
         # ok lets try to get the same datastore with a bad user
@@ -339,6 +341,7 @@ class DatastoreTests(APITestCaseExtended):
             'data_nonce': updated_data['data_nonce'],
             'secret_key': updated_data['secret_key'],
             'secret_key_nonce': updated_data['secret_key_nonce'],
+            'is_default': True,
         })
 
     def test_update_datastore_no_datastore_id(self):
@@ -454,6 +457,7 @@ class DatastoreTests(APITestCaseExtended):
             'data_nonce': updated_data['data_nonce'],
             'secret_key': updated_data['secret_key'],
             'secret_key_nonce': updated_data['secret_key_nonce'],
+            'is_default': True,
         })
 
     def test_change_datastore_with_no_permissions(self):

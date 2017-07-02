@@ -122,6 +122,8 @@ class Data_Store(models.Model):
     description = models.CharField(max_length=64, default='default')
     secret_key = models.CharField(_('secret key'), max_length=256)
     secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
+    is_default = models.BooleanField(_('default'), default=True,
+        help_text=_('Designates whether this is the default datastore for this type or not'))
 
     class Meta:
         abstract = False
