@@ -17,6 +17,10 @@ import nacl.secret
 import json
 import dateutil.parser
 
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
+
 def decrypt(session_secret_key, text_hex, nonce_hex):
 
     text = nacl.encoding.HexEncoder.decode(text_hex)
@@ -50,19 +54,48 @@ class DecryptJSONParser(JSONParser):
         try:
             data = json.loads(decrypted_data.decode())
         except ValueError as exc:
-            raise ParseError('JSON parse error - %s' % six.text_type(exc))
+            logger.info({
+                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
+                'request_method': stream.META['REQUEST_METHOD'],
+                'request_url': stream.META['PATH_INFO'],
+                'success': False,
+                'status': 'HTTP_400_BAD_REQUEST',
+                'event': 'INVALID_REQUEST',
+                'user': stream.user.username
+            })
+            raise ParseError('Invalid request')
+
 
         client_date = stream.auth.client_date
         create_date = stream.auth.create_date
         request_date = data.get('request_time', False)
         now = timezone.now()
 
-        # TODO Remove first "if clause", once all clients migrated
-        if client_date is not None and request_date != False:
-            request_date = dateutil.parser.parse(request_date)
-            time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
-            if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
-                raise ParseError('Replay Protection: Time difference too big')
+        if not request_date:
+            logger.info({
+                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
+                'request_method': stream.META['REQUEST_METHOD'],
+                'request_url': stream.META['PATH_INFO'],
+                'success': False,
+                'status': 'HTTP_400_BAD_REQUEST',
+                'event': 'REPLAY_PROTECTION_REQUEST_TIME_MISSING',
+                'user': stream.user.username
+            })
+            raise ParseError('Replay Protection: request_time missing')
+
+        request_date = dateutil.parser.parse(request_date)
+        time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
+        if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
+            logger.info({
+                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
+                'request_method': stream.META['REQUEST_METHOD'],
+                'request_url': stream.META['PATH_INFO'],
+                'success': False,
+                'status': 'HTTP_400_BAD_REQUEST',
+                'event': 'REPLAY_PROTECTION_TIME_DIFFERENCE_PROBLEM',
+                'user': stream.user.username
+            })
+            raise ParseError('Replay Protection: Time difference too big')
 
 
         return data
