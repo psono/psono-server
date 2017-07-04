@@ -11,6 +11,7 @@ from ..utils import request_misses_uuid, readbuffer
 
 from ..app_settings import (
     DatastoreOverviewSerializer,
+    CreateDatastoreSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -136,11 +137,28 @@ class DatastoreView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 201 / 400
         :rtype:
         """
 
-        #TODO Check if secret_key and nonce exist
+        serializer = CreateDatastoreSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'CREATE_DATASTORE_REQUEST_ERROR',
+                    'errors': serializer.errors
+                })
+
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
         try:
 
