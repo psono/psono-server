@@ -214,26 +214,6 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
 
 
     @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_true)
-    def test_post_authentication_yubikey_otp_verify_token_incorrect(self, yubikey_authenticate_fct):
-        """
-        Tests POST method on authentication_yubikey_otp_verify with an incorrect token
-        """
-
-        url = reverse('authentication_yubikey_otp_verify')
-
-        data = {
-            'token': '12345678',
-            'yubikey_otp': self.yubikey_token,
-        }
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'Token incorrect.'])
-
-
-    @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_true)
     def test_post_authentication_yubikey_otp_verify_not_attached_to_this_account(self, yubikey_authenticate_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify while the yubikey_otp token is note whitelisted for the

@@ -20,6 +20,8 @@ from .serializers import (
     ShareTreeSerializer as DefaultShareTreeSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
+    CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
+    DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
     SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer,
     MoveSecretLinkSerializer as DefaultMoveSecretLinkSerializer,
@@ -153,6 +155,20 @@ DatastoreOverviewSerializer = import_callable(
     serializers.get(
         'DATASTORE_OVERVIEW_SERIALIZER',
         DefaultDatastoreOverviewSerializer
+    )
+)
+
+CreateDatastoreSerializer = import_callable(
+    serializers.get(
+        'CREATE_DATASTORE_SERIALIZER',
+        DefaultCreateDatastoreSerializer
+    )
+)
+
+DeleteDatastoreSerializer = import_callable(
+    serializers.get(
+        'DELETE_DATASTORE_SERIALIZER',
+        DefaultDeleteDatastoreSerializer
     )
 )
 

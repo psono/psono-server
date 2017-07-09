@@ -451,7 +451,7 @@ class DatastoreTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {
             'type': initial_data['type'],
-            'description': initial_data['description'],
+            'description': updated_data['description'],
 
             'data': updated_data['data'],
             'data_nonce': updated_data['data_nonce'],
@@ -508,14 +508,137 @@ class DatastoreTests(APITestCaseExtended):
         Tests to delete the datastore
         """
 
-        # lets try to create a datastore
+        url = reverse('datastore')
 
+        initial_data = {
+            'type': "my-second-sexy-type",
+            'description': "my-second-sexy-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'is_default': False
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # And now lets try to delete it
         url = reverse('datastore')
 
         data = {
-
+            'authkey': self.test_authkey,
+            'datastore_id': new_datastore_id
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_delete_default_datastore(self):
+        """
+        Tests to delete the default datastore
+        """
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-second-sexy-type",
+            'description': "my-second-sexy-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'is_default': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            'authkey': self.test_authkey,
+            'datastore_id': new_datastore_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_default_with_no_datastore_id(self):
+        """
+        Tests to delete the default datastore
+        """
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-second-sexy-type",
+            'description': "my-second-sexy-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'is_default': False
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            'authkey': self.test_authkey,
+            # Missing 'datastore_id': new_datastore_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_default_with_no_authkey(self):
+        """
+        Tests to delete the default datastore
+        """
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-second-sexy-type",
+            'description': "my-second-sexy-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'is_default': False
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_datastore_id = str(response.data.get('datastore_id'))
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            # Missing 'authkey': self.test_authkey,
+            'datastore_id': new_datastore_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
