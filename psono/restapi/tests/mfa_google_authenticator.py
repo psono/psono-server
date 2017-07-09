@@ -49,9 +49,11 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         )
 
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+        self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         models.Token.objects.create(
             key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
-            user=self.test_user_obj
+            user=self.test_user_obj,
+            secret_key=self.session_secret_key,
         )
 
         secret = pyotp.random_base32()
@@ -109,7 +111,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             'ga_token': self.totp.now()
         }
 
-        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -126,11 +128,10 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             'ga_token': self.totp.now()
         }
 
-        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + '12345')
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertNotEqual(response.data.get('non_field_errors', False), False)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_post_authentication_ga_verify_no_proper_formatted_ga_token(self):
         """
@@ -144,7 +145,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             'ga_token': 'ABCDEF'
         }
 
-        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -162,7 +163,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             'ga_token': '012345'
         }
 
-        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

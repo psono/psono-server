@@ -16,7 +16,7 @@ import nacl.secret
 import nacl.encoding
 
 class ActivateTokenSerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     verification = serializers.CharField(required=True)
     verification_nonce = serializers.CharField(max_length=64, required=True)
 
@@ -26,11 +26,9 @@ class ActivateTokenSerializer(serializers.Serializer):
         verification_nonce_hex = attrs.get('verification_nonce')
         verification_nonce = nacl.encoding.HexEncoder.decode(verification_nonce_hex)
 
-        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+        token = self.context['request'].auth
 
-        try:
-            token = Token.objects.filter(key=token_hash, active=False).get()
-        except Token.DoesNotExist:
+        if token.active:
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 

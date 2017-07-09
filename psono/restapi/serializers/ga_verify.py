@@ -18,7 +18,7 @@ import nacl.encoding
 import pyotp
 
 class GAVerifySerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     ga_token = serializers.CharField(max_length=6, min_length=6, required=True)
 
     def validate(self, attrs):
@@ -29,11 +29,9 @@ class GAVerifySerializer(serializers.Serializer):
             msg = _('GA Tokens only contain digits.')
             raise exceptions.ValidationError(msg)
 
-        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+        token = self.context['request'].auth
 
-        try:
-            token = Token.objects.filter(key=token_hash, active=False).get()
-        except Token.DoesNotExist:
+        if token.active:
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
@@ -42,7 +40,7 @@ class GAVerifySerializer(serializers.Serializer):
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
 
         ga_token_correct = False
-        for ga in Google_Authenticator.objects.filter(user=token.user):
+        for ga in Google_Authenticator.objects.filter(user_id=token.user_id):
             encrypted_ga_secret = nacl.encoding.HexEncoder.decode(ga.secret)
             decrypted_ga_secret = crypto_box.decrypt(encrypted_ga_secret)
             totp = pyotp.TOTP(decrypted_ga_secret)

@@ -1,7 +1,7 @@
 from django.conf import settings
 from ..utils import authenticate
 
-import six
+import dateutil.parser
 import nacl.encoding
 import nacl.utils
 from nacl.public import PrivateKey, PublicKey, Box
@@ -72,6 +72,11 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['device_fingerprint'] = request_data.get('device_fingerprint', '')
         attrs['device_description'] = request_data.get('device_description', '')
-        attrs['device_time'] = request_data.get('device_time', None)
+
+        device_time = request_data.get('device_time', None)
+        if device_time is None:
+            attrs['device_time'] = None
+        else:
+            attrs['device_time'] = dateutil.parser.parse(device_time)
 
         return attrs

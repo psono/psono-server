@@ -42,11 +42,9 @@ class UserGA(GenericAPIView):
         :rtype:
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         google_authenticators = []
 
-        for ga in Google_Authenticator.objects.filter(user=user).all():
+        for ga in Google_Authenticator.objects.filter(user=request.user).all():
             google_authenticators.append({
                 'id': ga.id,
                 'title': ga.title,
@@ -71,8 +69,6 @@ class UserGA(GenericAPIView):
         :rtype:
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -85,7 +81,7 @@ class UserGA(GenericAPIView):
             encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
 
             new_ga = Google_Authenticator.objects.create(
-                user=user,
+                user=request.user,
                 title= serializer.validated_data.get('title'),
                 secret = encrypted_secret_hex
             )
@@ -112,8 +108,6 @@ class UserGA(GenericAPIView):
         :return: 200 / 400 / 403
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         if request_misses_uuid(request, 'google_authenticator_id'):
             return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -121,7 +115,7 @@ class UserGA(GenericAPIView):
 
         # check if google authenticator exists
         try:
-            google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=user)
+            google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=request.user)
         except Google_Authenticator.DoesNotExist:
             return Response({"message": "Google authenticator does not exist.",
                          "resource_id": request.data['google_authenticator_id']}, status=status.HTTP_403_FORBIDDEN)

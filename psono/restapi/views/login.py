@@ -115,7 +115,7 @@ class LoginView(GenericAPIView):
         # encrypt session secret with session_crypto_box
         session_secret_key_nonce = nacl.utils.random(Box.NONCE_SIZE)
         session_secret_key_nonce_hex = nacl.encoding.HexEncoder.encode(session_secret_key_nonce)
-        encrypted = session_crypto_box.encrypt(token.secret_key, session_secret_key_nonce)
+        encrypted = session_crypto_box.encrypt(token.secret_key.encode(), session_secret_key_nonce)
         session_secret_key = encrypted[len(session_secret_key_nonce):]
         session_secret_key_hex = nacl.encoding.HexEncoder.encode(session_secret_key)
 
@@ -124,7 +124,7 @@ class LoginView(GenericAPIView):
         # encrypt user_validator with user_crypto_box
         user_validator_nonce = nacl.utils.random(Box.NONCE_SIZE)
         user_validator_nonce_hex = nacl.encoding.HexEncoder.encode(user_validator_nonce)
-        encrypted = user_crypto_box.encrypt(token.user_validator, user_validator_nonce)
+        encrypted = user_crypto_box.encrypt(token.user_validator.encode(), user_validator_nonce)
         user_validator = encrypted[len(user_validator_nonce):]
         user_validator_hex = nacl.encoding.HexEncoder.encode(user_validator)
 

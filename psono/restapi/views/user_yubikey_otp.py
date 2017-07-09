@@ -40,11 +40,9 @@ class UserYubikeyOTP(GenericAPIView):
         :rtype:
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         yubikey_otps = []
 
-        for ga in Yubikey_OTP.objects.filter(user=user).all():
+        for ga in Yubikey_OTP.objects.filter(user=request.user).all():
             yubikey_otps.append({
                 'id': ga.id,
                 'title': ga.title,
@@ -69,8 +67,6 @@ class UserYubikeyOTP(GenericAPIView):
         :rtype:
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -86,7 +82,7 @@ class UserYubikeyOTP(GenericAPIView):
             encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
 
             new_yubikey = Yubikey_OTP.objects.create(
-                user=user,
+                user=request.user,
                 title= serializer.validated_data.get('title'),
                 yubikey_id = encrypted_yubikey_id_hex
             )
@@ -112,8 +108,6 @@ class UserYubikeyOTP(GenericAPIView):
         :return: 200 / 400 / 403
         """
 
-        user = User.objects.get(pk=request.user.id)
-
         if request_misses_uuid(request, 'yubikey_otp_id'):
             return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -121,7 +115,7 @@ class UserYubikeyOTP(GenericAPIView):
 
         # check if the YubiKey exists
         try:
-            yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=user)
+            yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=request.user)
         except Yubikey_OTP.DoesNotExist:
             return Response({"message": "YubiKey does not exist.",
                          "resource_id": request.data['yubikey_otp_id']}, status=status.HTTP_403_FORBIDDEN)

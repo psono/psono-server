@@ -19,7 +19,7 @@ import nacl.secret
 import nacl.encoding
 
 class YubikeyOTPVerifySerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     yubikey_otp = serializers.CharField(required=True)
 
     def validate(self, attrs):
@@ -36,11 +36,9 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
             msg = _('YubiKey OTP incorrect.')
             raise exceptions.ValidationError(msg)
 
-        token_hash = TokenAuthentication.user_token_to_token_hash(attrs.get('token'))
+        token = self.context['request'].auth
 
-        try:
-            token = Token.objects.filter(key=token_hash, active=False).get()
-        except Token.DoesNotExist:
+        if token.active:
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
@@ -51,7 +49,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
 
         otp_token_correct = False
-        for yk in Yubikey_OTP.objects.filter(user=token.user):
+        for yk in Yubikey_OTP.objects.filter(user_id=token.user_id):
             encrypted_yubikey_id = nacl.encoding.HexEncoder.decode(yk.yubikey_id)
             decrypted_yubikey_id = crypto_box.decrypt(encrypted_yubikey_id)
 

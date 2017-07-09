@@ -7,11 +7,12 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import request_misses_uuid, readbuffer
+from ..utils import request_misses_uuid, readbuffer, authenticate
 
 from ..app_settings import (
     DatastoreOverviewSerializer,
     CreateDatastoreSerializer,
+    DeleteDatastoreSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
 
@@ -267,8 +268,15 @@ class DatastoreView(GenericAPIView):
             datastore.secret_key = str(request.data['secret_key'])
         if 'secret_key_nonce' in request.data:
             datastore.secret_key_nonce = str(request.data['secret_key_nonce'])
+        if 'description' in request.data:
+            datastore.description = str(request.data['description'])
+        if 'is_default' in request.data:
+            datastore.is_default = request.data['is_default']
 
         datastore.save()
+
+        if request.data.get('is_default', False):
+            Data_Store.objects.filter(user=request.user, type=datastore.type).exclude(pk=datastore.pk).update(is_default=False)
 
         if settings.LOGGING_AUDIT:
             logger.info({
@@ -285,5 +293,84 @@ class DatastoreView(GenericAPIView):
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
 
-    def delete(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes an Datastore
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400 / 403
+        """
+
+        serializer = DeleteDatastoreSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_400_BAD_REQUEST',
+                    'event': 'DELETE_DATASTORE_ERROR',
+                    'user': request.user.username
+                })
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not authenticate(username=request.user.username, authkey=str(request.data['authkey'])):
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_403_FORBIDDEN',
+                    'event': 'DELETE_DATASTORE_WRONG_PASSWORD_ERROR',
+                    'user': request.user.username
+                })
+            raise PermissionDenied({"message":"Your old password was not right."})
+
+        # check if datastore exists
+        try:
+            data_store = Data_Store.objects.get(pk=request.data['datastore_id'], user=request.user)
+        except Data_Store.DoesNotExist:
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_403_FORBIDDEN',
+                    'event': 'DELETE_DATASTORE_NOT_EXIST_ERROR',
+                    'user': request.user.username
+                })
+            return Response({"message": "Datastore does not exist.",
+                         "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
+
+        # prevent deletion of the default datastore
+        if data_store.is_default:
+
+            if settings.LOGGING_AUDIT:
+                logger.info({
+                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+                    'request_method': request.META['REQUEST_METHOD'],
+                    'request_url': request.META['PATH_INFO'],
+                    'success': False,
+                    'status': 'HTTP_403_FORBIDDEN',
+                    'event': 'DELETE_DATASTORE_DEFAULT_PROTECTION_ERROR',
+                    'user': request.user.username
+                })
+            return Response({"message": "Cannot delete default datastore.",
+                         "resource_id": request.data['datastore_id']}, status=status.HTTP_400_BAD_REQUEST)
+
+        # delete it
+        data_store.delete()
+
+        return Response(status=status.HTTP_200_OK)

@@ -77,7 +77,7 @@ class GAVerifyView(GenericAPIView):
                 'success': True,
                 'status': 'HTTP_200_OK',
                 'event': 'LOGIN_GA_VERIFY_SUCCESS',
-                'user': token.user.username
+                'user': request.user.username
             })
 
         return Response(status=status.HTTP_200_OK)

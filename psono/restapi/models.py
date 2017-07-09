@@ -350,8 +350,8 @@ class Token(models.Model):
         self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
         self.key = sha512(self.clear_text_key.encode('utf-8')).hexdigest()
 
-        self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
-        self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
+        self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
+        self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
 
     def __str__(self):
         return self.key

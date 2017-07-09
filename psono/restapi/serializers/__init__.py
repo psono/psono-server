@@ -4,6 +4,7 @@ from .create_recoverycode import *
 from .create_share import *
 from .create_user_share_right import *
 from .datastore_overview import *
+from .delete_datastore import *
 from .delete_secret_link import *
 from .enable_new_password import *
 from .ga_verify import *

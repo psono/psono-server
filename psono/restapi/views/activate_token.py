@@ -77,7 +77,7 @@ class ActivateTokenView(GenericAPIView):
         # decrypt user email address
         secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_email = nacl.encoding.HexEncoder.decode(token.user.email)
+        encrypted_email = nacl.encoding.HexEncoder.decode(request.user.email)
         decrypted_email = crypto_box.decrypt(encrypted_email)
 
         if settings.LOGGING_AUDIT:
@@ -93,10 +93,10 @@ class ActivateTokenView(GenericAPIView):
 
         return Response({
             "user": {
-                "id": token.user.id,
+                "id": request.user.id,
                 "email": decrypted_email,
-                "secret_key": token.user.secret_key,
-                "secret_key_nonce": token.user.secret_key_nonce
+                "secret_key": request.user.secret_key,
+                "secret_key_nonce": request.user.secret_key_nonce
             }
         },status=status.HTTP_200_OK)
 
