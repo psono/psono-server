@@ -7,6 +7,8 @@ from restapi import models
 
 from .base import APITestCaseExtended
 
+from django.utils import timezone
+from datetime import timedelta
 
 import random
 import string
@@ -54,6 +56,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
             user=self.test_user_obj,
             secret_key=self.session_secret_key,
+            valid_till = timezone.now() + timedelta(seconds=10)
         )
 
         secret = pyotp.random_base32()

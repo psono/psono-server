@@ -45,21 +45,21 @@ class CommandCleartokenTestCase(TestCase):
             is_email_active=True
         )
 
+        # Lets put one tokens validity into the future, and one into the past
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-        token_obj = models.Token.objects.create(
+        models.Token.objects.create(
             key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
-            user=self.test_user_obj
+            user=self.test_user_obj,
+            valid_till=timezone.now() + timedelta(seconds=10)
         )
 
         self.token2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
             key= hashlib.sha512(self.token2.encode('utf-8')).hexdigest(),
-            user=self.test_user_obj
+            user=self.test_user_obj,
+            valid_till = timezone.now() - timedelta(seconds=10)
         )
 
-        # seems to work, so lets now put the token back into the past
-        token_obj.create_date = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID + 1)
-        token_obj.save()
 
     def test_cleartoken(self):
 

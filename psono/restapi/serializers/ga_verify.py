@@ -18,7 +18,6 @@ import nacl.encoding
 import pyotp
 
 class GAVerifySerializer(serializers.Serializer):
-    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     ga_token = serializers.CharField(max_length=6, min_length=6, required=True)
 
     def validate(self, attrs):

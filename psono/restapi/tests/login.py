@@ -674,9 +674,8 @@ class LoginTests(APITestCaseExtended):
         # seems to work, so lets now put the token back into the past
 
         token_obj = models.Token.objects.get()
-        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID + 1)
 
-        token_obj.create_date = time_threshold
+        token_obj.valid_till = timezone.now() - timedelta(seconds=10)
 
         token_obj.save()
 

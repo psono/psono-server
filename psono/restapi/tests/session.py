@@ -8,6 +8,9 @@ from restapi import models
 
 from .base import APITestCaseExtended
 
+from django.utils import timezone
+from datetime import timedelta
+
 import random
 import string
 
@@ -77,6 +80,7 @@ class SessionTests(APITestCaseExtended):
             secret_key=self.session_secret_key,
             active=True,
             device_description='Device 1',
+            valid_till = timezone.now() + timedelta(seconds=10)
         )
 
         self.token_u1_2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(32))
@@ -86,6 +90,7 @@ class SessionTests(APITestCaseExtended):
             secret_key=self.session_secret_key,
             active=True,
             device_description='Device 2',
+            valid_till = timezone.now() + timedelta(seconds=10)
         )
 
         self.token_u2_1 = ''.join(random.choice(string.ascii_lowercase) for _ in range(32))
@@ -95,6 +100,7 @@ class SessionTests(APITestCaseExtended):
             secret_key=self.session_secret_key,
             active=True,
             device_description='Device 3',
+            valid_till = timezone.now() + timedelta(seconds=10)
         )
 
 
