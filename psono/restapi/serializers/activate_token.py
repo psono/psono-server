@@ -9,14 +9,12 @@ except:
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import Token
 import nacl.utils
 from nacl.exceptions import CryptoError
 import nacl.secret
 import nacl.encoding
 
 class ActivateTokenSerializer(serializers.Serializer):
-    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     verification = serializers.CharField(required=True)
     verification_nonce = serializers.CharField(max_length=64, required=True)
 

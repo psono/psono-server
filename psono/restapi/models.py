@@ -48,7 +48,7 @@ class User(models.Model):
         abstract = False
 
     def get_cache_time(self):
-        return settings.TOKEN_TIME_VALID
+        return settings.DEFAULT_TOKEN_TIME_VALID
 
     @staticmethod
     def is_authenticated():
@@ -318,6 +318,7 @@ class Token(models.Model):
     id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
+    valid_till = models.DateTimeField(default=timezone.now)
     key = models.CharField(max_length=128, primary_key=True)
     secret_key = models.CharField(max_length=64)
     user_validator = models.CharField(max_length=64, null=True)
@@ -336,7 +337,7 @@ class Token(models.Model):
     is_cachable = True
 
     def get_cache_time(self):
-        return settings.TOKEN_TIME_VALID - (timezone.now() - self.create_date).total_seconds()
+        return (self.valid_till - timezone.now()).total_seconds()
 
     def save(self, *args, **kwargs):
         if not self.key:

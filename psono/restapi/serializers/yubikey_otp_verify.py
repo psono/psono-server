@@ -19,7 +19,6 @@ import nacl.secret
 import nacl.encoding
 
 class YubikeyOTPVerifySerializer(serializers.Serializer):
-    token = serializers.CharField(required=False) # TODO remove after all clients migrated
     yubikey_otp = serializers.CharField(required=True)
 
     def validate(self, attrs):

@@ -1,6 +1,8 @@
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status
 
 from restapi import models
@@ -94,7 +96,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         models.Token.objects.create(
             key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
             user=self.test_user_obj,
-            secret_key = binascii.hexlify(os.urandom(32)).decode()
+            secret_key = binascii.hexlify(os.urandom(32)).decode(),
+            valid_till=timezone.now() + timedelta(seconds=10),
         )
 
         self.yubikey_token = 'fdnjhhfdkljhfdjhfdkljhfdjklhfdkjlhfdg'

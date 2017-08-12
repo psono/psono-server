@@ -23,12 +23,14 @@ class LoginSerializer(serializers.Serializer):
     public_key = serializers.CharField(required=True, min_length=64, max_length=64)
     login_info = serializers.CharField(required=False)
     login_info_nonce = serializers.CharField(required=False)
+    session_duration = serializers.IntegerField(required=False)
 
     def validate(self, attrs):
 
         login_info = attrs.get('login_info', False)
         login_info_nonce = attrs.get('login_info_nonce', False)
         public_key = attrs.get('public_key')
+        session_duration = attrs.get('session_duration', settings.DEFAULT_TOKEN_TIME_VALID)
 
         crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
                          PublicKey(public_key, encoder=nacl.encoding.HexEncoder))
@@ -69,6 +71,7 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         attrs['user_session_public_key'] = public_key
+        attrs['session_duration'] = session_duration
 
         attrs['device_fingerprint'] = request_data.get('device_fingerprint', '')
         attrs['device_description'] = request_data.get('device_description', '')

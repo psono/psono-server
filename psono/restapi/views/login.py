@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -16,6 +17,7 @@ import nacl.utils
 import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 
+from datetime import timedelta
 import json
 import six
 
@@ -95,12 +97,13 @@ class LoginView(GenericAPIView):
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),
+            valid_till=timezone.now() + timedelta(seconds=serializer.validated_data.get('session_duration')),
         )
 
         # our public / private key box
         box = PrivateKey.generate()
 
-        # our hex encoded public / private keys
+        # our hex encoded public / private keyssession_duration
         server_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
         server_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
         user_session_public_key_hex = serializer.validated_data['user_session_public_key']

@@ -13,8 +13,6 @@ from ..app_settings import (
 )
 from ..authentication import TokenAuthentication
 
-from datetime import timedelta
-
 # import the logging
 import logging
 logger = logging.getLogger(__name__)
@@ -28,10 +26,8 @@ class SessionView(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
 
-        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
-
         sessions = []
-        for session in self.token_model.objects.filter(user=request.user, create_date__gt=time_threshold, active=True):
+        for session in self.token_model.objects.filter(user=request.user, valid_till__gt=timezone.now(), active=True):
             sessions.append({
                 "id": str(session.id),
                 "create_date": session.create_date.utcnow().strftime("%Y-%m-%d %H:%M:%S"),

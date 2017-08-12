@@ -73,8 +73,6 @@ class TokenAuthentication(BaseAuthentication):
 
     def get_db_token(self, token_hash):
 
-        time_threshold = timezone.now() - timedelta(seconds=settings.TOKEN_TIME_VALID)
-
         token = get_cache(Token, token_hash)
 
         if token is None:
@@ -83,7 +81,7 @@ class TokenAuthentication(BaseAuthentication):
         if not self.allow_inactive and not token.active:
             raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
-        if token.create_date < time_threshold:
+        if token.valid_till < timezone.now():
             raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
 
         return token
