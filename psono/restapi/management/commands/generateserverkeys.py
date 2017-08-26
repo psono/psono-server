@@ -25,9 +25,9 @@ class Command(BaseCommand):
         print('SECRET_KEY: ' + repr(''.join([random.SystemRandom().choice(uni) for i in range(50)])))
         print('ACTIVATION_LINK_SECRET: ' + repr(''.join([random.SystemRandom().choice(uni) for i in range(50)])))
         print('DB_SECRET: ' + repr(''.join([random.SystemRandom().choice(uni) for i in range(50)])))
-        print('EMAIL_SECRET_SALT: ' + repr(bcrypt.gensalt()))
-        print('PRIVATE_KEY: ' + repr(private_key_hex))
-        print('PUBLIC_KEY: ' + repr(public_key_hex))
+        print('EMAIL_SECRET_SALT: ' + repr(bcrypt.gensalt())).decode()
+        print('PRIVATE_KEY: ' + repr(private_key_hex)).decode()
+        print('PUBLIC_KEY: ' + repr(public_key_hex)).decode()
         print('')
 
 
