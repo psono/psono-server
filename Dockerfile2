@@ -15,12 +15,12 @@ RUN apt-get update && \
         python-pip \
         python-psycopg2 \
         nginx \
-        supervisor \
         postgresql-client \
         cron \
         haveged \
         net-tools && \
     pip install --upgrade pip && \
+    pip install supervisor && \
     pip install -r requirements.txt && \
     pip install uwsgi && \
     apt-get clean && \
