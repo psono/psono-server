@@ -82,7 +82,7 @@ run-vulnerability-scan-python2:
     - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE2
-    - docker run $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && safety check"
 
 
 run-vulnerability-scan-python3:
@@ -92,7 +92,7 @@ run-vulnerability-scan-python3:
     - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE3
-    - docker run $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && safety check"
 
 
 release-container-python2:
