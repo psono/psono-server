@@ -75,6 +75,26 @@ run-unittests-python3:
     - docker run --link db:postgres $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
+run-vulnerability-scan-python2:
+  stage: test
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE2
+    - docker run $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && safety check"
+
+
+run-vulnerability-scan-python3:
+  stage: test
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE3
+    - docker run $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && safety check"
+
+
 release-container-python2:
   stage: release
   image: docker:git
