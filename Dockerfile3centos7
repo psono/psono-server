@@ -1,0 +1,52 @@
+# PSONO Dockerfile for CentOS python 3
+FROM centos:centos7
+
+MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
+COPY psono/static/email /var/www/html/static/email
+COPY . /root/
+WORKDIR /root
+RUN yum -y update && \
+    yum -y install epel-release && \
+    yum -y update && \
+    yum -y install \
+        gcc \
+        python34 \
+        python34-devel \
+        python2-pip \
+        python34-pip \
+        nginx \
+        postgresql-client \
+        crontabs \
+        haveged \
+        net-tools && \
+    pip install --upgrade pip && \
+    pip install supervisor && \
+    pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt && \
+    pip3 install uwsgi && \
+    yum clean all && \
+    mkdir -p /root/.psono_server && \
+    echo "daemon off;" >> /etc/nginx/nginx.conf && \
+    cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
+    cp /root/configs/docker/worker-automigrate-cron3 /etc/cron.d/ && \
+    chmod 0644 /etc/cron.d/worker-cron3 && \
+    chmod 0644 /etc/cron.d/worker-automigrate-cron3 && \
+    touch /var/log/cron.log && \
+    mkdir -p /var/www/html/media && \
+    mkdir -p /etc/supervisor/conf.d && \
+    cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
+    cp /root/configs/docker/supervisor-psono-worker.conf /etc/supervisor/conf.d/ && \
+    cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/conf.d/default.conf && \
+    cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
+    sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \
+    sed -i s/YourPostgresUser/postgres/g /root/.psono_server/settings.yaml && \
+    sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
+    sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
+    sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
+    rm -Rf /root/psono/static && \
+    rm -Rf /root/var && \
+    rm -Rf /tmp/* /var/tmp/* /root/.cache
+
+EXPOSE 80
+
+CMD bash -c "supervisord -n"

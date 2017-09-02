@@ -1,7 +1,7 @@
 README.md
 .gitignore
 .gitmodules
-Dockerfile
+Dockerfile*
 configs/apache
 configs/nginx/psono.pw.conf
 demo
