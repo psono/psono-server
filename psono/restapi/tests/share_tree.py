@@ -1019,7 +1019,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
                              share_trees.count()))
 
-        # change datastore owner
+        # change datastore creator
         models.Data_Store.objects.filter(pk=self.test_datastore1_obj.id).update(user=self.test_user3_obj)
 
 

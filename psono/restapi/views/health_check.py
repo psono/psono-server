@@ -10,6 +10,11 @@ from django.db import connections, DEFAULT_DB_ALIAS
 
 import ntplib
 
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
+
 
 class HealthCheckView(GenericAPIView):
     permission_classes = (AllowAny,)
@@ -77,8 +82,15 @@ class HealthCheckView(GenericAPIView):
 
         if unhealthy:
             health_status = status.HTTP_400_BAD_REQUEST
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
+                     event='CHECK_HEALTH_FAILURE')
+
         else:
             health_status = status.HTTP_200_OK
+
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='CHECK_HEALTH_SUCCESS')
 
 
         return Response({

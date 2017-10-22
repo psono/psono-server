@@ -67,7 +67,7 @@ class UserShareRightsTest(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share2_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -84,7 +84,7 @@ class UserShareRightsTest(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share3_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,

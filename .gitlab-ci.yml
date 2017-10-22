@@ -16,6 +16,8 @@ stages:
   - deploy
 
 build-container-python2:
+  except:
+    - schedules
   stage: build
   image: docker:git
   services:
@@ -26,6 +28,8 @@ build-container-python2:
     - docker push $CONTAINER_TEST_IMAGE2
 
 build-container-python3:
+  except:
+    - schedules
   stage: build
   image: docker:git
   services:
@@ -36,6 +40,8 @@ build-container-python3:
     - docker push $CONTAINER_TEST_IMAGE3
 
 run-unittests-python2:
+  except:
+    - schedules
   stage: test
   image: docker:git
   variables:
@@ -56,6 +62,8 @@ run-unittests-python2:
 
 
 run-unittests-python3:
+  except:
+    - schedules
   stage: test
   image: docker:git
   variables:
@@ -76,6 +84,8 @@ run-unittests-python3:
 
 
 run-unittests-python3-centos7:
+  except:
+    - schedules
   stage: test
   image: docker:git
   variables:
@@ -97,26 +107,32 @@ run-unittests-python3-centos7:
 
 
 run-vulnerability-scan-python2:
+  except:
+    - schedules
   stage: test
   image: docker:git
   services:
     - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE2
-    - docker run -e "LANG=C.UTF-8" -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE2 bash -c "pip2 install -r requirements-dev.txt && safety check"
 
 
 run-vulnerability-scan-python3:
+  except:
+    - schedules
   stage: test
   image: docker:git
   services:
     - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE3
-    - docker run -e "LANG=C.UTF-8" -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE3 bash -c "pip3 install -r requirements-dev.txt && safety check"
 
 
 release-container-python2:
+  except:
+    - schedules
   stage: release
   image: docker:git
   services:
@@ -131,6 +147,8 @@ release-container-python2:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
 release-container-python3:
+  except:
+    - schedules
   stage: release
   image: docker:git
   services:
@@ -144,6 +162,8 @@ release-container-python3:
 
 
 deploy:
+  except:
+    - schedules
   stage: deploy
   image: docker:git
   services:
@@ -155,3 +175,15 @@ deploy:
     url: https://psono.pw
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
+
+
+scheduled-run-vulnerability-scan-python2:
+  only:
+    - schedules
+  stage: test
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker pull psono/psono-server
+    - docker run -e "LANG=C.UTF-8" psono/psono-server bash -c "pip2 install -r requirements-dev.txt && safety check"

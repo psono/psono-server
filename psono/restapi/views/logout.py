@@ -13,6 +13,7 @@ from ..app_settings import (
 from ..authentication import TokenAuthentication
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -47,19 +48,9 @@ class LogoutView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'LOGOUT_ERROR',
-                    'errors': serializer.errors
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGOUT_ERROR', errors=serializer.errors)
 
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         session_id = serializer.validated_data.get('session_id', False)
         if session_id:
@@ -74,16 +65,8 @@ class LogoutView(GenericAPIView):
             except:
                 pass
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'LOGOUT_SUCCESS',
-                'user': request.user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='LOGOUT_SUCCESS', request_resource=request.user.id)
 
         return Response({"success": "Successfully logged out."},
                         status=status.HTTP_200_OK)

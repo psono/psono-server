@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
                 ('add_share', models.BooleanField(default=False, help_text='Designates whether this user has "add share" rights and can add shares to this group', verbose_name='add share right')),
                 ('remove_share', models.BooleanField(default=False, help_text='Designates whether this user has "remove share" rights and can remove shares of this group', verbose_name='remove share right')),
                 ('grant', models.BooleanField(default=False, help_text='Designates whether this user has "grant" rights and can add users and rights of users of thisgroup. The user is limited by his own rights, so e.g. he cannot grant write if he does not have write on his own.', verbose_name='grant right')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='group_user_rights', to='restapi.Group')),
+                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='group_share_rights', to='restapi.Group')),
             ],
             options={
                 'abstract': False,
@@ -236,7 +236,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='group_user_right',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='group_user_rights', to='restapi.User'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='group_share_rights', to='restapi.User'),
         ),
         migrations.AddField(
             model_name='group',

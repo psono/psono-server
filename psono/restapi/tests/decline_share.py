@@ -97,7 +97,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -107,7 +107,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -150,7 +150,7 @@ class UserRightsDecline(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_decline_share_right(self):
         """
@@ -166,7 +166,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -176,7 +176,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -184,7 +184,7 @@ class UserRightsDecline(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+        url = reverse('share_right_decline')
 
         initial_data = {}
 
@@ -207,7 +207,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -217,7 +217,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -225,7 +225,7 @@ class UserRightsDecline(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+        url = reverse('share_right_decline')
 
         initial_data = {}
 
@@ -248,7 +248,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -258,7 +258,7 @@ class UserRightsDecline(APITestCaseExtended):
 
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -266,7 +266,7 @@ class UserRightsDecline(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_decline', kwargs={'uuid': str(self.test_share_right1_obj.id)})
+        url = reverse('share_right_decline')
 
         initial_data = {}
 

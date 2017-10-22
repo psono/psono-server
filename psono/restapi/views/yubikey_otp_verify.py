@@ -13,6 +13,7 @@ from ..app_settings import (
 from ..authentication import TokenAuthenticationAllowInactive
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -42,24 +43,15 @@ class YubikeyOTPVerifyView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200 / 400
         :rtype:
         """
+
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'LOGIN_YUBIKEY_OTP_VERIFY_ERROR',
-                    'errors': serializer.errors,
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_YUBIKEY_OTP_VERIFY_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -70,16 +62,8 @@ class YubikeyOTPVerifyView(GenericAPIView):
         token.yubikey_otp_2fa = False
         token.save()
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'LOGIN_YUBIKEY_OTP_VERIFY_SUCCESS',
-                'user': request.user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='LOGIN_YUBIKEY_OTP_VERIFY_SUCCESS', request_resource=serializer.validated_data['yubikey_otp'].id)
 
         return Response(status=status.HTTP_200_OK)
 

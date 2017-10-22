@@ -107,7 +107,7 @@ class UserShareRightTest(APITestCaseExtended):
         )
 
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
@@ -118,7 +118,7 @@ class UserShareRightTest(APITestCaseExtended):
 
         # and now insert our dummy share_right
         self.test_share_right1_ob = models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -198,7 +198,7 @@ class UserShareRightTest(APITestCaseExtended):
         # now lets define rights for this user
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -270,7 +270,7 @@ class UserShareRightTest(APITestCaseExtended):
         # now lets define rights for this user
         self.test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=False,
@@ -369,7 +369,7 @@ class UserShareRightTest(APITestCaseExtended):
             data_nonce="12345"
         )
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
@@ -419,6 +419,7 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data.get('shares', False), list,
                               'Shares do not exist in list shares response')
+        # Expect the share in response (even so it wasn't accepted yet)
         self.assertEquals(len(response.data.get('shares', False)), 1,
                           'The should only be one share')
 
@@ -434,24 +435,9 @@ class UserShareRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data.get('share_rights', False), list,
                               'Shares do not exist in list shares response')
-        self.assertEqual(len(response.data.get('share_rights', False)), 1,
-                         'One share should exist for this user')
 
-        target_store = {
-            'id': UUID(new_share_right_id, version=4),
-            'share_id': self.test_share1_obj.id,
-            'title': initial_data['title'],
-            'title_nonce': initial_data['title_nonce'],
-            'type': initial_data['type'],
-            'type_nonce': initial_data['type_nonce'],
-            'read': True,
-            'write': True,
-            'grant': True,
-            'key': initial_data['key'],
-            'key_nonce': initial_data['key_nonce'],
-        }
-
-        self.assertEqual(response.data.get('share_rights', False)[0], target_store)
+        self.assertEqual(len(response.data.get('share_rights', False)), 0,
+                         'Expecting no share, as it hasn\'t been accepted yet')
 
     def test_delete_share_right_with_no_grant_right(self):
         """
@@ -465,7 +451,7 @@ class UserShareRightTest(APITestCaseExtended):
             data_nonce="12345"
         )
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
@@ -474,7 +460,7 @@ class UserShareRightTest(APITestCaseExtended):
             accepted=True
         )
         test_user_share_rights = models.User_Share_Right.objects.create(
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             share_id=self.test_share1_obj.id,
             read=False,
@@ -495,7 +481,7 @@ class UserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_share_right_without_uuid(self):
         """
@@ -523,7 +509,7 @@ class UserShareRightTest(APITestCaseExtended):
             data_nonce="12345"
         )
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=test_share1_obj.id,
             read=True,
@@ -533,7 +519,7 @@ class UserShareRightTest(APITestCaseExtended):
         )
 
         test_user_share_rights = models.User_Share_Right.objects.create(
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             share_id=test_share1_obj.id,
             read=False,

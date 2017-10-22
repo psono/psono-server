@@ -9,6 +9,7 @@ from ..app_settings import (
 )
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -43,34 +44,15 @@ class VerifyEmailView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'LOGIN_VERIFY_EMAIL_ERROR',
-                    'errors': serializer.errors
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_VERIFY_EMAIL_ERROR', errors=serializer.errors)
 
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data['user']
         user.is_email_active = True
         user.save()
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'LOGIN_VERIFY_EMAIL_SUCCESS',
-                'user': user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK', event='LOGIN_VERIFY_EMAIL_SUCCESS', user=user.username)
 
         return Response({"success": "Successfully activated."},
                         status=status.HTTP_200_OK)

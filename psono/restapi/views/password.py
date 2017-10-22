@@ -21,6 +21,7 @@ from ..models import (
 from ..utils import readbuffer
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -33,21 +34,25 @@ class PasswordView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
+        """
+        Second step of the recovery code password reset.
+        Validates the code and sets the new password.
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 400 / 403
+        :rtype:
+        """
 
         serializer = SetNewPasswordSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'RECOVERY_CODE_SET_PASSWORD_ERROR',
-                    'errors': serializer.errors
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='RECOVERY_CODE_SET_PASSWORD_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -62,59 +67,33 @@ class PasswordView(GenericAPIView):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_USER_INVALID_ERROR'
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_USER_INVALID_ERROR')
+
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             recovery_code = Recovery_Code.objects.get(user_id=user.id)
 
             if not check_password(recovery_authkey, recovery_code.recovery_authkey):
-                if settings.LOGGING_AUDIT:
-                    logger.info({
-                        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                        'request_method': request.META['REQUEST_METHOD'],
-                        'request_url': request.META['PATH_INFO'],
-                        'success': False,
-                        'status': 'HTTP_403_FORBIDDEN',
-                        'event': 'RECOVERY_CODE_INVALID_ERROR',
-                        'user': user.username
-                    })
+
+                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                         event='RECOVERY_CODE_INVALID_ERROR')
+
                 return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         except Recovery_Code.DoesNotExist:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_DOES_NOT_EXIST_ERROR',
-                    'user': user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_DOES_NOT_EXIST_ERROR')
+
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         if recovery_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_VALIDATOR_EXPIRED_ERROR',
-                    'user': user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_VALIDATOR_EXPIRED_ERROR')
+
             return Response({"message": "Validator expired."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -130,16 +109,10 @@ class PasswordView(GenericAPIView):
             secret_key_nonce = update_data_dec['secret_key_nonce']
 
         except:
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_VALIDATOR_FAILED_ERROR',
-                    'user': user.username
-                })
+
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_VALIDATOR_FAILED_ERROR')
+
             return Response({"message": "Validation failed"}, status=status.HTTP_403_FORBIDDEN)
 
         recovery_code.verifier  = ''
@@ -153,23 +126,31 @@ class PasswordView(GenericAPIView):
         user.secret_key_nonce = secret_key_nonce
         user.save()
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'RECOVERY_CODE_SET_PASSWORD_SUCCESS',
-                'user': user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='RECOVERY_CODE_SET_PASSWORD_SUCCESS', request_resource=recovery_code.id)
+
         return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
+        """
+        First step of the password reset with a recovery code
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 403
+        :rtype:
+        """
 
         serializer = EnableNewPasswordSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='RECOVERY_CODE_INITIATE_ERROR', errors=serializer.errors)
+
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -181,15 +162,9 @@ class PasswordView(GenericAPIView):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_INITIATE_ERROR'
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_INITIATE_USER_NOT_EXIST_ERROR')
+
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -197,30 +172,16 @@ class PasswordView(GenericAPIView):
 
             if not check_password(recovery_authkey, recovery_code.recovery_authkey):
 
-                if settings.LOGGING_AUDIT:
-                    logger.info({
-                        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                        'request_method': request.META['REQUEST_METHOD'],
-                        'request_url': request.META['PATH_INFO'],
-                        'success': False,
-                        'status': 'HTTP_403_FORBIDDEN',
-                        'event': 'RECOVERY_CODE_INITIATE_INVALID_ERROR',
-                        'user': user.username
-                    })
+                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                         event='RECOVERY_CODE_INITIATE_INVALID_ERROR')
+
                 return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         except Recovery_Code.DoesNotExist:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'RECOVERY_CODE_INITIATE_DOES_NOT_EXIST_ERROR',
-                    'user': user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='RECOVERY_CODE_INITIATE_DOES_NOT_EXIST_ERROR')
+
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         verifier_box = PrivateKey.generate()
@@ -233,16 +194,8 @@ class PasswordView(GenericAPIView):
         recovery_code.verifier_issue_date  = verifier_issue_date
         recovery_code.save()
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'RECOVERY_CODE_INITIATE_SUCCESS',
-                'user': user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='RECOVERY_CODE_INITIATE_SUCCESS', request_resource=recovery_code.id)
 
         return Response({
             'recovery_data': readbuffer(recovery_code.recovery_data),

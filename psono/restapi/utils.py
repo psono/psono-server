@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
+from rest_framework import status as rest_status
 import bcrypt
 import time
 from uuid import UUID
-from .models import User, User_Share_Right, Secret_Link, Data_Store
+from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store
 
 import nacl.encoding
 import nacl.utils
@@ -114,24 +115,125 @@ def get_all_inherited_rights(user_id, share_id):
 
     return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
         FROM (
-          SELECT DISTINCT ON(t.path)
-          ur.*
-        FROM restapi_share_tree t
-        JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
-        JOIN restapi_user_share_right ur ON t2.share_id = ur.share_id
-        WHERE t.share_id = %(share_id)s
-          AND ur.user_id = %(user_id)s
-          AND ur.accepted = true
-        ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
-        ) a""", {
+            SELECT DISTINCT ON(t.path)
+                ur.id, ur.read, ur.write, ur.grant
+            FROM restapi_share_tree t
+                JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
+                JOIN restapi_user_share_right ur ON t2.share_id = ur.share_id
+            WHERE t.share_id = %(share_id)s
+                AND ur.user_id = %(user_id)s
+                AND ur.accepted = true
+            ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
+        ) a
+        UNION
+        SELECT DISTINCT ON (id) *
+        FROM (
+            SELECT DISTINCT ON(t.path)
+                gr.id, gr.read, gr.write, gr.grant
+            FROM restapi_share_tree t
+                JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
+                JOIN restapi_group_share_right gr ON t2.share_id = gr.share_id
+                JOIN restapi_user_group_membership gm ON gr.group_id = gm.group_id
+            WHERE t.share_id = %(share_id)s
+                AND gm.user_id = %(user_id)s
+                AND gm.accepted = true
+            ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
+        ) b
+        """, {
         'share_id': share_id,
         'user_id': user_id,
     })
 
 
+def get_all_direct_user_rights(user_id, share_id):
+
+    try:
+        user_share_rights = User_Share_Right.objects.only("read", "write", "grant").filter(user_id=user_id, share_id=share_id, accepted=True)
+    except User_Share_Right.DoesNotExist:
+        user_share_rights = []
+
+    return user_share_rights
+
+
+def get_all_direct_group_rights(user_id, share_id):
+
+    return Group_Share_Right.objects.raw("""SELECT gr.id, gr.read, gr.write, gr.grant
+        FROM restapi_group_share_right gr
+            JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
+        WHERE gr.share_id = %(share_id)s
+            AND ms.user_id = %(user_id)s
+            AND ms.accepted = true""", {
+        'share_id': share_id,
+        'user_id': user_id,
+    })
+
+
+def calculate_user_rights_on_share(user_id = -1, share_id=-1):
+    """
+    Calculates the user's rights on a share
+
+    :param user_id:
+    :type user_id:
+    :param share_id:
+    :type share_id:
+    :return:
+    :rtype:
+    """
+
+    grouped_read = False
+    grouped_write = False
+    grouped_grant = False
+
+    has_direct_user_share_rights = False
+    has_direct_group_share_rights = False
+
+    user_rights = get_all_direct_user_rights(user_id=user_id, share_id=share_id)
+
+    for user_right in user_rights:
+        has_direct_user_share_rights = True
+        grouped_read = grouped_read or user_right.read
+        grouped_write = grouped_write or user_right.write
+        grouped_grant = grouped_grant or user_right.grant
+
+
+    group_rights = get_all_direct_group_rights(user_id, share_id)
+
+    for s in group_rights:
+        has_direct_group_share_rights = True
+        grouped_read = grouped_read or s.read
+        grouped_write = grouped_write or s.write
+        grouped_grant = grouped_grant or s.grant
+
+
+    if has_direct_user_share_rights == False and has_direct_group_share_rights == False:
+
+        # maybe the user has inherited rights
+        user_share_rights = get_all_inherited_rights(user_id, share_id)
+
+        for s in user_share_rights:
+            grouped_read = grouped_read or s.read
+            grouped_write = grouped_write or s.write
+            grouped_grant = grouped_grant or s.grant
+
+    return {
+        'read': grouped_read,
+        'write': grouped_write,
+        'grant': grouped_grant,
+    }
+
+
 def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
     """
-    Checks if the given user has the requested rights for the given share
+    Checks if the given user has the requested rights for the given share. User_share_rights and all Group_share_rights
+    be checked first.
+
+    If "right = true" is demanded and one of them is true, this function returns true.
+    If "right = false" is demanded and one of them is true, this function returns false.
+
+    Afterwards inherited rights are checked.
+
+    If "right = true" is demanded and one of them is true, this function returns true.
+    If "right = false" is demanded and one of them is true, this function returns false.
 
     :param user_id:
     :param share_id:
@@ -141,30 +243,11 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
     :return:
     """
 
-    try:
-        # check direct share_rights first, as direct share_rights override inherited share rights
-        user_share_right = User_Share_Right.objects.get(user_id=user_id, share_id=share_id, accepted=True)
+    rights = calculate_user_rights_on_share(user_id, share_id)
 
-        return (read is None or read == user_share_right.read)\
-               and (write is None or write == user_share_right.write)\
-               and (grant is None or grant == user_share_right.grant)
-
-    except User_Share_Right.DoesNotExist:
-        # maybe he has inherited rights
-        user_share_rights = get_all_inherited_rights(user_id, share_id)
-
-        grouped_read = False
-        grouped_write = False
-        grouped_grant = False
-
-        for s in user_share_rights:
-            grouped_read = grouped_read or s.read
-            grouped_write = grouped_write or s.write
-            grouped_grant = grouped_grant or s.grant
-
-        return (read is None or read == grouped_read) \
-               and (write is None or write == grouped_write) \
-               and (grant is None or grant == grouped_grant)
+    return (read is None or read == rights['read']) \
+           and (write is None or write == rights['write']) \
+           and (grant is None or grant == rights['grant'])
 
 
 def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None):
@@ -179,7 +262,7 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
     """
 
     try:
-        datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True)
+        datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
     except Data_Store.DoesNotExist:
         datastores = []
 
@@ -306,6 +389,68 @@ def generate_authkey(username, password):
                          r=8,
                          p=1,
                          dkLen=64))
+
+def get_datastore(datastore_id=None, user=None):
+    """
+    Returns for a given datastore ID and user the datastore (if the user owns the datastore) or None (if the user doesn't
+    own the datastore)
+
+    :param datastore_id: The datastore ID
+    :type datastore_id: uuid
+    :param user: The user and alleged owner of the datastore
+    :type user: User
+    :return:
+    :rtype:
+    """
+
+    if user and not datastore_id:
+        try:
+            datastores = Data_Store.objects.filter(user=user)
+        except Data_Store.DoesNotExist:
+            datastores = []
+        return datastores
+
+    datastore = None
+    try:
+        if user and datastore_id:
+            datastore = Data_Store.objects.get(pk=datastore_id, user=user)
+        else:
+            datastore = Data_Store.objects.get(pk=datastore_id)
+    except Data_Store.DoesNotExist:
+        pass
+    except ValueError:
+        pass
+
+    return datastore
+
+
+def log_info(logger, request, status, event, errors=None, request_resource=None, user=None):
+
+    if not settings.LOGGING_AUDIT:
+        return
+
+    log_entry = {
+        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
+        'request_method': request.META['REQUEST_METHOD'],
+        'request_url': request.META['PATH_INFO'],
+        'success': rest_status.is_success(getattr(rest_status, status)),
+        'status': status,
+        'event': event,
+        'user': request.user.username,
+    }
+
+    if errors is not None:
+        log_entry['errors'] = errors
+
+    if request_resource is not None:
+        log_entry['request_resource'] = request_resource
+
+    if user is not None:
+        log_entry['user'] = user
+    else:
+        log_entry['user'] = request.user.username
+
+    logger.info(log_entry)
 
 # Python 3 Helper functions
 

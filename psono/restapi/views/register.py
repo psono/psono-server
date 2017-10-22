@@ -12,6 +12,7 @@ from ..app_settings import (
 from ..utils import generate_activation_code
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -51,25 +52,14 @@ class RegisterView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'errors': serializer.errors,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'REGISTER_ERROR',
-                    'user': self.request.data.get('username', '')
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='REGISTER_ERROR', errors=serializer.errors)
 
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         activation_code = generate_activation_code(serializer.validated_data['email'])
 
         # serializer.validated_data['email'] gets now encrypted
-        serializer.save()
+        user = serializer.save()
 
         # if len(self.request.data.get('base_url', '')) < 1:
         #    raise exceptions.ValidationError(msg)
@@ -105,16 +95,8 @@ class RegisterView(GenericAPIView):
             html_message=msg_html,
         )
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_201_CREATED',
-                'event': 'REGISTER_SUCCESS',
-                'user': self.request.data.get('username', '')
-            })
+        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
+                 event='REGISTER_SUCCESS', request_resource=user.id)
 
         return Response({"success": "Successfully registered."},
                         status=status.HTTP_201_CREATED)

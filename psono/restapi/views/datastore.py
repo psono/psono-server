@@ -7,7 +7,7 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import request_misses_uuid, readbuffer, authenticate
+from ..utils import request_misses_uuid, readbuffer, authenticate, get_datastore
 
 from ..app_settings import (
     DatastoreOverviewSerializer,
@@ -22,30 +22,9 @@ from ..authentication import TokenAuthentication
 import six
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
-
-def get_datastore(datastore_id=None, user=None):
-
-    if user and not datastore_id:
-        try:
-            datastores = Data_Store.objects.filter(user=user)
-        except Data_Store.DoesNotExist:
-            datastores = []
-        return datastores
-
-    datastore = None
-    try:
-        if user and datastore_id:
-            datastore = Data_Store.objects.get(pk=datastore_id, user=user)
-        else:
-            datastore = Data_Store.objects.get(pk=datastore_id)
-    except Data_Store.DoesNotExist:
-        pass
-    except ValueError:
-        pass
-
-    return datastore
 
 
 class DatastoreView(GenericAPIView):
@@ -73,16 +52,7 @@ class DatastoreView(GenericAPIView):
         if not uuid:
             datastores = get_datastore(user=request.user)
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': True,
-                    'status': 'HTTP_200_OK',
-                    'event': 'LIST_ALL_DATASTORES_SUCCESS',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_200_OK', event='LIST_ALL_DATASTORES_SUCCESS')
 
             return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
@@ -90,32 +60,13 @@ class DatastoreView(GenericAPIView):
             datastore = get_datastore(uuid, request.user)
             if not datastore:
 
-                if settings.LOGGING_AUDIT:
-                    logger.info({
-                        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                        'request_method': request.META['REQUEST_METHOD'],
-                        'request_url': request.META['PATH_INFO'],
-                        'success': False,
-                        'status': 'HTTP_403_FORBIDDEN',
-                        'request_ressource': uuid,
-                        'event': 'LIST_DATASTORE_ERROR',
-                        'user': request.user.username
-                    })
+                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                         event='LIST_DATASTORE_ERROR')
 
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': True,
-                    'status': 'HTTP_200_OK',
-                    'event': 'LIST_DATASTORE_SUCCESS',
-                    'user': request.user.username
-                })
-
-
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='LIST_DATASTORE_SUCCESS', request_resource= datastore.id)
 
             return Response({
                 'data': readbuffer(datastore.data),
@@ -146,19 +97,9 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'CREATE_DATASTORE_REQUEST_ERROR',
-                    'errors': serializer.errors
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_DATASTORE_REQUEST_ERROR', errors=serializer.errors)
 
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
         try:
@@ -179,17 +120,8 @@ class DatastoreView(GenericAPIView):
 
         except IntegrityError as e:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'error': 'IntegrityError',
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'CREATE_DATASTORE_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
+                     event='CREATE_DATASTORE_INTEGRITY_ERROR')
 
             if hasattr(e, 'message') and '(user_id, type, description)' in e.message:
                 return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
@@ -204,16 +136,9 @@ class DatastoreView(GenericAPIView):
                 return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_201_CREATED',
-                'event': 'CREATE_DATASTORE_SUCCESS',
-                'user': request.user.username
-            })
+
+        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
+                 event='CREATE_DATASTORE_SUCCESS', request_resource=datastore.id)
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
@@ -232,32 +157,18 @@ class DatastoreView(GenericAPIView):
         """
 
         if request_misses_uuid(request, 'datastore_id'):
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'UPDATE_DATASTORE_NO_DATASTORE_ID_ERROR',
-                    'user': request.user.username
-                })
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
+                     event='UPDATE_DATASTORE_NO_DATASTORE_ID_ERROR')
+
             return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         datastore = get_datastore(request.data['datastore_id'], request.user)
         if not datastore:
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'request_ressource': request.data['datastore_id'],
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'UPDATE_DATASTORE_PERMISSIONS_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='UPDATE_DATASTORE_PERMISSIONS_ERROR', request_resource=request.data['datastore_id'])
+
             raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
 
         if 'data' in request.data:
@@ -278,17 +189,8 @@ class DatastoreView(GenericAPIView):
         if request.data.get('is_default', False):
             Data_Store.objects.filter(user=request.user, type=datastore.type).exclude(pk=datastore.pk).update(is_default=False)
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'request_ressource': request.data['datastore_id'],
-                'status': 'HTTP_200_OK',
-                'event': 'UPDATE_DATASTORE_SUCCESS',
-                'user': request.user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='UPDATE_DATASTORE_SUCCESS', request_resource=request.data['datastore_id'])
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
@@ -307,16 +209,7 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_400_BAD_REQUEST',
-                    'event': 'DELETE_DATASTORE_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_DATASTORE_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -324,16 +217,9 @@ class DatastoreView(GenericAPIView):
 
         if not authenticate(username=request.user.username, authkey=str(request.data['authkey'])):
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'DELETE_DATASTORE_WRONG_PASSWORD_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='DELETE_DATASTORE_WRONG_PASSWORD_ERROR')
+
             raise PermissionDenied({"message":"Your old password was not right."})
 
         # check if datastore exists
@@ -341,34 +227,23 @@ class DatastoreView(GenericAPIView):
             data_store = Data_Store.objects.get(pk=request.data['datastore_id'], user=request.user)
         except Data_Store.DoesNotExist:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'DELETE_DATASTORE_NOT_EXIST_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='DELETE_DATASTORE_NOT_EXIST_ERROR')
+
             return Response({"message": "Datastore does not exist.",
                          "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # prevent deletion of the default datastore
         if data_store.is_default:
 
-            if settings.LOGGING_AUDIT:
-                logger.info({
-                    'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                    'request_method': request.META['REQUEST_METHOD'],
-                    'request_url': request.META['PATH_INFO'],
-                    'success': False,
-                    'status': 'HTTP_403_FORBIDDEN',
-                    'event': 'DELETE_DATASTORE_DEFAULT_PROTECTION_ERROR',
-                    'user': request.user.username
-                })
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='DELETE_DATASTORE_DEFAULT_PROTECTION_ERROR', request_resource=data_store.id)
+
             return Response({"message": "Cannot delete default datastore.",
                          "resource_id": request.data['datastore_id']}, status=status.HTTP_400_BAD_REQUEST)
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='DELETE_DATASTORE_SUCCESS', request_resource=data_store.id)
 
         # delete it
         data_store.delete()

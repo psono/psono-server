@@ -14,6 +14,7 @@ from ..app_settings import (
 from ..authentication import TokenAuthentication
 
 # import the logging
+from ..utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -35,16 +36,8 @@ class SessionView(GenericAPIView):
                 "current_session": session.id == request.auth.id,
             })
 
-        if settings.LOGGING_AUDIT:
-            logger.info({
-                'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-                'request_method': request.META['REQUEST_METHOD'],
-                'request_url': request.META['PATH_INFO'],
-                'success': True,
-                'status': 'HTTP_200_OK',
-                'event': 'LIST_SESSIONS_SUCCESS',
-                'user': request.user.username
-            })
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='LIST_SESSIONS_SUCCESS')
 
         return Response({
             'sessions': sessions

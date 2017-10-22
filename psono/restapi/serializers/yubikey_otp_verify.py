@@ -54,6 +54,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
             if six.b(yubikey_id) == decrypted_yubikey_id:
                 otp_token_correct = True
+                attrs['yubikey_otp'] = yk
                 break
 
         if not otp_token_correct:

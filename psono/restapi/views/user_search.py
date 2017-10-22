@@ -3,23 +3,27 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    User, Google_Authenticator, Yubikey_OTP, Recovery_Code
+    Google_Authenticator, Yubikey_OTP, Recovery_Code
 )
 
 from ..app_settings import (
-    UserPublicKeySerializer
+    UserSearchSerializer
 )
-from django.core.exceptions import ValidationError
 
 
 from ..authentication import TokenAuthentication
+
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
 
 
 class UserSearch(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserPublicKeySerializer
+    serializer_class = UserSearchSerializer
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
@@ -44,24 +48,16 @@ class UserSearch(GenericAPIView):
         :return:
         :rtype:
         """
-        if 'user_id' in request.data and request.data['user_id']:
-            try:
-                user = User.objects.get(pk=str(request.data['user_id']))
-            except ValidationError:
-                return Response({"error": "IdNoUUID", 'message': "User ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            except User.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_id'])}, status=status.HTTP_403_FORBIDDEN)
 
-        elif 'user_username' in request.data and request.data['user_username']:
-            try:
-                user = User.objects.get(username=str(request.data['user_username']))
-            except User.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": str(request.data['user_username'])}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='USER_SEARCH_ERROR', errors=serializer.errors)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data.get('user')
 
         user_details = {
             'id': user.id,
@@ -73,8 +69,11 @@ class UserSearch(GenericAPIView):
             user_details['multifactor_auth_enabled'] = Google_Authenticator.objects.filter(user=user).exists() or Yubikey_OTP.objects.filter(user=user).exists()
             user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
 
-        return Response(user_details,
-                status=status.HTTP_200_OK)
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='SEARCH_USER_SUCCESS', request_resource=user.id)
+
+        return Response(user_details, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

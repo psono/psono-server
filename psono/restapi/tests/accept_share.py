@@ -134,7 +134,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -144,7 +144,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -159,7 +159,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -189,8 +189,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         saved_user_share_right = models.User_Share_Right.objects.get(pk=str(test_share_right1_obj.id))
 
-        self.assertEqual(saved_user_share_right.title, "", "Title should be empty")
-        self.assertEqual(saved_user_share_right.title_nonce, "", "Title nonce should be empty")
         self.assertEqual(saved_user_share_right.accepted, True, "Accepted flag should be true")
         self.assertEqual(saved_user_share_right.key, initial_data['key'], "Key should be new key")
         self.assertEqual(saved_user_share_right.key_nonce, initial_data['key_nonce'], "Key nonce should be new key")
@@ -203,7 +201,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -213,7 +211,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -222,7 +220,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right2_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user3_obj.id,
             read=True,
             write=False,
@@ -237,7 +235,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -253,7 +251,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share2_obj.id,
-            owner_id=self.test_user3_obj.id,
+            creator_id=self.test_user3_obj.id,
             user_id=self.test_user3_obj.id,
             read=False,
             write=True,
@@ -291,7 +289,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user3_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_in_share_with_no_grant_right_on_share(self):
         """
@@ -300,7 +298,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -310,7 +308,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -325,7 +323,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -347,7 +345,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_with_badly_formatted_parent_share_uuid(self):
         """
@@ -356,7 +354,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -366,7 +364,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -381,7 +379,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -412,7 +410,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -422,7 +420,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -437,7 +435,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -468,7 +466,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -484,7 +482,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -514,7 +512,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -530,7 +528,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -560,7 +558,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -576,7 +574,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -619,7 +617,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -635,7 +633,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -644,7 +642,7 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': '581d7299-b818-48d5-984b-812b43522464'})
+        url = reverse('share_right_accept')
 
         initial_data = {
             'link_id': "223545",
@@ -666,7 +664,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -676,7 +674,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -715,8 +713,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         saved_user_share_right = models.User_Share_Right.objects.get(pk=str(test_share_right1_obj.id))
 
-        self.assertEqual(saved_user_share_right.title, "", "Title should be empty")
-        self.assertEqual(saved_user_share_right.title_nonce, "", "Title nonce should be empty")
         self.assertEqual(saved_user_share_right.accepted, True, "Accepted flag should be true")
         self.assertEqual(saved_user_share_right.key, initial_data['key'], "Key should be new key")
         self.assertEqual(saved_user_share_right.key_nonce, initial_data['key_nonce'], "Key nonce should be new key")
@@ -741,7 +737,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_with_not_existing_parent_share(self):
         """
@@ -750,7 +746,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -771,7 +767,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_with_not_existing_datastore(self):
         """
@@ -780,7 +776,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -801,7 +797,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_without_parent_share_rights(self):
         """
@@ -810,7 +806,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -831,7 +827,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_share_right_with_no_rights_on_datastore(self):
         """
@@ -840,7 +836,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -871,7 +867,7 @@ class UserRightsAccept(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_accept_share_right(self):
         """
@@ -880,7 +876,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -890,7 +886,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -905,7 +901,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -936,7 +932,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -946,7 +942,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -961,7 +957,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -970,7 +966,7 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
@@ -991,7 +987,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             read=True,
             write=False,
@@ -1001,7 +997,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_share_right1_obj = models.User_Share_Right.objects.create(
             share_id=self.test_share1_obj.id,
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user2_obj.id,
             read=True,
             write=False,
@@ -1016,7 +1012,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         models.User_Share_Right.objects.create(
             share_id=test_parent_share1_obj.id,
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             read=False,
             write=True,
@@ -1025,7 +1021,7 @@ class UserRightsAccept(APITestCaseExtended):
         )
 
         # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept', kwargs={'uuid': str(test_share_right1_obj.id)})
+        url = reverse('share_right_accept')
 
         initial_data = {
             'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",

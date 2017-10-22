@@ -18,6 +18,11 @@ import nacl.utils
 import nacl.secret
 import hashlib
 
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
+
 
 class UserYubikeyOTP(GenericAPIView):
 
@@ -36,7 +41,7 @@ class UserYubikeyOTP(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200
         :rtype:
         """
 
@@ -63,37 +68,41 @@ class UserYubikeyOTP(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 201 / 400
         :rtype:
         """
 
         serializer = self.get_serializer(data=request.data)
 
-        if serializer.is_valid():
+        if not serializer.is_valid():
 
-            yubikey_otp = serializer.validated_data.get('yubikey_otp')
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_YUBIKEY_OTP_ERROR', errors=serializer.errors)
 
-            yubikey_id = yubikey_otp[:12]
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-            secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
-            crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-            encrypted_yubikey_id = crypto_box.encrypt(str(yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-            encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
+        yubikey_otp = serializer.validated_data.get('yubikey_otp')
 
-            new_yubikey = Yubikey_OTP.objects.create(
-                user=request.user,
-                title= serializer.validated_data.get('title'),
-                yubikey_id = encrypted_yubikey_id_hex
-            )
+        yubikey_id = yubikey_otp[:12]
 
-            return Response({
-                "id": new_yubikey.id,
-            },
-                status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
+        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+        encrypted_yubikey_id = crypto_box.encrypt(str(yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
+
+        new_yubikey = Yubikey_OTP.objects.create(
+            user=request.user,
+            title= serializer.validated_data.get('title'),
+            yubikey_id = encrypted_yubikey_id_hex
+        )
+
+        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
+                 event='CREATE_YUBIKEY_OTP_SUCCESS', request_resource=new_yubikey.id)
+
+        return Response({
+            "id": new_yubikey.id,
+        },
+            status=status.HTTP_201_CREATED)
 
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -109,6 +118,10 @@ class UserYubikeyOTP(GenericAPIView):
         """
 
         if request_misses_uuid(request, 'yubikey_otp_id'):
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
+                     event='DELETE_YUBIKEY_OTP_NO_YUBIKEY_OTP_ID_ERROR')
+
             return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -117,10 +130,17 @@ class UserYubikeyOTP(GenericAPIView):
         try:
             yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=request.user)
         except Yubikey_OTP.DoesNotExist:
+
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='DELETE_YUBIKEY_OTP_YUBIKEY_OTP_NOT_EXIST_ERROR')
+
             return Response({"message": "YubiKey does not exist.",
                          "resource_id": request.data['yubikey_otp_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # delete it
         yubikey_otp.delete()
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='DELETE_YUBIKEY_OTP_SUCCESS', request_resource=request.data['yubikey_otp_id'])
 
         return Response(status=status.HTTP_200_OK)

@@ -147,7 +147,7 @@ class ShareTests(APITestCaseExtended):
         )
 
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
@@ -177,7 +177,7 @@ class ShareTests(APITestCaseExtended):
         )
 
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user2_obj.id,
+            creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             share_id=self.test_share2_obj.id,
             read=True,
@@ -311,15 +311,15 @@ class ShareTests(APITestCaseExtended):
             'data_nonce': initial_data['data_nonce'],
             'user_id': self.test_user_obj.id,
             'user_share_rights': [{
-                'user_id': self.test_user_obj.id,
                 'grant': True,
                 'read': True,
-                'key_nonce': initial_data['key_nonce'],
-                'key_type': initial_data['key_type'],
                 'write': True,
-                'key': initial_data['key'],
-                'id': response.data['user_share_rights'][0]['id']
             }],
+            'rights': {
+                'grant': True,
+                'read': True,
+                'write': True,
+            },
             'user_share_rights_inherited': []
         }
 
@@ -458,15 +458,15 @@ class ShareTests(APITestCaseExtended):
             'data_nonce': updated_data['data_nonce'],
             'user_id': self.test_user_obj.id,
             'user_share_rights': [{
-                'user_id': self.test_user_obj.id,
                 'grant': True,
                 'read': True,
-                'key_nonce': initial_data['key_nonce'],
                 'write': True,
-                'key': initial_data['key'],
-                'key_type': initial_data['key_type'],
-                'id': response.data['user_share_rights'][0]['id']
             }],
+            'rights': {
+                'grant': True,
+                'read': True,
+                'write': True,
+            },
             'user_share_rights_inherited': []
         }
 
@@ -520,7 +520,7 @@ class UpdateShareTests(APITestCaseExtended):
         )
 
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
@@ -554,7 +554,7 @@ class UpdateShareTests(APITestCaseExtended):
         )
 
         models.User_Share_Right.objects.create(
-            owner_id=self.test_user_obj.id,
+            creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share3_obj.id,
             read=True,
@@ -593,7 +593,7 @@ class UpdateShareTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_no_rights_on_share(self):
         """
@@ -609,7 +609,7 @@ class UpdateShareTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_no_write_rights_on_share(self):
         """
@@ -625,7 +625,7 @@ class UpdateShareTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, initial_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_write_data_to_database(self):
         """

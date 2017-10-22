@@ -18,6 +18,11 @@ from ..app_settings import (
 from django.db import connection
 from ..authentication import TokenAuthentication
 
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
+
 
 def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
     """
@@ -152,6 +157,8 @@ class ShareLinkView(GenericAPIView):
         :return: 201 / 400 / 403
         """
 
+        # TODO Refactor to use serializer
+
         if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -198,6 +205,9 @@ class ShareLinkView(GenericAPIView):
             return Response({"message":"Link id already exists.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_403_FORBIDDEN)
 
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK', event='CREATE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
+
         return Response(status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
@@ -216,6 +226,8 @@ class ShareLinkView(GenericAPIView):
         :param kwargs:
         :return: 200 / 403 / 404
         """
+
+        # TODO Refactor to use serializer
 
         if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
@@ -295,6 +307,8 @@ class ShareLinkView(GenericAPIView):
         for share_id in shares:
             create_share_link(request.data['link_id'], share_id, new_parent_share_id, new_parent_datastore_id)
 
+        log_info(logger=logger, request=request, status='HTTP_200_OK', event='MOVE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -312,6 +326,8 @@ class ShareLinkView(GenericAPIView):
         :param kwargs:
         :return: 200 / 400/ 403
         """
+
+        # TODO Refactor to use serializer
 
         if request_misses_uuid(request, 'link_id'):
             return Response({"error": "IdNoUUID", 'message': "Link ID not in request"},
@@ -356,5 +372,7 @@ class ShareLinkView(GenericAPIView):
                                 "resource_id": datastore_id}, status=status.HTTP_403_FORBIDDEN)
 
         delete_share_link(request.data['link_id'])
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DELETE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
 
         return Response(status=status.HTTP_200_OK)
