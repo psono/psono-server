@@ -67,7 +67,7 @@ urlpatterns = [
     url(r'^group/$', views.GroupView.as_view(), name='group'),
     url(r'^group/rights/$', views.GroupRightsView.as_view(), name='group_rights'),
     url(r'^group/rights/(?P<uuid>[^/]+)/$', views.GroupRightsView.as_view(), name='group_rights'),
-    url(r'^group/(?P<uuid>[^/]+)/$', views.GroupView.as_view(), name='group'),
+    url(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='group'),
 
     url(r'^membership/accept/$', views.MembershipAcceptView.as_view(), name='membership_accept'),
     url(r'^membership/decline/$', views.MembershipDeclineView.as_view(), name='membership_decline'),

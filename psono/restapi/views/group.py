@@ -31,14 +31,14 @@ class GroupView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, group_id = None, *args, **kwargs):
         """
         Returns either a list of all groups with own access privileges or the members specified group
         
         :param request:
         :type request:
-        :param uuid:
-        :type uuid:
+        :param group_id:
+        :type group_id:
         :param args:
         :type args:
         :param kwargs:
@@ -47,7 +47,7 @@ class GroupView(GenericAPIView):
         :rtype:
         """
 
-        if not uuid:
+        if not group_id:
 
             # Generates a list of groups wherever the user has any rights for it
 
@@ -89,9 +89,6 @@ class GroupView(GenericAPIView):
 
                 response.append(details)
 
-
-            print(response)
-
             log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_ALL_GROUPS_SUCCESS')
 
             return Response({'groups': response},
@@ -100,13 +97,13 @@ class GroupView(GenericAPIView):
 
             # Returns the specified share if the user has any rights for it and joins the user_share objects
             try:
-                membership = User_Group_Membership.objects.get(user=request.user, group_id=uuid)
+                membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
             except User_Group_Membership.DoesNotExist:
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN', event='READ_GROUP_NO_PERMISSION_ERROR')
+                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='READ_GROUP_NO_PERMISSION_ERROR')
 
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                 "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                 "resource_id": group_id}, status=status.HTTP_400_BAD_REQUEST)
 
             members = []
             if membership.group_admin and membership.accepted:
@@ -288,13 +285,13 @@ class GroupView(GenericAPIView):
 
         # check if the group exists
         try:
-            membership = User_Group_Membership.objects.get(group_id=request.data['group_id'], user=request.user, group_admin=True)
+            membership = User_Group_Membership.objects.get(group_id=request.data['group_id'], user=request.user, group_admin=True, accepted=True)
         except User_Group_Membership.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN', event='DELETE_GROUP_NO_PERMISSION_ERROR')
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_GROUP_NO_PERMISSION_ERROR')
 
             return Response({"message":"You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['group_id']}, status=status.HTTP_403_FORBIDDEN)
+                             "resource_id": request.data['group_id']}, status=status.HTTP_400_BAD_REQUEST)
 
 
         log_info(logger=logger, request=request, status='HTTP_200_OK', event='DELETE_GROUP_SUCCESS', request_resource=request.data['group_id'])
