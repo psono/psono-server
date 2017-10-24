@@ -8,6 +8,7 @@ from ..utils import request_misses_uuid
 from ..app_settings import (
     CreateMembershipSerializer,
     UpdateMembershipSerializer,
+    DeleteMembershipSerializer,
 )
 from ..models import (
     User_Group_Membership
@@ -119,7 +120,7 @@ class MembershipView(GenericAPIView):
         :return: 200 / 400 / 403 / 404
         """
 
-        serializer = UpdateMembershipSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
@@ -128,37 +129,6 @@ class MembershipView(GenericAPIView):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
-
-        # if request_misses_uuid(request, 'membership_id'):
-        #
-        #     log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-        #              event='DELETE_MEMBERSHIP_NO_MEMBERSHIP_ID_ERROR')
-        #
-        #     return Response({"error": "IdNoUUID", 'message': "Membership ID not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-
-        # # check if the membership exists
-        # try:
-        #     membership = User_Group_Membership.objects.get(pk=request.data['membership_id'])
-        # except User_Group_Membership.DoesNotExist:
-        #
-        #     log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-        #              event='DELETE_MEMBERSHIP_MEMBERSHIP_DOES_NOT_EXIST_ERROR')
-        #
-        #     return Response({"message":"You don't have permission to access or it does not exist.",
-        #                      "resource_id": request.data['membership_id']}, status=status.HTTP_403_FORBIDDEN)
-        #
-        # # check if the user has the necessary access privileges for this group
-        # try:
-        #     User_Group_Membership.objects.get(group_id=membership.group_id, user=request.user, group_admin=True)
-        #
-        #     log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-        #              event='DELETE_MEMBERSHIP_NO_PERMISSION_ERROR')
-        #
-        #
-        # except User_Group_Membership.DoesNotExist:
-        #     return Response({"message":"You don't have permission to access or it does not exist.",
-        #                      "resource_id": request.data['membership_id']}, status=status.HTTP_403_FORBIDDEN)
 
         membership = serializer.validated_data.get('membership')
 

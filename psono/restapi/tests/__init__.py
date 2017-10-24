@@ -21,4 +21,5 @@ from .utils import *
 from .mfa_yubikey_otp import *
 from .mfa_google_authenticator import *
 from .group import *
+from .membership import *
 from .commands import *
