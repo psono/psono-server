@@ -22,4 +22,6 @@ from .mfa_yubikey_otp import *
 from .mfa_google_authenticator import *
 from .group import *
 from .membership import *
+from .membership_accept import *
+from .membership_decline import *
 from .commands import *
