@@ -32,12 +32,6 @@ class CreateSecretSerializer(serializers.Serializer):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
-            try:
-                parent_share = Share.objects.get(pk=parent_share_id)
-            except Share.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
-                raise exceptions.ValidationError(msg)
-
         if parent_datastore_id is not None:
             parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
             if not parent_datastore:

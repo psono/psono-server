@@ -125,47 +125,6 @@ class SecretView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # if 'data' not in request.data:
-        #
-        #     return Response({"error": "NotInRequest", 'message': "data not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if 'data_nonce' not in request.data:
-        #     return Response({"error": "NotInRequest", 'message': "data_nonce not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-
-        # if request_misses_uuid(request, 'link_id'):
-        #     return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-
-        # parent_share = None
-        # parent_share_id = None
-        # if 'parent_share_id' in request.data and request.data['parent_share_id']:
-        #     # check permissions on parent
-        #     if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
-        #         return Response({"message": "You don't have permission to access or it does not exist.",
-        #                          "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-        #
-        #     try:
-        #         parent_share = Share.objects.get(pk=request.data['parent_share_id'])
-        #         parent_share_id = parent_share.id
-        #     except Share.DoesNotExist:
-        #         return Response({"message":"You don't have permission to access or it does not exist.",
-        #                         "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # parent_datastore = None
-        # parent_datastore_id = None
-        # if 'parent_datastore_id' in request.data and request.data['parent_datastore_id']:
-        #     parent_datastore = get_datastore(request.data['parent_datastore_id'], request.user)
-        #     if not parent_datastore:
-        #         return Response({"message":"You don't have permission to access or it does not exist.",
-        #                         "resource_id": request.data['parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
-        #     parent_datastore_id = parent_datastore.id
-        #
-        # if not parent_share and not parent_datastore:
-        #     return Response({"message": "Either parent share or datastore need to be specified."},
-        #                     status=status.HTTP_404_NOT_FOUND)
-
         try:
             secret = Secret.objects.create(
                 data = readbuffer(str(request.data['data'])),
@@ -219,24 +178,6 @@ class SecretView(GenericAPIView):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
-
-
-        # if request_misses_uuid(request, 'secret_id'):
-        #     return Response({"error": "IdNoUUID", 'message': "Secret ID not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-        #
-        #
-        # try:
-        #     secret = Secret.objects.get(pk=request.data['secret_id'])
-        # except Secret.DoesNotExist:
-        #     raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-        # except ValueError:
-        #     return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
-        #                     status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if not user_has_rights_on_secret(request.user.id, secret.id, None, True):
-        #     raise PermissionDenied({"message":"You don't have permission to access",
-        #                     "resource_id": secret.id})
 
         secret = serializer.validated_data['secret']
         if serializer.validated_data['data']:

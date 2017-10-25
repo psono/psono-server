@@ -1,5 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.hashers import make_password
+from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -8,6 +9,7 @@ from restapi import models
 
 import random
 import string
+import binascii
 import os
 
 class UserCreateSecretTest(APITestCaseExtended):
@@ -45,6 +47,31 @@ class UserCreateSecretTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt2 = "b"
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
+
+        self.test_user_obj2 = models.User.objects.create(
+            username=self.test_username2,
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
+            is_email_active=True
+        )
+
         self.test_datastore_obj = models.Data_Store.objects.create(
             user_id=self.test_user_obj.id,
             type="my-type",
@@ -53,6 +80,22 @@ class UserCreateSecretTest(APITestCaseExtended):
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        )
+
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer("my-data"),
+            data_nonce="12345"
+        )
+
+        self.test_user_share_right1_obj = models.User_Share_Right.objects.create(
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True
         )
 
         # create share 1
@@ -108,9 +151,9 @@ class UserCreateSecretTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_create_secret(self):
+    def test_create_secret_in_datastore(self):
         """
-        Tests to create a secret successfully
+        Tests to create a secret successfully in a datastore
         """
 
         url = reverse('secret')
@@ -126,6 +169,95 @@ class UserCreateSecretTest(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+    def test_create_secret_without_parent_datastore_nor_share(self):
+        """
+        Tests to create a secret successfully in a datastore
+        """
+
+        url = reverse('secret')
+
+        data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            # 'parent_datastore_id': str(self.test_datastore_obj.id),
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_secret_in_datastore_that_the_user_does_not_own(self):
+        """
+        Tests to create a secret in a datastore that the user has no access permissions
+        """
+
+        self.test_datastore_obj.user = self.test_user_obj2
+        self.test_datastore_obj.save()
+
+        url = reverse('secret')
+
+        data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_datastore_id': str(self.test_datastore_obj.id),
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_secret_in_share_without_write_permissions(self):
+        """
+        Tests to create a secret faulty in a share without write permissions
+        """
+
+        self.test_user_share_right1_obj.write = False
+        self.test_user_share_right1_obj.save()
+
+        url = reverse('secret')
+
+        data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_share_id': str(self.test_share1_obj.id),
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_secret_in_share_that_does_not_exist(self):
+        """
+        Tests to create a secret faulty in a share that does not exist
+        """
+
+        self.test_user_share_right1_obj.write = False
+        self.test_user_share_right1_obj.save()
+
+        url = reverse('secret')
+
+        data = {
+            'link_id': '0f3ff8d2-213a-47f3-bd58-fc88cb0220f9',
+            'parent_share_id': "9a4648b6-7832-403b-bcdf-42f825db0311",
+            'data': '12345',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_duplicate_nonce(self):
