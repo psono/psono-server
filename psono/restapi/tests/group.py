@@ -1,9 +1,15 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.hashers import make_password
+from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
+
+import random
+import string
+import binascii
+import os
 
 class CreateGroupTest(APITestCaseExtended):
     """
@@ -503,6 +509,31 @@ class ReadGroupTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt2 = "b"
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
+
+        self.test_user_obj2 = models.User.objects.create(
+            username=self.test_username2,
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
+            is_email_active=True
+        )
+
         self.test_group_obj = models.Group.objects.create(
             name = 'Test Group 1',
             public_key = 'a123',
@@ -622,6 +653,24 @@ class ReadGroupTest(APITestCaseExtended):
         self.assertTrue(test_group_2_found)
         self.assertTrue(test_group_5_found)
         self.assertFalse(found_something_else)
+
+
+    def test_read_groups_success_without_memberships(self):
+        """
+        Tests to read all groups
+        """
+
+        url = reverse('group')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj2)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data.get('groups', True)) # Empty List
+        self.assertEqual(len(response.data.get('groups')), 0)
+
 
 
     def test_read_group_success(self):

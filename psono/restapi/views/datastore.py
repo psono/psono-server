@@ -118,23 +118,14 @@ class DatastoreView(GenericAPIView):
             if request.data.get('is_default', True):
                 Data_Store.objects.filter(user=request.user, type=str(request.data['type'])).exclude(pk=datastore.pk).update(is_default=False)
 
-        except IntegrityError as e:
+        except IntegrityError:
 
             log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
                      event='CREATE_DATASTORE_INTEGRITY_ERROR')
 
-            if hasattr(e, 'message') and '(user_id, type, description)' in e.message:
-                return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
-                                                                                 "description must be unique"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-            if hasattr(e, 'args') and '(user_id, type, description)' in e.args[0]:
-                return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
-                                                                                 "description must be unique"},
-                            status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
+                                                                             "description must be unique"},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
         log_info(logger=logger, request=request, status='HTTP_201_CREATED',

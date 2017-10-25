@@ -62,7 +62,7 @@ class GroupRightsView(GenericAPIView):
 
         if group_id:
             try:
-                share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").get(user_id=request.user.id, group_id=group_id)
+                share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").filter(group_id=group_id)
             except Group_Share_Right.DoesNotExist:
                 share_rights = []
         else:
