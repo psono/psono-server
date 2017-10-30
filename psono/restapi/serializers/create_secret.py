@@ -9,7 +9,6 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
 
 from ..utils import user_has_rights_on_share, get_datastore
-from ..models import Share
 
 class CreateSecretSerializer(serializers.Serializer):
 
@@ -23,8 +22,9 @@ class CreateSecretSerializer(serializers.Serializer):
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
 
-        parent_share = None
-        parent_datastore = None
+        if parent_share_id is None and parent_datastore_id is None:
+            msg = _("Either parent share or datastore need to be specified.")
+            raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:
             # check permissions on parent
@@ -37,10 +37,6 @@ class CreateSecretSerializer(serializers.Serializer):
             if not parent_datastore:
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
-
-        if parent_share is None and parent_datastore is None:
-            msg = _("Either parent share or datastore need to be specified.")
-            raise exceptions.ValidationError(msg)
 
         attrs['parent_share_id'] = parent_share_id
         attrs['parent_datastore_id'] = parent_datastore_id

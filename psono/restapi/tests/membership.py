@@ -166,6 +166,7 @@ class CreateMembershipTest(APITestCaseExtended):
             private_key_type = 'symmetric',
             group_admin = False,
             accepted = None,
+
         )
 
 
@@ -510,6 +511,20 @@ class DeleteMembershipTest(APITestCaseExtended):
             accepted = True,
         )
 
+        self.test_membership_obj6 = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj2,
+            group = self.test_group_obj2,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = False,
+            accepted = True,
+        )
+
         self.test_group_obj3 = models.Group.objects.create(
             name = 'Test Group 3',
             public_key = 'a123',
@@ -549,7 +564,21 @@ class DeleteMembershipTest(APITestCaseExtended):
             private_key = 'private_key',
             private_key_nonce = 'private_key_nonce',
             private_key_type = 'symmetric',
-            group_admin = False,
+            group_admin = True,
+            accepted = None,
+        )
+
+        self.test_membership_obj7 = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj2,
+            group = self.test_group_obj5,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
             accepted = None,
         )
 
@@ -592,6 +621,23 @@ class DeleteMembershipTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    def test_delete_success_own_share_with_no_group_admin(self):
+        """
+        Tests to delete an own membership without group admin rights
+        """
+
+        url = reverse('membership')
+
+        data = {
+            'membership_id': self.test_membership_obj2.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
     def test_delete_failure_no_group_admin(self):
         """
         Tests to delete a membership without group admin rights
@@ -600,7 +646,7 @@ class DeleteMembershipTest(APITestCaseExtended):
         url = reverse('membership')
 
         data = {
-            'membership_id': self.test_membership_obj2.id,
+            'membership_id': self.test_membership_obj6.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -619,7 +665,7 @@ class DeleteMembershipTest(APITestCaseExtended):
         url = reverse('membership')
 
         data = {
-            'membership_id': self.test_membership_obj5.id,
+            'membership_id': self.test_membership_obj7.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
