@@ -1,11 +1,7 @@
 from ..utils import user_has_rights_on_share
 from  more_itertools import unique_everseen
 
-try:
-    from django.utils.http import urlsafe_base64_decode as uid_decoder
-except:
-    # make compatible with django 1.5
-    from django.utils.http import base36_to_int as uid_decoder
+from django.utils.http import urlsafe_base64_decode as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -32,7 +28,7 @@ class MoveSecretLinkSerializer(serializers.Serializer):
         old_parents = []
         old_datastores = []
 
-        for s in Secret_Link.objects.filter(link_id=self.context['request'].data['link_id']).all():
+        for s in Secret_Link.objects.filter(link_id=link_id).all():
             secrets.append(s.secret_id)
             if s.parent_share_id:
                 old_parents.append(s.parent_share_id)
@@ -62,19 +58,14 @@ class MoveSecretLinkSerializer(serializers.Serializer):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
-        # check if new_parent_share exists
-        if new_parent_share_id is not None and not Share.objects.filter(pk=new_parent_share_id).exists():
+        # check if new parent share exists and permissions
+        if new_parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id,
+                                                                            new_parent_share_id, write=True):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 
         # check if new_datastore exists
         if new_parent_datastore_id and not Data_Store.objects.filter(pk=new_parent_datastore_id, user=self.context['request'].user).exists():
-            msg = _("You don't have permission to access or it does not exist.")
-            raise exceptions.ValidationError(msg)
-
-
-        # check permissions on new_parent_share
-        if new_parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id, new_parent_share_id, write=True):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 

@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
+from django.db import connection
+
 from rest_framework import status as rest_status
 import bcrypt
 import time
 from uuid import UUID
-from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store
+from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
 
 import nacl.encoding
 import nacl.utils
@@ -471,3 +473,103 @@ def readbuffer(data):
         return data.tobytes().decode()
     else:
         return str(data).encode("utf-8")
+
+
+def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
+    """
+    DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
+    link paths to their children
+
+    Takes care of "degenerated" tree structures (e.g a child has two parents)
+
+    In addition checks if the link already exists, as this is a crucial part of the access rights system
+
+    :param link_id:
+    :param share_id:
+    :param parent_share_id:
+    :param parent_datastore_id:
+    :return:
+    """
+
+    link_id = str(link_id).replace("-", "")
+
+    # Prevent malicious (or by bad RNGs generated?) link ids
+    # Not doing so could cause access rights problems
+    if Share_Tree.objects.filter(path__match='*.' + link_id + '.*').count() > 0:
+        return False
+
+    cursor = connection.cursor()
+
+    cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
+    SELECT
+      gen_random_uuid() id,
+      now() create_date,
+      now() write_date,
+      CASE
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(new_parent.path, '') || %(link_id)s
+        ELSE coalesce(new_parent.path, '') || %(link_id)s || subltree(t.path, nlevel(one_old_parent.path), nlevel(t.path))
+      END path,
+      t.share_id,
+      CASE
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN new_parent.share_id
+        ELSE t.parent_share_id
+      END parent_share_id,
+      CASE
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) AND new_parent.share_id IS NOT NULL THEN NULL
+        WHEN nlevel(one_old_parent.path) != nlevel(t.path) AND t.parent_share_id IS NOT NULL THEN NULL
+        WHEN nlevel(one_old_parent.path) = nlevel(t.path) THEN COALESCE(%(parent_datastore_id)s, t.parent_datastore_id) --replace this null with datastore id if specified
+        ELSE t.parent_datastore_id
+      END parent_datastore_id
+    FROM restapi_share_tree t
+    JOIN (
+      SELECT path
+      FROM restapi_share_tree
+      WHERE share_id = %(share_id)s
+      LIMIT 1
+    ) one_old_parent ON t.path <@ one_old_parent.path
+    LEFT JOIN restapi_share_tree new_parent
+      ON new_parent.share_id = %(parent_share_id)s""", {
+        'parent_datastore_id': parent_datastore_id,
+        'link_id': link_id,
+        'share_id': share_id,
+        'parent_share_id': parent_share_id,
+    })
+
+    if cursor.rowcount == 0:
+        if parent_datastore_id:
+            Share_Tree.objects.create(
+                share_id=share_id,
+                parent_datastore_id=parent_datastore_id,
+                path=link_id
+            )
+        else:
+            cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
+            SELECT
+                gen_random_uuid() id,
+                now() create_date,
+                now() write_date,
+                path || %(link_id)s path,
+                %(share_id)s share_id,
+                %(parent_share_id)s parent_share_id,
+                %(parent_datastore_id)s parent_datastore_id
+                FROM restapi_share_tree
+                WHERE share_id = %(parent_share_id)s""", {
+                'link_id': link_id,
+                'parent_share_id': parent_share_id,
+                'parent_datastore_id': parent_datastore_id,
+                'share_id': share_id,
+            })
+
+    return True
+
+def delete_share_link(link_id):
+    """
+    DB wrapper to delete a link to a share (and all his child shares with the same link)
+
+    :param link_id:
+    :return:
+    """
+
+    link_id = str(link_id).replace("-", "")
+
+    Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()

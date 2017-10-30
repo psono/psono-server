@@ -3,7 +3,6 @@ from django.contrib.auth.hashers import make_password
 
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer
 from restapi import models
-from restapi.views.share_tree import create_share_link
 
 from mock import patch
 

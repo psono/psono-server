@@ -192,6 +192,52 @@ class CreateMembershipTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
+    def test_create_failure_invalid_secret_key_type(self):
+        """
+        Tests to create a membership with an invalid secret key type
+        """
+
+        url = reverse('membership')
+
+        data = {
+            'user_id': self.test_user_obj2.id,
+            'group_id': self.test_group_obj.id,
+            'secret_key': 'a123',
+            'secret_key_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+            'secret_key_type': 'ABC', # Should be symmetric or asymmetric
+            'private_key': 'a123',
+            'private_key_nonce': 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_invalid_private_key_type(self):
+        """
+        Tests to create a membership with an invalid private key type
+        """
+
+        url = reverse('membership')
+
+        data = {
+            'user_id': self.test_user_obj2.id,
+            'group_id': self.test_group_obj.id,
+            'secret_key': 'a123',
+            'secret_key_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+            'private_key': 'a123',
+            'private_key_nonce': 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
+            'private_key_type': 'ABC', # Should be symmetric or asymmetric
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     def test_create_failure_no_group_admin(self):
         """
         Tests to create a membership without group admin
