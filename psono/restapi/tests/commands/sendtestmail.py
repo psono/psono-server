@@ -50,5 +50,5 @@ class CommandSendtestmailTestCase(TestCase):
 
         fake_send_mail_fct.assert_has_calls([call('Testmail successfull',
                                                   'If you read this, then everything is correctly configured.',
-                                                  'info@psono.pw', [target_email],
+                                                  settings.EMAIL_FROM, [target_email],
                                                   html_message='If you read this, then everything is correctly configured.')])

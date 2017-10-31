@@ -124,7 +124,6 @@ REST_FRAMEWORK = {
         'yubikey_otp_verify': '10/minute',
         'registration': '6/day',
     },
-    'PAGE_SIZE': 10
 }
 
 LOGGING_AUDIT = config_get('LOGGING_AUDIT', False)
