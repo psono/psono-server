@@ -168,72 +168,47 @@ class ShareRightView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.validated_data.get('user_id', False):
-            try:
-                # Lets see if it already exists
-                User_Share_Right.objects.get(share_id=serializer.validated_data['share_id'],
-                                             user_id=serializer.validated_data['user_id'])
+            # lets check if the user has already a path to access the share. if yes automatically approve rights
+            accepted = None
+            if len(list(get_all_inherited_rights(serializer.validated_data['user_id'], serializer.validated_data['share_id']))) > 0:
+                accepted = True
 
-                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                         event='CREATE_USER_SHARE_DUPLICATE_ERROR')
+            share_right = User_Share_Right.objects.create(
+                key=serializer.validated_data['key'],
+                key_nonce=serializer.validated_data['key_nonce'],
+                title=serializer.validated_data['title'],
+                title_nonce=serializer.validated_data['title_nonce'],
+                type=serializer.validated_data['type'],
+                type_nonce=serializer.validated_data['type_nonce'],
+                share_id=serializer.validated_data['share_id'],
+                creator=request.user,
+                user=serializer.validated_data['user'],
+                read=serializer.validated_data['read'],
+                write=serializer.validated_data['write'],
+                grant=serializer.validated_data['grant'],
+                accepted=accepted,
+            )
 
-                return Response({"message": "User Share Right already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
-
-            except User_Share_Right.DoesNotExist:
-
-                # lets check if the user has already a path to access the share. if yes automatically approve rights
-                accepted = None
-                if len(list(get_all_inherited_rights(serializer.validated_data['user_id'], serializer.validated_data['share_id']))) > 0:
-                    accepted = True
-
-                share_right = User_Share_Right.objects.create(
-                    key=serializer.validated_data['key'],
-                    key_nonce=serializer.validated_data['key_nonce'],
-                    title=serializer.validated_data['title'],
-                    title_nonce=serializer.validated_data['title_nonce'],
-                    type=serializer.validated_data['type'],
-                    type_nonce=serializer.validated_data['type_nonce'],
-                    share_id=serializer.validated_data['share_id'],
-                    creator=request.user,
-                    user=serializer.validated_data['user'],
-                    read=serializer.validated_data['read'],
-                    write=serializer.validated_data['write'],
-                    grant=serializer.validated_data['grant'],
-                    accepted=accepted,
-                )
-
-                log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                         event='CREATE_USER_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
+            log_info(logger=logger, request=request, status='HTTP_201_CREATED',
+                     event='CREATE_USER_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
         else:
-            try:
-                # Lets see if it already exists
-                Group_Share_Right.objects.get(share_id=serializer.validated_data['share_id'],
-                                              group_id=serializer.validated_data['group_id'])
+            share_right = Group_Share_Right.objects.create(
+                key=serializer.validated_data['key'],
+                key_nonce=serializer.validated_data['key_nonce'],
+                title=serializer.validated_data['title'],
+                title_nonce=serializer.validated_data['title_nonce'],
+                type=serializer.validated_data['type'],
+                type_nonce=serializer.validated_data['type_nonce'],
+                share_id=serializer.validated_data['share_id'],
+                creator=request.user,
+                group=serializer.validated_data['group'],
+                read=serializer.validated_data['read'],
+                write=serializer.validated_data['write'],
+                grant=serializer.validated_data['grant'],
+            )
 
-                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                         event='CREATE_GROUP_SHARE_DUPLICATE_ERROR')
-
-                return Response({"message": "Group Share Right already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
-            except Group_Share_Right.DoesNotExist:
-
-                share_right = Group_Share_Right.objects.create(
-                    key=serializer.validated_data['key'],
-                    key_nonce=serializer.validated_data['key_nonce'],
-                    title=serializer.validated_data['title'],
-                    title_nonce=serializer.validated_data['title_nonce'],
-                    type=serializer.validated_data['type'],
-                    type_nonce=serializer.validated_data['type_nonce'],
-                    share_id=serializer.validated_data['share_id'],
-                    creator=request.user,
-                    group=serializer.validated_data['group'],
-                    read=serializer.validated_data['read'],
-                    write=serializer.validated_data['write'],
-                    grant=serializer.validated_data['grant'],
-                )
-
-                log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                         event='CREATE_GROUP_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
+            log_info(logger=logger, request=request, status='HTTP_201_CREATED',
+                     event='CREATE_GROUP_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
 
         return Response({"share_right_id": share_right.id},
                         status=status.HTTP_201_CREATED)

@@ -21,7 +21,7 @@ import os
 import hashlib
 
 
-def yubikey_authenticate_true(yubikey_otp):
+def yubico_verify_true(yubikey_otp):
     """
     utils.yubikey_authenticate function that will always return True
 
@@ -36,22 +36,7 @@ def yubikey_authenticate_true(yubikey_otp):
 
     return True
 
-def yubikey_authenticate_none(yubikey_otp):
-    """
-    utils.yubikey_authenticate function that will always return None
-
-    :param yubikey_otp: Yubikey OTP
-    :type yubikey_otp: str
-    :return: True
-    :rtype: Boolean
-    """
-
-    # Take exactly 1 argument which we will happily ignore afterwards
-    assert yubikey_otp
-
-    return None
-
-def yubikey_authenticate_false(yubikey_otp):
+def yubico_verify_false(yubikey_otp):
     """
     utils.yubikey_authenticate function that will always return False
 
@@ -157,8 +142,9 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-    @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_true)
-    def test_post_authentication_yubikey_otp_verify_correct(self, yubikey_authenticate_fct):
+    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)
+    def test_post_authentication_yubikey_otp_verify_correct(self, settings_fct, yubico_verify_true_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify
         """
@@ -176,8 +162,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_none)
-    def test_post_authentication_yubikey_otp_verify_no_yubikey_support(self, yubikey_authenticate_fct):
+    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None)
+    def test_post_authentication_yubikey_otp_verify_no_yubikey_support(self, settings_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify
         """
@@ -196,8 +182,9 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), [u'Server does not support YubiKeys.'])
 
 
-    @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_false)
-    def test_post_authentication_yubikey_otp_verify_yubikey_incorrect(self, yubikey_authenticate_fct):
+    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_false)
+    def test_post_authentication_yubikey_otp_verify_yubikey_incorrect(self, settings_fct, yubico_verify_false_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify while the yubikey is incorrect
         """
@@ -216,8 +203,9 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), [u'YubiKey OTP incorrect.'])
 
 
-    @patch('restapi.serializers.yubikey_otp_verify.yubikey_authenticate', side_effect=yubikey_authenticate_true)
-    def test_post_authentication_yubikey_otp_verify_not_attached_to_this_account(self, yubikey_authenticate_fct):
+    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)
+    def test_post_authentication_yubikey_otp_verify_not_attached_to_this_account(self, settings_fct, yubico_verify_true_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify while the yubikey_otp token is note whitelisted for the
         user that owns this token

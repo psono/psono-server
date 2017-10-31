@@ -23,7 +23,7 @@ class DeleteShareRightSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if user_share_right_id is not None and group_share_right_id is not None:
-            msg = _("Either user or group share right needs to be specified, not both")
+            msg = _("Either user or group share right needs to be specified, not both.")
             raise exceptions.ValidationError(msg)
 
         if user_share_right_id:
@@ -41,8 +41,7 @@ class DeleteShareRightSerializer(serializers.Serializer):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
-
-        # check permissions on parent
+        # check if the user has grant rights on this share
         if not user_has_rights_on_share(self.context['request'].user.id, share_right.share_id, grant=True):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)

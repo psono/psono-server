@@ -1,15 +1,12 @@
 from django.conf import settings
 from ..utils import yubikey_authenticate, yubikey_get_yubikey_id
-from ..authentication import TokenAuthentication
 import hashlib
 import six
-
-from django.utils.http import urlsafe_base64_decode as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import Token, Yubikey_OTP
+from ..models import Yubikey_OTP
 import nacl.utils
 import nacl.secret
 import nacl.encoding

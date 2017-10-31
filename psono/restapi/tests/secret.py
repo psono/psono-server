@@ -402,12 +402,45 @@ class UserGetSecretTest(APITestCaseExtended):
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
+
+        self.test_datastore_obj = models.Data_Store.objects.create(
+            user_id=self.test_user_obj.id,
+            type="my-type",
+            description= "my-description",
+            data= readbuffer("12345"),
+            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        )
+
+        self.secret_link_obj = models.Secret_Link.objects.create(
+            link_id = '0493017f-47b0-446e-9a41-6533721ade71',
+            secret_id = self.test_secret_obj.id,
+            parent_datastore_id = self.test_datastore_obj.id,
+            parent_share_id = None
+        )
+
         self.test_secret2_obj = models.Secret.objects.create(
             user_id=self.test_user2_obj.id,
             data=readbuffer('12345'),
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
+
+
+    def test_read_secret_success(self):
+        """
+        Tests to read a specific secret successful
+        """
+
+        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
     def test_without_uuid_and_existing_secrets(self):
@@ -492,6 +525,21 @@ class UserGetSecretTest(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_delete_secret_update(self):
+        """
+        Tests DELETE method on user_update
+        """
+
+        url = reverse('secret')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class UserUpdateSecretTest(APITestCaseExtended):

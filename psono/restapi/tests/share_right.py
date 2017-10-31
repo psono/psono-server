@@ -372,45 +372,24 @@ class CreateUserShareRightTest(APITestCaseExtended):
             is_email_active=True
         )
 
-    def test_grant_share_right_with_no_rights(self):
-        """
-        Tests grant share right without rights
-        """
-
-        # Lets first insert our dummy share
-        self.test_share1_obj = models.Share.objects.create(
-            user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
+        self.test_group_obj = models.Group.objects.create(
+            name = 'Test Group',
+            public_key = 'a123',
         )
 
-        # lets try to create a share right for this share
-
-        url = reverse('share_right')
-
-        initial_data = {
-            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'share_id': str(self.test_share1_obj.id),
-            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
-            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'read': True,
-            'write': True,
-            'grant': True,
-            'user_id': str(self.test_user2_obj.id),
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_grant_share_right_with_right(self):
-        """
-        Tests to insert the share right and check the rights to access it
-        """
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret-key',
+            secret_key_nonce = 'secret-key-nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private-key',
+            private_key_nonce = 'private-key-nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
 
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
@@ -428,7 +407,17 @@ class CreateUserShareRightTest(APITestCaseExtended):
             accepted=True
         )
 
-        # lets try to create a share right for this share
+        # Lets first insert our dummy share
+        self.test_share2_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer("my-data"),
+            data_nonce="12345"
+        )
+
+    def test_grant_share_right_sucess_for_user(self):
+        """
+        Tests to insert the share right and check the rights to access it
+        """
 
         url = reverse('share_right')
 
@@ -489,6 +478,226 @@ class CreateUserShareRightTest(APITestCaseExtended):
         self.assertEqual(len(response.data.get('share_rights', False)), 0,
                          'Expecting no share, as it hasn\'t been accepted yet')
 
+    def test_grant_share_right_sucess_for_group(self):
+        """
+        Tests to insert the share right for a group
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': str(self.test_group_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_grant_share_right_failure_for_user_twice(self):
+        """
+        Tests to insert the share right for a user twice
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # And now a second time
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_failure_for_group_twice(self):
+        """
+        Tests to insert the share right for a group twice
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': str(self.test_group_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # And now a second time
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_failure_user_and_group_specified(self):
+        """
+        Tests to insert the share right for a group
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': str(self.test_group_obj.id),
+            'user_id': str(self.test_user2_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_failure_user_does_not_exist(self):
+        """
+        Tests to insert the share right and fails because the user does not exist
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': "1135c539-c33b-4a1f-a25b-b078f6cf40e6",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_failure_group_does_not_exist(self):
+        """
+        Tests to insert the share right and fails because the group does not exist
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': "1135c539-c33b-4a1f-a25b-b078f6cf40e6",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_with_no_user_id_nor_group_id(self):
+        """
+        Tests to insert the share right and check the rights to access it
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            # 'user_id': str(self.test_user2_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_grant_share_right_with_no_rights(self):
+        """
+        Tests grant share right without rights
+        """
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share2_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 class DeleteUserShareRightTest(APITestCaseExtended):
 
     def setUp(self):
@@ -542,27 +751,23 @@ class DeleteUserShareRightTest(APITestCaseExtended):
             is_email_active=True
         )
 
-    def test_delete_share_right_with_no_grant_right(self):
-        """
-        Tests to delete the share right with no grant right
-        """
-
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
             data=readbuffer("my-data"),
             data_nonce="12345"
         )
-        models.User_Share_Right.objects.create(
+        self.test_user_share_right1 = models.User_Share_Right.objects.create(
             creator_id=self.test_user_obj.id,
             user_id=self.test_user_obj.id,
             share_id=self.test_share1_obj.id,
             read=True,
             write=True,
-            grant=False,
+            grant=True,
             accepted=True
         )
-        test_share_rights = models.User_Share_Right.objects.create(
+
+        self.test_user_share_right2 = models.User_Share_Right.objects.create(
             creator_id=self.test_user2_obj.id,
             user_id=self.test_user2_obj.id,
             share_id=self.test_share1_obj.id,
@@ -572,13 +777,87 @@ class DeleteUserShareRightTest(APITestCaseExtended):
             accepted=True
         )
 
-        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_share_rights.id).count(), 1,
+        self.test_group_obj = models.Group.objects.create(
+            name = 'Test Group',
+            public_key = 'a123',
+        )
+
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user2_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret-key',
+            secret_key_nonce = 'secret-key-nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private-key',
+            private_key_nonce = 'private-key-nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
+
+        self.test_group_share_right_obj = models.Group_Share_Right.objects.create(
+            creator_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            group_id=self.test_group_obj.id,
+            read=True,
+            write=True,
+            grant=True,
+        )
+
+    def test_delete_user_share_right_success(self):
+        """
+        Tests to delete a user share right successful
+        """
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=self.test_user_share_right2.id).count(), 1,
                          'Exactly one share right with this id should exist')
 
         url = reverse('share_right')
 
         data = {
-            'share_right_id': str(test_share_rights.id)
+            'user_share_right_id': str(self.test_user_share_right2.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=self.test_user_share_right2.id).count(), 0,
+                         'Share right with this id should have been deleted')
+
+    def test_delete_group_share_right_success(self):
+        """
+        Tests to delete a group share right successful
+        """
+
+        self.assertEqual(models.Group_Share_Right.objects.filter(pk=self.test_group_share_right_obj.id).count(), 1,
+                         'Exactly one share right with this id should exist')
+
+        url = reverse('share_right')
+
+        data = {
+            'group_share_right_id ': str(self.test_group_share_right_obj.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.Group_Share_Right.objects.filter(pk=self.test_group_share_right_obj.id).count(), 0,
+                         'Share right with this id should have been deleted')
+
+    def test_delete_user_share_right_failure_does_not_exist(self):
+        """
+        Tests to delete a user share right that does not exist
+        """
+
+        url = reverse('share_right')
+
+        data = {
+            'user_share_right_id ': "d198cac6-e287-4873-bd29-7d45237058f4"
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -586,9 +865,64 @@ class DeleteUserShareRightTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_delete_share_right_without_uuid(self):
+    def test_delete_group_share_right_failure_does_not_exist(self):
         """
-        Tests to delete something without uuid
+        Tests to delete a group share right that does not exist
+        """
+
+        url = reverse('share_right')
+
+        data = {
+            'group_share_right_id ': "cfd8460a-2d01-44f6-a02c-c843162558f4"
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_share_right_failure_with_group_and_user_right_id_being_specified(self):
+        """
+        Tests to delete a share right with a group and a user share right being specified
+        """
+
+        url = reverse('share_right')
+
+        data = {
+            'user_share_right_id': str(self.test_user_share_right2.id),
+            'group_share_right_id ': str(self.test_group_share_right_obj.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_share_right_with_no_grant_right(self):
+        """
+        Tests to delete the share right with no grant right
+        """
+
+        self.test_user_share_right1.grant = False
+        self.test_user_share_right1.save()
+
+        self.assertEqual(models.User_Share_Right.objects.filter(pk=self.test_user_share_right2.id).count(), 1,
+                         'Exactly one share right with this id should exist')
+
+        url = reverse('share_right')
+
+        data = {
+            'user_share_right_id': str(self.test_user_share_right2.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_share_right_without_user_nor_group_share_right_id(self):
+        """
+        Tests to delete something without user not group share right id
         """
 
         url = reverse('share_right')
@@ -599,54 +933,6 @@ class DeleteUserShareRightTest(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_delete_share_right_with_grant_rights(self):
-        """
-        Tests to delete the share right with grant rights
-        """
-
-        # Lets first insert our dummy share
-        test_share1_obj = models.Share.objects.create(
-            user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-        models.User_Share_Right.objects.create(
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user_obj.id,
-            share_id=test_share1_obj.id,
-            read=True,
-            write=True,
-            grant=True,
-            accepted=True
-        )
-
-        test_share_rights = models.User_Share_Right.objects.create(
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            share_id=test_share1_obj.id,
-            read=False,
-            write=False,
-            grant=False,
-            accepted=True
-        )
-
-        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_share_rights.id).count(), 1,
-                         'Exactly one share right with this id should exist')
-
-        url = reverse('share_right')
-
-        data = {
-            'share_right_id': str(test_share_rights.id)
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertEqual(models.User_Share_Right.objects.filter(pk=test_share_rights.id).count(), 0,
-                         'Share right with this id should have been deleted')
 
 class UpdateUserShareRightTest(APITestCaseExtended):
 

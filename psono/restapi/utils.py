@@ -19,11 +19,7 @@ from yubico_client import Yubico
 import pyscrypt
 
 import six
-import sys
-if sys.version_info < (2, 7):
-    from django.utils.importlib import import_module
-else:
-    from importlib import import_module
+from importlib import import_module
 
 
 def import_callable(path_or_callable):
@@ -226,8 +222,8 @@ def calculate_user_rights_on_share(user_id = -1, share_id=-1):
 
 def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
     """
-    Checks if the given user has the requested rights for the given share. User_share_rights and all Group_share_rights
-    be checked first.
+    Checks if the given user has the requested rights for the given share.
+    User_share_rights and all Group_share_rights be checked first.
 
     If "right = true" is demanded and one of them is true, this function returns true.
     If "right = false" is demanded and one of them is true, this function returns false.
@@ -263,10 +259,8 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
     :return:
     """
 
-    try:
-        datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
-    except Data_Store.DoesNotExist:
-        datastores = []
+    datastores_loaded = False
+    datastores = []
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
@@ -275,9 +269,19 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
         return False
 
     for link in secret_links:
-        if link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
-            return True
-        elif link.parent_datastore_id is not None and link.parent_datastore_id in datastores:
+
+        if link.parent_datastore_id is not None:
+            if not datastores_loaded:
+                try:
+                    datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
+                except Data_Store.DoesNotExist:
+                    datastores = []
+                datastores_loaded = True
+
+            if link.parent_datastore_id in datastores:
+                return True
+
+        elif link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
             return True
 
     return False

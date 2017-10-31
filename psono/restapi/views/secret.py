@@ -51,15 +51,13 @@ class SecretView(GenericAPIView):
         :rtype:
         """
         if not uuid:
-            try:
-                storages = Secret.objects.filter(user=request.user)
-            except Secret.DoesNotExist:
-                storages = []
+
+            secrets = Secret.objects.filter(user=request.user)
 
             log_info(logger=logger, request=request, status='HTTP_200_OK',
                      event='READ_SECRETS_ALL_SUCCESS')
 
-            return Response({'secrets': SecretOverviewSerializer(storages, many=True).data},
+            return Response({'secrets': SecretOverviewSerializer(secrets, many=True).data},
                 status=status.HTTP_200_OK)
         else:
             try:

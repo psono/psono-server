@@ -26,16 +26,12 @@ class CreateShareSerializer(serializers.Serializer):
         parent_datastore = None
 
         if parent_share_id is not None:
-            # check permissions on parent
+            # check permissions on parent (and if it exists)
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
-            try:
-                parent_share = Share.objects.get(pk=parent_share_id)
-            except Share.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
-                raise exceptions.ValidationError(msg)
+            parent_share = Share.objects.get(pk=parent_share_id)
 
         if parent_datastore_id is not None:
             parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)

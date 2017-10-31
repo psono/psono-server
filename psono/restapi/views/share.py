@@ -41,11 +41,7 @@ class ShareView(GenericAPIView):
             specific_right_share_index = {}
             share_index = {}
 
-            try:
-                shares = Share.objects.filter(user_share_rights__user=user).distinct()
-            except Share.DoesNotExist:
-                shares = []
-
+            shares = Share.objects.filter(user_share_rights__user=user).distinct()
 
             for s in shares:
 
@@ -251,24 +247,6 @@ class ShareView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # if request_misses_uuid(request, 'share_id'):
-        #     return Response({"error": "IdNoUUID", 'message': "Share ID not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-
-        # try:
-        #     share = Share.objects.get(pk=request.data['share_id'])
-        # except ValueError:
-        #     return Response({"error": "IdNoUUID", 'message': "Share ID is badly formed and no uuid"},
-        #                     status=status.HTTP_400_BAD_REQUEST)
-        # except Share.DoesNotExist:
-        #         return Response({"message":"You don't have permission to access or it does not exist.",
-        #                         "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # # check permissions on share
-        # if not user_has_rights_on_share(request.user.id, request.data['share_id'], write=True):
-        #     return Response({"message": "You don't have permission to access or it does not exist.",
-        #                      "resource_id": request.data['share_id']}, status=status.HTTP_403_FORBIDDEN)
-
         share = serializer.validated_data['share']
         if serializer.validated_data['data']:
             share.data = six.b(str(serializer.validated_data['data']))
@@ -311,54 +289,11 @@ class ShareView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # if 'data' not in request.data:
-        #     return Response({"error": "NotInRequest", 'message': "Data not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if request_misses_uuid(request, 'link_id'):
-        #     return Response({"error": "IdNoUUID", 'message': "link ID not in request"},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-
-        # parent_share = None
-        # parent_share_id = None
-        # if 'parent_share_id' in request.data and request.data['parent_share_id']:
-        #     # check permissions on parent
-        #     if not user_has_rights_on_share(request.user.id, request.data['parent_share_id'], write=True):
-        #         return Response({"message": "You don't have permission to access or it does not exist.",
-        #                          "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-        #
-        #     try:
-        #         parent_share = Share.objects.get(pk=request.data['parent_share_id'])
-        #         parent_share_id = parent_share.id
-        #     except Share.DoesNotExist:
-        #         return Response({"message":"You don't have permission to access or it does not exist.",
-        #                         "resource_id": request.data['parent_share_id']}, status=status.HTTP_403_FORBIDDEN)
-        #
-        # parent_datastore = None
-        # parent_datastore_id = None
-        # if 'parent_datastore_id' in request.data and request.data['parent_datastore_id']:
-        #     parent_datastore = get_datastore(request.data['parent_datastore_id'], request.user)
-        #     if not parent_datastore:
-        #         return Response({"message":"You don't have permission to access or it does not exist.",
-        #                         "resource_id": request.data['parent_datastore_id']}, status=status.HTTP_403_FORBIDDEN)
-        #     parent_datastore_id = parent_datastore.id
-        #
-        # if not parent_share and not parent_datastore:
-        #     return Response({"message": "Either parent share or parent datastore need to be specified."},
-        #                     status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            share = Share.objects.create(
-                data = six.b(str(request.data['data'])),
-                data_nonce = str(request.data['data_nonce']),
-                user = request.user
-            )
-        except IntegrityError:
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SHARE_DUPLICATE_NONCE_ERROR')
-
-            return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
+        share = Share.objects.create(
+            data = six.b(str(request.data['data'])),
+            data_nonce = str(request.data['data_nonce']),
+            user = request.user
+        )
 
         User_Share_Right.objects.create(
                 creator = request.user,

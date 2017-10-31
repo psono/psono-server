@@ -170,37 +170,6 @@ class ReadShareTests(APITestCaseExtended):
             is_email_active=True
         )
 
-        self.test_share2_obj = models.Share.objects.create(
-            user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-
-        models.User_Share_Right.objects.create(
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            share_id=self.test_share2_obj.id,
-            read=True,
-            write=True,
-            grant=True,
-            accepted=True
-        )
-
-    def test_list_shares_without_credentials(self):
-        """
-        Tests if someone gets shares without credentials
-        """
-
-        url = reverse('share')
-
-        data = {}
-
-        response = self.client.get(url, data, user=self.test_user_obj)
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertNotIsInstance(response.data.get('shares', False), list,
-                                 'We got some data even with a 401')
-
     def test_list_shares(self):
         """
         Tests if the initial listing of shares works
@@ -218,6 +187,39 @@ class ReadShareTests(APITestCaseExtended):
                               'Shares do not exist in list shares response')
         self.assertEqual(len(response.data.get('shares', False)), 1,
                          'Only 1 share should exist at the beginning.')
+
+    def test_list_empty_shares(self):
+        """
+        Tests if the listing of no shares work
+        """
+
+        url = reverse('share')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data.get('shares', False), list,
+                              'Shares do not exist in list shares response')
+        self.assertEqual(len(response.data.get('shares', False)), 0,
+                         'Only 1 share should exist at the beginning.')
+
+    def test_list_shares_without_credentials(self):
+        """
+        Tests if someone gets shares without credentials
+        """
+
+        url = reverse('share')
+
+        data = {}
+
+        response = self.client.get(url, data, user=self.test_user_obj)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIsInstance(response.data.get('shares', False), list,
+                                 'We got some data even with a 401')
 
 class CreateShareTests(APITestCaseExtended):
     def setUp(self):
@@ -458,6 +460,33 @@ class CreateShareTests(APITestCaseExtended):
             self.assertNotEqual(store.get('id', ''), new_share_id,
                                 'Found our share in the list view of another user')
 
+    def test_insert_share_failure_duplicate_link_id(self):
+        """
+        Tests to insert the share while reusing a the link id
+        """
+
+        url = reverse('share')
+
+        initial_data = {
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'key_type': 'symmetric',
+            'link_id': '12c5f6b3-61cb-451b-bbc8-950215a01496',
+            'parent_datastore_id': self.test_datastore1_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # And now lets try to reuse the link id
+        response = self.client.post(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_insert_share_into_share_without_write_permissions(self):
         """
         Tests to insert the share and check the rights to access it
@@ -476,7 +505,7 @@ class CreateShareTests(APITestCaseExtended):
             'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
-            'link_id': '47986868-5950-476f-b532-3ed3a80d515d',
+            'link_id': 'a2546859-84a9-4340-b620-2d0989e253ef',
             'parent_share_id': self.test_share1_obj.id,
         }
 
@@ -500,7 +529,7 @@ class CreateShareTests(APITestCaseExtended):
             'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'key_type': 'symmetric',
-            'link_id': '47986868-5950-476f-b532-3ed3a80d515d',
+            'link_id': '996a29d9-aeb7-496a-864c-d6e1c350637b',
             'parent_datastore_id': self.test_datastore1_obj.id,
         }
 
@@ -989,5 +1018,19 @@ class MoreUpdateShareTests(APITestCaseExtended):
                          'data was not saved proper')
         self.assertEqual(updated_share.data_nonce, data['data_nonce'],
                          'data_nonce was not saved proper')
+
+    def test_delete_recoverycode(self):
+        """
+        Tests DELETE method on share
+        """
+
+        url = reverse('share')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
