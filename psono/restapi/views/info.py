@@ -16,7 +16,7 @@ class InfoView(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Check the health of the application
+        Returns the Server's signed information
 
         :param request:
         :type request:
