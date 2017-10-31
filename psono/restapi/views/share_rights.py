@@ -1,3 +1,4 @@
+from ..utils import calculate_user_rights_on_share
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -11,16 +12,12 @@ from rest_framework.exceptions import PermissionDenied
 
 from ..authentication import TokenAuthentication
 
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
+
 class ShareRightsView(GenericAPIView):
-
-    """
-    Check the REST Token and the object permissions and returns
-    all share rights of a specified share. Including the share rights of other people as long as the user who requests
-    it has the "grant" right, and is allowed to see them.
-
-    Accept the following GET parameters: share_id
-    Return a list of the share rights for the specified share
-    """
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
@@ -33,96 +30,96 @@ class ShareRightsView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get(self, request, uuid = None, *args, **kwargs):
+        """
+        Returns all share rights of a specified share. Including the share rights of other people as long as the user
+        who requests it has the "grant" right, and is allowed to see them.
+
+        :param request:
+        :type request:
+        :param uuid:
+        :type uuid:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
         # TODO update according to inherit share rights
 
         if not uuid:
+            log_info(logger=logger, request=request, status='HTTP_404_NOT_FOUND', event='READ_SHARE_RIGHTS_NO_UUID_ERROR')
             return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
 
-        else:
+        # Returns the specified share rights if the user has any rights for it and joins the user_share objects
 
-            # Returns the specified share rights if the user has any rights for it and joins the user_share objects
+        try:
+            share = Share.objects.get(pk=uuid)
+        except Share.DoesNotExist:
 
-            try:
-                share = Share.objects.get(pk=uuid)
-            except Share.DoesNotExist:
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN', event='READ_SHARE_RIGHTS_SHARE_NOT_EXIST_ERROR')
 
-            own_share_right = {
-                'id': [],
-                'accepted': False,
-                'read': False,
-                'write': False,
-                'grant': False,
-                'user_id': [],
-                'share_id': uuid,
-                'email': [],
-            }
-            user_share_rights = []
-            user_share_rights_inherited = []
-            user_has_specific_rights = False
+            return Response({"message":"You don't have permission to access or it does not exist.",
+                            "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
 
 
-            for u in share.user_share_rights.all():
+        own_share_rights = calculate_user_rights_on_share(request.user.id, uuid)
 
-                right = {
-                    'id': u.id,
-                    'accepted': u.accepted,
-                    'read': u.read,
-                    'write': u.write,
-                    'grant': u.grant,
-                    'user_id': u.user_id,
-                    'share_id': u.share_id,
-                    'username': u.user.username,
-                }
+        if not own_share_rights['grant']:
 
-                if u.user_id == request.user.id and (u.read or u.write or u.grant):
-                    user_has_specific_rights = True
-                    own_share_right = right
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='READ_SHARE_RIGHTS_NO_GRANT_PERMISSION_ERROR', request_resource=uuid)
 
-                user_share_rights.append(right)
+            raise PermissionDenied({"message":"You don't have permission to access",
+                                    "resource_id": share.id})
 
-            # TODO Get inherited share rights
-            user_share_right_inherit = []
+        user_share_rights = []
+        group_share_rights = []
+        user_share_rights_inherited = []
 
 
-            for u in user_share_right_inherit:
-                right = {
-                    'id': u.id,
-                    'accepted': u.share_right.accepted,
-                    'read': u.share_right.read,
-                    'write': u.share_right.write,
-                    'grant': u.share_right.grant,
-                    'user_id': u.share_right.user_id,
-                    'share_id': u.share_id,
-                    'username': u.user.username,
-                }
+        for u in share.user_share_rights.all():
 
-                if not user_has_specific_rights and u.user_id == request.user.id and\
-                        (u.share_right.read or u.share_right.write or u.share_right.grant):
-                    own_share_right['id'].push = right['id']
-                    own_share_right['accepted'] = own_share_right['accepted'] or right['accepted']
-                    own_share_right['read'] = own_share_right['read'] or right['read']
-                    own_share_right['write'] = own_share_right['accepted'] or right['write']
-                    own_share_right['grant'] = own_share_right['accepted'] or right['grant']
-                    own_share_right['user_id'].push = right['user_id']
-                    own_share_right['email'].push = right['email']
-
-                user_share_rights_inherited.append(right)
-
-            if not own_share_right['grant']:
-                raise PermissionDenied({"message":"You don't have permission to access",
-                                "resource_id": share.id})
-
-            response = {
-                'id': share.id,
-                'own_share_rights': own_share_right,
-                'user_share_rights': user_share_rights,
-                'user_share_rights_inherited': user_share_rights_inherited
+            right = {
+                'id': u.id,
+                'accepted': u.accepted,
+                'read': u.read,
+                'write': u.write,
+                'grant': u.grant,
+                'user_id': u.user_id,
+                'share_id': u.share_id,
+                'username': u.user.username,
             }
 
-            return Response(response,
-                status=status.HTTP_200_OK)
+            user_share_rights.append(right)
+
+        for u in share.group_share_rights.all():
+
+            right = {
+                'id': u.id,
+                'accepted': True,
+                'read': u.read,
+                'write': u.write,
+                'grant': u.grant,
+                'group_id': u.group_id,
+                'share_id': u.share_id,
+                'group_name': u.group.name,
+            }
+
+            group_share_rights.append(right)
+
+        response = {
+            'id': share.id,
+            'own_share_rights': own_share_rights,
+            'user_share_rights': user_share_rights,
+            'group_share_rights': group_share_rights,
+            'user_share_rights_inherited': user_share_rights_inherited # Deprecated
+        }
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='READ_SHARE_RIGHTS_SUCCESS', request_resource=uuid)
+
+        return Response(response, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

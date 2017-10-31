@@ -10,7 +10,7 @@ from .base import APITestCaseExtended
 import random
 import string
 
-class DatastoreTests(APITestCaseExtended):
+class ReadDatastoreTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "asd"
@@ -95,6 +95,59 @@ class DatastoreTests(APITestCaseExtended):
                               'Datastores do not exist in list datastores response')
         self.assertEqual(len(response.data.get('datastores', False)), 0,
                          'Datastores hold already data, but should not contain any data at the beginning')
+
+class InsertDatastoreTests(APITestCaseExtended):
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_email_bcrypt = "asd"
+        self.test_email2 = "test2@example.com"
+        self.test_email_bcrypt2 = "abc"
+        self.test_username = "test@psono.pw"
+        self.test_username2 = "test2@psono.pw"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
+            username=self.test_username,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce='3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7',
+            is_email_active=True
+        )
+
+        self.test_user2_obj = models.User.objects.create(
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            username=self.test_username2,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce='f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01',
+            is_email_active=True
+        )
 
     def test_insert_datastore(self):
         """
@@ -277,6 +330,134 @@ class DatastoreTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_insert_datastore_failure_no_type(self):
+        """
+        Tests to insert the datastore without type
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            # 'type': "my-type",
+            'description': "my-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_insert_datastore_failure_no_description(self):
+        """
+        Tests to insert the datastore without description
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-type",
+            # 'description': "my-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_insert_datastore_failure_type_and_description_combination_unique(self):
+        """
+        Tests to insert the datastore with the same type and description combination
+        """
+
+        # lets try to create a datastore
+
+        url = reverse('datastore')
+
+        initial_data = {
+            'type': "my-type",
+            'description': "my-description",
+            'data': "12345",
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateDatastoreTests(APITestCaseExtended):
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_email_bcrypt = "asd"
+        self.test_email2 = "test2@example.com"
+        self.test_email_bcrypt2 = "abc"
+        self.test_username = "test@psono.pw"
+        self.test_username2 = "test2@psono.pw"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
+            username=self.test_username,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce='3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7',
+            is_email_active=True
+        )
+
+        self.test_user2_obj = models.User.objects.create(
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            username=self.test_username2,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce='f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01',
+            is_email_active=True
+        )
+
     def test_update_datastore(self):
         """
         Tests to update the datastore
@@ -316,6 +497,7 @@ class DatastoreTests(APITestCaseExtended):
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'is_default': True,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -341,7 +523,7 @@ class DatastoreTests(APITestCaseExtended):
             'data_nonce': updated_data['data_nonce'],
             'secret_key': updated_data['secret_key'],
             'secret_key_nonce': updated_data['secret_key_nonce'],
-            'is_default': True,
+            'is_default': updated_data['is_default'],
         })
 
     def test_update_datastore_no_datastore_id(self):
@@ -503,10 +685,58 @@ class DatastoreTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_delete(self):
-        """
-        Tests to delete the datastore
-        """
+class DeleteDatastoreTests(APITestCaseExtended):
+    def setUp(self):
+        self.test_email = "test@example.com"
+        self.test_email_bcrypt = "asd"
+        self.test_email2 = "test2@example.com"
+        self.test_email_bcrypt2 = "abc"
+        self.test_username = "test@psono.pw"
+        self.test_username2 = "test2@psono.pw"
+        self.test_password = "myPassword"
+        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
+                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
+                                   "571a48eb"
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
+        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
+                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
+                                    "a74b9b2452"
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
+        self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+
+        self.test_user_obj = models.User.objects.create(
+            email=self.test_email,
+            email_bcrypt=self.test_email_bcrypt,
+            username=self.test_username,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce,
+            user_sauce='3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7',
+            is_email_active=True
+        )
+
+        self.test_user2_obj = models.User.objects.create(
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            username=self.test_username2,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key_enc,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key_enc,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce='f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01',
+            is_email_active=True
+        )
 
         url = reverse('datastore')
 
@@ -524,30 +754,11 @@ class DatastoreTests(APITestCaseExtended):
         response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_datastore_id = str(response.data.get('datastore_id'))
-
-        # And now lets try to delete it
-        url = reverse('datastore')
-
-        data = {
-            'authkey': self.test_authkey,
-            'datastore_id': new_datastore_id
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.delete(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_delete_default_datastore(self):
-        """
-        Tests to delete the default datastore
-        """
-
-        url = reverse('datastore')
+        self.new_datastore_id = str(response.data.get('datastore_id'))
 
         initial_data = {
-            'type': "my-second-sexy-type",
-            'description': "my-second-sexy-description",
+            'type': "my-second-sexy-type2",
+            'description': "my-second-sexy-description2",
             'data': "12345",
             'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
@@ -559,14 +770,70 @@ class DatastoreTests(APITestCaseExtended):
         response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_datastore_id = str(response.data.get('datastore_id'))
+        self.new_datastore_id2 = str(response.data.get('datastore_id'))
+
+    def test_delete(self):
+        """
+        Tests to delete the datastore
+        """
 
         # And now lets try to delete it
         url = reverse('datastore')
 
         data = {
             'authkey': self.test_authkey,
-            'datastore_id': new_datastore_id
+            'datastore_id': self.new_datastore_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_delete_datastore_that_does_not_belong_to_the_user(self):
+        """
+        Tests to delete a datastore that does not belong to the user
+        """
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            'authkey': self.test_authkey,
+            'datastore_id': self.new_datastore_id
+        }
+
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_failure_datastore_id_does_not_exist(self):
+        """
+        Tests to delete a datastore that does not exist
+        """
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            'authkey': self.test_authkey,
+            'datastore_id': "656f963b-cec0-4e18-bd8c-729f62fe4e56"
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_default_datastore(self):
+        """
+        Tests to delete the default datastore
+        """
+
+        # And now lets try to delete it
+        url = reverse('datastore')
+
+        data = {
+            'authkey': self.test_authkey,
+            'datastore_id': self.new_datastore_id2
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -577,24 +844,6 @@ class DatastoreTests(APITestCaseExtended):
         """
         Tests to delete the default datastore
         """
-
-        url = reverse('datastore')
-
-        initial_data = {
-            'type': "my-second-sexy-type",
-            'description': "my-second-sexy-description",
-            'data': "12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'is_default': False
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_datastore_id = str(response.data.get('datastore_id'))
 
         # And now lets try to delete it
         url = reverse('datastore')
@@ -613,30 +862,12 @@ class DatastoreTests(APITestCaseExtended):
         Tests to delete the default datastore
         """
 
-        url = reverse('datastore')
-
-        initial_data = {
-            'type': "my-second-sexy-type",
-            'description': "my-second-sexy-description",
-            'data': "12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'secret_key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'secret_key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'is_default': False
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_datastore_id = str(response.data.get('datastore_id'))
-
         # And now lets try to delete it
         url = reverse('datastore')
 
         data = {
             # Missing 'authkey': self.test_authkey,
-            'datastore_id': new_datastore_id
+            'datastore_id': self.new_datastore_id
         }
 
         self.client.force_authenticate(user=self.test_user_obj)

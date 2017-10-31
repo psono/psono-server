@@ -1,5 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.hashers import make_password
+from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -8,6 +9,8 @@ from restapi import models
 
 import random
 import string
+import os
+import binascii
 
 class UserDeleteSecretLinkTest(APITestCaseExtended):
     """
@@ -44,6 +47,31 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt2 = "b"
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
+
+        self.test_user_obj2 = models.User.objects.create(
+            username=self.test_username2,
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
+            is_email_active=True
+        )
+
         self.test_datastore_obj = models.Data_Store.objects.create(
             user_id=self.test_user_obj.id,
             type="my-type",
@@ -54,24 +82,72 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         )
 
-        # create share 1
-        url = reverse('share')
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer("my-data"),
+            data_nonce="12345"
+        )
 
-        self.initial_data1 = {
-            'data': "12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'key_type': 'symmetric',
-            'link_id': '5993584d-bf73-4679-a92a-ea333640cfdd',
-            'parent_datastore_id': self.test_datastore_obj.id,
+        models.User_Share_Right.objects.create(
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=True,
+            write=False,
+            grant=True,
+            accepted=True
+        )
+
+        # # Lets first insert our dummy share
+        # self.test_share2_obj = models.Share.objects.create(
+        #     user_id=self.test_user_obj.id,
+        #     data=readbuffer("my-data"),
+        #     data_nonce="12345"
+        # )
+        #
+        # models.User_Share_Right.objects.create(
+        #     creator_id=self.test_user_obj.id,
+        #     user_id=self.test_user_obj.id,
+        #     share_id=self.test_share2_obj.id,
+        #     read=True,
+        #     write=True,
+        #     grant=True,
+        #     accepted=True
+        # )
+
+        self.link_id = '04f5a857-0bb9-46e0-9a84-97787b3d8ed5'
+
+        self.test_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer('12345'),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+
+        self.secret_link_obj = models.Secret_Link.objects.create(
+            link_id = self.link_id,
+            secret_id = self.test_secret_obj.id,
+            parent_datastore_id = self.test_datastore_obj.id,
+            parent_share_id = None
+        )
+
+    def test_delete_success(self):
+        """
+        Tests to delete a secret link successful
+        """
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response1 = self.client.post(url, self.initial_data1)
+        response = self.client.delete(url, data)
 
-        self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
-
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_without_link_id(self):
         """
@@ -81,14 +157,12 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         url = reverse('secret_link')
 
         data = {
-
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_delete_with_not_existing_link_id(self):
         """
@@ -97,16 +171,56 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
 
         url = reverse('secret_link')
 
-        link_id = '1e541d96-ff3f-4161-9b50-dae234a7e6b8'
-
         data = {
-            'link_id': link_id
+            'link_id': 'cafb9645-7494-4665-bfb6-4cb416efe69d'
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_failure_datastore_not_owned_by_user(self):
+        """
+        Tests to delete a secret link that is in a datastore that does not belong to the user
+        """
+
+
+        self.test_datastore_obj.user_id = self.test_user_obj2.id
+        self.test_datastore_obj.save()
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_failure_share_with_no_right_permissions(self):
+        """
+        Tests to delete a secret link that is in a share where the user has no write permission
+        """
+
+        self.secret_link_obj.parent_datastore_id = None
+        self.secret_link_obj.parent_share_id = self.test_share1_obj.id
+        self.secret_link_obj.save()
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 
 class UserMoveSecretLinkTest(APITestCaseExtended):
     """
@@ -143,6 +257,31 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt2 = "b"
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
+
+        self.test_user_obj2 = models.User.objects.create(
+            username=self.test_username2,
+            email=self.test_email2,
+            email_bcrypt=self.test_email_bcrypt2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
+            is_email_active=True
+        )
+
         self.test_datastore_obj = models.Data_Store.objects.create(
             user_id=self.test_user_obj.id,
             type="my-type",
@@ -153,26 +292,182 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
         )
 
-        # create share 1
-        url = reverse('share')
+        self.test_datastore2_obj = models.Data_Store.objects.create(
+            user_id=self.test_user_obj2.id,
+            type="my-type2",
+            description= "my-description2",
+            data= readbuffer("12345"),
+            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        )
 
-        self.initial_data1 = {
-            'data': "12345",
-            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            'key_type': 'symmetric',
-            'link_id': '5993584d-bf73-4679-a92a-ea333640cfdd',
-            'parent_datastore_id': self.test_datastore_obj.id,
+        # Lets first insert our dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer("my-data"),
+            data_nonce="12345"
+        )
+
+        models.User_Share_Right.objects.create(
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share1_obj.id,
+            read=True,
+            write=False,
+            grant=True,
+            accepted=True
+        )
+
+        # Lets first insert our dummy share
+        self.test_share2_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer("my-data"),
+            data_nonce="12345"
+        )
+
+        models.User_Share_Right.objects.create(
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            share_id=self.test_share2_obj.id,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True
+        )
+
+        self.link_id = '04f5a857-0bb9-46e0-9a84-97787b3d8ed5'
+
+        self.test_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data=readbuffer('12345'),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        self.secret_link_obj = models.Secret_Link.objects.create(
+            link_id = self.link_id,
+            secret_id = self.test_secret_obj.id,
+            parent_datastore_id = self.test_datastore_obj.id,
+            parent_share_id = None
+        )
+
+
+    def test_move_success(self):
+        """
+        Tests to move a link successful
+        """
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_share_id': self.test_share2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        self.response1 = self.client.post(url, self.initial_data1)
+        response = self.client.post(url, data)
 
-        self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    def test_move_without_link_id(self):
+    def test_move_failure_new_parent_datastore_does_not_exist(self):
+        """
+        Tests to move a link from a share to a datastore that does not exist
+        """
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_datastore_id': 'db9f0478-c050-4197-95a1-1ac5e5af1876',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_move_failure_new_parent_datastore_is_owned_by_other_user(self):
+        """
+        Tests to move a link from a share to a datastore that belongs to another user
+        """
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_datastore_id': self.test_datastore2_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_move_failure_no_write_right_on_old_parent_share(self):
+        """
+        Tests to move a link from a share where the user has no write permission
+        """
+
+        self.secret_link_obj.parent_datastore_id = None
+        self.secret_link_obj.parent_share_id = self.test_share1_obj.id
+        self.secret_link_obj.save()
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_share_id': self.test_share2_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_move_failure_old_datastore_does_not_belong_to_user(self):
+        """
+        Tests to move a link that is in a datastore that does not belong to the user
+        """
+
+        self.test_datastore_obj.user_id = self.test_user_obj2.id
+        self.test_datastore_obj.save()
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_share_id': self.test_share2_obj.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_move_failure_new_parent_share_does_not_exist(self):
+        """
+        Tests to move a link to a parent share that does not exist
+        """
+
+        url = reverse('secret_link')
+
+        data = {
+            'link_id': self.link_id,
+            'new_parent_share_id': '476c17e8-2c03-4e0e-9afd-517ba268124f',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_move_failure_no_link_id(self):
         """
         Tests to move a link without link_id
         """
@@ -180,7 +475,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         url = reverse('secret_link')
 
         data = {
-            'new_parent_share_id': '062f7167-e0ea-4c7c-a490-3b6993d43f7e',
+            'new_parent_share_id': self.test_share2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -189,7 +484,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_move_without_new_parent_share_id_nor_new_parent_datastore_id(self):
+    def test_move_failure_no_new_parent_share_id_nor_new_parent_datastore_id(self):
         """
         Tests to move a link without new_parent_share_id nor new_parent_datastore_id
         """
@@ -197,7 +492,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         url = reverse('secret_link')
 
         data = {
-            'link_id': 'ebf581a5-7113-4861-866f-a570b79ae860',
+            'link_id': self.link_id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -206,19 +501,20 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_move_without_existing_link_id(self):
+    def test_move_failure_link_id_does_not_exist(self):
         """
-        Tests to move a link without existing link_id
+        Tests to move a link where the link id does not exist
         """
 
         url = reverse('secret_link')
 
         data = {
             'link_id': 'd5331d29-1a33-455e-8d9d-6ad9ea3c0a0c',
-            'new_parent_share_id': 'e5d173bf-bba5-4cd3-b1a4-a8889f754543',
+            'new_parent_share_id': self.test_share2_obj.id,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+

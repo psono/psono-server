@@ -1,21 +1,21 @@
-from ..utils import request_misses_uuid
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from ..models import (
-    User_Share_Right
-)
-
 from ..authentication import TokenAuthentication
 
-class ShareRightDeclineView(GenericAPIView):
+from ..app_settings import (
+    ShareRightDeclineSerializer,
+)
 
-    """
-    Check the REST Token and the object permissions and updates the share right as declined and removes title and keys
-    from the share right
-    """
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
+
+
+class ShareRightDeclineView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
@@ -32,35 +32,34 @@ class ShareRightDeclineView(GenericAPIView):
         Mark a Share_right as declined. In addition deletes now unnecessary information like title and encryption key.
 
         :param request:
-        :param uuid: share_right_id
         :param args:
         :param kwargs:
-        :return: 200 / 403 / 404
+        :return: 200 / 403
         """
 
-        if request_misses_uuid(request, 'share_right_id'):
-            return Response({"error": "IdNoUUID", 'message': "Share Right ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+        serializer = ShareRightDeclineSerializer(data=request.data, context=self.get_serializer_context())
 
-        if not request.data['share_right_id']:
-            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+        if not serializer.is_valid():
 
-        try:
-            user_share_right_obj = User_Share_Right.objects.get(id=request.data['share_right_id'], user=request.user, accepted=None)
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DECLINE_SHARE_RIGHT_ERROR', errors=serializer.errors)
 
-            user_share_right_obj.accepted = False
-            user_share_right_obj.title = ''
-            user_share_right_obj.title_nonce = ''
-            user_share_right_obj.type = ''
-            user_share_right_obj.type_nonce = ''
-            user_share_right_obj.key_type = ''
-            user_share_right_obj.key = ''
-            user_share_right_obj.key_nonce = ''
-            user_share_right_obj.save()
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        except User_Share_Right.DoesNotExist:
-            return Response({"message":"You don't have permission to access it or it does not exist or you already accepted or declined this share.",
-                            "resource_id": request.data['share_right_id']}, status=status.HTTP_403_FORBIDDEN)
+        user_share_right_obj = serializer.validated_data.get('user_share_right_obj')
+
+        user_share_right_obj.accepted = False
+        user_share_right_obj.title = ''
+        user_share_right_obj.title_nonce = ''
+        user_share_right_obj.type = ''
+        user_share_right_obj.type_nonce = ''
+        user_share_right_obj.key_type = ''
+        user_share_right_obj.key = ''
+        user_share_right_obj.key_nonce = ''
+        user_share_right_obj.save()
+
+        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DECLINE_SHARE_RIGHT_SUCCESS', request_resource=request.data['share_right_id'])
 
         return Response(status=status.HTTP_200_OK)
 

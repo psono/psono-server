@@ -7,7 +7,6 @@ on the request, such as form content or json encoded data.
 from __future__ import unicode_literals
 
 from django.conf import settings
-from django.utils import six
 from django.utils import timezone
 from rest_framework.parsers import JSONParser
 from rest_framework import renderers
@@ -18,6 +17,7 @@ import json
 import dateutil.parser
 
 # import the logging
+from .utils import log_info
 import logging
 logger = logging.getLogger(__name__)
 
@@ -53,49 +53,25 @@ class DecryptJSONParser(JSONParser):
 
         try:
             data = json.loads(decrypted_data.decode())
-        except ValueError as exc:
-            logger.info({
-                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
-                'request_method': stream.META['REQUEST_METHOD'],
-                'request_url': stream.META['PATH_INFO'],
-                'success': False,
-                'status': 'HTTP_400_BAD_REQUEST',
-                'event': 'INVALID_REQUEST',
-                'user': stream.user.username
-            })
+        except ValueError:
+            log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='INVALID_REQUEST')
             raise ParseError('Invalid request')
 
+        if not settings.REPLAY_PROTECTION_DISABLED:
 
-        client_date = stream.auth.client_date
-        create_date = stream.auth.create_date
-        request_date = data.get('request_time', False)
-        now = timezone.now()
+            client_date = stream.auth.client_date
+            create_date = stream.auth.create_date
+            request_date = data.get('request_time', False)
+            now = timezone.now()
 
-        if not request_date:
-            logger.info({
-                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
-                'request_method': stream.META['REQUEST_METHOD'],
-                'request_url': stream.META['PATH_INFO'],
-                'success': False,
-                'status': 'HTTP_400_BAD_REQUEST',
-                'event': 'REPLAY_PROTECTION_REQUEST_TIME_MISSING',
-                'user': stream.user.username
-            })
-            raise ParseError('Replay Protection: request_time missing')
+            if not request_date:
+                log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='REPLAY_PROTECTION_REQUEST_TIME_MISSING')
+                raise ParseError('Replay Protection: request_time missing')
 
-        request_date = dateutil.parser.parse(request_date)
-        time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
-        if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
-            logger.info({
-                'ip': stream.META.get('HTTP_X_FORWARDED_FOR', stream.META.get('REMOTE_ADDR')),
-                'request_method': stream.META['REQUEST_METHOD'],
-                'request_url': stream.META['PATH_INFO'],
-                'success': False,
-                'status': 'HTTP_400_BAD_REQUEST',
-                'event': 'REPLAY_PROTECTION_TIME_DIFFERENCE_PROBLEM',
-                'user': stream.user.username
-            })
-            raise ParseError('Replay Protection: Time difference too big')
-
+            request_date = dateutil.parser.parse(request_date)
+            time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
+            if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
+                log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='REPLAY_PROTECTION_TIME_DIFFERENCE_PROBLEM')
+                raise ParseError('Replay Protection: Time difference too big')
 
         return data

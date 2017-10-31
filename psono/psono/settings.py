@@ -124,7 +124,6 @@ REST_FRAMEWORK = {
         'yubikey_otp_verify': '10/minute',
         'registration': '6/day',
     },
-    'PAGE_SIZE': 10
 }
 
 LOGGING_AUDIT = config_get('LOGGING_AUDIT', False)
@@ -274,6 +273,7 @@ EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
 DEFAULT_TOKEN_TIME_VALID = config_get('DEFAULT_TOKEN_TIME_VALID', 86400) # 24h in seconds
 RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) # in seconds
+REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 60) # in seconds
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']

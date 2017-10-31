@@ -5,9 +5,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
-from ..models import (
-    User
-)
 
 from ..app_settings import (
     UserUpdateSerializer
@@ -21,6 +18,11 @@ import nacl.utils
 import nacl.secret
 import bcrypt
 import hashlib
+
+# import the logging
+from ..utils import log_info
+import logging
+logger = logging.getLogger(__name__)
 
 
 class UserUpdate(GenericAPIView):
@@ -50,10 +52,14 @@ class UserUpdate(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='USER_UPDATE_DETAILS_ERROR', errors=serializer.errors)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if not authenticate(username=request.user.username, authkey=str(request.data['authkey_old'])):
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='USER_UPDATE_DETAILS_OLD_PASSWORD_INCORRECT_ERROR')
             raise PermissionDenied({"message":"Your old password was not right."})
 
         # E-Mail Change
@@ -73,19 +79,33 @@ class UserUpdate(GenericAPIView):
             encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
             request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='USER_UPDATE_DETAILS_EMAIL_SUCCESS')
+
+        password_changed = False
         # Password Change
         if 'authkey' in request.data and request.data['authkey'] is not None:
+            password_changed = True
             request.user.authkey = make_password(str(request.data['authkey']))
         if 'secret_key' in request.data and request.data['secret_key'] is not None:
+            password_changed = True
             request.user.secret_key = str(request.data['secret_key'])
         if 'secret_key_nonce' in request.data and request.data['secret_key_nonce'] is not None:
+            password_changed = True
             request.user.secret_key_nonce = str(request.data['secret_key_nonce'])
         if 'private_key' in request.data and request.data['private_key'] is not None:
+            password_changed = True
             request.user.private_key = str(request.data['private_key'])
         if 'private_key_nonce' in request.data and request.data['private_key_nonce'] is not None:
+            password_changed = True
             request.user.private_key_nonce = str(request.data['private_key_nonce'])
         if 'user_sauce' in request.data and request.data['user_sauce'] is not None:
+            password_changed = True
             request.user.user_sauce = str(request.data['user_sauce'])
+
+        if password_changed:
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='USER_UPDATE_DETAILS_PASSWORD_SUCCESS')
 
         request.user.save()
 

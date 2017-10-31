@@ -54,9 +54,7 @@ urlpatterns = [
     url(r'^share/rights/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
 
     url(r'^share/right/accept/$', views.ShareRightAcceptView.as_view(), name='share_right_accept'),
-    url(r'^share/right/accept/(?P<uuid>[^/]+)/$', views.ShareRightAcceptView.as_view(), name='share_right_accept'),
     url(r'^share/right/decline/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
-    url(r'^share/right/decline/(?P<uuid>[^/]+)/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
     url(r'^share/right/$', views.ShareRightView.as_view(), name='share_right'),
     url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
 
@@ -67,7 +65,14 @@ urlpatterns = [
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
 
     url(r'^group/$', views.GroupView.as_view(), name='group'),
-    url(r'^group/(?P<uuid>[^/]+)/$', views.GroupView.as_view(), name='group'),
+    url(r'^group/rights/$', views.GroupRightsView.as_view(), name='group_rights'),
+    url(r'^group/rights/(?P<group_id>[^/]+)/$', views.GroupRightsView.as_view(), name='group_rights'),
+    url(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='group'),
+
+    url(r'^membership/accept/$', views.MembershipAcceptView.as_view(), name='membership_accept'),
+    url(r'^membership/decline/$', views.MembershipDeclineView.as_view(), name='membership_decline'),
+    url(r'^membership/$', views.MembershipView.as_view(), name='membership'),
+    url(r'^membership/(?P<uuid>[^/]+)/$', views.MembershipView.as_view(), name='membership'),
 
     # url(r'^$', views.api_root),
 

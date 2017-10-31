@@ -8,24 +8,38 @@ from .serializers import (
     LogoutSerializer as DefaultLogoutSerializer,
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
-    UserPublicKeySerializer as DefaultUserPublicKeySerializer,
+    UserSearchSerializer as DefaultUserSearchSerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     NewGASerializer as DefaultNewGASerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
-    CreateUserShareRightSerializer as DefaultCreateUserShareRightSerializer,
-    UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
+    CreateShareRightSerializer as DefaultCreateShareRightSerializer,
+    UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
+    DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
     EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
     SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
     ShareTreeSerializer as DefaultShareTreeSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
+    UpdateShareSerializer as DefaultUpdateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
+    DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
     SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer,
+    ShareRightAcceptSerializer as DefaultShareRightAcceptSerializer,
+    ShareRightDeclineSerializer as DefaultShareRightDeclineSerializer,
     MoveSecretLinkSerializer as DefaultMoveSecretLinkSerializer,
     DeleteSecretLinkSerializer as DefaultDeleteSecretLinkSerializer,
+    CreateGroupSerializer as DefaultCreateGroupSerializer,
+    ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
+    CreateSecretSerializer as DefaultCreateSecretSerializer,
+    UpdateSecretSerializer as DefaultUpdateSecretSerializer,
+    CreateMembershipSerializer as DefaultCreateMembershipSerializer,
+    UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
+    UpdateGroupSerializer as DefaultUpdateGroupSerializer,
+    MembershipAcceptSerializer as DefaultMembershipAcceptSerializer,
+    MembershipDeclineSerializer as DefaultMembershipDeclineSerializer,
 )
 from .utils import import_callable
 
@@ -69,10 +83,10 @@ VerifyEmailSerializer = import_callable(
 )
 
 
-UserPublicKeySerializer = import_callable(
+UserSearchSerializer = import_callable(
     serializers.get(
-        'USER_PUBLIC_KEY_SERIALIZER',
-        DefaultUserPublicKeySerializer
+        'USER_SEARCH_SERIALIZER',
+        DefaultUserSearchSerializer
     )
 )
 
@@ -98,17 +112,24 @@ NewYubikeyOTPSerializer = import_callable(
 )
 
 
-CreateUserShareRightSerializer = import_callable(
+CreateShareRightSerializer = import_callable(
     serializers.get(
         'CREATE_SHARE_RIGHT_SERIALIZER',
-        DefaultCreateUserShareRightSerializer
+        DefaultCreateShareRightSerializer
     )
 )
 
-UpdateUserShareRightSerializer = import_callable(
+UpdateShareRightSerializer = import_callable(
     serializers.get(
         'UPDATE_SHARE_RIGHT_SERIALIZER',
-        DefaultUpdateUserShareRightSerializer
+        DefaultUpdateShareRightSerializer
+    )
+)
+
+DeleteShareRightSerializer = import_callable(
+    serializers.get(
+        'DELETE_SHARE_RIGHT_SERIALIZER',
+        DefaultDeleteShareRightSerializer
     )
 )
 
@@ -151,6 +172,14 @@ CreateShareSerializer = import_callable(
     )
 )
 
+
+UpdateShareSerializer = import_callable(
+    serializers.get(
+        'UPDATE_SHARE_SERIALIZER',
+        DefaultUpdateShareSerializer
+    )
+)
+
 DatastoreOverviewSerializer = import_callable(
     serializers.get(
         'DATASTORE_OVERVIEW_SERIALIZER',
@@ -172,6 +201,14 @@ DeleteDatastoreSerializer = import_callable(
     )
 )
 
+
+DeleteMembershipSerializer = import_callable(
+    serializers.get(
+        'DELETE_MEMBERSHIP_SERIALIZER',
+        DefaultDeleteMembershipSerializer
+    )
+)
+
 SecretOverviewSerializer = import_callable(
     serializers.get(
         'SECRET_OVERVIEW_SERIALIZER',
@@ -183,6 +220,20 @@ ShareOverviewSerializer = import_callable(
     serializers.get(
         'SHARE_OVERVIEW_SERIALIZER',
         DefaultShareOverviewSerializer
+    )
+)
+
+ShareRightAcceptSerializer = import_callable(
+    serializers.get(
+        'SHARE_RIGHT_ACCEPT_SERIALIZER',
+        DefaultShareRightAcceptSerializer
+    )
+)
+
+ShareRightDeclineSerializer = import_callable(
+    serializers.get(
+        'SHARE_RIGHT_DECLINE_SERIALIZER',
+        DefaultShareRightDeclineSerializer
     )
 )
 
@@ -199,5 +250,69 @@ DeleteSecretLinkSerializer = import_callable(
         DefaultDeleteSecretLinkSerializer
     )
 )
+
+CreateGroupSerializer = import_callable(
+    serializers.get(
+        'CREATE_GROUP_SERIALIZER',
+        DefaultCreateGroupSerializer
+    )
+)
+
+ReadGroupRightsSerializer = import_callable(
+    serializers.get(
+        'READ_GROUP_RIGHTS_SERIALIZER',
+        DefaultReadGroupRightsSerializer
+    )
+)
+
+CreateSecretSerializer = import_callable(
+    serializers.get(
+        'CREATE_SECRET_SERIALIZER',
+        DefaultCreateSecretSerializer
+    )
+)
+
+UpdateSecretSerializer = import_callable(
+    serializers.get(
+        'UPDATE_SECRET_SERIALIZER',
+        DefaultUpdateSecretSerializer
+    )
+)
+
+CreateMembershipSerializer = import_callable(
+    serializers.get(
+        'CREATE_MEMBERSHIP_SERIALIZER',
+        DefaultCreateMembershipSerializer
+    )
+)
+
+UpdateMembershipSerializer = import_callable(
+    serializers.get(
+        'CREATE_MEMBERSHIP_SERIALIZER',
+        DefaultUpdateMembershipSerializer
+    )
+)
+
+UpdateGroupSerializer = import_callable(
+    serializers.get(
+        'UPDATE_GROUP_SERIALIZER',
+        DefaultUpdateGroupSerializer
+    )
+)
+
+MembershipAcceptSerializer = import_callable(
+    serializers.get(
+        'MEMBERSHIP_ACCEPT_SERIALIZER',
+        DefaultMembershipAcceptSerializer
+    )
+)
+
+MembershipDeclineSerializer = import_callable(
+    serializers.get(
+        'MEMBERSHIP_DECLINE_SERIALIZER',
+        DefaultMembershipDeclineSerializer
+    )
+)
+
 
 EMAIL_VERIFICATION = 'mandatory'

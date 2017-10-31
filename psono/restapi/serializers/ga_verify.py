@@ -1,17 +1,12 @@
 from django.conf import settings
-from ..authentication import TokenAuthentication
 import hashlib
 
-try:
-    from django.utils.http import urlsafe_base64_decode as uid_decoder
-except:
-    # make compatible with django 1.5
-    from django.utils.http import base36_to_int as uid_decoder
+from django.utils.http import urlsafe_base64_decode as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import Token, Google_Authenticator
+from ..models import Google_Authenticator
 import nacl.utils
 import nacl.secret
 import nacl.encoding
@@ -45,7 +40,8 @@ class GAVerifySerializer(serializers.Serializer):
             totp = pyotp.TOTP(decrypted_ga_secret)
             if totp.verify(ga_token):
                 ga_token_correct = True
-                break
+                attrs['ga_token'] = ga
+            break
 
         if not ga_token_correct:
             msg = _('GA Token incorrect.')

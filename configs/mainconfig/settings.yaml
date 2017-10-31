@@ -40,9 +40,9 @@ EMAIL_PORT: 25
 EMAIL_SUBJECT_PREFIX: ''
 EMAIL_USE_TLS: False
 EMAIL_USE_SSL: False
-EMAIL_SSL_CERTFILE: None
-EMAIL_SSL_KEYFILE: None
-EMAIL_TIMEOUT: None
+EMAIL_SSL_CERTFILE:
+EMAIL_SSL_KEYFILE:
+EMAIL_TIMEOUT:
 
 # In case you want to offer Yubikey support, create a pair of credentials here https://upgrade.yubico.com/getapikey/
 # and update the following two lines before commenting them in

@@ -105,7 +105,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data1)
+        response = self.client.post(url, initial_data1)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
@@ -133,7 +133,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data2)
+        response = self.client.post(url, initial_data2)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
@@ -173,7 +173,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data3)
+        response = self.client.post(url, initial_data3)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('share_id', False), False,
@@ -219,7 +219,7 @@ class ShareTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, initial_data1)
+        response = self.client.post(url, initial_data1)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -1019,7 +1019,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
                              expected_share_tree_count_after) + ' share tree objects should be created, but we got: ' + str(
                              share_trees.count()))
 
-        # change datastore owner
+        # change datastore creator
         models.Data_Store.objects.filter(pk=self.test_datastore1_obj.id).update(user=self.test_user3_obj)
 
 

@@ -20,4 +20,9 @@ from .health_check import *
 from .utils import *
 from .mfa_yubikey_otp import *
 from .mfa_google_authenticator import *
+from .group import *
+from .group_rights import *
+from .membership import *
+from .membership_accept import *
+from .membership_decline import *
 from .commands import *
