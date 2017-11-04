@@ -36,7 +36,7 @@ class VerifyEmailView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200 / 400
         :rtype:
         """
 

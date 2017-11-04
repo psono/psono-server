@@ -10,6 +10,7 @@ from .delete_secret_link import *
 from .create_group import *
 from .create_secret import *
 from .create_membership import *
+from .update_datastore import *
 from .update_group import *
 from .update_membership import *
 from .read_group_rights import *
@@ -34,7 +35,9 @@ from .share_right_accept import *
 from .share_right_decline import *
 from .membership_accept import *
 from .membership_decline import *
-from .share_tree import *
+from .create_share_link import *
+from .update_share_link import *
+from .delete_share_link import *
 from .user_search import *
 from .user_share import *
 from .user_update import *

@@ -7,12 +7,12 @@ from ..models import User, Group, User_Share_Right, Group_Share_Right
 
 
 class CreateShareRightSerializer(serializers.Serializer):
-    key = serializers.CharField(max_length=256, required=False)
-    key_nonce = serializers.CharField(max_length=64, required=False)
-    title = serializers.CharField(max_length=512, required=False)
-    title_nonce = serializers.CharField(max_length=64, required=False)
-    type = serializers.CharField(max_length=512, required=False)
-    type_nonce = serializers.CharField(max_length=64, required=False)
+    key = serializers.CharField(max_length=256, required=True)
+    key_nonce = serializers.CharField(max_length=64, required=True)
+    title = serializers.CharField(max_length=512, required=True)
+    title_nonce = serializers.CharField(max_length=64, required=True)
+    type = serializers.CharField(max_length=512, required=True)
+    type_nonce = serializers.CharField(max_length=64, required=True)
     share_id = serializers.UUIDField(required=True)
     user_id = serializers.UUIDField(required=False)
     group_id = serializers.UUIDField(required=False)

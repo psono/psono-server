@@ -4,43 +4,45 @@ from  more_itertools import unique_everseen
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import Secret_Link, Data_Store
+from ..models import Data_Store, Share_Tree, Share
 
-
-class MoveSecretLinkSerializer(serializers.Serializer):
+class UpdateShareLinkSerializer(serializers.Serializer):
 
     link_id = serializers.UUIDField(required=True)
     new_parent_share_id = serializers.UUIDField(required=False)
     new_parent_datastore_id = serializers.UUIDField(required=False)
 
     def validate(self, attrs):
-        link_id = attrs.get('link_id')
+
+        link_id = str(attrs.get('link_id')).replace("-", "")
         new_parent_share_id = attrs.get('new_parent_share_id', None)
         new_parent_datastore_id = attrs.get('new_parent_datastore_id', None)
 
-        if new_parent_share_id is None and new_parent_datastore_id is None:
-            msg = _("No parent (share or datastore) has been provided as parent")
-            raise exceptions.ValidationError(msg)
-
-        secrets = []
+        shares = []
         old_parents = []
         old_datastores = []
 
-        for s in Secret_Link.objects.filter(link_id=link_id).all():
-            secrets.append(s.secret_id)
+        for s in Share_Tree.objects.filter(path__match='*.' + link_id).all():
+            shares.append(s.share_id)
             if s.parent_share_id:
                 old_parents.append(s.parent_share_id)
             if s.parent_datastore_id:
                 old_datastores.append(s.parent_datastore_id)
 
         # remove duplicates
-        secrets = list(unique_everseen(secrets))
+        shares = list(unique_everseen(shares))
         old_parents = list(unique_everseen(old_parents))
         old_datastores = list(unique_everseen(old_datastores))
 
-        if not secrets and not old_parents and not old_datastores:
+        if not shares and not old_parents and not old_datastores:
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
+
+        # check grant permissions on share
+        for share_id in shares:
+            if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
+                msg = _("You don't have permission to access or it does not exist.")
+                raise exceptions.ValidationError(msg)
 
         # check write permissions on old_parents
         for old_parent_share_id in old_parents:
@@ -56,20 +58,24 @@ class MoveSecretLinkSerializer(serializers.Serializer):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
-        # check if new parent share exists and permissions
-        if new_parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id,
-                                                                            new_parent_share_id, write=True):
+        # check permissions on new_parent_share (and if it exists)
+        if new_parent_share_id and not user_has_rights_on_share(self.context['request'].user.id,
+                                                                new_parent_share_id, write=True):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 
-        # check if new_datastore exists
-        if new_parent_datastore_id and not Data_Store.objects.filter(pk=new_parent_datastore_id, user=self.context['request'].user).exists():
-            msg = _("You don't have permission to access or it does not exist.")
-            raise exceptions.ValidationError(msg)
+        # check if new parent datastore exists and belongs to the user
+        if new_parent_datastore_id is not None:
+            try:
+                Data_Store.objects.get(pk=new_parent_datastore_id, user=self.context['request'].user)
+            except Data_Store.DoesNotExist:
+                msg = _("You don't have permission to access or it does not exist.")
+                raise exceptions.ValidationError(msg)
 
-        attrs['link_id'] = link_id
+
+        attrs['shares'] = shares
         attrs['new_parent_share_id'] = new_parent_share_id
         attrs['new_parent_datastore_id'] = new_parent_datastore_id
-        attrs['secrets'] = secrets
 
         return attrs
+

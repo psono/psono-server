@@ -46,7 +46,7 @@ class UserUpdate(GenericAPIView):
         :param kwargs:
         :type kwargs:
         :return:
-        :rtype:
+        :rtype: 200 / 400 / 403
         """
 
         serializer = self.get_serializer(data=request.data)

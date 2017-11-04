@@ -26,6 +26,18 @@ class SessionView(GenericAPIView):
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
     def get(self, request, *args, **kwargs):
+        """
+        Lists all active sessions
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 400
+        :rtype:
+        """
 
         sessions = []
         for session in self.token_model.objects.filter(user=request.user, valid_till__gt=timezone.now(), active=True):

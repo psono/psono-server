@@ -32,17 +32,17 @@ class SecretView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, secret_id = None, *args, **kwargs):
         """
-        Lists all secrets the user created or only a specific secret
+        Lists a specific secret
 
         Necessary Rights:
             - read on secret
 
         :param request:
         :type request:
-        :param uuid:
-        :type uuid:
+        :param secret_id:
+        :type secret_id:
         :param args:
         :type args:
         :param kwargs:
@@ -50,49 +50,43 @@ class SecretView(GenericAPIView):
         :return: 200 / 400 / 403
         :rtype:
         """
-        if not uuid:
+        if not secret_id:
+            return Response({"error": "IdNoUUID", 'message': "Secret ID has not been provided"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-            secrets = Secret.objects.filter(user=request.user)
+        try:
+            secret = Secret.objects.get(pk=secret_id)
+        except ValidationError:
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SECRETS_ALL_SUCCESS')
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='READ_SECRET_ID_NO_UUID_ERROR', request_resource=secret_id)
 
-            return Response({'secrets': SecretOverviewSerializer(secrets, many=True).data},
-                status=status.HTTP_200_OK)
-        else:
-            try:
-                secret = Secret.objects.get(pk=uuid)
-            except ValidationError:
+            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no secret_id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Secret.DoesNotExist:
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_ID_NO_UUID_ERROR', request_resource=uuid)
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='READ_SECRET_NOT_EXIST_ERROR', request_resource=secret_id)
 
-                return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            except Secret.DoesNotExist:
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_NOT_EXIST_ERROR', request_resource=uuid)
+        if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
 
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
+                     event='READ_SECRET_PERMISSION_DENIED_ERROR', request_resource=secret_id)
 
-            if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_PERMISSION_DENIED_ERROR', request_resource=uuid)
+        log_info(logger=logger, request=request, status='HTTP_200_OK',
+                 event='READ_SECRET_SUCCESS', request_resource=secret_id)
 
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SECRET_SUCCESS', request_resource=uuid)
-
-            return Response({
-                'create_date': secret.create_date,
-                'write_date': secret.write_date,
-                'data': readbuffer(secret.data),
-                'data_nonce': secret.data_nonce if secret.data_nonce else '',
-                'type': secret.type,
-            }, status=status.HTTP_200_OK)
+        return Response({
+            'create_date': secret.create_date,
+            'write_date': secret.write_date,
+            'data': readbuffer(secret.data),
+            'data_nonce': secret.data_nonce if secret.data_nonce else '',
+            'type': secret.type,
+        }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
@@ -108,7 +102,7 @@ class SecretView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 201 / 400 / 403 / 404
+        :return: 201 / 400
         :rtype:
         """
 
@@ -162,7 +156,7 @@ class SecretView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         :rtype:
         """
 

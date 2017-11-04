@@ -98,7 +98,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights without valid share id
         """
 
-        url = reverse('share_rights', kwargs={'uuid': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
+        url = reverse('share_rights', kwargs={'share_id': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
 
         data = {}
 
@@ -113,7 +113,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights without valid share id
         """
 
-        url = reverse('share_rights', kwargs={'uuid': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
+        url = reverse('share_rights', kwargs={'share_id': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
 
         data = {}
 
@@ -128,7 +128,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights without valid share id
         """
 
-        url = reverse('share_rights', kwargs={'uuid': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
+        url = reverse('share_rights', kwargs={'share_id': 'cebcd1c4-baf6-441f-b97f-796ba6c95848'})
 
         data = {}
 
@@ -142,7 +142,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights without any rights for the specified share
         """
 
-        url = reverse('share_rights', kwargs={'uuid': str(self.test_share1_obj.id)})
+        url = reverse('share_rights', kwargs={'share_id': str(self.test_share1_obj.id)})
 
         data = {}
 
@@ -156,7 +156,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights without grant rights for the specified share
         """
 
-        url = reverse('share_rights', kwargs={'uuid': str(self.test_share2_obj.id)})
+        url = reverse('share_rights', kwargs={'share_id': str(self.test_share2_obj.id)})
 
         data = {}
 
@@ -170,7 +170,7 @@ class UserShareRightsTest(APITestCaseExtended):
         Tests if the initial listing of share rights works
         """
 
-        url = reverse('share_rights', kwargs={'uuid': str(self.test_share3_obj.id)})
+        url = reverse('share_rights', kwargs={'share_id': str(self.test_share3_obj.id)})
 
         data = {}
 
@@ -184,7 +184,5 @@ class UserShareRightsTest(APITestCaseExtended):
                             'own_share_rights does not exist in answer')
         self.assertNotEqual(response.data.get('user_share_rights', False), False,
                             'user_share_rights does not exist in answer')
-        self.assertNotEqual(response.data.get('user_share_rights_inherited', False), False,
-                            'user_share_rights_inherited does not exist in answer')
 
     #TODO Test actual database integrity of saved share rights

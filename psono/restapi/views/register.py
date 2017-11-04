@@ -41,7 +41,7 @@ class RegisterView(GenericAPIView):
         :param kwargs:
         :type kwargs:
         :return:
-        :rtype:
+        :rtype: 201 / 400
         """
 
         def splitAt(w, n):

@@ -141,7 +141,7 @@ class PasswordView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 403
+        :return: 200 / 400/ 403
         :rtype:
         """
 

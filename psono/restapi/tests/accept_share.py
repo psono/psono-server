@@ -172,8 +172,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -264,8 +262,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -280,181 +276,11 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share2_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
 
         self.client.force_authenticate(user=self.test_user3_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_in_share_with_no_grant_right_on_share(self):
-        """
-        Tests to accept a share right in share with no grant right on share
-        """
-
-        models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user_obj.id,
-            read=True,
-            write=False,
-            grant=True,
-            accepted=True
-        )
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=False
-        )
-
-        test_parent_share1_obj = models.Share.objects.create(
-            user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-
-        models.User_Share_Right.objects.create(
-            share_id=test_parent_share1_obj.id,
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=False,
-            write=True,
-            grant=False,
-            accepted=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_badly_formatted_parent_share_uuid(self):
-        """
-        Tests to accept a share right with badly formatted parent share uuid
-        """
-
-        models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user_obj.id,
-            read=True,
-            write=False,
-            grant=True,
-            accepted=True
-        )
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        test_parent_share1_obj = models.Share.objects.create(
-            user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-
-        models.User_Share_Right.objects.create(
-            share_id=test_parent_share1_obj.id,
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=False,
-            write=True,
-            grant=False,
-            accepted=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': "123456",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_badly_formatted_parent_datastore_uuid(self):
-        """
-        Tests to accept a share right with badly formatted parent datastore uuid
-        """
-
-        models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user_obj.id,
-            read=True,
-            write=False,
-            grant=True,
-            accepted=True
-        )
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        test_parent_share1_obj = models.Share.objects.create(
-            user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-
-        models.User_Share_Right.objects.create(
-            share_id=test_parent_share1_obj.id,
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=False,
-            write=True,
-            grant=False,
-            accepted=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_datastore_id': "123456",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -495,53 +321,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': "581d7299-b818-48d5-984b-812b43522464",
-            'parent_share_id': test_parent_share1_obj.id,
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_no_parent_share_nor_datastore(self):
-        """
-        Tests to accept a share right with no parent_share nor datastore
-        """
-
-        models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user_obj.id,
-            read=True,
-            write=False,
-            grant=True,
-            accepted=True
-        )
-
-        test_parent_share1_obj = models.Share.objects.create(
-            user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
-            data_nonce="12345"
-        )
-
-        models.User_Share_Right.objects.create(
-            share_id=test_parent_share1_obj.id,
-            creator_id=self.test_user2_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=False,
-            write=True,
-            grant=False,
-            accepted=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': '581d7299-b818-48d5-984b-812b43522464',
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -598,9 +377,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': '581d7299-b818-48d5-984b-812b43522464',
-            'parent_share_id': test_parent_share1_obj.id,
-            'parent_datastore_id': test_datastore1_obj.id,
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -645,8 +421,6 @@ class UserRightsAccept(APITestCaseExtended):
         url = reverse('share_right_accept')
 
         initial_data = {
-            'link_id': "223545",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -696,8 +470,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_datastore_id': test_datastore1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -728,140 +500,8 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': "c705baca-ea0f-4848-b16e-e95fe80652f2",
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': self.test_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_not_existing_parent_share(self):
-        """
-        Tests to accept a share right with a parent share for which the user has no rights
-        """
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
-            'parent_share_id': "b084e8cd-ff45-49a1-8ad7-f74e7c0a301d"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_not_existing_datastore(self):
-        """
-        Tests to accept a share right with a parent datastore that does not exist
-        """
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
-            'parent_datastore_id': "b084e8cd-ff45-49a1-8ad7-f74e7c0a301d"
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_without_parent_share_rights(self):
-        """
-        Tests to accept a a share right with a parent for which the user has no rights
-        """
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
-            'parent_share_id': self.test_parent_share2_obj.id
-        }
-
-        self.client.force_authenticate(user=self.test_user2_obj)
-        response = self.client.post(url, initial_data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_accept_share_right_with_no_rights_on_datastore(self):
-        """
-        Tests to accept a share right with a parent datastore for which the user has no rights
-        """
-
-        test_share_right1_obj = models.User_Share_Right.objects.create(
-            share_id=self.test_share1_obj.id,
-            creator_id=self.test_user_obj.id,
-            user_id=self.test_user2_obj.id,
-            read=True,
-            write=False,
-            grant=True
-        )
-
-        test_datastore1_obj = models.Data_Store.objects.create(
-            user_id=self.test_user_obj.id,
-            type="my-type",
-            description= "my-description",
-            data= readbuffer("12345"),
-            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-        )
-
-        # lets try to create an inherited share right for share2
-        url = reverse('share_right_accept')
-
-        initial_data = {
-            'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
-            'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9",
-            'parent_datastore_id': test_datastore1_obj.id
         }
 
         self.client.force_authenticate(user=self.test_user2_obj)
@@ -914,8 +554,6 @@ class UserRightsAccept(APITestCaseExtended):
 
         initial_data = {
             'share_right_id': str(test_share_right1_obj.id),
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -969,8 +607,6 @@ class UserRightsAccept(APITestCaseExtended):
         url = reverse('share_right_accept')
 
         initial_data = {
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }
@@ -1024,8 +660,6 @@ class UserRightsAccept(APITestCaseExtended):
         url = reverse('share_right_accept')
 
         initial_data = {
-            'link_id': "2455761a-dbb8-4cbc-971c-428aa4d471a3",
-            'parent_share_id': test_parent_share1_obj.id,
             'key': "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a55e3c",
             'key_nonce': "4298a9ab3d9d5d8643dfd4445adc30301b5654f650497fb9"
         }

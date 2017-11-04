@@ -1,5 +1,5 @@
 from ..utils import calculate_user_rights_on_share
-from .share_tree import create_share_link
+from .share_link import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -123,45 +123,7 @@ class ShareView(GenericAPIView):
         except Share.DoesNotExist:
             return None
 
-        # user_share_rights = []
-        # user_share_rights_inherited = []
-        # has_read_right = False
-        #
-        # for u in share.user_share_rights.filter(user=user):
-        #     user_share_rights.append({
-        #         'id': u.id,
-        #         'key': u.key,
-        #         'key_nonce': u.key_nonce,
-        #         'key_type': u.key_type,
-        #         'read': u.read,
-        #         'write': u.write,
-        #         'grant': u.grant,
-        #         'user_id': u.user_id,
-        #     })
-        #
-        #     has_read_right = has_read_right or u.read
-        #
-        # if not user_share_rights:
-        #     inherited_rights = get_all_inherited_rights(user.id, uuid)
-        #     for u in inherited_rights:
-        #         user_share_rights_inherited.append({
-        #             'id': u.id,
-        #             'key': u.key,
-        #             'key_nonce': u.key_nonce,
-        #             'key_type': u.key_type,
-        #             'read': u.read,
-        #             'write': u.write,
-        #             'grant': u.grant,
-        #             'user_id': u.user_id,
-        #         })
-        #
-        #         has_read_right = has_read_right or u.read
-        #
-        # if not has_read_right:
-        #     return None
-
         rights = calculate_user_rights_on_share(user.id, uuid)
-        user_share_rights=[rights]
 
         if not rights['read']:
             return None
@@ -169,8 +131,6 @@ class ShareView(GenericAPIView):
         return {
             'share': share,
             'rights': rights,
-            'user_share_rights': user_share_rights,  # DEPRECATED: Remove later
-            'user_share_rights_inherited': [],  # DEPRECATED: Remove later
         }
 
     def get(self, request, uuid = None, *args, **kwargs):
@@ -210,8 +170,6 @@ class ShareView(GenericAPIView):
                 'data_nonce': share['share'].data_nonce if share['share'].data_nonce else '',
                 'user_id': share['share'].user_id,
                 'rights': share['rights'],
-                'user_share_rights': share['user_share_rights'], # DEPRECATED: Remove later
-                'user_share_rights_inherited': share['user_share_rights_inherited'], # DEPRECATED: Remove later
             }
 
             log_info(logger=logger, request=request, status='HTTP_200_OK',

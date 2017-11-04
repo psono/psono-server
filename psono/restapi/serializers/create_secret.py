@@ -22,6 +22,10 @@ class CreateSecretSerializer(serializers.Serializer):
             msg = _("Either parent share or datastore need to be specified.")
             raise exceptions.ValidationError(msg)
 
+        if parent_share_id is not None and parent_datastore_id is not None:
+            msg = _("Either parent share or datastore need to be specified, not both.")
+            raise exceptions.ValidationError(msg)
+
         if parent_share_id is not None:
             # check permissions on parent
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):

@@ -43,10 +43,7 @@ class LoginView(GenericAPIView):
         Check the credentials and return the REST Token
         if the credentials are valid and authenticated.
 
-        Accepts the following POST parameters: email, authkey
-        Returns the token.
-
-        Clients should authenticate by passing the token key in the "Authorization"
+        Clients should later authenticate by passing the token key in the "Authorization"
         HTTP header, prepended with the string "Token ". For example:
 
             Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
@@ -57,7 +54,7 @@ class LoginView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200 / 400
         :rtype:
         """
         serializer = self.get_serializer(data=self.request.data)

@@ -1,4 +1,3 @@
-from .share_tree import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -34,8 +33,7 @@ class ShareRightAcceptView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Mark a Share_right as accepted. In addition update the share right with the new encryption key and deletes now
-        unnecessary information like title.
+        Mark a Share_right as accepted. In addition update the share right with the new encryption key
 
         :param request:
         :param args:
@@ -55,23 +53,13 @@ class ShareRightAcceptView(GenericAPIView):
 
         user_share_right_obj = serializer.validated_data.get('user_share_right_obj')
 
-        # Deprecated
-        if request.data.get('link_id', False) and not create_share_link(request.data['link_id'], user_share_right_obj.share_id,
-                                                                        serializer.validated_data.get('parent_share_id'),
-                                                                        serializer.validated_data.get('parent_datastore_id')):
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='ACCEPT_SHARE_RIGHT_LIK_ID_DUPLICATE_ERROR')
-
-            return Response({"message": "Link id already exists.",
-                             "resource_id": request.data['share_right_id']}, status=status.HTTP_400_BAD_REQUEST)
-
         type = user_share_right_obj.type
         type_nonce = user_share_right_obj.type_nonce
 
         user_share_right_obj.accepted = True
         user_share_right_obj.type = ''
         user_share_right_obj.type_nonce = ''
-        user_share_right_obj.key_type = serializer.validated_data.get('key_type', False)
+        user_share_right_obj.key_type = serializer.validated_data.get('key_type')
 
         if serializer.validated_data.get('key', False):
             user_share_right_obj.key = serializer.validated_data.get('key')

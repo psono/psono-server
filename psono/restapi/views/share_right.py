@@ -36,17 +36,17 @@ class ShareRightView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, user_share_right_id = None, *args, **kwargs):
         """
         Returns a specific Share_Right or a list of all the Share_Rights of the user who requested it
 
         :param request:
-        :param uuid:
+        :param user_share_right_id:
         :param args:
         :param kwargs:
         :return: 200 / 403
         """
-        if not uuid:
+        if not user_share_right_id:
 
             # Generate a list of a all share rights
 
@@ -111,21 +111,21 @@ class ShareRightView(GenericAPIView):
             # Returns the specified share right if the user is the user
 
             try:
-                share_right = User_Share_Right.objects.get(pk=uuid)
+                share_right = User_Share_Right.objects.get(pk=user_share_right_id)
                 if share_right.creator_id != request.user.id and share_right.user_id != request.user.id:
 
                     log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                             event='READ_GROUP_SHARE_RIGHT_NO_PERMISSION_FAILURE', request_resource=uuid)
+                             event='READ_GROUP_SHARE_RIGHT_NO_PERMISSION_FAILURE', request_resource=user_share_right_id)
 
                     return Response({"message":"You don't have permission to access or it does not exist.",
-                                    "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                    "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
             except User_Share_Right.DoesNotExist:
 
                 log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_GROUP_SHARE_RIGHT_NOT_EXIST_FAILURE', request_resource=uuid)
+                         event='READ_GROUP_SHARE_RIGHT_NOT_EXIST_FAILURE', request_resource=user_share_right_id)
 
                 return Response({"message":"You don't have permission to access or it does not exist.",
-                                "resource_id": uuid}, status=status.HTTP_403_FORBIDDEN)
+                                "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
 
             response = {
                 'id': share_right.id,
@@ -140,7 +140,7 @@ class ShareRightView(GenericAPIView):
             }
 
             log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_GROUP_SHARE_RIGHT_SUCCESS', request_resource=uuid)
+                     event='READ_GROUP_SHARE_RIGHT_SUCCESS', request_resource=user_share_right_id)
 
             return Response(response,
                 status=status.HTTP_200_OK)
@@ -260,12 +260,14 @@ class ShareRightView(GenericAPIView):
         Necessary Rights:
             - grant on share
 
-
         :param request:
-        :param uuid: share_right_id
+        :type request:
         :param args:
+        :type args:
         :param kwargs:
+        :type kwargs:
         :return: 200 / 400
+        :rtype:
         """
 
         # it does not yet exist, so lets create it

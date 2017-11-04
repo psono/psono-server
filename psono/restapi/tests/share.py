@@ -419,17 +419,11 @@ class CreateShareTests(APITestCaseExtended):
             'data': str(initial_data['data']),
             'data_nonce': initial_data['data_nonce'],
             'user_id': self.test_user_obj.id,
-            'user_share_rights': [{
-                'grant': True,
-                'read': True,
-                'write': True,
-            }],
             'rights': {
                 'grant': True,
                 'read': True,
                 'write': True,
-            },
-            'user_share_rights_inherited': []
+            }
         }
 
         self.assertEqual(response.data, target_store)
@@ -824,17 +818,11 @@ class UpdateShareTests(APITestCaseExtended):
             'data': str(updated_data['data']),
             'data_nonce': updated_data['data_nonce'],
             'user_id': self.test_user_obj.id,
-            'user_share_rights': [{
-                'grant': True,
-                'read': True,
-                'write': True,
-            }],
             'rights': {
                 'grant': True,
                 'read': True,
                 'write': True,
-            },
-            'user_share_rights_inherited': []
+            }
         }
 
         self.assertEqual(response.data, target_store)

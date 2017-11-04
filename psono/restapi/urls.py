@@ -43,23 +43,21 @@ urlpatterns = [
     url(r'^recoverycode/$', views.RecoveryCodeView.as_view(), name='recoverycode'),
 
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
-    url(r'^datastore/(?P<uuid>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
+    url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 
     url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
-    url(r'^secret/link/(?P<uuid>[^/]+)/$', views.SecretLinkView.as_view(), name='secret_link'),
 
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
-    url(r'^secret/(?P<uuid>[^/]+)/$', views.SecretView.as_view(), name='secret'),
+    url(r'^secret/(?P<secret_id>[^/]+)/$', views.SecretView.as_view(), name='secret'),
 
-    url(r'^share/rights/(?P<uuid>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
+    url(r'^share/rights/(?P<share_id>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
 
     url(r'^share/right/accept/$', views.ShareRightAcceptView.as_view(), name='share_right_accept'),
     url(r'^share/right/decline/$', views.ShareRightDeclineView.as_view(), name='share_right_decline'),
     url(r'^share/right/$', views.ShareRightView.as_view(), name='share_right'),
-    url(r'^share/right/(?P<uuid>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
+    url(r'^share/right/(?P<user_share_right_id>[^/]+)/$', views.ShareRightView.as_view(), name='share_right'),
 
     url(r'^share/link/$', views.ShareLinkView.as_view(), name='share_link'),
-    url(r'^share/link/(?P<uuid>[^/]+)/$', views.ShareLinkView.as_view(), name='share_link'),
 
     url(r'^share/$', views.ShareView.as_view(), name='share'),
     url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),

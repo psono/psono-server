@@ -433,7 +433,7 @@ class UserGetSecretTest(APITestCaseExtended):
         Tests to read a specific secret successful
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.test_secret_obj.id)})
+        url = reverse('secret', kwargs={'secret_id': str(self.test_secret_obj.id)})
 
         data = {}
 
@@ -455,13 +455,7 @@ class UserGetSecretTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotEqual(response.data.get('secrets', False), False,
-                            'secrets does not exist in answer')
-        self.assertEqual(len(response.data['secrets']), 1,
-                            'There should only be one secret, but we got: ' + str(len(response.data['secrets'])))
-        self.assertNotEqual(response.data['secrets'][0].get('id', False), False,
-                            'object in list has no id attribute')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_without_uuid_and_no_existing_secrets(self):
@@ -476,18 +470,14 @@ class UserGetSecretTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user3_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotEqual(response.data.get('secrets', False), False,
-                            'secrets does not exist in answer')
-        self.assertEqual(len(response.data['secrets']), 0,
-                            'There should not be any secret, but we got: ' + str(len(response.data['secrets'])))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_with_badly_formatted_uuid(self):
         """
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': "12345"})
+        url = reverse('secret', kwargs={'secret_id': "12345"})
 
         data = {}
 
@@ -502,7 +492,7 @@ class UserGetSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'})
+        url = reverse('secret', kwargs={'secret_id': 'cf84fbd5-c606-4d5b-aa96-88c68a06cde4'})
 
         data = {}
 
@@ -517,7 +507,7 @@ class UserGetSecretTest(APITestCaseExtended):
         Tests to get a specific share without rights
         """
 
-        url = reverse('secret', kwargs={'uuid': str(self.test_secret2_obj.id)})
+        url = reverse('secret', kwargs={'secret_id': str(self.test_secret2_obj.id)})
 
         data = {}
 

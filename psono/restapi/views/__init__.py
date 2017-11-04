@@ -20,7 +20,7 @@ from .share_right import ShareRightView
 from .share_right_accept import ShareRightAcceptView
 from .share_right_decline import ShareRightDeclineView
 from .share_rights import ShareRightsView
-from .share_tree import ShareLinkView
+from .share_link import ShareLinkView
 from .user_ga import UserGA
 from .user_search import UserSearch
 from .user_update import UserUpdate
