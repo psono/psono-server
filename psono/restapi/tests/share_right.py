@@ -238,7 +238,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
 
         # let try to query the share directly with user which has defined rights for this share including read
 
-        url = reverse('share', kwargs={'uuid': str(self.test_share1_obj.id)})
+        url = reverse('share', kwargs={'share_id': str(self.test_share1_obj.id)})
 
         data = {}
 
@@ -310,7 +310,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
 
         # let try to query the share directly with user which has defined rights for this share but no read
 
-        url = reverse('share', kwargs={'uuid': str(self.test_share1_obj.id)})
+        url = reverse('share', kwargs={'share_id': str(self.test_share1_obj.id)})
 
         data = {}
 

@@ -1,13 +1,12 @@
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from ..utils import request_misses_uuid
 from ..app_settings import (
     CreateGroupSerializer,
     UpdateGroupSerializer,
+    DeleteGroupSerializer,
 )
 from ..models import (
     Group, User_Group_Membership
@@ -95,7 +94,7 @@ class GroupView(GenericAPIView):
                 status=status.HTTP_200_OK)
         else:
 
-            # Returns the specified share if the user has any rights for it and joins the user_share objects
+            # Returns the specified group if the user has any rights for it
             try:
                 membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
             except User_Group_Membership.DoesNotExist:
@@ -273,30 +272,24 @@ class GroupView(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         """
 
-        if request_misses_uuid(request, 'group_id'):
+        serializer = DeleteGroupSerializer(data=request.data, context=self.get_serializer_context())
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_GROUP_NO_GROUP_ID_ERROR')
+        if not serializer.is_valid():
 
-            return Response({"error": "IdNoUUID", 'message': "Group ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_GROUP_ERROR', errors=serializer.errors)
 
-        # check if the group exists
-        try:
-            membership = User_Group_Membership.objects.get(group_id=request.data['group_id'], user=request.user, group_admin=True, accepted=True)
-        except User_Group_Membership.DoesNotExist:
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_GROUP_NO_PERMISSION_ERROR')
-
-            return Response({"message":"You don't have permission to access or it does not exist.",
-                             "resource_id": request.data['group_id']}, status=status.HTTP_400_BAD_REQUEST)
-
+        group = serializer.validated_data.get('group')
 
         log_info(logger=logger, request=request, status='HTTP_200_OK', event='DELETE_GROUP_SUCCESS', request_resource=request.data['group_id'])
 
         # delete it
-        membership.group.delete()
+        group.delete()
 
         return Response(status=status.HTTP_200_OK)

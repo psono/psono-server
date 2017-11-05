@@ -1,10 +1,8 @@
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from ..utils import request_misses_uuid
 from ..app_settings import (
     CreateMembershipSerializer,
     UpdateMembershipSerializer,
@@ -30,7 +28,7 @@ class MembershipView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
@@ -45,7 +43,7 @@ class MembershipView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 400 / 403
+        :return: 201 / 400
         :rtype:
         """
 
@@ -87,7 +85,7 @@ class MembershipView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         :rtype:
         """
 
@@ -117,7 +115,7 @@ class MembershipView(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403 / 404
+        :return: 200 / 400
         """
 
         serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())

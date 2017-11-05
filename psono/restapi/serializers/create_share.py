@@ -21,9 +21,14 @@ class CreateShareSerializer(serializers.Serializer):
     def validate(self, attrs):
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
+        key_type = attrs.get('key_type')
 
         parent_share = None
         parent_datastore = None
+
+        if key_type not in ['asymmetric', 'symmetric']:
+            msg = _("Invalid Key Type")
+            raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:
             # check permissions on parent (and if it exists)

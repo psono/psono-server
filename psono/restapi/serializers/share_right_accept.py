@@ -16,6 +16,11 @@ class ShareRightAcceptSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         share_right_id = attrs.get('share_right_id')
+        key_type = attrs.get('key_type')
+
+        if key_type not in ['asymmetric', 'symmetric']:
+            msg = _("Invalid Key Type")
+            raise exceptions.ValidationError(msg)
 
         try:
             user_share_right_obj = User_Share_Right.objects.get(pk=share_right_id, user=self.context['request'].user, accepted=None)

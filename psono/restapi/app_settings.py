@@ -41,6 +41,7 @@ from .serializers import (
     CreateMembershipSerializer as DefaultCreateMembershipSerializer,
     UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
     UpdateGroupSerializer as DefaultUpdateGroupSerializer,
+    DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     MembershipAcceptSerializer as DefaultMembershipAcceptSerializer,
     MembershipDeclineSerializer as DefaultMembershipDeclineSerializer,
 )
@@ -321,6 +322,13 @@ UpdateGroupSerializer = import_callable(
     serializers.get(
         'UPDATE_GROUP_SERIALIZER',
         DefaultUpdateGroupSerializer
+    )
+)
+
+DeleteGroupSerializer = import_callable(
+    serializers.get(
+        'DELETE_GROUP_SERIALIZER',
+        DefaultDeleteGroupSerializer
     )
 )
 

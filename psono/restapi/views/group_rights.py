@@ -61,21 +61,21 @@ class GroupRightsView(GenericAPIView):
         group_id = serializer.validated_data.get('group_id', False)
 
         if group_id:
-            try:
-                share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").filter(group_id=group_id)
-            except Group_Share_Right.DoesNotExist:
-                share_rights = []
+            share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").filter(group_id=group_id)
+
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='READ_GROUP_RIGHTS_SUCCESS', request_resource=group_id)
         else:
-            try:
-                share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant
-                    FROM restapi_group_share_right gr
-                        JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
-                    WHERE ms.user_id = %(user_id)s
-                        AND ms.accepted = true""", {
-                    'user_id': request.user.id,
-                })
-            except Group_Share_Right.DoesNotExist:
-                share_rights = []
+            share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant
+                FROM restapi_group_share_right gr
+                    JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
+                WHERE ms.user_id = %(user_id)s
+                    AND MS.accepted = TRUE""", {
+                'user_id': request.user.id,
+            })
+
+            log_info(logger=logger, request=request, status='HTTP_200_OK',
+                     event='READ_ALL_GROUP_RIGHTS_SUCCESS')
 
         group_rights = []
         for right in share_rights:
@@ -87,10 +87,6 @@ class GroupRightsView(GenericAPIView):
                 'write': right.write,
                 'grant': right.grant,
             })
-
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='READ_GROUP_RIGHTS_SUCCESS', request_resource=group_id)
 
         return Response({
             'group_rights': group_rights

@@ -15,7 +15,6 @@ from ..app_settings import (
 )
 from django.core.exceptions import ValidationError
 
-from django.db import IntegrityError
 from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
@@ -55,14 +54,15 @@ class ShareView(GenericAPIView):
                         'share_right_title_nonce': u.title_nonce,
                         'share_right_key': u.key,
                         'share_right_key_nonce': u.key_nonce,
-                        'share_right_key_type': u.key_type,
+                        'share_right_key_type': 'symmetric',
                         'share_right_read': u.read,
                         'share_right_write': u.write,
                         'share_right_grant': u.grant,
                         'share_right_accepted': u.accepted,
                         'share_right_create_user_id': u.creator.id if u.creator is not None else '',
                         'share_right_create_user_username': u.creator.username if u.creator is not None else '',
-                        'share_right_create_user_public_key': u.creator.public_key if u.creator is not None else ''}
+                        'share_right_create_user_public_key': u.creator.public_key if u.creator is not None else ''
+                    }
 
                     # share.data = str(s.data) if s.data and s.share_right_read and s.share_right_accepted else ''
                     # share.data_nonce =  s.data_nonce if s.data_nonce and s.share_right_read and s.share_right_accepted else ''
@@ -133,18 +133,18 @@ class ShareView(GenericAPIView):
             'rights': rights,
         }
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, share_id = None, *args, **kwargs):
         """
         Returns a list of all shares with all own share rights on that share or
         returns a share with all rights existing on the share
 
         :param request:
-        :param uuid:
+        :param share_id:
         :param args:
         :param kwargs:
         :return: 200 / 400
         """
-        if not uuid:
+        if not share_id:
 
             log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_ALL_SHARES_SUCCESS')
 
@@ -152,10 +152,11 @@ class ShareView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
         else:
+
             # UUID specified
             # Returns the specified share if the user has any rights for it and joins the user_share objects
 
-            share = self.get_share(request.user, uuid)
+            share = self.get_share(request.user, share_id)
 
             if share is None:
 

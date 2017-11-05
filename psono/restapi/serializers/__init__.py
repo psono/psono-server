@@ -16,6 +16,7 @@ from .update_membership import *
 from .read_group_rights import *
 from .update_share_right import *
 from .delete_share_right import *
+from .delete_group import *
 from .update_secret import *
 from .update_share import *
 from .enable_new_password import *

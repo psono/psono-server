@@ -75,7 +75,7 @@ class EmptyShareTests(APITestCaseExtended):
         Tests if bad formatted share ids make a problem
         """
 
-        url = reverse('share', kwargs={'uuid': '3c2c0f4d'})
+        url = reverse('share', kwargs={'share_id': '3c2c0f4d'})
 
         data = {}
 
@@ -90,7 +90,7 @@ class EmptyShareTests(APITestCaseExtended):
         Tests to get a share that does not exist
         """
 
-        url = reverse('share', kwargs={'uuid': '3c2c0f4d-8fae-4790-b5ad-55a4ae78024a'})
+        url = reverse('share', kwargs={'share_id': '3c2c0f4d-8fae-4790-b5ad-55a4ae78024a'})
 
         data = {}
 
@@ -405,7 +405,7 @@ class CreateShareTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('share', kwargs={'uuid': new_share_id})
+        url = reverse('share', kwargs={'share_id': new_share_id})
 
         data = {}
 
@@ -804,7 +804,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('share', kwargs={'uuid': new_share_id})
+        url = reverse('share', kwargs={'share_id': new_share_id})
 
         data = {}
 

@@ -60,7 +60,7 @@ urlpatterns = [
     url(r'^share/link/$', views.ShareLinkView.as_view(), name='share_link'),
 
     url(r'^share/$', views.ShareView.as_view(), name='share'),
-    url(r'^share/(?P<uuid>[^/]+)/$', views.ShareView.as_view(), name='share'),
+    url(r'^share/(?P<share_id>[^/]+)/$', views.ShareView.as_view(), name='share'),
 
     url(r'^group/$', views.GroupView.as_view(), name='group'),
     url(r'^group/rights/$', views.GroupRightsView.as_view(), name='group_rights'),
@@ -70,7 +70,6 @@ urlpatterns = [
     url(r'^membership/accept/$', views.MembershipAcceptView.as_view(), name='membership_accept'),
     url(r'^membership/decline/$', views.MembershipDeclineView.as_view(), name='membership_decline'),
     url(r'^membership/$', views.MembershipView.as_view(), name='membership'),
-    url(r'^membership/(?P<uuid>[^/]+)/$', views.MembershipView.as_view(), name='membership'),
 
     # url(r'^$', views.api_root),
 
