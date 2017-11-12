@@ -23,6 +23,10 @@ curl -X POST $psono_image_updater_url
 # Deploy to GitHub
 echo "Clonging gitlab.com/psono/psono-server.git"
 git clone https://gitlab.com/psono/psono-server.git
+cd psono-server
+git branch --track develop origin/develop
+git fetch --all
+git pull --all
 
 echo "Empty .ssh folder"
 if [ -d "/root/.ssh" ]; then
@@ -40,6 +44,5 @@ chmod 600 /root/.ssh/id_rsa
 chmod 600 /root/.ssh/known_hosts
 
 echo "Push to github.com/psono/psono-server.git"
-cd psono-server
 git remote set-url origin git@github.com:psono/psono-server.git
-git push -u origin master
+git push --all origin

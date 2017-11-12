@@ -1,12 +1,15 @@
-# PSONO Dockerfile for CentOS 7 / python 3
-FROM centos:centos7
+# PSONO Dockerfile for RedhHat 7 / python 3
+FROM rhel7
 
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
 RUN yum -y update && \
-    yum -y install epel-release && \
+    yum -y install wget && \
+    wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
+    yum -y install epel-release-latest-7.noarch.rpm && \
+    yum -y remove wget && \
     yum -y update && \
     yum -y install \
         gcc \
