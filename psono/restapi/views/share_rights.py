@@ -12,11 +12,6 @@ from rest_framework.exceptions import PermissionDenied
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class ShareRightsView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -47,7 +42,7 @@ class ShareRightsView(GenericAPIView):
         """
 
         if not share_id:
-            log_info(logger=logger, request=request, status='HTTP_404_NOT_FOUND', event='READ_SHARE_RIGHTS_NO_UUID_ERROR')
+
             return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
 
         # Returns the specified share rights if the user has any rights for it and joins the user_share objects
@@ -56,17 +51,12 @@ class ShareRightsView(GenericAPIView):
             share = Share.objects.get(pk=share_id)
         except Share.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN', event='READ_SHARE_RIGHTS_SHARE_NOT_EXIST_ERROR')
-
             return Response({"message":"You don't have permission to access or it does not exist."}, status=status.HTTP_403_FORBIDDEN)
 
 
         own_share_rights = calculate_user_rights_on_share(request.user.id, share_id)
 
         if not own_share_rights['grant']:
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='READ_SHARE_RIGHTS_NO_GRANT_PERMISSION_ERROR', request_resource=share_id)
 
             raise PermissionDenied({"message":"You don't have permission to access"})
 
@@ -110,9 +100,6 @@ class ShareRightsView(GenericAPIView):
             'user_share_rights': user_share_rights,
             'group_share_rights': group_share_rights
         }
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='READ_SHARE_RIGHTS_SUCCESS', request_resource=share_id)
 
         return Response(response, status=status.HTTP_200_OK)
 

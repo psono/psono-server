@@ -15,11 +15,6 @@ from ..models import (
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 def create_secret_link(link_id, secret_id, parent_share_id, parent_datastore_id):
     """
     DB wrapper to create a link between a secret and a datastore or a share
@@ -91,8 +86,6 @@ class SecretLinkView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='MOVE_SECRET_LINK_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         link_id = serializer.validated_data['link_id']
@@ -105,9 +98,6 @@ class SecretLinkView(GenericAPIView):
 
         for secret_id in secrets:
             create_secret_link(link_id, secret_id, new_parent_share_id, new_parent_datastore_id)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='MOVE_SECRET_LINK_SUCCESS', request_resource=link_id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -131,15 +121,10 @@ class SecretLinkView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_SECRET_LINK_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         link_id = serializer.validated_data['link_id']
 
         delete_secret_link(link_id)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_SECRET_LINK_SUCCESS', request_resource=link_id)
 
         return Response(status=status.HTTP_200_OK)

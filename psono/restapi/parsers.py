@@ -16,11 +16,6 @@ import nacl.secret
 import json
 import dateutil.parser
 
-# import the logging
-from .utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 def decrypt(session_secret_key, text_hex, nonce_hex):
 
     text = nacl.encoding.HexEncoder.decode(text_hex)
@@ -54,7 +49,6 @@ class DecryptJSONParser(JSONParser):
         try:
             data = json.loads(decrypted_data.decode())
         except ValueError:
-            log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='INVALID_REQUEST')
             raise ParseError('Invalid request')
 
         if not settings.REPLAY_PROTECTION_DISABLED:
@@ -65,13 +59,11 @@ class DecryptJSONParser(JSONParser):
             now = timezone.now()
 
             if not request_date:
-                log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='REPLAY_PROTECTION_REQUEST_TIME_MISSING')
                 raise ParseError('Replay Protection: request_time missing')
 
             request_date = dateutil.parser.parse(request_date)
             time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
             if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
-                log_info(logger=logger, request=stream, status='HTTP_400_BAD_REQUEST', event='REPLAY_PROTECTION_TIME_DIFFERENCE_PROBLEM')
                 raise ParseError('Replay Protection: Time difference too big')
 
         return data

@@ -18,11 +18,6 @@ import nacl.utils
 import nacl.secret
 import hashlib
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class UserYubikeyOTP(GenericAPIView):
 
@@ -76,8 +71,6 @@ class UserYubikeyOTP(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_YUBIKEY_OTP_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         yubikey_otp = serializer.validated_data.get('yubikey_otp')
@@ -95,9 +88,6 @@ class UserYubikeyOTP(GenericAPIView):
             title= serializer.validated_data.get('title'),
             yubikey_id = encrypted_yubikey_id_hex
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_YUBIKEY_OTP_SUCCESS', request_resource=new_yubikey.id)
 
         return Response({
             "id": new_yubikey.id,
@@ -119,9 +109,6 @@ class UserYubikeyOTP(GenericAPIView):
 
         if request_misses_uuid(request, 'yubikey_otp_id'):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='DELETE_YUBIKEY_OTP_NO_YUBIKEY_OTP_ID_ERROR')
-
             return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -131,16 +118,10 @@ class UserYubikeyOTP(GenericAPIView):
             yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=request.user)
         except Yubikey_OTP.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='DELETE_YUBIKEY_OTP_YUBIKEY_OTP_NOT_EXIST_ERROR')
-
             return Response({"message": "YubiKey does not exist.",
                          "resource_id": request.data['yubikey_otp_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # delete it
         yubikey_otp.delete()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_YUBIKEY_OTP_SUCCESS', request_resource=request.data['yubikey_otp_id'])
 
         return Response(status=status.HTTP_200_OK)

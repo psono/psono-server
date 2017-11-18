@@ -10,11 +10,6 @@ from ..app_settings import (
     MembershipAcceptSerializer,
 )
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class MembershipAcceptView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication,)
@@ -41,8 +36,6 @@ class MembershipAcceptView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='ACCEPT_MEMBERSHIP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -52,8 +45,6 @@ class MembershipAcceptView(GenericAPIView):
         membership_obj.accepted = True
 
         membership_obj.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='ACCEPT_MEMBERSHIP_SUCCESS', request_resource=request.data['membership_id'])
 
         shares = []
 

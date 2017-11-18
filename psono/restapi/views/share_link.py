@@ -13,11 +13,6 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class ShareLinkView(GenericAPIView):
 
@@ -53,8 +48,6 @@ class ShareLinkView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SHARE_LINK_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -67,9 +60,6 @@ class ShareLinkView(GenericAPIView):
         if not create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
             return Response({"message":"Link id already exists.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_400_BAD_REQUEST)
-
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='CREATE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
 
         return Response(status=status.HTTP_201_CREATED)
 
@@ -94,8 +84,6 @@ class ShareLinkView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SHARE_LINK_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -109,8 +97,6 @@ class ShareLinkView(GenericAPIView):
 
         for share_id in shares:
             create_share_link(request.data['link_id'], share_id, new_parent_share_id, new_parent_datastore_id)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='UPDATE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
 
         return Response(status=status.HTTP_200_OK)
 
@@ -134,14 +120,10 @@ class ShareLinkView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_SHARE_LINK_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
         delete_share_link(request.data['link_id'])
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DELETE_SHARE_LINK_SUCCESS', request_resource=request.data['link_id'])
 
         return Response(status=status.HTTP_200_OK)

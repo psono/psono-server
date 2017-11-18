@@ -430,37 +430,6 @@ def get_datastore(datastore_id=None, user=None):
     return datastore
 
 
-def log_info(logger, request, status, event, errors=None, request_resource=None, user=None):
-
-    if not settings.LOGGING_AUDIT:
-        return
-
-    log_entry = {
-        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-        'request_method': request.META['REQUEST_METHOD'],
-        'request_url': request.META['PATH_INFO'],
-        'success': rest_status.is_success(getattr(rest_status, status)),
-        'status': status,
-        'event': event,
-        'user': request.user.username,
-    }
-
-    if errors is not None:
-        log_entry['errors'] = errors
-
-    if request_resource is not None:
-        log_entry['request_resource'] = request_resource
-
-    if user is not None:
-        log_entry['user'] = user
-    else:
-        log_entry['user'] = request.user.username
-
-    logger.info(log_entry)
-
-# Python 3 Helper functions
-
-
 def readbuffer(data):
     """
     Reads an arbitary data objects and returns the byte representation (in python 3) or str (in python2)

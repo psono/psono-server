@@ -9,11 +9,6 @@ from ..app_settings import (
     MembershipDeclineSerializer,
 )
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class MembershipDeclineView(GenericAPIView):
 
@@ -42,8 +37,6 @@ class MembershipDeclineView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DECLINE_MEMBERSHIP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -51,8 +44,6 @@ class MembershipDeclineView(GenericAPIView):
         membership_obj = serializer.validated_data.get('membership_obj')
         membership_obj.accepted = False
         membership_obj.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DECLINE_MEMBERSHIP_SUCCESS', request_resource=request.data['membership_id'])
 
         return Response(status=status.HTTP_200_OK)
 

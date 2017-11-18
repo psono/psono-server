@@ -21,11 +21,6 @@ from datetime import timedelta
 import json
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
@@ -60,8 +55,6 @@ class LoginView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_STARTED_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -155,8 +148,6 @@ class LoginView(GenericAPIView):
         encrypted = server_crypto_box.encrypt(six.b(json.dumps(response)), login_info_nonce)
         encrypted_login_info = encrypted[len(login_info_nonce):]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='LOGIN_STARTED_SUCCESS', request_resource=user.id)
 
         return Response({
             'login_info': encrypted_login_info_hex,

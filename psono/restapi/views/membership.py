@@ -13,11 +13,6 @@ from ..models import (
 )
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class MembershipView(GenericAPIView):
 
     """
@@ -51,8 +46,6 @@ class MembershipView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_MEMBERSHIP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -69,9 +62,6 @@ class MembershipView(GenericAPIView):
             private_key_type = str(serializer.validated_data['private_key_type']),
             group_admin = serializer.validated_data['group_admin'],
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_MEMBERSHIP_SUCCESS', request_resource=membership.id)
 
         return Response({'membership_id': membership.id}, status=status.HTTP_201_CREATED)
 
@@ -93,8 +83,6 @@ class MembershipView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_MEMBERSHIP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -102,9 +90,6 @@ class MembershipView(GenericAPIView):
         membership = serializer.validated_data['membership']
         membership.group_admin = serializer.validated_data['group_admin']
         membership.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_MEMBERSHIP_SUCCESS', request_resource=membership.id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -122,16 +107,11 @@ class MembershipView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_MEMBERSHIP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
         membership = serializer.validated_data.get('membership')
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_MEMBERSHIP_SUCCESS', request_resource=membership.id)
 
         # delete it
         membership.delete()

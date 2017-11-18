@@ -9,12 +9,6 @@ from ..app_settings import (
     ShareRightDeclineSerializer,
 )
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
-
 class ShareRightDeclineView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -41,8 +35,6 @@ class ShareRightDeclineView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DECLINE_SHARE_RIGHT_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -58,8 +50,6 @@ class ShareRightDeclineView(GenericAPIView):
         user_share_right_obj.key = ''
         user_share_right_obj.key_nonce = ''
         user_share_right_obj.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DECLINE_SHARE_RIGHT_SUCCESS', request_resource=request.data['share_right_id'])
 
         return Response(status=status.HTTP_200_OK)
 

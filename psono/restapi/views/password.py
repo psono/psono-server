@@ -20,11 +20,6 @@ from ..models import (
 
 from ..utils import readbuffer
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class PasswordView(GenericAPIView):
 
     permission_classes = (AllowAny,)
@@ -52,8 +47,6 @@ class PasswordView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='RECOVERY_CODE_SET_PASSWORD_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -67,9 +60,6 @@ class PasswordView(GenericAPIView):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_USER_INVALID_ERROR')
-
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -77,22 +67,13 @@ class PasswordView(GenericAPIView):
 
             if not check_password(recovery_authkey, recovery_code.recovery_authkey):
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='RECOVERY_CODE_INVALID_ERROR')
-
                 return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         except Recovery_Code.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_DOES_NOT_EXIST_ERROR')
-
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         if recovery_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_VALIDATOR_EXPIRED_ERROR')
 
             return Response({"message": "Validator expired."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -110,9 +91,6 @@ class PasswordView(GenericAPIView):
 
         except:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_VALIDATOR_FAILED_ERROR')
-
             return Response({"message": "Validation failed"}, status=status.HTTP_403_FORBIDDEN)
 
         recovery_code.verifier  = ''
@@ -125,9 +103,6 @@ class PasswordView(GenericAPIView):
         user.secret_key = secret_key
         user.secret_key_nonce = secret_key_nonce
         user.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='RECOVERY_CODE_SET_PASSWORD_SUCCESS', request_resource=recovery_code.id)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -149,8 +124,6 @@ class PasswordView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='RECOVERY_CODE_INITIATE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -162,9 +135,6 @@ class PasswordView(GenericAPIView):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_INITIATE_USER_NOT_EXIST_ERROR')
-
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -172,15 +142,9 @@ class PasswordView(GenericAPIView):
 
             if not check_password(recovery_authkey, recovery_code.recovery_authkey):
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='RECOVERY_CODE_INITIATE_INVALID_ERROR')
-
                 return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
         except Recovery_Code.DoesNotExist:
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='RECOVERY_CODE_INITIATE_DOES_NOT_EXIST_ERROR')
 
             return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -193,9 +157,6 @@ class PasswordView(GenericAPIView):
         recovery_code.verifier = verifier_box.encode(encoder=encoding.HexEncoder)
         recovery_code.verifier_issue_date  = verifier_issue_date
         recovery_code.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='RECOVERY_CODE_INITIATE_SUCCESS', request_resource=recovery_code.id)
 
         return Response({
             'recovery_data': readbuffer(recovery_code.recovery_data),

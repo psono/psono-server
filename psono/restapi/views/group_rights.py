@@ -13,11 +13,6 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class GroupRightsView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -51,8 +46,6 @@ class GroupRightsView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='READ_GROUP_RIGHTS_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -62,9 +55,6 @@ class GroupRightsView(GenericAPIView):
 
         if group_id:
             share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").filter(group_id=group_id)
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_GROUP_RIGHTS_SUCCESS', request_resource=group_id)
         else:
             share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant
                 FROM restapi_group_share_right gr
@@ -73,9 +63,6 @@ class GroupRightsView(GenericAPIView):
                     AND MS.accepted = TRUE""", {
                 'user_id': request.user.id,
             })
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_ALL_GROUP_RIGHTS_SUCCESS')
 
         group_rights = []
         for right in share_rights:

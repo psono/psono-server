@@ -13,11 +13,6 @@ from ..models import (
 )
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class GroupView(GenericAPIView):
 
     """
@@ -88,8 +83,6 @@ class GroupView(GenericAPIView):
 
                 response.append(details)
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_ALL_GROUPS_SUCCESS')
-
             return Response({'groups': response},
                 status=status.HTTP_200_OK)
         else:
@@ -98,8 +91,6 @@ class GroupView(GenericAPIView):
             try:
                 membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
             except User_Group_Membership.DoesNotExist:
-
-                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='READ_GROUP_NO_PERMISSION_ERROR')
 
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                  "resource_id": group_id}, status=status.HTTP_400_BAD_REQUEST)
@@ -165,9 +156,6 @@ class GroupView(GenericAPIView):
                 response['user_id'] = membership.creator.id
                 response['user_username'] = membership.creator.username
 
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_GROUP_SUCCESS', request_resource=membership.group_id)
-
             return Response(response,
                 status=status.HTTP_200_OK)
 
@@ -188,8 +176,6 @@ class GroupView(GenericAPIView):
         serializer = CreateGroupSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_GROUP_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -213,8 +199,6 @@ class GroupView(GenericAPIView):
             group_admin = True,
             accepted = True,
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED', event='CREATE_GROUP_SUCCESS', request_resource=group.id)
 
         return Response({
             "group_id": group.id,
@@ -248,8 +232,6 @@ class GroupView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_GROUP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -260,8 +242,6 @@ class GroupView(GenericAPIView):
         if name:
             group.name = name
             group.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='UPDATE_GROUP_SUCCESS', request_resource=group.id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -279,15 +259,11 @@ class GroupView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_GROUP_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
         group = serializer.validated_data.get('group')
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='DELETE_GROUP_SUCCESS', request_resource=request.data['group_id'])
 
         # delete it
         group.delete()

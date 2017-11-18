@@ -17,11 +17,6 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class ShareRightView(GenericAPIView):
 
     """
@@ -99,9 +94,6 @@ class ShareRightView(GenericAPIView):
                 'share_rights': share_right_response
             }
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_GROUP_SHARE_RIGHTS_SUCCESS')
-
             return Response(response,
                 status=status.HTTP_200_OK)
 
@@ -114,15 +106,9 @@ class ShareRightView(GenericAPIView):
                 share_right = User_Share_Right.objects.get(pk=user_share_right_id)
                 if share_right.creator_id != request.user.id and share_right.user_id != request.user.id:
 
-                    log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                             event='READ_GROUP_SHARE_RIGHT_NO_PERMISSION_FAILURE', request_resource=user_share_right_id)
-
                     return Response({"message":"You don't have permission to access or it does not exist.",
                                     "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
             except User_Share_Right.DoesNotExist:
-
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_GROUP_SHARE_RIGHT_NOT_EXIST_FAILURE', request_resource=user_share_right_id)
 
                 return Response({"message":"You don't have permission to access or it does not exist.",
                                 "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
@@ -138,9 +124,6 @@ class ShareRightView(GenericAPIView):
                 'grant': share_right.grant,
                 'share_id': share_right.share_id
             }
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_GROUP_SHARE_RIGHT_SUCCESS', request_resource=user_share_right_id)
 
             return Response(response,
                 status=status.HTTP_200_OK)
@@ -162,8 +145,6 @@ class ShareRightView(GenericAPIView):
         serializer = CreateShareRightSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SHARE_RIGHT_ERROR', errors=serializer.errors)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -188,9 +169,6 @@ class ShareRightView(GenericAPIView):
                 grant=serializer.validated_data['grant'],
                 accepted=accepted,
             )
-
-            log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                     event='CREATE_USER_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
         else:
             share_right = Group_Share_Right.objects.create(
                 key=serializer.validated_data['key'],
@@ -206,9 +184,6 @@ class ShareRightView(GenericAPIView):
                 write=serializer.validated_data['write'],
                 grant=serializer.validated_data['grant'],
             )
-
-            log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                     event='CREATE_GROUP_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
 
         return Response({"share_right_id": share_right.id},
                         status=status.HTTP_201_CREATED)
@@ -231,8 +206,6 @@ class ShareRightView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SHARE_RIGHT_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -242,9 +215,6 @@ class ShareRightView(GenericAPIView):
         share_right_obj.write = serializer.validated_data['write']
         share_right_obj.grant = serializer.validated_data['grant']
         share_right_obj.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_SHARE_RIGHT_SUCCESS', request_resource=share_right_obj.id)
 
         return Response({"share_right_id": str(share_right_obj.id)},
                         status=status.HTTP_200_OK)
@@ -275,15 +245,10 @@ class ShareRightView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_SHARE_RIGHT_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
         share_right = serializer.validated_data['share_right']
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_SHARE_RIGHT_SUCCESS', request_resource=share_right.id)
 
         # delete it
         share_right.delete()

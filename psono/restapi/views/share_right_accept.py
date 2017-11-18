@@ -10,11 +10,6 @@ from ..app_settings import (
     ShareRightAcceptSerializer,
 )
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class ShareRightAcceptView(GenericAPIView):
     """
     Check the REST Token and the object permissions and updates the share right as accepted with new symmetric
@@ -45,8 +40,6 @@ class ShareRightAcceptView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='ACCEPT_SHARE_RIGHT_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -67,8 +60,6 @@ class ShareRightAcceptView(GenericAPIView):
             user_share_right_obj.key_nonce = serializer.validated_data.get('key_nonce')
 
         user_share_right_obj.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='ACCEPT_SHARE_RIGHT_SUCCESS', request_resource=request.data['share_right_id'])
 
         if user_share_right_obj.read:
 

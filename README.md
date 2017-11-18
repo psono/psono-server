@@ -17,23 +17,6 @@ The documentation for the psono server can be found here:
 Some things that have not yet found their place in the documentation:
 
 
-## Audit Logging
-
-For companies audibility is a big point. To enable audit logs add the following two lines to your settings.yml:
-
-    LOGGING_AUDIT: True
-    LOGGING_AUDIT_FOLDER: '/path/to/audit/log/folder'
-    LOGGING_AUDIT_TIME: 'time_server' # (optional) if you prefer server time over utc time
-    
-This will show report to the client in the `info/` request, that audit logging is enabled.
-The client will show this as a warning to the user before login and requires the users approval.
-Afterwards the client will send some additional data for audibility purposes.
-
->INFO: This feature is not enabled on the psono.pw server and is not enabled by default
-
->WARNING: This feature may be removed without notice in any future version.
-
-
 
 ## Backup & Restore
 

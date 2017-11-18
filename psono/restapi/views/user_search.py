@@ -13,11 +13,6 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class UserSearch(GenericAPIView):
 
@@ -53,8 +48,6 @@ class UserSearch(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='USER_SEARCH_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data.get('user')
@@ -69,9 +62,6 @@ class UserSearch(GenericAPIView):
             user_details['multifactor_auth_enabled'] = Google_Authenticator.objects.filter(user=user).exists() or Yubikey_OTP.objects.filter(user=user).exists()
             user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
 
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='SEARCH_USER_SUCCESS', request_resource=user.id)
 
         return Response(user_details, status=status.HTTP_200_OK)
 

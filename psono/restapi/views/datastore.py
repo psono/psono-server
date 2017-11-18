@@ -22,11 +22,6 @@ from ..authentication import TokenAuthentication
 
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class DatastoreView(GenericAPIView):
 
@@ -53,21 +48,13 @@ class DatastoreView(GenericAPIView):
         if not datastore_id:
             datastores = get_datastore(user=request.user)
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='LIST_ALL_DATASTORES_SUCCESS')
-
             return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
         else:
             datastore = get_datastore(datastore_id, request.user)
             if not datastore:
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='LIST_DATASTORE_ERROR')
-
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='LIST_DATASTORE_SUCCESS', request_resource= datastore.id)
 
             return Response({
                 'data': readbuffer(datastore.data),
@@ -98,8 +85,6 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_DATASTORE_REQUEST_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -121,16 +106,9 @@ class DatastoreView(GenericAPIView):
 
         except IntegrityError:
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_DATASTORE_INTEGRITY_ERROR')
-
             return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
                                                                              "description must be unique"},
                         status=status.HTTP_400_BAD_REQUEST)
-
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_DATASTORE_SUCCESS', request_resource=datastore.id)
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
@@ -151,8 +129,6 @@ class DatastoreView(GenericAPIView):
         serializer = UpdateDatastoreSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_DATASTORE_REQUEST_ERROR', errors=serializer.errors)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -176,9 +152,6 @@ class DatastoreView(GenericAPIView):
         if request.data.get('is_default', False):
             Data_Store.objects.filter(user=request.user, type=datastore.type).exclude(pk=datastore.pk).update(is_default=False)
 
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_DATASTORE_SUCCESS', request_resource=request.data['datastore_id'])
-
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
 
@@ -196,8 +169,6 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_DATASTORE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -206,13 +177,7 @@ class DatastoreView(GenericAPIView):
 
         if not authenticate(username=request.user.username, authkey=str(request.data['authkey'])):
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='DELETE_DATASTORE_WRONG_PASSWORD_ERROR')
-
             raise PermissionDenied({"message":"Your old password was not right."})
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_DATASTORE_SUCCESS', request_resource=datastore.id)
 
         # delete it
         datastore.delete()

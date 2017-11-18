@@ -20,11 +20,6 @@ from ..authentication import TokenAuthentication
 
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class ShareView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -146,8 +141,6 @@ class ShareView(GenericAPIView):
         """
         if not share_id:
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_ALL_SHARES_SUCCESS')
-
             return Response({'shares': self.get_shares(request.user)},
                 status=status.HTTP_200_OK)
 
@@ -160,8 +153,6 @@ class ShareView(GenericAPIView):
 
             if share is None:
 
-                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='READ_SHARE_SHARE_NOT_EXIST_ERROR')
-
                 return Response("The share does not exist or you don't have read permissions",
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -172,9 +163,6 @@ class ShareView(GenericAPIView):
                 'user_id': share['share'].user_id,
                 'rights': share['rights'],
             }
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SHARE_SUCCESS', request_resource=share['share'].id)
 
             return Response(response,
                 status=status.HTTP_200_OK)
@@ -200,8 +188,6 @@ class ShareView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SHARE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -213,9 +199,6 @@ class ShareView(GenericAPIView):
             share.data_nonce = str(serializer.validated_data['data_nonce'])
 
         share.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_SHARE_SUCCESS', request_resource=share.id)
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
@@ -241,8 +224,6 @@ class ShareView(GenericAPIView):
         serializer = CreateShareSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SHARE_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -271,13 +252,7 @@ class ShareView(GenericAPIView):
 
         if not create_share_link(request.data['link_id'], share.id, serializer.validated_data['parent_share_id'], serializer.validated_data['parent_datastore_id']):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SHARE_DUPLICATE_LINK_ID_ERROR')
-
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_SHARE_SUCCESS', request_resource=share.id)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 

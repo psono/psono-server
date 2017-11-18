@@ -16,11 +16,6 @@ from ..models import (
 
 from ..utils import readbuffer
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class RecoveryCodeView(GenericAPIView):
 
@@ -40,8 +35,6 @@ class RecoveryCodeView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_RECOVERY_CODE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -56,10 +49,6 @@ class RecoveryCodeView(GenericAPIView):
             recovery_data_nonce = serializer.validated_data['recovery_data_nonce'],
             recovery_sauce = str(serializer.validated_data['recovery_sauce']),
         )
-
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='CREATE_RECOVERY_CODE_SUCCESS', request_resource=recovery_code.id)
 
         return Response({
             'recovery_code_id': recovery_code.id

@@ -20,11 +20,6 @@ import nacl.secret
 import hashlib
 import pyotp
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class UserGA(GenericAPIView):
 
@@ -55,9 +50,6 @@ class UserGA(GenericAPIView):
                 'title': ga.title,
             })
 
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='READ_GA_SUCCESS')
-
         return Response({
             "google_authenticators": google_authenticators
         },
@@ -81,8 +73,6 @@ class UserGA(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_GA_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         secret = pyotp.random_base32()
@@ -98,9 +88,6 @@ class UserGA(GenericAPIView):
             title= serializer.validated_data.get('title'),
             secret = encrypted_secret_hex
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_GA_SUCCESS', request_resource=new_ga.id)
 
         return Response({
             "id": new_ga.id,
@@ -123,9 +110,6 @@ class UserGA(GenericAPIView):
 
         if request_misses_uuid(request, 'google_authenticator_id'):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='DELETE_GA_NO_GOOGLE_AUTHENTICATOR_ID_ERROR')
-
             return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -135,16 +119,10 @@ class UserGA(GenericAPIView):
             google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=request.user)
         except Google_Authenticator.DoesNotExist:
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='DELETE_GA_GOOGLE_AUTHENTICATOR_NOT_EXIST_ERROR')
-
             return Response({"message": "Google authenticator does not exist.",
                          "resource_id": request.data['google_authenticator_id']}, status=status.HTTP_403_FORBIDDEN)
 
         # delete it
         google_authenticator.delete()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_GA_SUCCESS', request_resource=request.data['google_authenticator_id'])
 
         return Response(status=status.HTTP_200_OK)

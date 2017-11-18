@@ -21,11 +21,6 @@ from ..authentication import TokenAuthentication
 
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class SecretView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -58,27 +53,15 @@ class SecretView(GenericAPIView):
             secret = Secret.objects.get(pk=secret_id)
         except ValidationError:
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='READ_SECRET_ID_NO_UUID_ERROR', request_resource=secret_id)
-
             return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no secret_id"},
                             status=status.HTTP_400_BAD_REQUEST)
         except Secret.DoesNotExist:
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='READ_SECRET_NOT_EXIST_ERROR', request_resource=secret_id)
 
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
         if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='READ_SECRET_PERMISSION_DENIED_ERROR', request_resource=secret_id)
-
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='READ_SECRET_SUCCESS', request_resource=secret_id)
 
         return Response({
             'create_date': secret.create_date,
@@ -110,8 +93,6 @@ class SecretView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SECRET_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -124,20 +105,11 @@ class SecretView(GenericAPIView):
             )
         except IntegrityError:
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SECRET_DUPLICATE_NONCE_ERROR')
-
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not create_secret_link(request.data['link_id'], secret.id, serializer.validated_data['parent_share_id'], serializer.validated_data['parent_datastore_id']):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SECRET_DUPLICATE_LINK_ID_ERROR')
-
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_SECRET_SUCCESS', request_resource=secret.id)
 
         return Response({"secret_id": secret.id}, status=status.HTTP_201_CREATED)
 
@@ -164,8 +136,6 @@ class SecretView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SECRET_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -177,9 +147,6 @@ class SecretView(GenericAPIView):
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 
         secret.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_SECRET_SUCCESS', request_resource=secret.id)
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

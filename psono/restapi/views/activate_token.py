@@ -17,11 +17,6 @@ import nacl.utils
 import nacl.secret
 import hashlib
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class ActivateTokenView(GenericAPIView):
 
     authentication_classes = (TokenAuthenticationAllowInactive, )
@@ -53,8 +48,6 @@ class ActivateTokenView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_ACTIVATE_TOKEN_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -70,9 +63,6 @@ class ActivateTokenView(GenericAPIView):
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = nacl.encoding.HexEncoder.decode(request.user.email)
         decrypted_email = crypto_box.decrypt(encrypted_email)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='LOGIN_ACTIVATE_TOKEN_SUCCESS', request_resource=token.id)
 
         return Response({
             "user": {

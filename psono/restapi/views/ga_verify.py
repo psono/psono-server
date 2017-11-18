@@ -12,11 +12,6 @@ from ..app_settings import (
 )
 from ..authentication import TokenAuthenticationAllowInactive
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class GAVerifyView(GenericAPIView):
 
     authentication_classes = (TokenAuthenticationAllowInactive, )
@@ -50,8 +45,6 @@ class GAVerifyView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_GA_VERIFY_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -60,9 +53,6 @@ class GAVerifyView(GenericAPIView):
         token = serializer.validated_data['token']
         token.google_authenticator_2fa = False
         token.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='LOGIN_GA_VERIFY_SUCCESS', request_resource=serializer.validated_data['ga_token'].id)
 
         return Response(status=status.HTTP_200_OK)
 
