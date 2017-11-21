@@ -92,21 +92,24 @@ def authenticate(username = False, user = False, authkey = False):
     :rtype: User or bool
     """
 
-    if not authkey:
-        return False
     if not username and not user:
         return False
 
-    if username:
-        try:
-            user = User.objects.filter(username=username, is_active=True)[0]
-        except IndexError:
-            return False
-
-    if not check_password(authkey, user.authkey):
+    if not authkey:
         return False
 
-    return user
+    for method in settings.AUTHENTICATION_METHODS:
+        if 'AUTHKEY' == method:
+            if username and not user:
+                try:
+                    user = User.objects.filter(username=username, is_active=True)[0]
+                except IndexError:
+                    continue
+
+            if user and check_password(authkey, user.authkey):
+                return user
+
+    return False
 
 
 def get_all_inherited_rights(user_id, share_id):

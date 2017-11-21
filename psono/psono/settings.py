@@ -293,6 +293,8 @@ USE_L10N = True
 
 USE_TZ = True
 
+AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -311,6 +313,7 @@ def generate_signature():
         'api': 1,
         'log_audit': LOGGING_AUDIT,
         'public_key': PUBLIC_KEY,
+        'authentication_methods': AUTHENTICATION_METHODS,
     }
 
     info = json.dumps(info)
