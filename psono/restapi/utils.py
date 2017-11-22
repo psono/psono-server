@@ -592,7 +592,7 @@ def encrypt_secret(secret, password, user_sauce):
     return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
 
 
-def create_user(username, password, email):
+def create_user(username, password, email, authkey=False):
 
     email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
@@ -604,7 +604,11 @@ def create_user(username, password, email):
         return { 'error': 'Username already exists.' }
 
     user_sauce = binascii.hexlify(os.urandom(32))
-    authkey = make_password(str(generate_authkey(username, password)))
+
+    if not authkey:
+        authkey = str(generate_authkey(username, password))
+
+    authkey_hashed = make_password(authkey)
 
     box = PrivateKey.generate()
     public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
@@ -624,7 +628,7 @@ def create_user(username, password, email):
         username=username,
         email=email.decode(),
         email_bcrypt=email_bcrypt,
-        authkey=authkey,
+        authkey=authkey_hashed,
         public_key=public_key.decode(),
         private_key=private_key.decode(),
         private_key_nonce=private_key_nonce.decode(),
