@@ -1,9 +1,18 @@
 from django.conf import settings
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from restapi import models
 
-from rest_framework import status as rest_status
+import os
+from nacl.public import PrivateKey
+import nacl.secret
+import nacl.encoding
+import nacl.utils
+
+
+
+
 import bcrypt
 import time
 from uuid import UUID
@@ -81,13 +90,14 @@ def validate_activation_code(activation_code):
 
     return False
 
-def authenticate(username = False, user = False, authkey = False):
+def authenticate(username = False, user = False, authkey = False, password = False):
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
     :param username: str
     :param user: User
     :param authkey: str
+    :param password: str or False
     :return: user or False
     :rtype: User or bool
     """
@@ -549,3 +559,84 @@ def delete_share_link(link_id):
     link_id = str(link_id).replace("-", "")
 
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
+
+
+def encrypt_secret(secret, password, user_sauce):
+    """
+    Encrypts a secret with a password and a random static user specific key we call "user_sauce"
+
+    :param secret: The secret to encrypt
+    :type secret: str
+    :param password: The password to use for the encryption
+    :type password: str
+    :param user_sauce: A random static user specific key
+    :type user_sauce: str
+    :return: A tuple of the encrypted secret and nonce
+    :rtype: (str, str)
+    """
+
+    salt = hashlib.sha512(user_sauce).hexdigest()
+
+    k = hashlib.sha256(binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+                                                      salt=salt.encode("utf-8"),
+                                                      N=16384,
+                                                      r=8,
+                                                      p=1,
+                                                      dkLen=64))).hexdigest()
+    crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
+
+    nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+    encrypted_secret_full = crypto_box.encrypt(secret, nonce)
+    encrypted_secret = encrypted_secret_full[len(nonce):]
+
+    return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
+
+
+def create_user(username, password, email):
+
+    email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
+        settings.EMAIL_SECRET_SALT, '', 1)
+
+    if models.User.objects.filter(email_bcrypt=email_bcrypt).exists():
+        return { 'error': 'Email already exists.' }
+
+    if models.User.objects.filter(username=username).exists():
+        return { 'error': 'Username already exists.' }
+
+    user_sauce = binascii.hexlify(os.urandom(32))
+    authkey = make_password(str(generate_authkey(username, password)))
+
+    box = PrivateKey.generate()
+    public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+    private_key_decrypted = box.encode(encoder=nacl.encoding.HexEncoder)
+    (private_key, private_key_nonce) = encrypt_secret(private_key_decrypted, password, user_sauce)
+
+    secret_key_decrypted = binascii.hexlify(os.urandom(32))
+    (secret_key, secret_key_nonce) = encrypt_secret(secret_key_decrypted, password, user_sauce)
+
+    # normally encrypt emails, so they are not stored in plaintext with a random nonce
+    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
+    encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    email = nacl.encoding.HexEncoder.encode(encrypted_email)
+
+    user = models.User.objects.create(
+        username=username,
+        email=email.decode(),
+        email_bcrypt=email_bcrypt,
+        authkey=authkey,
+        public_key=public_key.decode(),
+        private_key=private_key.decode(),
+        private_key_nonce=private_key_nonce.decode(),
+        secret_key=secret_key.decode(),
+        secret_key_nonce=secret_key_nonce.decode(),
+        is_email_active=True,
+        is_active=True,
+        user_sauce=user_sauce.decode()
+    )
+
+    return {
+        'user': user,
+        'private_key_decrypted': private_key_decrypted,
+        'secret_key_decrypted': secret_key_decrypted,
+    }

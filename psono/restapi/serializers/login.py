@@ -50,8 +50,9 @@ class LoginSerializer(serializers.Serializer):
 
         username = request_data.get('username').lower().strip()
         authkey = request_data.get('authkey')
+        password = request_data.get('password', False)
 
-        user = authenticate(username=username, authkey=authkey)
+        user = authenticate(username=username, authkey=authkey, password=password)
 
         if not user:
             msg = _('Username or password wrong.')
