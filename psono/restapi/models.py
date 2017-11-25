@@ -27,7 +27,7 @@ class User(models.Model):
     username = models.EmailField(_('Username'), unique=True)
     email = models.CharField(_('email address'), max_length=512, unique=True)
     email_bcrypt = models.CharField(_('bcrypt of email address'), max_length=60, unique=True)
-    authkey = models.CharField(_('auth key'), max_length=128)
+    authkey = models.CharField(_('auth key'), max_length=128, null=True)
     public_key = models.CharField(_('public key'), max_length=256)
     private_key = models.CharField(_('private key'), max_length=256)
     private_key_nonce = models.CharField(_('private key nonce'), max_length=64, unique=True)
