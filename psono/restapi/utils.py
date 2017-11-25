@@ -2,16 +2,12 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
-from restapi import models
 
 import os
 from nacl.public import PrivateKey
 import nacl.secret
 import nacl.encoding
 import nacl.utils
-
-
-
 
 import bcrypt
 import time
@@ -597,10 +593,10 @@ def create_user(username, password, email, authkey=False):
     email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
 
-    if models.User.objects.filter(email_bcrypt=email_bcrypt).exists():
+    if User.objects.filter(email_bcrypt=email_bcrypt).exists():
         return { 'error': 'Email already exists.' }
 
-    if models.User.objects.filter(username=username).exists():
+    if User.objects.filter(username=username).exists():
         return { 'error': 'Username already exists.' }
 
     user_sauce = binascii.hexlify(os.urandom(32))
@@ -624,7 +620,7 @@ def create_user(username, password, email, authkey=False):
     encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
     email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
-    user = models.User.objects.create(
+    user = User.objects.create(
         username=username,
         email=email.decode(),
         email_bcrypt=email_bcrypt,
