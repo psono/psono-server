@@ -166,8 +166,6 @@ release-container-python2:
     - docker pull $CONTAINER_TEST_IMAGE2
     - docker tag $CONTAINER_TEST_IMAGE2 $CONTAINER_RELEASE_IMAGE2
     - docker push $CONTAINER_RELEASE_IMAGE2
-    - docker tag $CONTAINER_TEST_IMAGE2 $CONTAINER_LATEST_IMAGE
-    - docker push $CONTAINER_LATEST_IMAGE
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
@@ -182,6 +180,8 @@ release-container-python3:
     - docker pull $CONTAINER_TEST_IMAGE3
     - docker tag $CONTAINER_TEST_IMAGE3 $CONTAINER_RELEASE_IMAGE3
     - docker push $CONTAINER_RELEASE_IMAGE3
+    - docker tag $CONTAINER_TEST_IMAGE3 $CONTAINER_LATEST_IMAGE
+    - docker push $CONTAINER_LATEST_IMAGE
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
