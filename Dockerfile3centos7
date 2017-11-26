@@ -10,12 +10,15 @@ RUN yum -y update && \
     yum -y update && \
     yum -y install \
         gcc \
+        openssl-devel \
         libffi-devel \
         python34 \
         python34-devel \
         python2-pip \
         python34-pip \
         nginx \
+        postgresql \
+        postgresql-devel \
         postgresql-client \
         crontabs \
         haveged \
