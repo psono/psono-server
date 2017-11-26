@@ -10,6 +10,7 @@ RUN yum -y update && \
     yum -y update && \
     yum -y install \
         gcc \
+        libffi-devel \
         python34 \
         python34-devel \
         python2-pip \
