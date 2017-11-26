@@ -19,6 +19,13 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+try:
+    # Fall back to psycopg2cffi
+    from psycopg2cffi import compat
+    compat.register()
+except ImportError:
+    import psycopg2
+
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
