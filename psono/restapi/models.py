@@ -357,7 +357,7 @@ class Token(models.Model):
     user_validator = models.CharField(max_length=64, null=True)
     device_fingerprint = models.CharField(max_length=128, null=True)
     device_description = models.CharField(max_length=256, null=True)
-    user = models.ForeignKey(User, related_name='auth_tokens')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auth_tokens')
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
     google_authenticator_2fa = models.BooleanField(_('Google Authenticator Required'), default=False,
