@@ -1,26 +1,23 @@
-# PSONO Dockerfile for CentOS 7 / python 3
-FROM centos:centos7
-
+# PSONO Dockerfile for Ubuntu 16.04
+FROM ubuntu:16.04
+ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
-RUN yum -y update && \
-    yum -y install epel-release && \
-    yum -y update && \
-    yum -y install \
-        gcc \
-        openssl-devel \
-        libffi-devel \
-        python34 \
-        python34-devel \
-        python2-pip \
-        python34-pip \
+RUN apt-get update && \
+    apt-get install -y \
+        libyaml-dev \
+        libpython3-dev \
+        libpq-dev \
+        libffi-dev \
+        python3-dev \
+        python-pip \
+        python3-pip \
+        python3-psycopg2 \
         nginx \
-        postgresql \
-        postgresql-devel \
         postgresql-client \
-        crontabs \
+        cron \
         haveged \
         net-tools && \
     pip install --upgrade pip && \
@@ -28,7 +25,7 @@ RUN yum -y update && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
-    yum clean all && \
+    apt-get clean && \
     mkdir -p /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
@@ -42,7 +39,7 @@ RUN yum -y update && \
     cp /root/configs/docker/supervisord.conf /etc/supervisor/ && \
     cp /root/configs/docker/supervisor-psono-server.conf /etc/supervisor/conf.d/ && \
     cp /root/configs/docker/supervisor-psono-worker.conf /etc/supervisor/conf.d/ && \
-    cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/conf.d/default.conf && \
+    cp /root/configs/nginx/docker-psono.pw.conf /etc/nginx/sites-available/default && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresUser/postgres/g /root/.psono_server/settings.yaml && \
@@ -51,7 +48,7 @@ RUN yum -y update && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
     rm -Rf /root/psono/static && \
     rm -Rf /root/var && \
-    rm -Rf /tmp/* /var/tmp/* /root/.cache
+    rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 
 EXPOSE 80
 
