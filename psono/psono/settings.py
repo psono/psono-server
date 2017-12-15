@@ -82,17 +82,15 @@ INSTALLED_APPS = (
     'restapi',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'middleware.sqlprinter.SQLLogToConsoleMiddleware',
 )
 
 PASSWORD_HASHERS = (
@@ -137,43 +135,74 @@ LOGGING_AUDIT = config_get('LOGGING_AUDIT', False)
 LOGGING_AUDIT_FOLDER = config_get('LOGGING_AUDIT_FOLDER', os.path.join(BASE_DIR, os.pardir, "log"))
 LOGGING_AUDIT_TIME = config_get('LOGGING_AUDIT_TIME', 'time_utc')
 
+LOGGING_QUERY = config_get('LOGGING_QUERY', False)
+LOGGING_QUERY_FOLDER = config_get('LOGGING_QUERY_FOLDER', os.path.join(BASE_DIR, os.pardir, "log"))
+LOGGING_QUERY_TIME = config_get('LOGGING_QUERY_TIME', 'time_utc')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'restapi_formatter': {
+        'restapi_audit_formatter': {
             '()': 'restapi.log.AuditFormatter',
             'format': '%('+LOGGING_AUDIT_TIME+')s logger=%(name)s, %(message)s'
+        },
+        'restapi_query_formatter': {
+            '()': 'restapi.log.QueryFormatter',
+            'format': '%('+LOGGING_QUERY_TIME+')s logger=%(name)s, %(message)s'
         }
     },
     'filters': {
         'restapi_audit_console': {
-            '()': 'restapi.log.FilterConsole',
+            '()': 'restapi.log.FilterAuditConsole',
         },
         'restapi_audit_file': {
-            '()': 'restapi.log.FilterFile',
+            '()': 'restapi.log.FilterAuditFile',
+        },
+        'restapi_query_console': {
+            '()': 'restapi.log.FilterQueryConsole',
+        },
+        'restapi_query_file': {
+            '()': 'restapi.log.FilterQueryFile',
         },
     },
     'handlers': {
         'restapi_audit_handler_console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'restapi_formatter',
+            'formatter': 'restapi_audit_formatter',
             'filters': ['restapi_audit_console'],
         },
         'restapi_audit_handler_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(LOGGING_AUDIT_FOLDER, 'audit.log'),
-            'formatter': 'restapi_formatter',
+            'formatter': 'restapi_audit_formatter',
             'filters': ['restapi_audit_file'],
-        }
+        },
+        'restapi_query_handler_console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'restapi_query_formatter',
+            'filters': ['restapi_audit_console'],
+        },
+        'restapi_query_handler_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGGING_AUDIT_FOLDER, 'query.log'),
+            'formatter': 'restapi_query_formatter',
+            'filters': ['restapi_audit_file'],
+        },
     },
     'loggers': {
         'restapi': {
             'handlers': ['restapi_audit_handler_console', 'restapi_audit_handler_file'],
             'level': 'INFO',
             'propagate': False,
+        },
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['restapi_query_handler_console', 'restapi_query_handler_file'],
         }
     }
 }
