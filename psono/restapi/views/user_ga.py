@@ -86,7 +86,7 @@ class UserGA(GenericAPIView):
         new_ga = Google_Authenticator.objects.create(
             user=request.user,
             title= serializer.validated_data.get('title'),
-            secret = encrypted_secret_hex
+            secret = encrypted_secret_hex.decode()
         )
 
         return Response({

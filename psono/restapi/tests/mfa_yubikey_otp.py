@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
@@ -91,7 +91,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_yubikey_id = crypto_box.encrypt(str(self.yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
+        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id).decode()
 
         self.yubikey = models.Yubikey_OTP.objects.create(
             user=self.test_user_obj,

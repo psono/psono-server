@@ -141,6 +141,6 @@ class RegisterSerializer(serializers.Serializer):
         secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_email = crypto_box.encrypt(validated_data['email'].encode('utf-8'), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        validated_data['email'] = nacl.encoding.HexEncoder.encode(encrypted_email)
+        validated_data['email'] = nacl.encoding.HexEncoder.encode(encrypted_email).decode()
 
         return User.objects.create(**validated_data)

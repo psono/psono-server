@@ -81,7 +81,7 @@ class UserYubikeyOTP(GenericAPIView):
         secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         encrypted_yubikey_id = crypto_box.encrypt(str(yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id)
+        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id).decode()
 
         new_yubikey = Yubikey_OTP.objects.create(
             user=request.user,

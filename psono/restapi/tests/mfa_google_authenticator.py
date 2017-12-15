@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -71,7 +71,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = encrypted_secret_hex
+            secret = encrypted_secret_hex.decode()
         )
 
     def test_get_authentication_ga_verify(self):

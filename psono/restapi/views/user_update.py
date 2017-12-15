@@ -69,7 +69,7 @@ class UserUpdate(GenericAPIView):
             secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
             crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
             encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-            request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email)
+            request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email).decode()
 
         password_changed = False
         # Password Change
