@@ -1,6 +1,6 @@
 before_script:
   - docker info
-  - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" registry.gitlab.com
+  - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
 
 variables:
   CONTAINER_TEST_IMAGE_UBU1604: registry.gitlab.com/psono/psono-server:ubu1604-$CI_BUILD_REF_NAME
