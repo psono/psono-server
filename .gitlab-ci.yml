@@ -92,6 +92,15 @@ run-vulnerability-scan-python3:
     - docker pull $CONTAINER_TEST_IMAGE_UBU1604
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_UBU1604 bash -c "pip3 install -r requirements-dev.txt && safety check"
 
+deploy-security-scan-image:
+  except:
+    - schedules
+  stage: deploy
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - sh ./var/deploy_security_scan_image.sh
 
 release-container:
   except:

@@ -50,8 +50,9 @@ class UserUpdate(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not authenticate(username=request.user.username, authkey=str(request.data['authkey_old'])):
+        user, error_code = authenticate(username=request.user.username, authkey=str(request.data['authkey_old']))
 
+        if not user:
             raise PermissionDenied({"message":"Your old password was not right."})
 
         # E-Mail Change

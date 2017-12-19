@@ -95,14 +95,16 @@ def authenticate(username = False, user = False, authkey = False, password = Fal
     :param authkey: str
     :param password: str or False
     :return: user or False
-    :rtype: User or bool
+    :rtype: User or bool, str
     """
 
     if not username and not user:
-        return False
+        return False, 'USER_NOT_PROVIDED'
 
     if not authkey:
-        return False
+        return False, 'AUTHKEY_NOT_PROVIDED'
+
+    error_code = 'USER_NOT_FOUND'
 
     for method in settings.AUTHENTICATION_METHODS:
         if 'AUTHKEY' == method:
@@ -112,10 +114,13 @@ def authenticate(username = False, user = False, authkey = False, password = Fal
                 except IndexError:
                     continue
 
-            if user and user.authkey is not None and check_password(authkey, user.authkey):
-                return user
+            if user and user.authkey is not None:
+                if check_password(authkey, user.authkey):
+                    return user, None
+                else:
+                    error_code = 'INCORRECT_PASSWORD'
 
-    return False
+    return False, error_code
 
 
 def get_all_inherited_rights(user_id, share_id):

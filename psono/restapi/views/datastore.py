@@ -175,8 +175,9 @@ class DatastoreView(GenericAPIView):
 
         datastore = serializer.validated_data.get('datastore')
 
-        if not authenticate(username=request.user.username, authkey=str(request.data['authkey'])):
+        user, error_code = authenticate(username=request.user.username, authkey=str(request.data['authkey']))
 
+        if not user:
             raise PermissionDenied({"message":"Your old password was not right."})
 
         # delete it
