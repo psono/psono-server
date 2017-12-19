@@ -81,7 +81,7 @@ run-unittests-centos7:
     - docker run --link db:postgres $CONTAINER_TEST_IMAGE_CENTOS7 bash -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
-run-vulnerability-scan-python3:
+run-vulnerability-scan:
   except:
     - schedules
   stage: test
