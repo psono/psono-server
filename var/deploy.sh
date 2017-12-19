@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 apk add --update curl
+
+# Pull docker container here, as the login will be overwritten in the next step
+docker pull $CONTAINER_TEST_IMAGE_UBU1604
+
 # Deploy to Docker Hub
 mkdir -p /root/.docker
 cat > /root/.docker/config.json <<- "EOF"
@@ -12,7 +16,6 @@ cat > /root/.docker/config.json <<- "EOF"
 }
 EOF
 sed -i 's/docker_hub_credentials/'"$docker_hub_credentials"'/g' /root/.docker/config.json
-docker pull registry.gitlab.com/psono/psono-server:latest
 docker tag registry.gitlab.com/psono/psono-server:latest psono/psono-server:latest
 docker push psono/psono-server:latest
 
