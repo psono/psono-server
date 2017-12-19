@@ -56,7 +56,7 @@ run-unittests-ubuntu1604:
     - docker pull $CONTAINER_TEST_IMAGE_UBU1604
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_UBU1604 bash -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_UBU1604 bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
 run-unittests-centos7:
@@ -78,7 +78,7 @@ run-unittests-centos7:
     - docker pull $CONTAINER_TEST_IMAGE_CENTOS7
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_CENTOS7 bash -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_CENTOS7 bash -c "yum -y install python34-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
 run-vulnerability-scan:
@@ -90,7 +90,7 @@ run-vulnerability-scan:
     - docker:dind
   script:
     - docker pull $CONTAINER_TEST_IMAGE_UBU1604
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_UBU1604 bash -c "pip3 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_UBU1604 bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && safety check"
 
 deploy-security-scan-image:
   except:
@@ -142,4 +142,4 @@ scheduled-run-vulnerability-scan:
     - docker:dind
   script:
     - docker pull psono/psono-server
-    - docker run -e "LANG=C.UTF-8" psono/psono-server bash -c "pip3 install -r requirements-dev.txt && safety check"
+    - docker run -e "LANG=C.UTF-8" psono/psono-server bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && safety check"

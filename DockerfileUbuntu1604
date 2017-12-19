@@ -7,25 +7,23 @@ COPY . /root/
 WORKDIR /root
 RUN apt-get update && \
     apt-get install -y \
+        cron \
+        haveged \
         libyaml-dev \
         libpython3-dev \
         libpq-dev \
         libffi-dev \
+        nginx \
         python3-dev \
         python-pip \
         python3-pip \
         python3-psycopg2 \
-        nginx \
-        postgresql-client \
-        cron \
-        haveged \
-        net-tools && \
+        postgresql-client && \
     pip install --upgrade pip && \
     pip install supervisor && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
-    apt-get clean && \
     mkdir -p /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
@@ -46,6 +44,10 @@ RUN apt-get update && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
+    apt-get purge -y \
+        python-pip \
+        python3-pip && \
+    apt-get clean && \
     rm -Rf /root/psono/static && \
     rm -Rf /root/var && \
     rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache

@@ -9,26 +9,24 @@ RUN yum -y update && \
     yum -y install epel-release && \
     yum -y update && \
     yum -y install \
+        crontabs \
         gcc \
-        openssl-devel \
+        haveged \
         libffi-devel \
-        python34 \
-        python34-devel \
-        python2-pip \
-        python34-pip \
         nginx \
+        openssl-devel \
         postgresql \
         postgresql-devel \
         postgresql-client \
-        crontabs \
-        haveged \
-        net-tools && \
+        python34 \
+        python34-devel \
+        python2-pip \
+        python34-pip && \
     pip install --upgrade pip && \
     pip install supervisor && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
-    yum clean all && \
     mkdir -p /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
@@ -49,9 +47,17 @@ RUN yum -y update && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
-    rm -Rf /root/psono/static && \
-    rm -Rf /root/var && \
-    rm -Rf /tmp/* /var/tmp/* /root/.cache
+    yum remove \
+        python2-pip \
+        python34-pip && \
+    yum clean all && \
+    rm -Rf \
+        /root/requirements.txt \
+        /root/psono/static \
+        /root/var \
+        /root/.cache \
+        /tmp/* \
+        /var/tmp/*
 
 EXPOSE 80
 
