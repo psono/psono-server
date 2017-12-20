@@ -15,5 +15,5 @@ cat > /root/.docker/config.json <<- "EOF"
 }
 EOF
 sed -i 's/docker_hub_credentials/'"$docker_hub_credentials"'/g' /root/.docker/config.json
-docker tag $CONTAINER_TEST_IMAGE_UBU1604 psono/security-scans:ce-$CI_BUILD_REF_NAME
-docker push psono/security-scans:ce-$CI_BUILD_REF_NAME
+docker tag $CONTAINER_TEST_IMAGE_UBU1604 psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
+docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
