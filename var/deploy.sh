@@ -2,7 +2,7 @@
 apk add --update curl
 
 # Pull docker container here, as the login will be overwritten in the next step
-docker pull $CONTAINER_TEST_IMAGE_UBU1604
+docker pull registry.gitlab.com/psono/psono-server:latest
 
 # Deploy to Docker Hub
 mkdir -p /root/.docker
