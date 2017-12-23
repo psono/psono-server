@@ -13,7 +13,7 @@ class MoveSecretLinkSerializer(serializers.Serializer):
     new_parent_share_id = serializers.UUIDField(required=False)
     new_parent_datastore_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         link_id = attrs.get('link_id')
         new_parent_share_id = attrs.get('new_parent_share_id', None)
         new_parent_datastore_id = attrs.get('new_parent_datastore_id', None)

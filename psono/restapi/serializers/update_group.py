@@ -10,7 +10,7 @@ class UpdateGroupSerializer(serializers.Serializer):
     group_id = serializers.UUIDField(required=True)
     name = serializers.CharField(max_length=64, required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         group_id = attrs.get('group_id')
         name = attrs.get('name', False)

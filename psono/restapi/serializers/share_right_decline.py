@@ -10,7 +10,7 @@ class ShareRightDeclineSerializer(serializers.Serializer):
 
     share_right_id = serializers.UUIDField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         share_right_id = attrs.get('share_right_id')
 

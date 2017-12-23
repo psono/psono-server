@@ -29,7 +29,7 @@ class UserUpdateSerializer(serializers.Serializer):
                                     min_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2)
     secret_key_nonce = serializers.CharField(max_length=64, required=False, allow_null=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         email = attrs.get('email')
 
         if email:

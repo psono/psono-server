@@ -13,7 +13,7 @@ class UpdateSecretSerializer(serializers.Serializer):
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         secret_id = attrs.get('secret_id')
 

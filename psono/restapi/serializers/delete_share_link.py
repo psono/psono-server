@@ -10,7 +10,7 @@ class DeleteShareLinkSerializer(serializers.Serializer):
 
     link_id = serializers.UUIDField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         link_id = str(attrs.get('link_id')).replace("-", "")
 

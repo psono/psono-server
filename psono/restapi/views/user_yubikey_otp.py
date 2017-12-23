@@ -4,15 +4,15 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    User, Yubikey_OTP
+    Yubikey_OTP
 )
 
 from ..app_settings import (
-    NewYubikeyOTPSerializer
+    NewYubikeyOTPSerializer,
+    DeleteYubikeySerializer
 )
 
 from ..authentication import TokenAuthentication
-from ..utils import request_misses_uuid
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -104,22 +104,18 @@ class UserYubikeyOTP(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         """
 
-        if request_misses_uuid(request, 'yubikey_otp_id'):
+        serializer = DeleteYubikeySerializer(data=request.data, context=self.get_serializer_context())
 
-            return Response({"error": "IdNoUUID", 'message': "Yubikey OTP ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
 
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # check if the YubiKey exists
-        try:
-            yubikey_otp = Yubikey_OTP.objects.get(pk=request.data['yubikey_otp_id'], user=request.user)
-        except Yubikey_OTP.DoesNotExist:
-
-            return Response({"message": "YubiKey does not exist.",
-                         "resource_id": request.data['yubikey_otp_id']}, status=status.HTTP_403_FORBIDDEN)
+        yubikey_otp = serializer.validated_data.get('yubikey_otp')
 
         # delete it
         yubikey_otp.delete()

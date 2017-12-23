@@ -7,7 +7,7 @@ class DeleteGroupSerializer(serializers.Serializer):
 
     group_id = serializers.UUIDField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         group_id = attrs.get('group_id')
 

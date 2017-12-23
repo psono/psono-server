@@ -15,7 +15,7 @@ import pyotp
 class GAVerifySerializer(serializers.Serializer):
     ga_token = serializers.CharField(max_length=6, min_length=6, required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         ga_token = attrs.get('ga_token').lower().strip()
 

@@ -14,7 +14,7 @@ class ShareRightAcceptSerializer(serializers.Serializer):
     key_type = serializers.CharField(max_length=256, required=False, default='symmetric')
     key_nonce = serializers.CharField(max_length=64, required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         share_right_id = attrs.get('share_right_id')
         key_type = attrs.get('key_type')
 

@@ -13,7 +13,7 @@ class DeleteShareRightSerializer(serializers.Serializer):
     user_share_right_id = serializers.UUIDField(required=False)
     group_share_right_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         user_share_right_id = attrs.get('user_share_right_id', None)
         group_share_right_id = attrs.get('group_share_right_id', None)
 

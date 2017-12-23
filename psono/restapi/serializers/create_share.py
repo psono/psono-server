@@ -18,7 +18,7 @@ class CreateShareSerializer(serializers.Serializer):
     key_nonce = serializers.CharField(max_length=64, required=True)
     key_type = serializers.CharField(default='asymmetric')
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
         key_type = attrs.get('key_type')

@@ -409,7 +409,6 @@ class YubikeyOTPTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
 
 
     def test_delete_user_yubikey_otp_yubikey_otp_id_not_exist(self):
@@ -426,4 +425,4 @@ class YubikeyOTPTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

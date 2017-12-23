@@ -11,7 +11,7 @@ class DeleteSecretLinkSerializer(serializers.Serializer):
 
     link_id = serializers.UUIDField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         link_id = attrs.get('link_id')
 
         secrets = []

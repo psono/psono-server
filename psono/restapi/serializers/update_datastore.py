@@ -14,7 +14,7 @@ class UpdateDatastoreSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=64, required=False)
     is_default = serializers.BooleanField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         datastore_id = attrs.get('datastore_id')
 

@@ -22,6 +22,8 @@ import binascii
 from yubico_client import Yubico
 
 import pyscrypt
+from typing import Tuple, List
+
 
 import six
 from importlib import import_module
@@ -35,7 +37,7 @@ def import_callable(path_or_callable):
         package, attr = path_or_callable.rsplit('.', 1)
         return getattr(import_module(package), attr)
 
-def generate_activation_code(email):
+def generate_activation_code(email : str) -> str:
     """
     Takes email address and combines it with a timestamp before encrypting everything with the ACTIVATION_LINK_SECRET
     No database storage required for this action
@@ -57,15 +59,15 @@ def generate_activation_code(email):
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
-def validate_activation_code(activation_code):
+def validate_activation_code(activation_code : str) -> User:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure
 
     :param activation_code: activation_code
     :type activation_code: str
-    :return: user or False
-    :rtype: User or bool
+    :return: user
+    :rtype: User or None
     """
 
     try:
@@ -84,9 +86,9 @@ def validate_activation_code(activation_code):
         #wrong format or whatever could happen
         pass
 
-    return False
+    return None
 
-def authenticate(username = False, user = False, authkey = False, password = False):
+def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple:
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
@@ -123,7 +125,7 @@ def authenticate(username = False, user = False, authkey = False, password = Fal
     return False, error_code
 
 
-def get_all_inherited_rights(user_id, share_id):
+def get_all_inherited_rights(user_id : str, share_id : str) -> User_Share_Right:
 
     return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
         FROM (
@@ -157,7 +159,7 @@ def get_all_inherited_rights(user_id, share_id):
     })
 
 
-def get_all_direct_user_rights(user_id, share_id):
+def get_all_direct_user_rights(user_id: str, share_id: str) -> User_Share_Right:
 
     try:
         user_share_rights = User_Share_Right.objects.only("read", "write", "grant").filter(user_id=user_id, share_id=share_id, accepted=True)
@@ -167,7 +169,7 @@ def get_all_direct_user_rights(user_id, share_id):
     return user_share_rights
 
 
-def get_all_direct_group_rights(user_id, share_id):
+def get_all_direct_group_rights(user_id: str, share_id: str) -> Group_Share_Right:
 
     return Group_Share_Right.objects.raw("""SELECT gr.id, gr.read, gr.write, gr.grant
         FROM restapi_group_share_right gr
@@ -180,7 +182,7 @@ def get_all_direct_group_rights(user_id, share_id):
     })
 
 
-def calculate_user_rights_on_share(user_id = -1, share_id=-1):
+def calculate_user_rights_on_share(user_id : str = "", share_id : str = "") -> dict:
     """
     Calculates the user's rights on a share
 
@@ -234,7 +236,7 @@ def calculate_user_rights_on_share(user_id = -1, share_id=-1):
     }
 
 
-def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
+def user_has_rights_on_share(user_id : str = "", share_id : str = "", read : bool = None, write : bool = None, grant : bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given share.
     User_share_rights and all Group_share_rights be checked first.
@@ -262,7 +264,7 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
            and (grant is None or grant == rights['grant'])
 
 
-def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None):
+def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : bool = None, write : bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given secret
 
@@ -274,7 +276,7 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
     """
 
     datastores_loaded = False
-    datastores = []
+    datastores = [] # type: List[str]
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later

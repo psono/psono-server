@@ -12,7 +12,7 @@ class CreateShareLinkSerializer(serializers.Serializer):
     parent_share_id = serializers.UUIDField(required=False)
     parent_datastore_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         link_id = attrs.get('link_id')
         share_id = attrs.get('share_id')

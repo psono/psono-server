@@ -163,7 +163,7 @@ LOGGING = {
 
 
 for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
-    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value
+    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value # type: ignore
 
 
 ROOT_URLCONF = 'psono.urls'
@@ -234,7 +234,7 @@ if config_get('CACHE_DB', False):
 
 if config_get('CACHE_REDIS', False):
     CACHES = {
-       "default": {
+       "default": { # type: ignore
            "BACKEND": "django_redis.cache.RedisCache",
            "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
            "OPTIONS": {

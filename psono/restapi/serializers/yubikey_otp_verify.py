@@ -14,7 +14,7 @@ import nacl.encoding
 class YubikeyOTPVerifySerializer(serializers.Serializer):
     yubikey_otp = serializers.CharField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         yubikey_otp = attrs.get('yubikey_otp').strip()
 

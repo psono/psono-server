@@ -11,7 +11,7 @@ class UpdateShareSerializer(serializers.Serializer):
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         share_id = attrs.get('share_id')
 

@@ -12,7 +12,7 @@ class DeleteDatastoreSerializer(serializers.Serializer):
                                     max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
                                     min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         datastore_id = attrs.get('datastore_id')
 

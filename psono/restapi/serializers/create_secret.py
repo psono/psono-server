@@ -14,7 +14,7 @@ class CreateSecretSerializer(serializers.Serializer):
     parent_share_id = serializers.UUIDField(required=False)
     parent_datastore_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
 

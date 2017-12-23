@@ -8,7 +8,8 @@ from ..models import (
 )
 
 from ..app_settings import (
-    NewGASerializer
+    NewGASerializer,
+    DeleteGASerializer,
 )
 
 
@@ -105,22 +106,18 @@ class UserGA(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         """
 
-        if request_misses_uuid(request, 'google_authenticator_id'):
+        serializer = DeleteGASerializer(data=request.data, context=self.get_serializer_context())
 
-            return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
 
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # check if google authenticator exists
-        try:
-            google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=request.user)
-        except Google_Authenticator.DoesNotExist:
-
-            return Response({"message": "Google authenticator does not exist.",
-                         "resource_id": request.data['google_authenticator_id']}, status=status.HTTP_403_FORBIDDEN)
+        google_authenticator = serializer.validated_data.get('google_authenticator')
 
         # delete it
         google_authenticator.delete()

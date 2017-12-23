@@ -12,6 +12,8 @@ from .serializers import (
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     NewGASerializer as DefaultNewGASerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
+    DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    DeleteGASerializer as DefaultDeleteGASerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
@@ -112,6 +114,20 @@ NewYubikeyOTPSerializer = import_callable(
     serializers.get(
         'NEW_YUBIKEY_OTP_SERIALIZER',
         DefaultNewYubikeyOTPSerializer
+    )
+)
+
+DeleteYubikeySerializer = import_callable(
+    serializers.get(
+        'DELETE_YUBIKEY_SERIALIZER',
+        DefaultDeleteYubikeySerializer
+    )
+)
+
+DeleteGASerializer = import_callable(
+    serializers.get(
+        'DELETE_GA_SERIALIZER',
+        DefaultDeleteGASerializer
     )
 )
 

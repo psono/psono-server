@@ -21,7 +21,7 @@ class LoginSerializer(serializers.Serializer):
     login_info_nonce = serializers.CharField(required=True)
     session_duration = serializers.IntegerField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         login_info = attrs.get('login_info')
         login_info_nonce = attrs.get('login_info_nonce')
