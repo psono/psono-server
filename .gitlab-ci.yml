@@ -26,6 +26,18 @@ build-container-ubuntu1604:
     - docker build -f DockerfileUbuntu1604 -t $CONTAINER_TEST_IMAGE_UBU1604 .
     - docker push $CONTAINER_TEST_IMAGE_UBU1604
 
+build-container-alpine:
+  except:
+    - schedules
+  stage: build
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - sh ./var/update_version.sh
+    - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE_ALPINE .
+    - docker push $CONTAINER_TEST_IMAGE_ALPINE
+
 build-container-centos7:
   except:
     - schedules
