@@ -21,7 +21,7 @@ import hashlib
 import binascii
 from yubico_client import Yubico
 
-import pyscrypt
+import scrypt
 from typing import Tuple, List
 
 
@@ -405,12 +405,12 @@ def generate_authkey(username, password):
 
     salt = hashlib.sha512(username.lower().encode('utf-8')).hexdigest()
 
-    return binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+    return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                          salt=salt.encode("utf-8"),
                          N=16384,
                          r=8,
                          p=1,
-                         dkLen=64))
+                         buflen=64))
 
 def get_datastore(datastore_id=None, user=None):
     """
@@ -580,12 +580,12 @@ def encrypt_secret(secret, password, user_sauce):
 
     salt = hashlib.sha512(user_sauce).hexdigest()
 
-    k = hashlib.sha256(binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                                                       salt=salt.encode("utf-8"),
                                                       N=16384,
                                                       r=8,
                                                       p=1,
-                                                      dkLen=64))).hexdigest()
+                                                      buflen=64))).hexdigest()
     crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
