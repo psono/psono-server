@@ -4,8 +4,6 @@ import re
 import bcrypt
 import hashlib
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
@@ -38,6 +36,12 @@ class RegisterSerializer(serializers.Serializer):
     def validate_email(self, value):
 
         value = value.lower().strip()
+
+        if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
+            email_prefix, domain = value.split("@")
+            if domain not in settings.REGISTRATION_EMAIL_FILTER:
+                msg = _('E-Mail not allowed to register.')
+                raise exceptions.ValidationError(msg)
 
         # generate bcrypt with static salt.
         # I know its bad to use static salts, but its the best solution I could come up with,

@@ -43,6 +43,10 @@ class RegisterView(GenericAPIView):
             for i in range(0, len(w), n):
                 yield w[i:i + n]
 
+        if not settings.ALLOW_REGISTRATION:
+            return Response({"custom": ["Registration has been disabled."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():

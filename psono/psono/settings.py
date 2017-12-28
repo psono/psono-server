@@ -65,6 +65,13 @@ DEBUG = config_get('DEBUG')
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
+ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
+REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
+
+for index in range(len(REGISTRATION_EMAIL_FILTER)):
+    REGISTRATION_EMAIL_FILTER[index] = REGISTRATION_EMAIL_FILTER[index].lower().strip()
+
+
 HOST_URL = config_get('HOST_URL')
 
 # Application definition
