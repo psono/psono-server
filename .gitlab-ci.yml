@@ -3,6 +3,7 @@ before_script:
   - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
   - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
   - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker-local.jfrog.io
+  - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
 
 variables:
   CONTAINER_TEST_IMAGE_UBU1604: psono-docker-local.jfrog.io/psono/psono-server:ubu1604-$CI_BUILD_REF_NAME
@@ -137,7 +138,9 @@ deploy-security-scan-image:
   services:
     - docker:dind
   script:
-    - sh ./var/deploy_security_scan_image.sh
+    - docker pull $CONTAINER_TEST_IMAGE_UBU1604
+    - docker tag $CONTAINER_TEST_IMAGE_UBU1604 psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
+    - docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
 
 release-container:
   except:
@@ -147,6 +150,7 @@ release-container:
   services:
     - docker:dind
   script:
+    - docker info
     - docker pull $CONTAINER_TEST_IMAGE_ALPINE
     - docker tag $CONTAINER_TEST_IMAGE_ALPINE $CONTAINER_LATEST_IMAGE
     - docker push $CONTAINER_LATEST_IMAGE
