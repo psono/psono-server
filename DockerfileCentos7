@@ -1,11 +1,15 @@
 # PSONO Dockerfile for CentOS 7
-FROM centos:centos7
+FROM psono-docker.jfrog.io/centos:centos7
 
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
-RUN yum -y update && \
+
+RUN mkdir -p /root/.pip && \
+    echo '[global]' >> /root/.pip/pip.conf && \
+    echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
+    yum -y update && \
     yum -y install epel-release && \
     yum -y update && \
     yum -y install \
