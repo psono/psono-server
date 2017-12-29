@@ -391,7 +391,7 @@ def yubikey_get_yubikey_id(yubikey_otp):
 
     return yubikey_otp[:12]
 
-def generate_authkey(username, password):
+def generate_authkey(username, password) -> bytes:
     """
     Generates the authkey that is sent to the server instead of the cleartext password
 
@@ -649,7 +649,7 @@ def create_user(username, password, email, gen_authkey=True):
 
     authkey_hashed = None
     if gen_authkey:
-        authkey = str(generate_authkey(username, password))
+        authkey = generate_authkey(username, password).decode()
         authkey_hashed = make_password(authkey)
 
     box = PrivateKey.generate()
