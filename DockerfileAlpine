@@ -30,6 +30,6 @@ RUN mkdir -p /root/.pip && \
     rm -Rf \
         /root/.cache
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ["uwsgi", "--ini", "/root/configs/nginx/psono_uwsgi_port.ini"]
