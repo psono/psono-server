@@ -127,8 +127,8 @@ run-vulnerability-scan:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_UBU1604
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_UBU1604 bash -c "apt-get update && apt-get install -y python3-pip && pip3 install safety && safety check"
+    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_ALPINE sh -c "pip3 install safety && safety check"
 
 deploy-security-scan-image:
   except:
@@ -138,8 +138,8 @@ deploy-security-scan-image:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_UBU1604
-    - docker tag $CONTAINER_TEST_IMAGE_UBU1604 psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
+    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
+    - docker tag $CONTAINER_TEST_IMAGE_ALPINE psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
     - docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
 
 release-container:
@@ -172,15 +172,3 @@ deploy:
     url: https://psono.pw
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
-
-
-scheduled-run-vulnerability-scan:
-  only:
-    - schedules
-  stage: test
-  image: psono-docker.jfrog.io/docker:git
-  services:
-    - docker:dind
-  script:
-    - docker pull psono/psono-server
-    - docker run -e "LANG=C.UTF-8" psono/psono-server bash -c "apt-get update && apt-get install -y python3-pip && pip3 install safety && safety check"
