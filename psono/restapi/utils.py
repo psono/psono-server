@@ -564,7 +564,7 @@ def delete_share_link(link_id):
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
 
 
-def encrypt_secret(secret, password, user_sauce):
+def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
     """
     Encrypts a secret with a password and a random static user specific key we call "user_sauce"
 
@@ -575,7 +575,7 @@ def encrypt_secret(secret, password, user_sauce):
     :param user_sauce: A random static user specific key
     :type user_sauce: str
     :return: A tuple of the encrypted secret and nonce
-    :rtype: (str, str)
+    :rtype: (bytes, bytes)
     """
 
     salt = hashlib.sha512(user_sauce).hexdigest()
