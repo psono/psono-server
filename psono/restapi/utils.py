@@ -595,6 +595,45 @@ def encrypt_secret(secret, password, user_sauce):
     return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
 
 
+def delete_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.delete()
+
+    return {}
+
+def enable_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.is_active = True
+    user.save()
+
+    return {}
+
+def disable_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.is_active = False
+    user.save()
+
+    return {}
+
+
 def create_user(username, password, email, gen_authkey=True):
 
     email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
