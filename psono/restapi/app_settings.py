@@ -10,6 +10,7 @@ from .serializers import (
     RegisterSerializer as DefaultRegisterSerializer,
     UserSearchSerializer as DefaultUserSearchSerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
+    UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
@@ -100,6 +101,13 @@ UserUpdateSerializer = import_callable(
     serializers.get(
         'USER_UPDATE_SERIALIZER',
         DefaultUserUpdateSerializer
+    )
+)
+
+UserDeleteSerializer = import_callable(
+    serializers.get(
+        'USER_DELETE_SERIALIZER',
+        DefaultUserDeleteSerializer
     )
 )
 

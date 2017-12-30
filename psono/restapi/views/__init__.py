@@ -25,6 +25,7 @@ from .user_ga import UserGA
 from .user_search import UserSearch
 from .user_update import UserUpdate
 from .user_yubikey_otp import UserYubikeyOTP
+from .user_delete import UserDelete
 from .verify_email import VerifyEmailView
 from .yubikey_otp_verify import YubikeyOTPVerifyView
 from .group_rights import GroupRightsView

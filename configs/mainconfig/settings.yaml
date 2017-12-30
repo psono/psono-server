@@ -27,6 +27,12 @@ ALLOWED_HOSTS: ['*']
 # If you dont care about user data export (not implemented yet), you can put anything here that looks like a domain
 ALLOWED_DOMAINS: ['example.com']
 
+# If you want to disable registration, you can comment in the following line
+# ALLOW_REGISTRATION: False
+
+# If you want to restrict registration to some email addresses you can specify here a list of domains to filter
+# REGISTRATION_EMAIL_FILTER: ['company1.com', 'company2.com']
+
 # Should be the URL of the host under which the host is reachable
 # If you open the url you should have a text similar to {"detail":"Authentication credentials were not provided."}
 HOST_URL: 'http://example.com'
