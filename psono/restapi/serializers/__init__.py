@@ -44,5 +44,6 @@ from .delete_share_link import *
 from .user_search import *
 from .user_share import *
 from .user_update import *
+from .user_delete import *
 from .verify_email import *
 from .yubikey_otp_verify import *
