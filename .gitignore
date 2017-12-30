@@ -1,4 +1,5 @@
 .idea
+.mypy_cache
 *.py[cod]
 problemtest
 .coverage

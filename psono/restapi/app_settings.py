@@ -12,17 +12,22 @@ from .serializers import (
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     NewGASerializer as DefaultNewGASerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
+    DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    DeleteGASerializer as DefaultDeleteGASerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
     EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
     SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
-    ShareTreeSerializer as DefaultShareTreeSerializer,
+    CreateShareLinkSerializer as DefaultCreateShareLinkSerializer,
+    UpdateShareLinkSerializer as DefaultUpdateShareLinkSerializer,
+    DeleteShareLinkSerializer as DefaultDeleteShareLinkSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     UpdateShareSerializer as DefaultUpdateShareSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
+    UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
     SecretOverviewSerializer as DefaultSecretOverviewSerializer,
@@ -38,6 +43,7 @@ from .serializers import (
     CreateMembershipSerializer as DefaultCreateMembershipSerializer,
     UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
     UpdateGroupSerializer as DefaultUpdateGroupSerializer,
+    DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     MembershipAcceptSerializer as DefaultMembershipAcceptSerializer,
     MembershipDeclineSerializer as DefaultMembershipDeclineSerializer,
 )
@@ -111,6 +117,20 @@ NewYubikeyOTPSerializer = import_callable(
     )
 )
 
+DeleteYubikeySerializer = import_callable(
+    serializers.get(
+        'DELETE_YUBIKEY_SERIALIZER',
+        DefaultDeleteYubikeySerializer
+    )
+)
+
+DeleteGASerializer = import_callable(
+    serializers.get(
+        'DELETE_GA_SERIALIZER',
+        DefaultDeleteGASerializer
+    )
+)
+
 
 CreateShareRightSerializer = import_callable(
     serializers.get(
@@ -144,7 +164,7 @@ CreateRecoverycodeSerializer = import_callable(
 
 EnableNewPasswordSerializer = import_callable(
     serializers.get(
-        'PASSWORD_SERIALIZER',
+        'ENABLE_NEW_PASSWORD_SERIALIZER',
         DefaultEnableNewPasswordSerializer
     )
 )
@@ -152,15 +172,29 @@ EnableNewPasswordSerializer = import_callable(
 
 SetNewPasswordSerializer = import_callable(
     serializers.get(
-        'PASSWORD_SERIALIZER',
+        'SET_NEW_PASSWORD_SERIALIZER',
         DefaultSetNewPasswordSerializer
     )
 )
 
-ShareTreeSerializer = import_callable(
+CreateShareLinkSerializer = import_callable(
     serializers.get(
-        'SHARE_RIGHT_INHERIT_SERIALIZER',
-        DefaultShareTreeSerializer
+        'CREATE_SHARE_LINK_SERIALIZER',
+        DefaultCreateShareLinkSerializer
+    )
+)
+
+UpdateShareLinkSerializer = import_callable(
+    serializers.get(
+        'UPDATE_SHARE_LINK_SERIALIZER',
+        DefaultUpdateShareLinkSerializer
+    )
+)
+
+DeleteShareLinkSerializer = import_callable(
+    serializers.get(
+        'DELETE_SHARE_LINK_SERIALIZER',
+        DefaultDeleteShareLinkSerializer
     )
 )
 
@@ -191,6 +225,13 @@ CreateDatastoreSerializer = import_callable(
     serializers.get(
         'CREATE_DATASTORE_SERIALIZER',
         DefaultCreateDatastoreSerializer
+    )
+)
+
+UpdateDatastoreSerializer = import_callable(
+    serializers.get(
+        'UPDATE_DATASTORE_SERIALIZER',
+        DefaultUpdateDatastoreSerializer
     )
 )
 
@@ -297,6 +338,13 @@ UpdateGroupSerializer = import_callable(
     serializers.get(
         'UPDATE_GROUP_SERIALIZER',
         DefaultUpdateGroupSerializer
+    )
+)
+
+DeleteGroupSerializer = import_callable(
+    serializers.get(
+        'DELETE_GROUP_SERIALIZER',
+        DefaultDeleteGroupSerializer
     )
 )
 

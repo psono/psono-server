@@ -1,9 +1,14 @@
 from django.conf import settings
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
 
-from rest_framework import status as rest_status
+import os
+from nacl.public import PrivateKey
+import nacl.secret
+import nacl.encoding
+import nacl.utils
+
 import bcrypt
 import time
 from uuid import UUID
@@ -16,7 +21,9 @@ import hashlib
 import binascii
 from yubico_client import Yubico
 
-import pyscrypt
+import scrypt
+from typing import Tuple, List
+
 
 import six
 from importlib import import_module
@@ -30,7 +37,7 @@ def import_callable(path_or_callable):
         package, attr = path_or_callable.rsplit('.', 1)
         return getattr(import_module(package), attr)
 
-def generate_activation_code(email):
+def generate_activation_code(email : str) -> str:
     """
     Takes email address and combines it with a timestamp before encrypting everything with the ACTIVATION_LINK_SECRET
     No database storage required for this action
@@ -52,15 +59,15 @@ def generate_activation_code(email):
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
-def validate_activation_code(activation_code):
+def validate_activation_code(activation_code : str) -> User:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure
 
     :param activation_code: activation_code
     :type activation_code: str
-    :return: user or False
-    :rtype: User or bool
+    :return: user
+    :rtype: User or None
     """
 
     try:
@@ -79,37 +86,46 @@ def validate_activation_code(activation_code):
         #wrong format or whatever could happen
         pass
 
-    return False
+    return None
 
-def authenticate(username = False, user = False, authkey = False):
+def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple:
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
     :param username: str
     :param user: User
     :param authkey: str
+    :param password: str or False
     :return: user or False
-    :rtype: User or bool
+    :rtype: User or bool, str
     """
 
-    if not authkey:
-        return False
     if not username and not user:
-        return False
+        return False, 'USER_NOT_PROVIDED'
 
-    if username:
-        try:
-            user = User.objects.filter(username=username, is_active=True)[0]
-        except IndexError:
-            return False
+    if not authkey:
+        return False, 'AUTHKEY_NOT_PROVIDED'
 
-    if not check_password(authkey, user.authkey):
-        return False
+    error_code = 'USER_NOT_FOUND'
 
-    return user
+    for method in settings.AUTHENTICATION_METHODS:
+        if 'AUTHKEY' == method:
+            if username and not user:
+                try:
+                    user = User.objects.filter(username=username, is_active=True)[0]
+                except IndexError:
+                    continue
+
+            if user and user.authkey is not None:
+                if check_password(authkey, user.authkey):
+                    return user, None
+                else:
+                    error_code = 'INCORRECT_PASSWORD'
+
+    return False, error_code
 
 
-def get_all_inherited_rights(user_id, share_id):
+def get_all_inherited_rights(user_id : str, share_id : str) -> User_Share_Right:
 
     return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
         FROM (
@@ -143,7 +159,7 @@ def get_all_inherited_rights(user_id, share_id):
     })
 
 
-def get_all_direct_user_rights(user_id, share_id):
+def get_all_direct_user_rights(user_id: str, share_id: str) -> User_Share_Right:
 
     try:
         user_share_rights = User_Share_Right.objects.only("read", "write", "grant").filter(user_id=user_id, share_id=share_id, accepted=True)
@@ -153,7 +169,7 @@ def get_all_direct_user_rights(user_id, share_id):
     return user_share_rights
 
 
-def get_all_direct_group_rights(user_id, share_id):
+def get_all_direct_group_rights(user_id: str, share_id: str) -> Group_Share_Right:
 
     return Group_Share_Right.objects.raw("""SELECT gr.id, gr.read, gr.write, gr.grant
         FROM restapi_group_share_right gr
@@ -166,7 +182,7 @@ def get_all_direct_group_rights(user_id, share_id):
     })
 
 
-def calculate_user_rights_on_share(user_id = -1, share_id=-1):
+def calculate_user_rights_on_share(user_id : str = "", share_id : str = "") -> dict:
     """
     Calculates the user's rights on a share
 
@@ -220,7 +236,7 @@ def calculate_user_rights_on_share(user_id = -1, share_id=-1):
     }
 
 
-def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, grant=None):
+def user_has_rights_on_share(user_id : str = "", share_id : str = "", read : bool = None, write : bool = None, grant : bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given share.
     User_share_rights and all Group_share_rights be checked first.
@@ -248,7 +264,7 @@ def user_has_rights_on_share(user_id = -1, share_id=-1, read=None, write=None, g
            and (grant is None or grant == rights['grant'])
 
 
-def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None):
+def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : bool = None, write : bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given secret
 
@@ -260,7 +276,7 @@ def user_has_rights_on_secret(user_id = -1, secret_id=-1, read=None, write=None)
     """
 
     datastores_loaded = False
-    datastores = []
+    datastores = [] # type: List[str]
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
@@ -375,7 +391,7 @@ def yubikey_get_yubikey_id(yubikey_otp):
 
     return yubikey_otp[:12]
 
-def generate_authkey(username, password):
+def generate_authkey(username, password) -> bytes:
     """
     Generates the authkey that is sent to the server instead of the cleartext password
 
@@ -389,12 +405,12 @@ def generate_authkey(username, password):
 
     salt = hashlib.sha512(username.lower().encode('utf-8')).hexdigest()
 
-    return binascii.hexlify(pyscrypt.hash(password=password.encode("utf-8"),
+    return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                          salt=salt.encode("utf-8"),
                          N=16384,
                          r=8,
                          p=1,
-                         dkLen=64))
+                         buflen=64))
 
 def get_datastore(datastore_id=None, user=None):
     """
@@ -428,37 +444,6 @@ def get_datastore(datastore_id=None, user=None):
         pass
 
     return datastore
-
-
-def log_info(logger, request, status, event, errors=None, request_resource=None, user=None):
-
-    if not settings.LOGGING_AUDIT:
-        return
-
-    log_entry = {
-        'ip': request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR')),
-        'request_method': request.META['REQUEST_METHOD'],
-        'request_url': request.META['PATH_INFO'],
-        'success': rest_status.is_success(getattr(rest_status, status)),
-        'status': status,
-        'event': event,
-        'user': request.user.username,
-    }
-
-    if errors is not None:
-        log_entry['errors'] = errors
-
-    if request_resource is not None:
-        log_entry['request_resource'] = request_resource
-
-    if user is not None:
-        log_entry['user'] = user
-    else:
-        log_entry['user'] = request.user.username
-
-    logger.info(log_entry)
-
-# Python 3 Helper functions
 
 
 def readbuffer(data):
@@ -577,3 +562,127 @@ def delete_share_link(link_id):
     link_id = str(link_id).replace("-", "")
 
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
+
+
+def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
+    """
+    Encrypts a secret with a password and a random static user specific key we call "user_sauce"
+
+    :param secret: The secret to encrypt
+    :type secret: str
+    :param password: The password to use for the encryption
+    :type password: str
+    :param user_sauce: A random static user specific key
+    :type user_sauce: str
+    :return: A tuple of the encrypted secret and nonce
+    :rtype: (bytes, bytes)
+    """
+
+    salt = hashlib.sha512(user_sauce).hexdigest()
+
+    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
+                                                      salt=salt.encode("utf-8"),
+                                                      N=16384,
+                                                      r=8,
+                                                      p=1,
+                                                      buflen=64))).hexdigest()
+    crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
+
+    nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+    encrypted_secret_full = crypto_box.encrypt(secret, nonce)
+    encrypted_secret = encrypted_secret_full[len(nonce):]
+
+    return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
+
+
+def delete_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.delete()
+
+    return {}
+
+def enable_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.is_active = True
+    user.save()
+
+    return {}
+
+def disable_user(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.is_active = False
+    user.save()
+
+    return {}
+
+
+def create_user(username, password, email, gen_authkey=True):
+
+    email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
+        settings.EMAIL_SECRET_SALT, '', 1)
+
+    if User.objects.filter(email_bcrypt=email_bcrypt).exists():
+        return { 'error': 'Email already exists.' }
+
+    if User.objects.filter(username=username).exists():
+        return { 'error': 'Username already exists.' }
+
+    user_sauce = binascii.hexlify(os.urandom(32))
+
+    authkey_hashed = None
+    if gen_authkey:
+        authkey = generate_authkey(username, password).decode()
+        authkey_hashed = make_password(authkey)
+
+    box = PrivateKey.generate()
+    public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+    private_key_decrypted = box.encode(encoder=nacl.encoding.HexEncoder)
+    (private_key, private_key_nonce) = encrypt_secret(private_key_decrypted, password, user_sauce)
+
+    secret_key_decrypted = binascii.hexlify(os.urandom(32))
+    (secret_key, secret_key_nonce) = encrypt_secret(secret_key_decrypted, password, user_sauce)
+
+    # normally encrypt emails, so they are not stored in plaintext with a random nonce
+    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
+    encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    email = nacl.encoding.HexEncoder.encode(encrypted_email)
+
+    user = User.objects.create(
+        username=username,
+        email=email.decode(),
+        email_bcrypt=email_bcrypt,
+        authkey=authkey_hashed,
+        public_key=public_key.decode(),
+        private_key=private_key.decode(),
+        private_key_nonce=private_key_nonce.decode(),
+        secret_key=secret_key.decode(),
+        secret_key_nonce=secret_key_nonce.decode(),
+        is_email_active=True,
+        is_active=True,
+        user_sauce=user_sauce.decode()
+    )
+
+    return {
+        'user': user,
+        'private_key_decrypted': private_key_decrypted,
+        'secret_key_decrypted': secret_key_decrypted,
+    }

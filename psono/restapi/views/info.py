@@ -4,11 +4,6 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class InfoView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
@@ -27,8 +22,6 @@ class InfoView(GenericAPIView):
         :return:
         :rtype:
         """
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_INFO_SUCCESS')
 
         return Response(settings.SIGNATURE, status=status.HTTP_200_OK)
 

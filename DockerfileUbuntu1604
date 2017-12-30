@@ -1,31 +1,33 @@
-# PSONO Dockerfile for python 3
-FROM ubuntu:16.04
+# PSONO Dockerfile for Ubuntu 16.04
+FROM psono-docker.jfrog.io/ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
-RUN apt-get update && \
+
+RUN mkdir -p /root/.pip && \
+    echo '[global]' >> /root/.pip/pip.conf && \
+    echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
+    apt-get update && \
     apt-get install -y \
+        cron \
+        haveged \
         libyaml-dev \
         libpython3-dev \
         libpq-dev \
         libffi-dev \
+        nginx \
         python3-dev \
         python-pip \
         python3-pip \
         python3-psycopg2 \
-        nginx \
-        postgresql-client \
-        cron \
-        haveged \
-        net-tools && \
+        postgresql-client && \
     pip install --upgrade pip && \
     pip install supervisor && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
-    apt-get clean && \
     mkdir -p /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
@@ -46,6 +48,10 @@ RUN apt-get update && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
+    apt-get purge -y \
+        python-pip \
+        python3-pip && \
+    apt-get clean && \
     rm -Rf /root/psono/static && \
     rm -Rf /root/var && \
     rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache

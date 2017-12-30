@@ -10,12 +10,11 @@ from ..models import User_Share_Right, Group_Share_Right
 
 class DeleteShareRightSerializer(serializers.Serializer):
 
-    share_right_id = serializers.UUIDField(required=False) # Deprecated
     user_share_right_id = serializers.UUIDField(required=False)
     group_share_right_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
-        user_share_right_id = attrs.get('user_share_right_id', attrs.get('share_right_id', None))
+    def validate(self, attrs: dict) -> dict:
+        user_share_right_id = attrs.get('user_share_right_id', None)
         group_share_right_id = attrs.get('group_share_right_id', None)
 
         if user_share_right_id is None and group_share_right_id is None:

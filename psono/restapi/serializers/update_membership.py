@@ -10,7 +10,7 @@ class UpdateMembershipSerializer(serializers.Serializer):
     membership_id = serializers.UUIDField(required=True)
     group_admin = serializers.BooleanField(default=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         membership_id = attrs.get('membership_id')
 

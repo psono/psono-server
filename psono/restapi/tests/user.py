@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from rest_framework import status
@@ -732,7 +732,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         self.test_email_decrypted = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_encrypted = crypto_box.encrypt(self.test_email_decrypted.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        self.test_email_encrypted_hex = nacl.encoding.HexEncoder.encode(self.test_email_encrypted)
+        self.test_email_encrypted_hex = nacl.encoding.HexEncoder.encode(self.test_email_encrypted).decode()
 
 
         box = PrivateKey.generate()

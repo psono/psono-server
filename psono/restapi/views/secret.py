@@ -21,28 +21,23 @@ from ..authentication import TokenAuthentication
 
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class SecretView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, secret_id = None, *args, **kwargs):
         """
-        Lists all secrets the user created or only a specific secret
+        Lists a specific secret
 
         Necessary Rights:
             - read on secret
 
         :param request:
         :type request:
-        :param uuid:
-        :type uuid:
+        :param secret_id:
+        :type secret_id:
         :param args:
         :type args:
         :param kwargs:
@@ -50,49 +45,31 @@ class SecretView(GenericAPIView):
         :return: 200 / 400 / 403
         :rtype:
         """
-        if not uuid:
+        if not secret_id:
+            return Response({"error": "IdNoUUID", 'message': "Secret ID has not been provided"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-            secrets = Secret.objects.filter(user=request.user)
+        try:
+            secret = Secret.objects.get(pk=secret_id)
+        except ValidationError:
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SECRETS_ALL_SUCCESS')
+            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no secret_id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Secret.DoesNotExist:
 
-            return Response({'secrets': SecretOverviewSerializer(secrets, many=True).data},
-                status=status.HTTP_200_OK)
-        else:
-            try:
-                secret = Secret.objects.get(pk=uuid)
-            except ValidationError:
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_ID_NO_UUID_ERROR', request_resource=uuid)
+        if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
 
-                return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no uuid"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            except Secret.DoesNotExist:
+            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_NOT_EXIST_ERROR', request_resource=uuid)
-
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-            if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
-
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='READ_SECRET_PERMISSION_DENIED_ERROR', request_resource=uuid)
-
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SECRET_SUCCESS', request_resource=uuid)
-
-            return Response({
-                'create_date': secret.create_date,
-                'write_date': secret.write_date,
-                'data': readbuffer(secret.data),
-                'data_nonce': secret.data_nonce if secret.data_nonce else '',
-                'type': secret.type,
-            }, status=status.HTTP_200_OK)
+        return Response({
+            'create_date': secret.create_date,
+            'write_date': secret.write_date,
+            'data': readbuffer(secret.data),
+            'data_nonce': secret.data_nonce if secret.data_nonce else '',
+            'type': secret.type,
+        }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
@@ -108,15 +85,13 @@ class SecretView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 201 / 400 / 403 / 404
+        :return: 201 / 400
         :rtype:
         """
 
         serializer = CreateSecretSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SECRET_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -130,20 +105,11 @@ class SecretView(GenericAPIView):
             )
         except IntegrityError:
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SECRET_DUPLICATE_NONCE_ERROR')
-
             return Response({"error": "DuplicateNonce", 'message': "Don't use a nonce twice"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not create_secret_link(request.data['link_id'], secret.id, serializer.validated_data['parent_share_id'], serializer.validated_data['parent_datastore_id']):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SECRET_DUPLICATE_LINK_ID_ERROR')
-
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_SECRET_SUCCESS', request_resource=secret.id)
 
         return Response({"secret_id": secret.id}, status=status.HTTP_201_CREATED)
 
@@ -162,15 +128,13 @@ class SecretView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         :rtype:
         """
 
         serializer = UpdateSecretSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SECRET_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -183,9 +147,6 @@ class SecretView(GenericAPIView):
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 
         secret.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_SECRET_SUCCESS', request_resource=secret.id)
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

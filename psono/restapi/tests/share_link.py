@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
@@ -506,9 +506,10 @@ class ShareTreeModificationTests(APITestCaseExtended):
         Tests to link a share to other parent_share with badly formatted uuid
         """
         # lets try to create the a link to a share without rights to a parent_share
-        url = reverse('share_link', kwargs={'uuid': '123456'})
+        url = reverse('share_link')
 
         request_data = {
+            'link_id': '123456',
             'share_id': self.response7.data.get('share_id'),
             'parent_share_id': self.response5.data.get('share_id'),
         }
@@ -536,9 +537,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get('resource_id', False), str(request_data['share_id']),
-                            'Should be declined because of no rights for share')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_link_of_share_to_other_datastore_without_rights_for_the_datastore(self):
         """
@@ -558,10 +557,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        self.assertEqual(response.data.get('resource_id', False), str(request_data['parent_datastore_id']),
-                            'Should be declined because of no rights for datastore')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_to_other_parent_share_without_rights_for_the_share(self):
@@ -582,9 +578,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get('resource_id', False), str(request_data['share_id']),
-                         'Should be declined because of no rights for share')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_to_other_parent_share_without_rights_for_the_parent_share(self):
@@ -605,10 +599,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        self.assertEqual(str(response.data.get('resource_id', '')), str(request_data['parent_share_id']),
-                         'Should be declined because of no rights for parent_share')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_to_other_not_existing_share(self):
@@ -629,7 +620,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_to_other_not_existing_parent_share(self):
@@ -650,7 +641,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_to_other_parent_share(self):
@@ -668,7 +659,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
 
         # lets try to create the a link to a share without rights to a parent_share
         link_id = uuid4()
-        url = reverse('share_link', kwargs={'uuid': str(link_id)})
+        url = reverse('share_link')
 
         request_data = {
             'link_id': str(link_id),
@@ -763,7 +754,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_link_of_share_in_datastore(self):
@@ -845,19 +836,17 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.assertEqual(share_trees[0].path, expected_path,
                          'Path is incorrect')
 
-    # TODO Test move share_tree obj (POST)
-
-
-    # TODO Test delete share_tree obj (DELETE)
 
     def test_delete_with_badly_formatted_uuid(self):
         """
         Tests to delete a share_right with badly formed uuid
         """
 
-        url = reverse('share_link', kwargs={'uuid': "12345"})
+        url = reverse('share_link')
 
-        data = {}
+        data = {
+            'link_id': "12345"
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
@@ -887,7 +876,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_delete_share_that_exists(self):
@@ -982,7 +971,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         self.assertEqual(share_trees.count(), expected_share_tree_count_after,
                          'Exactly ' + str(
@@ -1033,7 +1022,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         self.assertEqual(share_trees.count(), expected_share_tree_count_after,
                          'Exactly ' + str(
@@ -1072,7 +1061,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_move_share_to_new_parent_share(self):
@@ -1142,7 +1131,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_move_share_to_new_parent_share_with_no_write_rights_on_old_parent(self):
@@ -1178,7 +1167,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_move_share_to_new_parent_share_while_no_grant_permissions_on_share(self):
@@ -1214,7 +1203,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_move_share_to_new_parent_share_which_does_not_exist(self):
@@ -1248,7 +1237,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_move_share_to_new_datastore(self):
         """
@@ -1314,7 +1303,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_move_share_to_new_datastore_which_does_not_exist(self):
         """
@@ -1347,7 +1336,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_move_from_not_own_datastore_to_own_datastore(self):
         """
@@ -1367,7 +1356,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_move_of_share_to_other_parent_share_with_badly_formatted_uuid(self):

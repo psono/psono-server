@@ -5,14 +5,14 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import django.db.models.deletion
 import uuid
+from typing import List, Tuple
 
 
 class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = [] # type: List[Tuple]
 
     operations = [
         migrations.RunSQL("""CREATE EXTENSION IF NOT EXISTS "pgcrypto";"""),

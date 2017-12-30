@@ -8,7 +8,8 @@ from ..models import (
 )
 
 from ..app_settings import (
-    NewGASerializer
+    NewGASerializer,
+    DeleteGASerializer,
 )
 
 
@@ -19,11 +20,6 @@ import nacl.utils
 import nacl.secret
 import hashlib
 import pyotp
-
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
 
 
 class UserGA(GenericAPIView):
@@ -55,9 +51,6 @@ class UserGA(GenericAPIView):
                 'title': ga.title,
             })
 
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='READ_GA_SUCCESS')
-
         return Response({
             "google_authenticators": google_authenticators
         },
@@ -81,8 +74,6 @@ class UserGA(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_GA_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         secret = pyotp.random_base32()
@@ -96,11 +87,8 @@ class UserGA(GenericAPIView):
         new_ga = Google_Authenticator.objects.create(
             user=request.user,
             title= serializer.validated_data.get('title'),
-            secret = encrypted_secret_hex
+            secret = encrypted_secret_hex.decode()
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_GA_SUCCESS', request_resource=new_ga.id)
 
         return Response({
             "id": new_ga.id,
@@ -118,33 +106,20 @@ class UserGA(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         """
 
-        if request_misses_uuid(request, 'google_authenticator_id'):
+        serializer = DeleteGASerializer(data=request.data, context=self.get_serializer_context())
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='DELETE_GA_NO_GOOGLE_AUTHENTICATOR_ID_ERROR')
+        if not serializer.is_valid():
 
-            return Response({"error": "IdNoUUID", 'message': "Google Authenticator ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-
-        # check if google authenticator exists
-        try:
-            google_authenticator = Google_Authenticator.objects.get(pk=request.data['google_authenticator_id'], user=request.user)
-        except Google_Authenticator.DoesNotExist:
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='DELETE_GA_GOOGLE_AUTHENTICATOR_NOT_EXIST_ERROR')
-
-            return Response({"message": "Google authenticator does not exist.",
-                         "resource_id": request.data['google_authenticator_id']}, status=status.HTTP_403_FORBIDDEN)
+        google_authenticator = serializer.validated_data.get('google_authenticator')
 
         # delete it
         google_authenticator.delete()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_GA_SUCCESS', request_resource=request.data['google_authenticator_id'])
 
         return Response(status=status.HTTP_200_OK)

@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
@@ -209,7 +209,7 @@ class InsertDatastoreTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore', kwargs={'datastore_id': new_datastore_id})
 
         data = {}
 
@@ -507,7 +507,7 @@ class UpdateDatastoreTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore', kwargs={'datastore_id': new_datastore_id})
 
         data = {}
 
@@ -569,7 +569,6 @@ class UpdateDatastoreTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, updated_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
 
 
     def test_change_datastore_type_or_description(self):
@@ -623,7 +622,7 @@ class UpdateDatastoreTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('datastore', kwargs={'uuid': new_datastore_id})
+        url = reverse('datastore', kwargs={'datastore_id': new_datastore_id})
 
         data = {}
 
@@ -683,7 +682,7 @@ class UpdateDatastoreTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.post(url, updated_data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 class DeleteDatastoreTests(APITestCaseExtended):
     def setUp(self):
@@ -804,7 +803,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.delete(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_failure_datastore_id_does_not_exist(self):
         """
@@ -821,7 +820,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_default_datastore(self):
         """

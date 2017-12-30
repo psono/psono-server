@@ -9,7 +9,7 @@ markdown
 django-filter
 pyyaml
 bcrypt
-psycopg2
+psycopg2cffi
 more_itertools
 pynacl
 django-redis
@@ -17,5 +17,5 @@ django-mailgun
 pyotp
 ntplib
 yubico-client
-pyscrypt
+scrypt
 python-dateutil

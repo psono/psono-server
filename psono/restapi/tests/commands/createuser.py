@@ -39,7 +39,7 @@ class CommandCreateuserTestCase(TestCase):
 
         self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
         self.assertEqual(user.email_bcrypt, email_bcrypt)
-        self.assertTrue(check_password(str(generate_authkey(username, password)), user.authkey))
+        self.assertTrue(check_password(generate_authkey(username, password).decode(), user.authkey))
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_email_active)
 

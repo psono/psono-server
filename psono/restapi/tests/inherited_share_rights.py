@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
@@ -194,7 +194,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         """
 
         # lets query for share11, expected failure because user2 has no rights on parent share1
-        url = reverse('share', kwargs={'uuid': str(self.response11.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(self.response11.data['share_id'])})
 
         data = {}
 
@@ -229,7 +229,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         models.User_Share_Right.objects.filter(pk=response.data['share_right_id']).update(accepted=True)
 
         # lets query for share11, expected success because user2 has rights on parent share1
-        url = reverse('share', kwargs={'uuid': str(self.response11.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(self.response11.data['share_id'])})
 
         data = {}
 
@@ -264,7 +264,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.assertEqual(response111.status_code, status.HTTP_201_CREATED)
 
         # lets query for share111, expected failure because user2 has no rights on parent share1
-        url = reverse('share', kwargs={'uuid': str(response111.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(response111.data['share_id'])})
 
         data = {}
 
@@ -299,7 +299,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         models.User_Share_Right.objects.filter(pk=response.data['share_right_id']).update(accepted=True)
 
         # lets query for share111, expected success because user2 has rights on parent of parent (share1)
-        url = reverse('share', kwargs={'uuid': str(response111.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(response111.data['share_id'])})
 
         data = {}
 
@@ -333,7 +333,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.assertEqual(response111.status_code, status.HTTP_201_CREATED)
 
         # lets query for share111, expected failure because user2 has no rights on parent share1
-        url = reverse('share', kwargs={'uuid': str(response111.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(response111.data['share_id'])})
 
         data = {}
 
@@ -368,7 +368,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         models.User_Share_Right.objects.filter(pk=response.data['share_right_id']).update(accepted=True)
 
         # lets query for share111, expected success because user2 has rights on parent of parent (share1)
-        url = reverse('share', kwargs={'uuid': str(response111.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(response111.data['share_id'])})
 
         data = {}
 
@@ -400,7 +400,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # lets query for share111, expected failure because user2 has his read rights revoked
-        url = reverse('share', kwargs={'uuid': str(response111.data['share_id'])})
+        url = reverse('share', kwargs={'share_id': str(response111.data['share_id'])})
 
         data = {}
 

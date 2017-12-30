@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -71,7 +71,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = encrypted_secret_hex
+            secret = encrypted_secret_hex.decode()
         )
 
     def test_get_authentication_ga_verify(self):
@@ -350,7 +350,6 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('error'), 'IdNoUUID')
 
 
     def test_delete_user_ga_google_authenticator_id_not_exist(self):
@@ -367,5 +366,5 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

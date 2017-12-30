@@ -1,5 +1,5 @@
 from ..utils import calculate_user_rights_on_share
-from .share_tree import create_share_link
+from .share_link import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -15,16 +15,10 @@ from ..app_settings import (
 )
 from django.core.exceptions import ValidationError
 
-from django.db import IntegrityError
 from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
 import six
-
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
 
 class ShareView(GenericAPIView):
 
@@ -36,80 +30,65 @@ class ShareView(GenericAPIView):
 
             # Generates a list of shares wherever the user has any rights for it and joins the user_share objects
 
-            #TODO optimize query. this way its too inefficient ...
-
             specific_right_share_index = {}
             share_index = {}
 
-            shares = Share.objects.filter(user_share_rights__user=user).distinct()
+            user_share_rights = User_Share_Right.objects\
+                .select_related('creator')\
+                .filter(user=user)\
+                .only("id","share_id", "user_id", "title", "title_nonce", "key", "key_nonce",
+                                        "read", "write", "grant", "accepted", "creator__id", "creator__username",
+                                        "creator__public_key")
 
-            for s in shares:
+            for user_share_right in user_share_rights:
 
-                for u in s.user_share_rights.filter(user=user):
+                share = {
+                    'id': user_share_right.share_id,
+                    'share_right_id': user_share_right.id,
+                    'share_right_user_id': user_share_right.user_id,
+                    'share_right_title': user_share_right.title,
+                    'share_right_title_nonce': user_share_right.title_nonce,
+                    'share_right_key': user_share_right.key,
+                    'share_right_key_nonce': user_share_right.key_nonce,
+                    'share_right_key_type': 'symmetric',
+                    'share_right_read': user_share_right.read,
+                    'share_right_write': user_share_right.write,
+                    'share_right_grant': user_share_right.grant,
+                    'share_right_accepted': user_share_right.accepted,
+                    'share_right_create_user_id': user_share_right.creator.id if user_share_right.creator is not None else '',
+                    'share_right_create_user_username': user_share_right.creator.username if user_share_right.creator is not None else '',
+                    'share_right_create_user_public_key': user_share_right.creator.public_key if user_share_right.creator is not None else ''
+                }
 
-                    share = {
-                        'id': s.id,
-                        'share_right_id': u.id,
-                        'share_right_user_id': u.user_id,
-                        'share_right_title': u.title,
-                        'share_right_title_nonce': u.title_nonce,
-                        'share_right_key': u.key,
-                        'share_right_key_nonce': u.key_nonce,
-                        'share_right_key_type': u.key_type,
-                        'share_right_read': u.read,
-                        'share_right_write': u.write,
-                        'share_right_grant': u.grant,
-                        'share_right_accepted': u.accepted,
-                        'share_right_create_user_id': u.creator.id if u.creator is not None else '',
-                        'share_right_create_user_username': u.creator.username if u.creator is not None else '',
-                        'share_right_create_user_public_key': u.creator.public_key if u.creator is not None else ''}
+                share_index[user_share_right.share_id] = share
+                specific_right_share_index[user_share_right.share_id] = share
 
-                    # share.data = str(s.data) if s.data and s.share_right_read and s.share_right_accepted else ''
-                    # share.data_nonce =  s.data_nonce if s.data_nonce and s.share_right_read and s.share_right_accepted else ''
-
-                    share_index[s.id] = share
-                    specific_right_share_index[s.id] = share
-
-
-            # inherited_user_share_rights = []
+            # shares = Share.objects.filter(user_share_rights__user=user).distinct()
             #
-            # for s in inherited_user_share_rights:
+            # for share in shares:
             #
-            #     # if we already have a specific right for this share, we do not allow inherited rights anymore
-            #     if s.id in specific_right_share_index:
-            #         continue
+            #     for user_share_right in share.user_share_rights.filter(user=user):
             #
-            #     if not s.id in share_index:
-            #         share_index[s.id] = {
-            #             'id': s.id,
-            #             'share_right_id': [],
-            #             'share_right_user_id': [],
-            #             'share_right_title': '',
-            #             'share_right_title_nonce': '',
-            #             'share_right_key': [],
-            #             'share_right_key_nonce': [],
-            #             'share_right_key_type': [],
-            #             'share_right_read': False,
-            #             'share_right_write': False,
-            #             'share_right_grant': False,
-            #             'share_right_accepted': False,
-            #             'share_right_create_user_id': [],
-            #             'share_right_create_user_username': [],
-            #             'share_right_create_user_public_key': []
+            #         s = {
+            #             'id': share.id,
+            #             'share_right_id': user_share_right.id,
+            #             'share_right_user_id': user_share_right.user_id,
+            #             'share_right_title': user_share_right.title,
+            #             'share_right_title_nonce': user_share_right.title_nonce,
+            #             'share_right_key': user_share_right.key,
+            #             'share_right_key_nonce': user_share_right.key_nonce,
+            #             'share_right_key_type': 'symmetric',
+            #             'share_right_read': user_share_right.read,
+            #             'share_right_write': user_share_right.write,
+            #             'share_right_grant': user_share_right.grant,
+            #             'share_right_accepted': user_share_right.accepted,
+            #             'share_right_create_user_id': user_share_right.creator.id if user_share_right.creator is not None else '',
+            #             'share_right_create_user_username': user_share_right.creator.username if user_share_right.creator is not None else '',
+            #             'share_right_create_user_public_key': user_share_right.creator.public_key if user_share_right.creator is not None else ''
             #         }
             #
-            #     share_index[s.id]['share_right_id'].append(s.share_right.id)
-            #     share_index[s.id]['share_right_user_id'].append(s.share_right.user_id)
-            #     share_index[s.id]['share_right_key'].append(s.share_right.key)
-            #     share_index[s.id]['share_right_key_nonce'].append(s.share_right.key_nonce)
-            #     share_index[s.id]['share_right_key_type'].append(s.share_right.key_type)
-            #     share_index[s.id]['share_right_read'] = share_index[s.id]['share_right_read'] or  s.share_right.read
-            #     share_index[s.id]['share_right_write'] = share_index[s.id]['share_right_write'] or  s.share_right.write
-            #     share_index[s.id]['share_right_grant'] = share_index[s.id]['share_right_grant'] or  s.share_right.grant
-            #     share_index[s.id]['share_right_accepted'] = share_index[s.id]['share_right_accepted'] or  s.share_right.accepted
-            #     share_index[s.id]['share_right_create_user_id'].append(s.share_right.creator.id)
-            #     share_index[s.id]['share_right_create_user_username'].append(s.share_right.creator.username)
-            #     share_index[s.id]['share_right_create_user_public_key'].append(s.share_right.creator.public_key)
+            #         share_index[share.id] = s
+            #         specific_right_share_index[share.id] = s
 
 
             return [share for share_id, share in share_index.items()]
@@ -123,45 +102,7 @@ class ShareView(GenericAPIView):
         except Share.DoesNotExist:
             return None
 
-        # user_share_rights = []
-        # user_share_rights_inherited = []
-        # has_read_right = False
-        #
-        # for u in share.user_share_rights.filter(user=user):
-        #     user_share_rights.append({
-        #         'id': u.id,
-        #         'key': u.key,
-        #         'key_nonce': u.key_nonce,
-        #         'key_type': u.key_type,
-        #         'read': u.read,
-        #         'write': u.write,
-        #         'grant': u.grant,
-        #         'user_id': u.user_id,
-        #     })
-        #
-        #     has_read_right = has_read_right or u.read
-        #
-        # if not user_share_rights:
-        #     inherited_rights = get_all_inherited_rights(user.id, uuid)
-        #     for u in inherited_rights:
-        #         user_share_rights_inherited.append({
-        #             'id': u.id,
-        #             'key': u.key,
-        #             'key_nonce': u.key_nonce,
-        #             'key_type': u.key_type,
-        #             'read': u.read,
-        #             'write': u.write,
-        #             'grant': u.grant,
-        #             'user_id': u.user_id,
-        #         })
-        #
-        #         has_read_right = has_read_right or u.read
-        #
-        # if not has_read_right:
-        #     return None
-
         rights = calculate_user_rights_on_share(user.id, uuid)
-        user_share_rights=[rights]
 
         if not rights['read']:
             return None
@@ -169,37 +110,34 @@ class ShareView(GenericAPIView):
         return {
             'share': share,
             'rights': rights,
-            'user_share_rights': user_share_rights,  # DEPRECATED: Remove later
-            'user_share_rights_inherited': [],  # DEPRECATED: Remove later
         }
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, share_id = None, *args, **kwargs):
         """
         Returns a list of all shares with all own share rights on that share or
         returns a share with all rights existing on the share
 
         :param request:
-        :param uuid:
+        :param share_id:
         :param args:
         :param kwargs:
         :return: 200 / 400
         """
-        if not uuid:
+        if not share_id:
 
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='READ_ALL_SHARES_SUCCESS')
+            shares = self.get_shares(request.user)
 
-            return Response({'shares': self.get_shares(request.user)},
+            return Response({'shares': shares},
                 status=status.HTTP_200_OK)
 
         else:
+
             # UUID specified
             # Returns the specified share if the user has any rights for it and joins the user_share objects
 
-            share = self.get_share(request.user, uuid)
+            share = self.get_share(request.user, share_id)
 
             if share is None:
-
-                log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='READ_SHARE_SHARE_NOT_EXIST_ERROR')
 
                 return Response("The share does not exist or you don't have read permissions",
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -210,12 +148,7 @@ class ShareView(GenericAPIView):
                 'data_nonce': share['share'].data_nonce if share['share'].data_nonce else '',
                 'user_id': share['share'].user_id,
                 'rights': share['rights'],
-                'user_share_rights': share['user_share_rights'], # DEPRECATED: Remove later
-                'user_share_rights_inherited': share['user_share_rights_inherited'], # DEPRECATED: Remove later
             }
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='READ_SHARE_SUCCESS', request_resource=share['share'].id)
 
             return Response(response,
                 status=status.HTTP_200_OK)
@@ -241,8 +174,6 @@ class ShareView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='UPDATE_SHARE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
@@ -254,9 +185,6 @@ class ShareView(GenericAPIView):
             share.data_nonce = str(serializer.validated_data['data_nonce'])
 
         share.save()
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_SHARE_SUCCESS', request_resource=share.id)
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
@@ -282,8 +210,6 @@ class ShareView(GenericAPIView):
         serializer = CreateShareSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_SHARE_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -312,13 +238,7 @@ class ShareView(GenericAPIView):
 
         if not create_share_link(request.data['link_id'], share.id, serializer.validated_data['parent_share_id'], serializer.validated_data['parent_datastore_id']):
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_SHARE_DUPLICATE_LINK_ID_ERROR')
-
             return Response({"error": "DuplicateLinkID", 'message': "Don't use a link id twice"}, status=status.HTTP_400_BAD_REQUEST)
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_SHARE_SUCCESS', request_resource=share.id)
 
         return Response({"share_id": share.id}, status=status.HTTP_201_CREATED)
 

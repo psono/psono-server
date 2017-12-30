@@ -12,7 +12,7 @@ class UserSearchSerializer(serializers.Serializer):
     user_id = serializers.UUIDField(required=False)
     user_username = serializers.CharField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         user_id = attrs.get('user_id', False)
         user_username = attrs.get('user_username', False)

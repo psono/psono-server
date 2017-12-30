@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
@@ -75,7 +75,7 @@ class EmptyShareTests(APITestCaseExtended):
         Tests if bad formatted share ids make a problem
         """
 
-        url = reverse('share', kwargs={'uuid': '3c2c0f4d'})
+        url = reverse('share', kwargs={'share_id': '3c2c0f4d'})
 
         data = {}
 
@@ -90,7 +90,7 @@ class EmptyShareTests(APITestCaseExtended):
         Tests to get a share that does not exist
         """
 
-        url = reverse('share', kwargs={'uuid': '3c2c0f4d-8fae-4790-b5ad-55a4ae78024a'})
+        url = reverse('share', kwargs={'share_id': '3c2c0f4d-8fae-4790-b5ad-55a4ae78024a'})
 
         data = {}
 
@@ -405,7 +405,7 @@ class CreateShareTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('share', kwargs={'uuid': new_share_id})
+        url = reverse('share', kwargs={'share_id': new_share_id})
 
         data = {}
 
@@ -419,17 +419,11 @@ class CreateShareTests(APITestCaseExtended):
             'data': str(initial_data['data']),
             'data_nonce': initial_data['data_nonce'],
             'user_id': self.test_user_obj.id,
-            'user_share_rights': [{
-                'grant': True,
-                'read': True,
-                'write': True,
-            }],
             'rights': {
                 'grant': True,
                 'read': True,
                 'write': True,
-            },
-            'user_share_rights_inherited': []
+            }
         }
 
         self.assertEqual(response.data, target_store)
@@ -810,7 +804,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         # lets try to get it back in detail
 
-        url = reverse('share', kwargs={'uuid': new_share_id})
+        url = reverse('share', kwargs={'share_id': new_share_id})
 
         data = {}
 
@@ -824,17 +818,11 @@ class UpdateShareTests(APITestCaseExtended):
             'data': str(updated_data['data']),
             'data_nonce': updated_data['data_nonce'],
             'user_id': self.test_user_obj.id,
-            'user_share_rights': [{
-                'grant': True,
-                'read': True,
-                'write': True,
-            }],
             'rights': {
                 'grant': True,
                 'read': True,
                 'write': True,
-            },
-            'user_share_rights_inherited': []
+            }
         }
 
         self.assertEqual(response.data, target_store)

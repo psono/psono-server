@@ -21,11 +21,6 @@ from datetime import timedelta
 import json
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
@@ -43,10 +38,7 @@ class LoginView(GenericAPIView):
         Check the credentials and return the REST Token
         if the credentials are valid and authenticated.
 
-        Accepts the following POST parameters: email, authkey
-        Returns the token.
-
-        Clients should authenticate by passing the token key in the "Authorization"
+        Clients should later authenticate by passing the token key in the "Authorization"
         HTTP header, prepended with the string "Token ". For example:
 
             Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
@@ -57,14 +49,12 @@ class LoginView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200 / 400
         :rtype:
         """
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='LOGIN_STARTED_ERROR', errors=serializer.errors)
 
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -158,8 +148,6 @@ class LoginView(GenericAPIView):
         encrypted = server_crypto_box.encrypt(six.b(json.dumps(response)), login_info_nonce)
         encrypted_login_info = encrypted[len(login_info_nonce):]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK', event='LOGIN_STARTED_SUCCESS', request_resource=user.id)
 
         return Response({
             'login_info': encrypted_login_info_hex,

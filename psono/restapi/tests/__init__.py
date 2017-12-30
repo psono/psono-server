@@ -4,7 +4,7 @@ from .login import *
 from .logout import *
 from .registration import *
 from .email_verification import *
-from .share_tree import *
+from .share_link import *
 from .accept_share import *
 from .decline_share import *
 from .share_rights import *

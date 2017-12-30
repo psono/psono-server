@@ -12,6 +12,7 @@ from ..utils import request_misses_uuid, readbuffer, authenticate, get_datastore
 from ..app_settings import (
     DatastoreOverviewSerializer,
     CreateDatastoreSerializer,
+    UpdateDatastoreSerializer,
     DeleteDatastoreSerializer,
 )
 from rest_framework.exceptions import PermissionDenied
@@ -21,11 +22,6 @@ from ..authentication import TokenAuthentication
 
 import six
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class DatastoreView(GenericAPIView):
 
@@ -33,14 +29,14 @@ class DatastoreView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
-    def get(self, request, uuid = None, *args, **kwargs):
+    def get(self, request, datastore_id = None, *args, **kwargs):
         """
         Lists all datastores of the user or returns a specific datastore with content
 
         :param request:
         :type request:
-        :param uuid: PK of the datastore
-        :type uuid: uuid
+        :param datastore_id: PK of the datastore
+        :type datastore_id: uuid
         :param args:
         :type args:
         :param kwargs:
@@ -49,24 +45,16 @@ class DatastoreView(GenericAPIView):
         :rtype:
         """
 
-        if not uuid:
+        if not datastore_id:
             datastores = get_datastore(user=request.user)
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK', event='LIST_ALL_DATASTORES_SUCCESS')
 
             return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
                 status=status.HTTP_200_OK)
         else:
-            datastore = get_datastore(uuid, request.user)
+            datastore = get_datastore(datastore_id, request.user)
             if not datastore:
 
-                log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                         event='LIST_DATASTORE_ERROR')
-
                 raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='LIST_DATASTORE_SUCCESS', request_resource= datastore.id)
 
             return Response({
                 'data': readbuffer(datastore.data),
@@ -97,8 +85,6 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='CREATE_DATASTORE_REQUEST_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -120,16 +106,9 @@ class DatastoreView(GenericAPIView):
 
         except IntegrityError:
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='CREATE_DATASTORE_INTEGRITY_ERROR')
-
             return Response({"error": "DuplicateTypeDescription", 'message': "The combination of type and "
                                                                              "description must be unique"},
                         status=status.HTTP_400_BAD_REQUEST)
-
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='CREATE_DATASTORE_SUCCESS', request_resource=datastore.id)
 
         return Response({"datastore_id": datastore.id}, status=status.HTTP_201_CREATED)
 
@@ -143,24 +122,17 @@ class DatastoreView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return:
+        :return: 200 / 400
         :rtype:
         """
 
-        if request_misses_uuid(request, 'datastore_id'):
+        serializer = UpdateDatastoreSerializer(data=request.data, context=self.get_serializer_context())
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST',
-                     event='UPDATE_DATASTORE_NO_DATASTORE_ID_ERROR')
+        if not serializer.is_valid():
 
-            return Response({"error": "IdNoUUID", 'message': "Datastore ID not in request"},
-                                status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        datastore = get_datastore(request.data['datastore_id'], request.user)
-        if not datastore:
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='UPDATE_DATASTORE_PERMISSIONS_ERROR', request_resource=request.data['datastore_id'])
-
-            raise PermissionDenied({"message": "You don't have permission to access or it does not exist."})
+        datastore = serializer.validated_data.get('datastore')
 
         if 'data' in request.data:
             datastore.data = six.b(str(request.data['data']))
@@ -180,9 +152,6 @@ class DatastoreView(GenericAPIView):
         if request.data.get('is_default', False):
             Data_Store.objects.filter(user=request.user, type=datastore.type).exclude(pk=datastore.pk).update(is_default=False)
 
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='UPDATE_DATASTORE_SUCCESS', request_resource=request.data['datastore_id'])
-
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)
 
@@ -200,43 +169,18 @@ class DatastoreView(GenericAPIView):
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='DELETE_DATASTORE_ERROR', errors=serializer.errors)
-
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if not authenticate(username=request.user.username, authkey=str(request.data['authkey'])):
+        datastore = serializer.validated_data.get('datastore')
 
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='DELETE_DATASTORE_WRONG_PASSWORD_ERROR')
+        user, error_code = authenticate(username=request.user.username, authkey=str(request.data['authkey']))
 
+        if not user:
             raise PermissionDenied({"message":"Your old password was not right."})
 
-        # check if datastore exists
-        try:
-            data_store = Data_Store.objects.get(pk=request.data['datastore_id'], user=request.user)
-        except Data_Store.DoesNotExist:
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='DELETE_DATASTORE_NOT_EXIST_ERROR')
-
-            return Response({"message": "Datastore does not exist.",
-                         "resource_id": request.data['datastore_id']}, status=status.HTTP_403_FORBIDDEN)
-
-        # prevent deletion of the default datastore
-        if data_store.is_default:
-
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='DELETE_DATASTORE_DEFAULT_PROTECTION_ERROR', request_resource=data_store.id)
-
-            return Response({"message": "Cannot delete default datastore.",
-                         "resource_id": request.data['datastore_id']}, status=status.HTTP_400_BAD_REQUEST)
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='DELETE_DATASTORE_SUCCESS', request_resource=data_store.id)
-
         # delete it
-        data_store.delete()
+        datastore.delete()
 
         return Response(status=status.HTTP_200_OK)

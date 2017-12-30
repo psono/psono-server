@@ -19,6 +19,13 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+try:
+    # Fall back to psycopg2cffi
+    from psycopg2cffi import compat
+    compat.register()
+except ImportError:
+    import psycopg2
+
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
@@ -58,6 +65,13 @@ DEBUG = config_get('DEBUG')
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
+ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
+REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
+
+for index in range(len(REGISTRATION_EMAIL_FILTER)):
+    REGISTRATION_EMAIL_FILTER[index] = REGISTRATION_EMAIL_FILTER[index].lower().strip()
+
+
 HOST_URL = config_get('HOST_URL')
 
 # Application definition
@@ -75,17 +89,15 @@ INSTALLED_APPS = (
     'restapi',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'middleware.sqlprinter.SQLLogToConsoleMiddleware',
 )
 
 PASSWORD_HASHERS = (
@@ -126,54 +138,39 @@ REST_FRAMEWORK = {
     },
 }
 
-LOGGING_AUDIT = config_get('LOGGING_AUDIT', False)
-LOGGING_AUDIT_FOLDER = config_get('LOGGING_AUDIT_FOLDER', os.path.join(BASE_DIR, os.pardir, "log"))
-LOGGING_AUDIT_TIME = config_get('LOGGING_AUDIT_TIME', 'time_utc')
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'restapi_formatter': {
-            '()': 'restapi.log.AuditFormatter',
-            'format': '%('+LOGGING_AUDIT_TIME+')s logger=%(name)s, %(message)s'
+        'restapi_query_formatter': {
+            '()': 'restapi.log.QueryFormatter',
+            'format': '%(time_utc)s logger=%(name)s, %(message)s'
         }
     },
     'filters': {
-        'restapi_audit_console': {
-            '()': 'restapi.log.FilterConsole',
-        },
-        'restapi_audit_file': {
-            '()': 'restapi.log.FilterFile',
+        'restapi_query_console': {
+            '()': 'restapi.log.FilterQueryConsole',
         },
     },
     'handlers': {
-        'restapi_audit_handler_console': {
-            'level': 'INFO',
+        'restapi_query_handler_console': {
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'restapi_formatter',
-            'filters': ['restapi_audit_console'],
+            'formatter': 'restapi_query_formatter',
+            'filters': ['restapi_query_console'],
         },
-        'restapi_audit_handler_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGGING_AUDIT_FOLDER, 'audit.log'),
-            'formatter': 'restapi_formatter',
-            'filters': ['restapi_audit_file'],
-        }
     },
     'loggers': {
-        'restapi': {
-            'handlers': ['restapi_audit_handler_console', 'restapi_audit_handler_file'],
-            'level': 'INFO',
-            'propagate': False,
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['restapi_query_handler_console'],
         }
     }
 }
 
 
 for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
-    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value
+    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value # type: ignore
 
 
 ROOT_URLCONF = 'psono.urls'
@@ -244,7 +241,7 @@ if config_get('CACHE_DB', False):
 
 if config_get('CACHE_REDIS', False):
     CACHES = {
-       "default": {
+       "default": { # type: ignore
            "BACKEND": "django_redis.cache.RedisCache",
            "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
            "OPTIONS": {
@@ -293,14 +290,13 @@ USE_L10N = True
 
 USE_TZ = True
 
+AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 STATIC_URL = '/static/'
-
-if not os.path.exists(LOGGING_AUDIT_FOLDER):
-    os.makedirs(LOGGING_AUDIT_FOLDER)
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
@@ -309,8 +305,9 @@ def generate_signature():
     info = {
         'version': VERSION,
         'api': 1,
-        'log_audit': LOGGING_AUDIT,
+        'log_audit': False,
         'public_key': PUBLIC_KEY,
+        'authentication_methods': AUTHENTICATION_METHODS,
     }
 
     info = json.dumps(info)

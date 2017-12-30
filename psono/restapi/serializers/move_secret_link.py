@@ -1,12 +1,10 @@
 from ..utils import user_has_rights_on_share
 from  more_itertools import unique_everseen
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import Secret_Link, Data_Store, Share
+from ..models import Secret_Link, Data_Store
 
 
 class MoveSecretLinkSerializer(serializers.Serializer):
@@ -15,7 +13,7 @@ class MoveSecretLinkSerializer(serializers.Serializer):
     new_parent_share_id = serializers.UUIDField(required=False)
     new_parent_datastore_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         link_id = attrs.get('link_id')
         new_parent_share_id = attrs.get('new_parent_share_id', None)
         new_parent_datastore_id = attrs.get('new_parent_datastore_id', None)

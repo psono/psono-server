@@ -2,14 +2,13 @@ import logging
 import datetime
 import re
 
-from six import iteritems
 from django.conf import settings
 from django.core.management.color import color_style
 
-class AuditFormatter(logging.Formatter):
+class QueryFormatter(logging.Formatter):
     def __init__(self, *args, **kwargs):
         self.style = color_style()
-        super(AuditFormatter, self).__init__(*args, **kwargs)
+        super(QueryFormatter, self).__init__(*args, **kwargs)
 
     def escape(self, string):
         string = str(string)
@@ -22,19 +21,18 @@ class AuditFormatter(logging.Formatter):
     def format(self, record):
 
         new_message = []
-        for (key, value) in iteritems(record.msg):
-            new_message.append(self.escape(key) + '=' + self.escape(value))
+
+        new_message.append('duration=' + self.escape(str(record.args[0])))
+        new_message.append('sql=' + self.escape(str(record.args[1])))
 
         record.msg = ", ".join(new_message)
         record.time_utc = datetime.datetime.utcnow().isoformat()
         record.time_server = datetime.datetime.now().isoformat()
+        record.args = []
 
-        return super(AuditFormatter, self).format(record)
+        return super(QueryFormatter, self).format(record)
 
-class FilterConsole(logging.Filter):
+
+class FilterQueryConsole(logging.Filter):
     def filter(self, record):
-        return settings.DEBUG and settings.LOGGING_AUDIT
-
-class FilterFile(logging.Filter):
-    def filter(self, record):
-        return not settings.DEBUG and settings.LOGGING_AUDIT
+        return settings.DEBUG

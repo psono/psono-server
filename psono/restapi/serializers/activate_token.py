@@ -12,7 +12,7 @@ class ActivateTokenSerializer(serializers.Serializer):
     verification = serializers.CharField(required=True)
     verification_nonce = serializers.CharField(max_length=64, required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         verification_hex = attrs.get('verification')
         verification = nacl.encoding.HexEncoder.decode(verification_hex)
         verification_nonce_hex = attrs.get('verification_nonce')

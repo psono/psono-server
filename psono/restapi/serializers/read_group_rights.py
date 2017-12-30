@@ -7,7 +7,7 @@ from ..models import User_Group_Membership
 
 class ReadGroupRightsSerializer(serializers.Serializer):
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         group_id = self.context['request'].parser_context['kwargs'].get('group_id', False)
 
         if group_id:

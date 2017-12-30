@@ -28,19 +28,19 @@ class TestUtils(APITestCaseExtended):
         """
         Test authentication without authkey
         """
-        self.assertFalse(authenticate('asdf', False, False))
+        self.assertEqual(authenticate('asdf', False, False), (False, 'AUTHKEY_NOT_PROVIDED'))
 
     def test_authenticate_with_no_username_nor_user_object(self):
         """
         Test authentication without username nor user object
         """
-        self.assertFalse(authenticate(False, False, 'asdf'))
+        self.assertEqual(authenticate(False, False, 'asdf'), (False, 'USER_NOT_PROVIDED'))
 
     def test_authenticate_with_wrong_username(self):
         """
         Test authentication with wrong username
         """
-        self.assertFalse(authenticate('narf', False, 'asdf'))
+        self.assertEqual(authenticate('narf', False, 'asdf'), (False, 'USER_NOT_FOUND'))
 
     @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
     @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)

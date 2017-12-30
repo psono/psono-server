@@ -11,11 +11,6 @@ from ..app_settings import (
 )
 from ..utils import generate_activation_code
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class RegisterView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
@@ -41,18 +36,20 @@ class RegisterView(GenericAPIView):
         :param kwargs:
         :type kwargs:
         :return:
-        :rtype:
+        :rtype: 201 / 400
         """
 
         def splitAt(w, n):
             for i in range(0, len(w), n):
                 yield w[i:i + n]
 
+        if not settings.ALLOW_REGISTRATION:
+            return Response({"custom": ["Registration has been disabled."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='REGISTER_ERROR', errors=serializer.errors)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -94,9 +91,6 @@ class RegisterView(GenericAPIView):
             [self.request.data.get('email', '')],
             html_message=msg_html,
         )
-
-        log_info(logger=logger, request=request, status='HTTP_201_CREATED',
-                 event='REGISTER_SUCCESS', request_resource=user.id)
 
         return Response({"success": "Successfully registered."},
                         status=status.HTTP_201_CREATED)

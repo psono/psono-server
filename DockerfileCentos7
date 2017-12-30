@@ -1,30 +1,36 @@
-# PSONO Dockerfile for CentOS python 3
-FROM centos:centos7
+# PSONO Dockerfile for CentOS 7
+FROM psono-docker.jfrog.io/centos:centos7
 
 MAINTAINER Sascha Pfeiffer <sascha.pfeiffer@psono.com>
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
-RUN yum -y update && \
+
+RUN mkdir -p /root/.pip && \
+    echo '[global]' >> /root/.pip/pip.conf && \
+    echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
+    yum -y update && \
     yum -y install epel-release && \
     yum -y update && \
     yum -y install \
+        crontabs \
         gcc \
+        haveged \
+        libffi-devel \
+        nginx \
+        openssl-devel \
+        postgresql \
+        postgresql-devel \
+        postgresql-client \
         python34 \
         python34-devel \
         python2-pip \
-        python34-pip \
-        nginx \
-        postgresql-client \
-        crontabs \
-        haveged \
-        net-tools && \
+        python34-pip && \
     pip install --upgrade pip && \
     pip install supervisor && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
-    yum clean all && \
     mkdir -p /root/.psono_server && \
     echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /root/configs/docker/worker-cron3 /etc/cron.d/ && \
@@ -45,9 +51,17 @@ RUN yum -y update && \
     sed -i s/YourPostgresHost/postgres/g /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
-    rm -Rf /root/psono/static && \
-    rm -Rf /root/var && \
-    rm -Rf /tmp/* /var/tmp/* /root/.cache
+    yum remove -y \
+        python2-pip \
+        python34-pip && \
+    yum clean all && \
+    rm -Rf \
+        /root/requirements.txt \
+        /root/psono/static \
+        /root/var \
+        /root/.cache \
+        /tmp/* \
+        /var/tmp/*
 
 EXPOSE 80
 

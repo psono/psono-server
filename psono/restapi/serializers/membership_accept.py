@@ -11,7 +11,7 @@ class MembershipAcceptSerializer(serializers.Serializer):
 
     membership_id = serializers.UUIDField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         membership_id = attrs.get('membership_id')
 

@@ -14,12 +14,16 @@ class CreateSecretSerializer(serializers.Serializer):
     parent_share_id = serializers.UUIDField(required=False)
     parent_datastore_id = serializers.UUIDField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
 
         if parent_share_id is None and parent_datastore_id is None:
             msg = _("Either parent share or datastore need to be specified.")
+            raise exceptions.ValidationError(msg)
+
+        if parent_share_id is not None and parent_datastore_id is not None:
+            msg = _("Either parent share or datastore need to be specified, not both.")
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:

@@ -8,7 +8,7 @@ class LogoutSerializer(serializers.Serializer):
     token = serializers.CharField(required=False)
     session_id = serializers.CharField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         attrs['token_hash'] = TokenAuthentication.get_token_hash(self.context['request'])
 

@@ -13,11 +13,6 @@ from ..app_settings import (
 )
 from ..authentication import TokenAuthentication
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 class SessionView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
@@ -26,6 +21,18 @@ class SessionView(GenericAPIView):
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
     def get(self, request, *args, **kwargs):
+        """
+        Lists all active sessions
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200
+        :rtype:
+        """
 
         sessions = []
         for session in self.token_model.objects.filter(user=request.user, valid_till__gt=timezone.now(), active=True):
@@ -35,9 +42,6 @@ class SessionView(GenericAPIView):
                 "device_description": session.device_description,
                 "current_session": session.id == request.auth.id,
             })
-
-        log_info(logger=logger, request=request, status='HTTP_200_OK',
-                 event='LIST_SESSIONS_SUCCESS')
 
         return Response({
             'sessions': sessions

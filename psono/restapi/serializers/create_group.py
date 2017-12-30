@@ -60,3 +60,16 @@ class CreateGroupSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         return value
+
+    def validate_name(self, value):
+        value = value.strip()
+
+        if len(value) < 3:
+            msg = _('Name may not be shorter than 3 chars.')
+            raise exceptions.ValidationError(msg)
+
+        if '@' in value:
+            msg = _('Name may not contain an "@"')
+            raise exceptions.ValidationError(msg)
+
+        return value

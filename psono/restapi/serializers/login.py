@@ -17,28 +17,28 @@ from rest_framework import serializers, exceptions
 class LoginSerializer(serializers.Serializer):
 
     public_key = serializers.CharField(required=True, min_length=64, max_length=64)
-    login_info = serializers.CharField(required=False)
-    login_info_nonce = serializers.CharField(required=False)
+    login_info = serializers.CharField(required=True)
+    login_info_nonce = serializers.CharField(required=True)
     session_duration = serializers.IntegerField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
-        login_info = attrs.get('login_info', False)
-        login_info_nonce = attrs.get('login_info_nonce', False)
+        login_info = attrs.get('login_info')
+        login_info_nonce = attrs.get('login_info_nonce')
         public_key = attrs.get('public_key')
         session_duration = attrs.get('session_duration', settings.DEFAULT_TOKEN_TIME_VALID)
 
         crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
                          PublicKey(public_key, encoder=nacl.encoding.HexEncoder))
 
-        request_data = json.loads(crypto_box.decrypt(
-            nacl.encoding.HexEncoder.decode(login_info),
-            nacl.encoding.HexEncoder.decode(login_info_nonce)
-        ).decode())
-        # try:
-        # except:
-        #     msg = _('Login info cannot be decrypted')
-        #     raise exceptions.ValidationError(msg)
+        try:
+            request_data = json.loads(crypto_box.decrypt(
+                nacl.encoding.HexEncoder.decode(login_info),
+                nacl.encoding.HexEncoder.decode(login_info_nonce)
+            ).decode())
+        except:
+            msg = _('Login info cannot be decrypted')
+            raise exceptions.ValidationError(msg)
 
         if not request_data.get('username', False):
             msg = _('No username specified.')
@@ -50,8 +50,9 @@ class LoginSerializer(serializers.Serializer):
 
         username = request_data.get('username').lower().strip()
         authkey = request_data.get('authkey')
+        password = request_data.get('password', False)
 
-        user = authenticate(username=username, authkey=authkey)
+        user, error_code = authenticate(username=username, authkey=authkey, password=password)
 
         if not user:
             msg = _('Username or password wrong.')

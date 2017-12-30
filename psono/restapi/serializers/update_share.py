@@ -1,5 +1,3 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
@@ -13,7 +11,7 @@ class UpdateShareSerializer(serializers.Serializer):
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
 
         share_id = attrs.get('share_id')
 

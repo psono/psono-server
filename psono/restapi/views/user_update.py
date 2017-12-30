@@ -19,11 +19,6 @@ import nacl.secret
 import bcrypt
 import hashlib
 
-# import the logging
-from ..utils import log_info
-import logging
-logger = logging.getLogger(__name__)
-
 
 class UserUpdate(GenericAPIView):
 
@@ -46,20 +41,18 @@ class UserUpdate(GenericAPIView):
         :param kwargs:
         :type kwargs:
         :return:
-        :rtype:
+        :rtype: 200 / 400 / 403
         """
 
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
 
-            log_info(logger=logger, request=request, status='HTTP_400_BAD_REQUEST', event='USER_UPDATE_DETAILS_ERROR', errors=serializer.errors)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not authenticate(username=request.user.username, authkey=str(request.data['authkey_old'])):
-            log_info(logger=logger, request=request, status='HTTP_403_FORBIDDEN',
-                     event='USER_UPDATE_DETAILS_OLD_PASSWORD_INCORRECT_ERROR')
+        user, error_code = authenticate(username=request.user.username, authkey=str(request.data['authkey_old']))
+
+        if not user:
             raise PermissionDenied({"message":"Your old password was not right."})
 
         # E-Mail Change
@@ -77,10 +70,7 @@ class UserUpdate(GenericAPIView):
             secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
             crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
             encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-            request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email)
-
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='USER_UPDATE_DETAILS_EMAIL_SUCCESS')
+            request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email).decode()
 
         password_changed = False
         # Password Change
@@ -102,10 +92,6 @@ class UserUpdate(GenericAPIView):
         if 'user_sauce' in request.data and request.data['user_sauce'] is not None:
             password_changed = True
             request.user.user_sauce = str(request.data['user_sauce'])
-
-        if password_changed:
-            log_info(logger=logger, request=request, status='HTTP_200_OK',
-                     event='USER_UPDATE_DETAILS_PASSWORD_SUCCESS')
 
         request.user.save()
 
