@@ -72,8 +72,8 @@ class GroupView(GenericAPIView):
                     details['private_key_type'] = membership.private_key_type
 
                 if membership.accepted is None:
-                    details['user_id'] = membership.creator.id
-                    details['user_username'] = membership.creator.username
+                    details['user_id'] = membership.creator.id if membership.creator is not None else ''
+                    details['user_username'] = membership.creator.username if membership.creator is not None else ''
                     details['share_right_grant'] = True
                     for right in membership.group.group_share_rights.all():
                         if not right.grant:
@@ -153,8 +153,8 @@ class GroupView(GenericAPIView):
                 response['group_share_rights'] = group_share_rights
 
             if membership.accepted is None:
-                response['user_id'] = membership.creator.id
-                response['user_username'] = membership.creator.username
+                response['user_id'] = membership.creator.id if membership.creator is not None else ''
+                response['user_username'] = membership.creator.username if membership.creator is not None else ''
 
             return Response(response,
                 status=status.HTTP_200_OK)

@@ -14,7 +14,6 @@ from ..app_settings import (
 
 
 from ..authentication import TokenAuthentication
-from ..utils import request_misses_uuid
 import nacl.encoding
 import nacl.utils
 import nacl.secret

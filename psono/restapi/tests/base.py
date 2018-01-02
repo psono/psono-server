@@ -1,5 +1,22 @@
 from rest_framework.test import APITestCase
-from restapi.utils import is_uuid
+from uuid import UUID
+
+def is_uuid(expr):
+    """
+    check if a given expression is a uuid (version 4)
+
+    :param expr: the possible uuid
+    :return: True or False
+    :rtype: bool
+    """
+
+    try:
+        val = UUID(expr, version=4)
+    except ValueError:
+        val = False
+
+    return not not val
+
 
 class APITestCaseExtended(APITestCase):
     @staticmethod

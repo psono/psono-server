@@ -325,37 +325,6 @@ def set_cache(obj, timeout=None):
     if settings.CACHE_ENABLE:
         cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
 
-def is_uuid(expr):
-    """
-    check if a given expression is a uuid (version 4)
-
-    :param expr: the possible uuid
-    :return: True or False
-    :rtype: bool
-    """
-
-    try:
-        val = UUID(expr, version=4)
-    except ValueError:
-        val = False
-
-    return not not val
-
-def request_misses_uuid(request, attribute):
-    """
-    check if a given request misses an attribute or the attribute is not valid uuid
-    
-    :param request: The request to check
-    :type request: 
-    :param attribute: The Attribute to check
-    :type attribute: str
-    :return: True or False
-    :rtype: bool
-    """
-
-    return attribute not in request.data or not is_uuid(request.data[attribute])
-
-
 def yubikey_authenticate(yubikey_otp):
     """
     Checks a YubiKey OTP
