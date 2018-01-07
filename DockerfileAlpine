@@ -32,4 +32,4 @@ RUN mkdir -p /root/.pip && \
 
 EXPOSE 80
 
-CMD ["uwsgi", "--ini", "/root/configs/nginx/psono_uwsgi_port.ini"]
+CMD ["/bin/sh", "/root/configs/docker/cmd.sh"]

@@ -11,7 +11,6 @@ from ..models import (
 )
 
 from ..app_settings import (
-    SecretOverviewSerializer,
     CreateSecretSerializer,
     UpdateSecretSerializer,
 )

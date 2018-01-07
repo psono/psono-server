@@ -11,7 +11,6 @@ import nacl.utils
 
 import bcrypt
 import time
-from uuid import UUID
 from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
 
 import nacl.encoding

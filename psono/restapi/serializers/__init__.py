@@ -31,7 +31,6 @@ from .new_yubikey_otp import *
 from .public_share_details import *
 from .public_user_details import *
 from .register import *
-from .secret_overview import *
 from .set_new_password import *
 from .share_overview import *
 from .share_right_accept import *

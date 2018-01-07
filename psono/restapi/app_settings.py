@@ -31,7 +31,6 @@ from .serializers import (
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
-    SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer,
     ShareRightAcceptSerializer as DefaultShareRightAcceptSerializer,
     ShareRightDeclineSerializer as DefaultShareRightDeclineSerializer,
@@ -255,13 +254,6 @@ DeleteMembershipSerializer = import_callable(
     serializers.get(
         'DELETE_MEMBERSHIP_SERIALIZER',
         DefaultDeleteMembershipSerializer
-    )
-)
-
-SecretOverviewSerializer = import_callable(
-    serializers.get(
-        'SECRET_OVERVIEW_SERIALIZER',
-        DefaultSecretOverviewSerializer
     )
 )
 
