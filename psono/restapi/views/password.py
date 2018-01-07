@@ -54,7 +54,6 @@ class PasswordView(GenericAPIView):
         recovery_code = serializer.validated_data['recovery_code']
         user = serializer.validated_data['user']
 
-
         try:
             crypto_box = Box(PrivateKey(recovery_code.verifier, encoder=nacl.encoding.HexEncoder),
                              PublicKey(user.public_key, encoder=nacl.encoding.HexEncoder))
@@ -115,7 +114,7 @@ class PasswordView(GenericAPIView):
 
         verifier_issue_date = timezone.now()
 
-        recovery_code.verifier = verifier_box.encode(encoder=encoding.HexEncoder)
+        recovery_code.verifier = verifier_box.encode(encoder=encoding.HexEncoder).decode()
         recovery_code.verifier_issue_date  = verifier_issue_date
         recovery_code.save()
 
@@ -124,7 +123,7 @@ class PasswordView(GenericAPIView):
             'recovery_data_nonce': recovery_code.recovery_data_nonce,
             'recovery_sauce': recovery_code.recovery_sauce,
             'user_sauce': user.user_sauce,
-            'verifier_public_key': public_key,
+            'verifier_public_key': public_key.decode(),
             'verifier_time_valid': settings.RECOVERY_VERIFIER_TIME_VALID
         }, status=status.HTTP_200_OK)
 
