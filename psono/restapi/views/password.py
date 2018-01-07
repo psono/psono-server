@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password, check_password
-import nacl, json, datetime
+from django.contrib.auth.hashers import make_password
+import nacl, json
 from nacl.public import PrivateKey, PublicKey, Box
 from nacl import encoding
 
@@ -14,9 +14,7 @@ from ..app_settings import (
     EnableNewPasswordSerializer,
     SetNewPasswordSerializer,
 )
-from ..models import (
-    Recovery_Code, User
-)
+
 
 from ..utils import readbuffer
 
@@ -51,31 +49,11 @@ class PasswordView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        username = str(serializer.validated_data['username'])
-        recovery_authkey = str(serializer.validated_data['recovery_authkey'])
-        update_data = nacl.encoding.HexEncoder.decode(str(serializer.validated_data['update_data']))
-        update_data_nonce = nacl.encoding.HexEncoder.decode(str(serializer.validated_data['update_data_nonce']))
+        update_data = serializer.validated_data['update_data']
+        update_data_nonce = serializer.validated_data['update_data_nonce']
+        recovery_code = serializer.validated_data['recovery_code']
+        user = serializer.validated_data['user']
 
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-
-            return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            recovery_code = Recovery_Code.objects.get(user_id=user.id)
-
-            if not check_password(recovery_authkey, recovery_code.recovery_authkey):
-
-                return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
-
-        except Recovery_Code.DoesNotExist:
-
-            return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
-
-        if recovery_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
-
-            return Response({"message": "Validator expired."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             crypto_box = Box(PrivateKey(recovery_code.verifier, encoder=nacl.encoding.HexEncoder),
@@ -128,25 +106,8 @@ class PasswordView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        username = str(serializer.validated_data['username'])
-        recovery_authkey = str(serializer.validated_data['recovery_authkey'])
-
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-
-            return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            recovery_code = Recovery_Code.objects.get(user_id=user.id)
-
-            if not check_password(recovery_authkey, recovery_code.recovery_authkey):
-
-                return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
-
-        except Recovery_Code.DoesNotExist:
-
-            return Response({"message": "Username or recovery code incorrect."}, status=status.HTTP_403_FORBIDDEN)
+        user = serializer.validated_data['user']
+        recovery_code = serializer.validated_data['recovery_code']
 
         verifier_box = PrivateKey.generate()
         public_key = verifier_box.public_key.encode(encoder=encoding.HexEncoder)
