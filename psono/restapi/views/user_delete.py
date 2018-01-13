@@ -17,6 +17,7 @@ class UserDelete(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserDeleteSerializer
     allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
+    throttle_scope = 'user_delete'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
