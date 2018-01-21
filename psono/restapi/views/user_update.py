@@ -1,5 +1,5 @@
 from django.conf import settings
-from ..utils import authenticate
+from ..utils import authenticate, encrypt_with_db_secret
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
@@ -65,13 +65,8 @@ class UserUpdate(GenericAPIView):
             # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
             # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
             # if you have a better solution, please let me know.
-            request.user.email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-
-            # normally encrypt emails, so they are not stored in plaintext with a random nonce
-            secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
-            crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-            encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-            request.user.email = nacl.encoding.HexEncoder.encode(encrypted_email).decode()
+            request.user.email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            request.user.email = encrypt_with_db_secret(email)
 
         # Password Change
         if 'authkey' in request.data and request.data['authkey'] is not None:

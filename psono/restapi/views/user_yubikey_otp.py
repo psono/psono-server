@@ -1,22 +1,12 @@
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
-from ..models import (
-    Yubikey_OTP
-)
 
-from ..app_settings import (
-    NewYubikeyOTPSerializer,
-    DeleteYubikeySerializer
-)
-
+from ..models import Yubikey_OTP
+from ..app_settings import NewYubikeyOTPSerializer, DeleteYubikeySerializer
 from ..authentication import TokenAuthentication
-import nacl.encoding
-import nacl.utils
-import nacl.secret
-import hashlib
+from ..utils import encrypt_with_db_secret
 
 
 class UserYubikeyOTP(GenericAPIView):
@@ -74,19 +64,12 @@ class UserYubikeyOTP(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         yubikey_otp = serializer.validated_data.get('yubikey_otp')
-
         yubikey_id = yubikey_otp[:12]
-
-        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_yubikey_id = crypto_box.encrypt(str(yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id).decode()
 
         new_yubikey = Yubikey_OTP.objects.create(
             user=request.user,
             title= serializer.validated_data.get('title'),
-            yubikey_id = encrypted_yubikey_id_hex
+            yubikey_id = encrypt_with_db_secret(str(yubikey_id))
         )
 
         return Response({

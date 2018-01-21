@@ -1,32 +1,24 @@
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from rest_framework import status
 
-from restapi import models
-
-from .base import APITestCaseExtended
-
-from ..utils import encrypt_with_db_secret
-
-from django.utils import timezone
 from datetime import timedelta
-
+from mock import patch
 import random
 import string
 import binascii
 import os
-
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 import hashlib
-import pyotp
+import time
+
+from restapi import models
+from .base import APITestCaseExtended
+from ..utils import encrypt_with_db_secret
 
 
-
-
-class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
+class DuoVerifyTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
@@ -61,21 +53,23 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
             valid_till = timezone.now() + timedelta(seconds=10)
         )
 
-        secret = pyotp.random_base32()
-        self.totp = pyotp.TOTP(secret)
-
-        models.Google_Authenticator.objects.create(
+        models.Duo.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = encrypt_with_db_secret(str(secret))
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
         )
 
-    def test_get_authentication_ga_verify(self):
+    def test_get_authentication_duo_verify(self):
         """
-        Tests GET method on authentication_ga_verify
+        Tests GET method on authentication_duo_verify
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {}
 
@@ -84,12 +78,12 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_put_authentication_ga_verify(self):
+    def test_put_authentication_duo_verify(self):
         """
-        Tests PUT method on authentication_ga_verify
+        Tests PUT method on authentication_duo_verify
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {}
 
@@ -98,16 +92,38 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_post_authentication_ga_verify(self):
+
+    def mock_check(self):
+        return {
+            'time': int(time.time())
+        }
+
+    def mock_enroll_status(self, user_id=None, activation_code=None):
+        return 'success'
+
+
+    def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'result': 'allow'
+        }
+    def mock_auth_invalid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'result': 'deny'
+        }
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify(self):
         """
-        Tests POST method on authentication_ga_verify
+        Tests POST method on authentication_duo_verify
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {
             'token': self.token,
-            'ga_token': self.totp.now()
+            'duo_token': '123456'
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
@@ -115,16 +131,19 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_post_authentication_ga_verify_invalid_token(self):
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify_invalid_token(self):
         """
-        Tests POST method on authentication_ga_verify with invalid token
+        Tests POST method on authentication_duo_verify with invalid token
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {
             'token': '12345',
-            'ga_token': self.totp.now()
+            'duo_token': '123456'
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + '12345')
@@ -132,34 +151,19 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_post_authentication_ga_verify_no_proper_formatted_ga_token(self):
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_invalid)
+    def test_post_authentication_duo_verify_invalid_duo_token(self):
         """
-        Tests POST method on authentication_ga_verify with no proper formatted ga_token
+        Tests POST method on authentication_duo_verify with an invalid duo_token
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {
             'token': self.token,
-            'ga_token': 'ABCDEF'
-        }
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'GA Tokens only contain digits.'])
-
-    def test_post_authentication_ga_verify_invalid_ga_token(self):
-        """
-        Tests POST method on authentication_ga_verify with an invalid ga_token
-        """
-
-        url = reverse('authentication_ga_verify')
-
-        data = {
-            'token': self.token,
-            'ga_token': '012345'
+            'duo_token': '123456'
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
@@ -168,12 +172,12 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotEqual(response.data.get('non_field_errors', False), False)
 
-    def test_delete_authentication_ga_verify(self):
+    def test_delete_authentication_duo_verify(self):
         """
-        Tests DELETE method on authentication_ga_verify
+        Tests DELETE method on authentication_duo_verify
         """
 
-        url = reverse('authentication_ga_verify')
+        url = reverse('authentication_duo_verify')
 
         data = {}
 
@@ -184,7 +188,7 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
 
 
 
-class GoogleAuthenticatorTests(APITestCaseExtended):
+class DuoTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
@@ -210,18 +214,23 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
             is_email_active=True
         )
 
-    def test_get_user_ga(self):
+    def test_get_user_duo(self):
         """
-        Tests GET method on user_ga
+        Tests GET method on user_duo
         """
 
-        ga = models.Google_Authenticator.objects.create(
+        duo = models.Duo.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = '1234'
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
         )
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {}
 
@@ -229,23 +238,40 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.data, {
-            "google_authenticators":[{
-                "id":ga.id,
+            "duos":[{
+                "id":duo.id,
                 "title":"My Sweet Title"
             }]
         })
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_put_user_ga(self):
+    def mock_check(self):
+        return {
+            'time': int(time.time())
+        }
+
+    def mock_enroll(self, username=None):
+        return {
+            'expiration': int(time.time()) + 86400,
+            'user_id': '1234',
+            'activation_code': '123456',
+        }
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll', mock_enroll)
+    def test_put_user_duo(self):
         """
-        Tests PUT method on user_ga
+        Tests PUT method on user_duo
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
             'title': 'asdu5zz53',
+            'integration_key': 'integration_key',
+            'secret_key': 'secret_key',
+            'host': 'host',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -253,14 +279,16 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('id', False), False)
-        self.assertNotEqual(response.data.get('secret', False), False)
+        self.assertNotEqual(response.data.get('activation_code', False), False)
 
-    def test_put_user_ga_no_title(self):
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll', mock_enroll)
+    def test_put_user_duo_no_title(self):
         """
-        Tests PUT method on user_ga with no title
+        Tests PUT method on user_duo with no title
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
         }
@@ -270,12 +298,12 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_user_ga(self):
+    def test_post_user_duo(self):
         """
-        Tests POST method on user_ga
+        Tests POST method on user_duo
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {}
 
@@ -284,21 +312,26 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_delete_user_ga(self):
+    def test_delete_user_duo(self):
         """
-        Tests DELETE method on user_ga
+        Tests DELETE method on user_duo
         """
 
-        ga = models.Google_Authenticator.objects.create(
+        duo = models.Duo.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = '1234'
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
         )
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
-            'google_authenticator_id': ga.id
+            'duo_id': duo.id
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -311,17 +344,17 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.data, {
-            "google_authenticators":[]
+            "duos":[]
         })
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_delete_user_ga_no_google_authenticator_id (self):
+    def test_delete_user_duo_no_duo_id (self):
         """
-        Tests DELETE method on user_ga with no google_authenticator_id
+        Tests DELETE method on user_duo with no duo_id
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
         }
@@ -331,15 +364,15 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_delete_user_ga_google_authenticator_id_no_uuid(self):
+    def test_delete_user_duo_duo_id_no_uuid(self):
         """
-        Tests DELETE method on user_ga with google_authenticator_id not being a uuid
+        Tests DELETE method on user_duo with duo_id not being a uuid
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
-            'google_authenticator_id': '12345'
+            'duo_id': '12345'
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -348,15 +381,15 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_delete_user_ga_google_authenticator_id_not_exist(self):
+    def test_delete_user_duo_duo_id_not_exist(self):
         """
-        Tests DELETE method on user_ga with google_authenticator_id not existing
+        Tests DELETE method on user_duo with duo_id not existing
         """
 
-        url = reverse('user_ga')
+        url = reverse('user_duo')
 
         data = {
-            'google_authenticator_id': '7e866c32-3e4d-4421-8a7d-3ac62f980fd3'
+            'duo_id': '7e866c32-3e4d-4421-8a7d-3ac62f980fd3'
         }
 
         self.client.force_authenticate(user=self.test_user_obj)

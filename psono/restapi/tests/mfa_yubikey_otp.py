@@ -6,13 +6,10 @@ from datetime import timedelta
 from rest_framework import status
 
 from restapi import models
+from ..utils import encrypt_with_db_secret
 
 from .base import APITestCaseExtended
 from mock import patch
-
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 
 import binascii
 import random
@@ -79,7 +76,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
 
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
-            key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
+            key= hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
             secret_key = binascii.hexlify(os.urandom(32)).decode(),
             valid_till=timezone.now() + timedelta(seconds=10),
@@ -87,16 +84,11 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
 
         self.yubikey_token = 'fdnjhhfdkljhfdjhfdkljhfdjklhfdkjlhfdg'
         self.yubikey_id = self.yubikey_token[:12]
-        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_yubikey_id = crypto_box.encrypt(str(self.yubikey_id).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_yubikey_id_hex = nacl.encoding.HexEncoder.encode(encrypted_yubikey_id).decode()
 
         self.yubikey = models.Yubikey_OTP.objects.create(
             user=self.test_user_obj,
             title= 'Dummy Title',
-            yubikey_id = encrypted_yubikey_id_hex
+            yubikey_id = encrypt_with_db_secret(str(self.yubikey_id))
         )
 
     def test_get_authentication_yubikey_otp_verify(self):
@@ -142,8 +134,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
-    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_post_authentication_yubikey_otp_verify_correct(self, settings_fct, yubico_verify_true_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify
@@ -162,7 +154,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None)
     def test_post_authentication_yubikey_otp_verify_no_yubikey_support(self, settings_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify
@@ -182,8 +174,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), [u'Server does not support YubiKeys.'])
 
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
-    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_false)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_false)
     def test_post_authentication_yubikey_otp_verify_yubikey_incorrect(self, settings_fct, yubico_verify_false_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify while the yubikey is incorrect
@@ -203,8 +195,8 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), [u'YubiKey OTP incorrect.'])
 
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
-    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_post_authentication_yubikey_otp_verify_not_attached_to_this_account(self, settings_fct, yubico_verify_true_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify while the yubikey_otp token is note whitelisted for the

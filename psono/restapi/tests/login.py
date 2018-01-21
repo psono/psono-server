@@ -662,7 +662,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(response.data.get('user', {}).get('id', False),
                         'User ID does not exist in login response')
         self.assertEqual(response.data.get('user', {}).get('email', False),
-                         six.b(self.test_email),
+                         self.test_email,
                          'Email is wrong in response or does not exist')
         self.assertEqual(response.data.get('user', {}).get('secret_key', False),
                          self.test_secret_key,

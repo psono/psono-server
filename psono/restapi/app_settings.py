@@ -3,6 +3,7 @@ from django.conf import settings
 from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
+    DuoVerifySerializer as DefaultDuoVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
     LogoutSerializer as DefaultLogoutSerializer,
@@ -12,9 +13,11 @@ from .serializers import (
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
+    NewDuoSerializer as DefaultNewDuoSerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
@@ -58,6 +61,10 @@ LoginSerializer = import_callable(
 
 GAVerifySerializer = import_callable(
     serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
+)
+
+DuoVerifySerializer = import_callable(
+    serializers.get('DUO_VERIFY_SERIALIZER', DefaultDuoVerifySerializer)
 )
 
 YubikeyOTPVerifySerializer = import_callable(
@@ -117,6 +124,13 @@ NewGASerializer = import_callable(
     )
 )
 
+NewDuoSerializer = import_callable(
+    serializers.get(
+        'NEW_DUO_SERIALIZER',
+        DefaultNewDuoSerializer
+    )
+)
+
 NewYubikeyOTPSerializer = import_callable(
     serializers.get(
         'NEW_YUBIKEY_OTP_SERIALIZER',
@@ -135,6 +149,13 @@ DeleteGASerializer = import_callable(
     serializers.get(
         'DELETE_GA_SERIALIZER',
         DefaultDeleteGASerializer
+    )
+)
+
+DeleteDuoSerializer = import_callable(
+    serializers.get(
+        'DELETE_DUO_SERIALIZER',
+        DefaultDeleteDuoSerializer
     )
 )
 

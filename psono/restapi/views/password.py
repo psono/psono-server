@@ -15,6 +15,12 @@ from ..app_settings import (
     SetNewPasswordSerializer,
 )
 
+from ..models import (
+    Google_Authenticator,
+    Yubikey_OTP,
+    Duo
+)
+
 
 from ..utils import readbuffer
 
@@ -67,7 +73,6 @@ class PasswordView(GenericAPIView):
             secret_key_nonce = update_data_dec['secret_key_nonce']
 
         except:
-
             return Response({"message": "Validation failed"}, status=status.HTTP_403_FORBIDDEN)
 
         recovery_code.verifier  = ''
@@ -80,6 +85,11 @@ class PasswordView(GenericAPIView):
         user.secret_key = secret_key
         user.secret_key_nonce = secret_key_nonce
         user.save()
+
+        # Delete 2 Factors
+        Google_Authenticator.objects.filter(user=user).delete()
+        Yubikey_OTP.objects.filter(user=user).delete()
+        Duo.objects.filter(user=user).delete()
 
         return Response({}, status=status.HTTP_200_OK)
 

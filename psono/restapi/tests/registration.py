@@ -6,18 +6,13 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
+from ..utils import decrypt_with_db_secret
 
 import binascii
 import random
 import string
 import os
-import six
-
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 import bcrypt
-import hashlib
 
 class RegistrationTests(APITestCaseExtended):
 
@@ -96,10 +91,9 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
+        self.assertEqual(decrypt_with_db_secret(user.email), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(authkey, user.authkey))
         self.assertEqual(user.public_key, public_key)
@@ -146,9 +140,7 @@ class RegistrationTests(APITestCaseExtended):
 
         user = models.User.objects.get()
 
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
-
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
+        self.assertEqual(decrypt_with_db_secret(user.email), email)
 
         response = self.client.post(url, data)
 

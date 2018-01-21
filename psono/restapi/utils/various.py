@@ -10,18 +10,14 @@ import nacl.encoding
 import nacl.utils
 
 import bcrypt
-import duo_client
-from socket import gaierror
-from ssl import SSLError
 import time
-from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
 
 import nacl.encoding
 import nacl.utils
 import nacl.secret
 import hashlib
 import binascii
-from yubico_client import Yubico
 
 import scrypt
 from typing import Tuple, List
@@ -54,7 +50,7 @@ def generate_activation_code(email : str) -> str:
     time_stamp = str(int(time.time()))
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
+    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
     validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
                                          nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
@@ -73,7 +69,7 @@ def validate_activation_code(activation_code : str) -> User:
     """
 
     try:
-        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
+        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code)).decode()
 
@@ -81,7 +77,7 @@ def validate_activation_code(activation_code : str) -> User:
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
             email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:
@@ -327,40 +323,6 @@ def set_cache(obj, timeout=None):
     if settings.CACHE_ENABLE:
         cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
 
-def yubikey_authenticate(yubikey_otp):
-    """
-    Checks a YubiKey OTP
-    
-    :param yubikey_otp: Yubikey OTP
-    :type yubikey_otp: 
-    :return: True or False or None
-    :rtype: bool
-    """
-
-    if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
-        return None
-
-    client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY)
-    try:
-        yubikey_is_valid = client.verify(yubikey_otp)
-    except:
-        yubikey_is_valid = False
-
-    return yubikey_is_valid
-
-def yubikey_get_yubikey_id(yubikey_otp):
-    """
-    Returns the yubikey id based
-    
-    :param yubikey_otp: Yubikey OTP
-    :type yubikey_otp: str
-    :return: Yubikey ID
-    :rtype: str
-    """
-
-    yubikey_otp = str(yubikey_otp).strip()
-
-    return yubikey_otp[:12]
 
 def generate_authkey(username, password) -> bytes:
     """
@@ -374,7 +336,7 @@ def generate_authkey(username, password) -> bytes:
     :rtype: str
     """
 
-    salt = hashlib.sha512(username.lower().encode('utf-8')).hexdigest()
+    salt = hashlib.sha512(username.lower().encode()).hexdigest()
 
     return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                          salt=salt.encode("utf-8"),
@@ -613,9 +575,9 @@ def encrypt_with_db_secret(plain_text: str) -> str:
     :return: encrypted text as hex
     :rtype: str
     """
-    secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_email = crypto_box.encrypt(plain_text.encode('utf-8'),
+    encrypted_email = crypto_box.encrypt(plain_text.encode(),
                                          nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
 
     return nacl.encoding.HexEncoder.encode(encrypted_email).decode()
@@ -629,116 +591,17 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     :return: decrypted text
     :rtype: str
     """
-    secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
     plaintext = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(encrypted_text))
 
     return plaintext.decode()
 
-def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
-    """
-    Calls the Duo auth check api
-
-    :param integration_key: The Duo integration key
-    :type integration_key:  str
-    :param secret_key: The Duo secret key
-    :type secret_key: str
-    :param host: The Duo host
-    :type host: str
-    :return: The check with the error details or the time
-    :rtype: dict
-    """
-
-    try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-        check = auth_api.check()
-    except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
-    except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
-    except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
-
-        return {
-            'error': 'Duo details incorrect'
-        }
-
-    except:
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
-
-    return check
-
-def duo_auth_enroll(integration_key: str, secret_key: str, host: str) -> dict:
-    """
-    Anonymous enrollment of a new device
-
-    :param integration_key: The Duo integration key
-    :type integration_key:  str
-    :param secret_key: The Duo secret key
-    :type secret_key: str
-    :param host: The Duo host
-    :type host: str
-    :return: The check with the error details or the time
-    :rtype: dict
-    """
-
-    try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-        enrollment = auth_api.enroll()
-    except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
-    except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
-    except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
-
-        return {
-            'error': 'Duo details incorrect'
-        }
-
-    except:
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
-
-    return enrollment
 
 
 def create_user(username, password, email, gen_authkey=True):
 
-    email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
+    email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
@@ -763,7 +626,7 @@ def create_user(username, password, email, gen_authkey=True):
     (secret_key, secret_key_nonce) = encrypt_secret(secret_key_decrypted, password, user_sauce)
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
     encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
     email = nacl.encoding.HexEncoder.encode(encrypted_email)

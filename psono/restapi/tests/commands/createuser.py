@@ -4,25 +4,20 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 
 from restapi import models
-from restapi.utils import generate_authkey
+from restapi.utils import generate_authkey, decrypt_with_db_secret
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 import bcrypt
-import hashlib
-import six
 
 class CommandCreateuserTestCase(TestCase):
 
     def setUp(self):
         self.test_email = "test@example.com"
-        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = "test@psono.pw"
         self.test_password = "myPassword"
         self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
@@ -71,10 +66,9 @@ class CommandCreateuserTestCase(TestCase):
 
         user = models.User.objects.get(username=username)
 
-        email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-        crypto_box = nacl.secret.SecretBox(hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest(), encoder=nacl.encoding.HexEncoder)
+        email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
-        self.assertEqual(crypto_box.decrypt(nacl.encoding.HexEncoder.decode(user.email)), six.b(email))
+        self.assertEqual(decrypt_with_db_secret(user.email), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(generate_authkey(username, password).decode(), user.authkey))
         self.assertTrue(user.is_active)

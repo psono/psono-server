@@ -136,6 +136,7 @@ REST_FRAMEWORK = {
         'user': '28800/day',
         'health_check': '61/hour',
         'ga_verify': '6/minute',
+        'duo_verify': '6/minute',
         'yubikey_otp_verify': '6/minute',
         'registration': '20/day',
         'user_delete': '20/day',
