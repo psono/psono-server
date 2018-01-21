@@ -49,7 +49,7 @@ class DuoVerifySerializer(serializers.Serializer):
                 user_id=duo.enrollment_user_id,
                 factor=factor,
                 device=device,
-                pushinfo=urlencode({'Host': domain}, quote_via=quote_plus),
+                pushinfo=urlencode({'Host': domain}),
                 passcode=duo_token
             )
 
