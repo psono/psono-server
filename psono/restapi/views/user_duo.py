@@ -6,7 +6,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from ..models import Duo
-from ..app_settings import NewDuoSerializer, DeleteDuoSerializer
+from ..app_settings import NewDuoSerializer, ActivateDuoSerializer, DeleteDuoSerializer
 from ..utils import encrypt_with_db_secret
 from ..authentication import TokenAuthentication
 
@@ -82,6 +82,7 @@ class UserDuo(GenericAPIView):
             enrollment_user_id = enrollment_user_id,
             enrollment_activation_code = enrollment_activation_code,
             enrollment_expiration_date = timezone.now() + timedelta(seconds=validity_in_seconds),
+            active=False
         )
 
         return Response({
@@ -90,8 +91,35 @@ class UserDuo(GenericAPIView):
         },
             status=status.HTTP_201_CREATED)
 
-    def post(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def post(self, request, *args, **kwargs):
+        """
+        Validates a duo and activates it
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        serializer = ActivateDuoSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        duo = serializer.validated_data.get('duo')
+
+        # delete it
+        duo.active = True
+        duo.save()
+
+        return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """

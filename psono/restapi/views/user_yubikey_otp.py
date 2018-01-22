@@ -4,7 +4,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from ..models import Yubikey_OTP
-from ..app_settings import NewYubikeyOTPSerializer, DeleteYubikeySerializer
+from ..app_settings import NewYubikeyOTPSerializer, ActivateYubikeySerializer, DeleteYubikeySerializer
 from ..authentication import TokenAuthentication
 from ..utils import encrypt_with_db_secret
 
@@ -69,7 +69,8 @@ class UserYubikeyOTP(GenericAPIView):
         new_yubikey = Yubikey_OTP.objects.create(
             user=request.user,
             title= serializer.validated_data.get('title'),
-            yubikey_id = encrypt_with_db_secret(str(yubikey_id))
+            yubikey_id = encrypt_with_db_secret(str(yubikey_id)),
+            active=True # YubiKeys don't need validation
         )
 
         return Response({
@@ -77,8 +78,34 @@ class UserYubikeyOTP(GenericAPIView):
         },
             status=status.HTTP_201_CREATED)
 
-    def post(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def post(self, request, *args, **kwargs):
+        """
+        Validates a yubikey and activates it
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        serializer = ActivateYubikeySerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        yubikey_otp = serializer.validated_data.get('yubikey_otp')
+
+        yubikey_otp.active = True
+        yubikey_otp.save()
+
+        return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """

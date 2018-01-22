@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.conf import settings
+from os.path import join, dirname, abspath
 import django
 from . import views
 
@@ -84,6 +85,6 @@ urlpatterns = [
 if settings.DEBUG:
     # URLs for development purposes only
     urlpatterns += [
-        url(r'^doc/(?P<path>.*)$', django.views.static.serve,
-            {'document_root':'/home/chickahoona/gits/psono-server/docs/_build/html'}),
+        url(r'^coverage/(?P<path>.*)$', django.views.static.serve,
+            {'document_root':join(dirname(abspath(__file__)), '..', '..', 'htmlcov')}),
     ]

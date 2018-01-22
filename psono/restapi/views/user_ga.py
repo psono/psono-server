@@ -1,26 +1,13 @@
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
-from ..models import (
-    Google_Authenticator
-)
-
-from ..app_settings import (
-    NewGASerializer,
-    DeleteGASerializer,
-)
-
-
-from ..authentication import TokenAuthentication
-from ..utils import encrypt_with_db_secret
-import nacl.encoding
-import nacl.utils
-import nacl.secret
-import hashlib
 import pyotp
 
+from ..models import Google_Authenticator
+from ..app_settings import NewGASerializer, ActivateGASerializer, DeleteGASerializer
+from ..authentication import TokenAuthentication
+from ..utils import encrypt_with_db_secret
 
 class UserGA(GenericAPIView):
 
@@ -81,7 +68,8 @@ class UserGA(GenericAPIView):
         new_ga = Google_Authenticator.objects.create(
             user=request.user,
             title= serializer.validated_data.get('title'),
-            secret = encrypt_with_db_secret(str(secret))
+            secret = encrypt_with_db_secret(str(secret)),
+            active=False
         )
 
         return Response({
@@ -90,8 +78,34 @@ class UserGA(GenericAPIView):
         },
             status=status.HTTP_201_CREATED)
 
-    def post(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def post(self, request, *args, **kwargs):
+        """
+        Validates a Google authenticator and activates it
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        serializer = ActivateGASerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        google_authenticator = serializer.validated_data.get('google_authenticator')
+
+        google_authenticator.active = True
+        google_authenticator.save()
+
+        return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """

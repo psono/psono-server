@@ -325,7 +325,7 @@ class YubikeyOTPTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_post_user_yubikey_otp(self):
+    def test_post_user_yubikey_otp_no_parameters(self):
         """
         Tests POST method on user_yubikey_otp
         """
@@ -337,7 +337,39 @@ class YubikeyOTPTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
+    def test_activate_yubikey_otp_success(self, settings_fct, yubico_verify_true_fct):
+        """
+        Tests POST method on user_duo to activate a duo
+        """
+
+        yubikey_token = 'fdnjhhfdkljhfdjhfdkljhfdjklhfdkjlhfdg'
+        yubikey_id = yubikey_token[:12]
+
+        yubikey = models.Yubikey_OTP.objects.create(
+            user=self.test_user_obj,
+            title= 'Dummy Title',
+            yubikey_id = encrypt_with_db_secret(str(yubikey_id))
+        )
+
+        url = reverse('user_yubikey_otp')
+
+        data = {
+            'yubikey_id': yubikey.id,
+            'yubikey_otp': yubikey_token,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        db_yubikey = models.Yubikey_OTP.objects.get(pk=yubikey.id)
+        self.assertTrue(db_yubikey.active)
+
 
     def test_delete_user_yubikey_otp(self):
         """

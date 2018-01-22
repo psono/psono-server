@@ -281,6 +281,7 @@ class DuoTests(APITestCaseExtended):
         self.assertNotEqual(response.data.get('id', False), False)
         self.assertNotEqual(response.data.get('activation_code', False), False)
 
+
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll)
     def test_put_user_duo_no_title(self):
@@ -298,7 +299,7 @@ class DuoTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_user_duo(self):
+    def test_post_user_duo_no_parameters(self):
         """
         Tests POST method on user_duo
         """
@@ -310,7 +311,50 @@ class DuoTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def mock_enroll_status(self, user_id=None, activation_code=None):
+        return 'success'
+
+    def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'result': 'allow'
+        }
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_activate_duo_success(self):
+        """
+        Tests POST method on user_duo to activate a duo
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+            'duo_token': '123456',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        db_duo = models.Duo.objects.get(pk=duo.id)
+        self.assertTrue(db_duo.active)
 
     def test_delete_user_duo(self):
         """

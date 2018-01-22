@@ -65,31 +65,17 @@ class LoginView(GenericAPIView):
 
         user = serializer.validated_data['user']
 
-        if Google_Authenticator.objects.filter(user=user).exists():
+        if Google_Authenticator.objects.filter(user=user, active=True).exists():
             google_authenticator_2fa = True
         else:
             google_authenticator_2fa = False
 
-        if Duo.objects.filter(user=user).exists():
-
-
-
-            duos = Duo.objects.filter(user=user).all()
-
-            for duo in duos:
-                auth_api = duo_client.Auth(
-                    ikey=duo.duo_integration_key,
-                    skey=decrypt_with_db_secret(duo.duo_secret_key),
-                    host=duo.duo_host,
-                )
-
-
-
+        if Duo.objects.filter(user=user, active=True).exists():
             duo_2fa = True
         else:
             duo_2fa = False
 
-        if Yubikey_OTP.objects.filter(user=user).exists():
+        if Yubikey_OTP.objects.filter(user=user, active=True).exists():
             yubikey_otp_2fa = True
         else:
             yubikey_otp_2fa = False

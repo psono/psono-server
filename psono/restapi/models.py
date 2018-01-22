@@ -69,6 +69,8 @@ class Google_Authenticator(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_authenticator')
     title = models.CharField(_('title'), max_length=256)
     secret = models.CharField(_('secret as hex'), max_length=256)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
 
     class Meta:
         abstract = False
@@ -84,6 +86,8 @@ class Yubikey_OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='yubikey_otp')
     title = models.CharField(_('Title'), max_length=256)
     yubikey_id = models.CharField(_('YubiKey ID'), max_length=128)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
 
     class Meta:
         abstract = False
@@ -104,6 +108,8 @@ class Duo(models.Model):
     enrollment_user_id = models.CharField(_('Duo user_id'), max_length=32)
     enrollment_expiration_date = models.DateTimeField(null=True, blank=True)
     enrollment_activation_code = models.CharField(_('Duo Host'), max_length=128)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
 
     class Meta:
         abstract = False

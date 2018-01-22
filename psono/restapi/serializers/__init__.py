@@ -46,6 +46,9 @@ from .new_yubikey_otp import *
 from .ga_verify import *
 from .duo_verify import *
 from .yubikey_otp_verify import *
+from .activate_ga import *
+from .activate_duo import *
+from .activate_yubikey import *
 from .delete_ga import *
 from .delete_duo import *
 from .delete_yubikey import *

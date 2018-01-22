@@ -270,7 +270,7 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_user_ga(self):
+    def test_post_user_ga_no_parameters(self):
         """
         Tests POST method on user_ga
         """
@@ -282,7 +282,37 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_success(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator
+        """
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= False
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': totp.now(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        db_ga = models.Google_Authenticator.objects.get(pk=ga.id)
+        self.assertTrue(db_ga.active)
 
     def test_delete_user_ga(self):
         """

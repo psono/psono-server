@@ -15,8 +15,11 @@ from .serializers import (
     NewGASerializer as DefaultNewGASerializer,
     NewDuoSerializer as DefaultNewDuoSerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
+    ActivateYubikeySerializer as DefaultActivateYubikeySerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    ActivateGASerializer as DefaultActivateGASerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    ActivateDuoSerializer as DefaultActivateDuoSerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
@@ -138,6 +141,13 @@ NewYubikeyOTPSerializer = import_callable(
     )
 )
 
+ActivateYubikeySerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_YUBIKEY_SERIALIZER',
+        DefaultActivateYubikeySerializer
+    )
+)
+
 DeleteYubikeySerializer = import_callable(
     serializers.get(
         'DELETE_YUBIKEY_SERIALIZER',
@@ -145,10 +155,24 @@ DeleteYubikeySerializer = import_callable(
     )
 )
 
+ActivateGASerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_GA_SERIALIZER',
+        DefaultActivateGASerializer
+    )
+)
+
 DeleteGASerializer = import_callable(
     serializers.get(
         'DELETE_GA_SERIALIZER',
         DefaultDeleteGASerializer
+    )
+)
+
+ActivateDuoSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_DUO_SERIALIZER',
+        DefaultActivateDuoSerializer
     )
 )
 
