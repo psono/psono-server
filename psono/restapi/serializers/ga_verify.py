@@ -29,8 +29,7 @@ class GAVerifySerializer(serializers.Serializer):
             totp = pyotp.TOTP(decrypted_ga_secret.encode())
             if totp.verify(ga_token):
                 ga_token_correct = True
-                attrs['ga_token'] = ga
-            break
+                break
 
         if not ga_token_correct:
             msg = _('GA Token incorrect.')

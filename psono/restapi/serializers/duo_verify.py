@@ -62,6 +62,8 @@ class DuoVerifySerializer(serializers.Serializer):
                 else:
                     msg = _('Validation failed.')
                 raise exceptions.ValidationError(msg)
+            else:
+                break
 
         attrs['token'] = token
         return attrs
