@@ -32,7 +32,7 @@ class ActivateTokenSerializer(serializers.Serializer):
             msg = _('Duo challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
-        if token.google_authenticator_2fa:
+        if token.yubikey_otp_2fa:
             msg = _('YubiKey challenge unsolved.')
             raise exceptions.ValidationError(msg)
 

@@ -343,7 +343,7 @@ class YubikeyOTPTests(APITestCaseExtended):
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_activate_yubikey_otp_success(self, settings_fct, yubico_verify_true_fct):
         """
-        Tests POST method on user_duo to activate a duo
+        Tests POST method on user_yubikey_otp to activate a duo
         """
 
         yubikey_token = 'fdnjhhfdkljhfdjhfdkljhfdjklhfdkjlhfdg'

@@ -210,6 +210,122 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
+    def test_login_with_corrupted_login_info(self):
+        """
+        Try to login with corrupted login info
+        """
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode() + 'corrupted',
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['non_field_errors'], ['Login info cannot be decrypted'])
+
+    def test_login_with_disabled_user(self):
+        """
+        Try to login with a disabled user
+        """
+
+        self.user_obj.is_active = False
+        self.user_obj.save()
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_login_with_user_where_email_is_not_verified(self):
+        """
+        Try to login with a user who did not yet verify his email address
+        """
+
+        self.user_obj.is_email_active = False
+        self.user_obj.save()
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     def test_login_failure_no_login_info(self):
         """
         Test to login without login info
@@ -400,7 +516,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.data.get('non_field_errors'), [u'No authkey specified.'])
 
-    def test_logi_with_google_authenticator(self):
+    def test_login_with_google_authenticator(self):
         """
         Ensure we can login with google authenticator
         """
@@ -439,12 +555,13 @@ class LoginTests(APITestCaseExtended):
 
         response = self.client.post(url, data)
 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
         ).decode())
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertTrue(request_data.get('token', False),
                         'Token does not exist in login response')
@@ -484,7 +601,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
-    def test_logi_with_yubikey_otp(self):
+    def test_login_with_yubikey_otp(self):
         """
         Ensure we can login with YubiKey OTP
         """
@@ -523,12 +640,12 @@ class LoginTests(APITestCaseExtended):
 
         response = self.client.post(url, data)
 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         request_data = json.loads(server_crypto_box.decrypt(
             nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
             nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
         ).decode())
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertTrue(request_data.get('token', False),
                         'Token does not exist in login response')

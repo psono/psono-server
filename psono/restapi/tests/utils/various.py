@@ -1,4 +1,4 @@
-from .base import APITestCaseExtended
+from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer
@@ -23,7 +23,7 @@ def yubico_verify_true(yubikey_otp):
     return True
 
 
-class TestUtils(APITestCaseExtended):
+class TestUtils(TestCase):
     def test_authenticate_with_no_authkey(self):
         """
         Test authentication without authkey
@@ -60,7 +60,7 @@ class TestUtils(APITestCaseExtended):
 
 
 
-class TestCalculateShareRightsOnShare(APITestCaseExtended):
+class TestCalculateShareRightsOnShare(TestCase):
 
     def setUp(self):
         self.test_email = "test@example.com"

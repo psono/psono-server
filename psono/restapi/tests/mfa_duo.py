@@ -12,6 +12,7 @@ import binascii
 import os
 import hashlib
 import time
+from uuid import UUID
 
 from restapi import models
 from .base import APITestCaseExtended
@@ -46,7 +47,7 @@ class DuoVerifyTests(APITestCaseExtended):
 
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
-        models.Token.objects.create(
+        self.token_obj = models.Token.objects.create(
             key= hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
             secret_key=self.session_secret_key,
@@ -101,6 +102,12 @@ class DuoVerifyTests(APITestCaseExtended):
     def mock_enroll_status(self, user_id=None, activation_code=None):
         return 'success'
 
+    def mock_enroll_status_invalid(self, user_id=None, activation_code=None):
+        return 'invalid'
+
+    def mock_enroll_status_waiting(self, user_id=None, activation_code=None):
+        return 'waiting'
+
 
     def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
@@ -110,11 +117,21 @@ class DuoVerifyTests(APITestCaseExtended):
         return {
             'result': 'deny'
         }
+    def mock_auth_status_msg(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'result': 'deny',
+            'status_msg': 'Deny it!'
+        }
+    def mock_auth_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'result': 'deny',
+            'error': 'Funny error'
+        }
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_valid)
-    def test_post_authentication_duo_verify(self):
+    def test_post_authentication_duo_verify_success_with_passcode(self):
         """
         Tests POST method on authentication_duo_verify
         """
@@ -130,6 +147,88 @@ class DuoVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify_success_without_passcode(self):
+        """
+        Tests POST method on authentication_duo_verify
+        """
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status_invalid)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify_invalid(self):
+        """
+        Tests POST method on authentication_duo_verify where the enrollment was never completed and therefore should be ignored
+        """
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+            'duo_token': '123456'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status_waiting)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify_waiting(self):
+        """
+        Tests POST method on authentication_duo_verify where the enrollment is pending
+        """
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+            'duo_token': '123456'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_post_authentication_duo_verify_already_active_token(self):
+        """
+        Tests POST method on authentication_duo_verify with a token that is already active
+        """
+
+        self.token_obj.active = True
+        self.token_obj.save()
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+            'duo_token': '123456'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll_status', mock_enroll_status)
@@ -171,6 +270,46 @@ class DuoVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotEqual(response.data.get('non_field_errors', False), False)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_status_msg)
+    def test_post_authentication_duo_verify_error_with_status_message(self):
+        """
+        Tests POST method on authentication_duo_verify with a status message error
+        """
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+            'duo_token': '123456'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_error)
+    def test_post_authentication_duo_verify_error_with_error_message(self):
+        """
+        Tests POST method on authentication_duo_verify with a error message error
+        """
+
+        url = reverse('authentication_duo_verify')
+
+        data = {
+            'token': self.token,
+            'duo_token': '123456'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_authentication_duo_verify(self):
         """
@@ -258,11 +397,21 @@ class DuoTests(APITestCaseExtended):
             'activation_code': '123456',
         }
 
+    def mock_check_error(self):
+        return {
+            'error': 'Some Error'
+        }
+
+    def mock_enroll_error(self, username=None):
+        return {
+            'error': 'Some Error'
+        }
+
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll)
     def test_put_user_duo(self):
         """
-        Tests PUT method on user_duo
+        Tests PUT method on user_duo to create a new duo
         """
 
         url = reverse('user_duo')
@@ -280,6 +429,82 @@ class DuoTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('id', False), False)
         self.assertNotEqual(response.data.get('activation_code', False), False)
+
+    @patch('duo_client.Auth.check', mock_check_error)
+    @patch('duo_client.Auth.enroll', mock_enroll)
+    def test_put_user_duo_error_in_check(self):
+        """
+        Tests PUT method on user_duo to create a new duo with an error in duo check call
+        """
+
+        url = reverse('user_duo')
+
+        data = {
+            'title': 'asdu5zz53',
+            'integration_key': 'integration_key',
+            'secret_key': 'secret_key',
+            'host': 'host',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll', mock_enroll_error)
+    def test_put_user_duo_error_in_check(self):
+        """
+        Tests PUT method on user_duo to create a new duo with an error in duo enroll call
+        """
+
+        url = reverse('user_duo')
+
+        data = {
+            'title': 'asdu5zz53',
+            'integration_key': 'integration_key',
+            'secret_key': 'secret_key',
+            'host': 'host',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll', mock_enroll)
+    def test_put_user_duo_error_already_exists(self):
+        """
+        Tests PUT method on user_duo to create a new (second) duo
+        """
+
+        models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+
+        url = reverse('user_duo')
+
+        data = {
+            'title': 'asdu5zz53',
+            'integration_key': 'integration_key',
+            'secret_key': 'secret_key',
+            'host': 'host',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     @patch('duo_client.Auth.check', mock_check)
@@ -316,15 +541,34 @@ class DuoTests(APITestCaseExtended):
     def mock_enroll_status(self, user_id=None, activation_code=None):
         return 'success'
 
+    def mock_enroll_status_invalid(self, user_id=None, activation_code=None):
+        return 'invalid'
+
+    def mock_enroll_status_waiting(self, user_id=None, activation_code=None):
+        return 'waiting'
+
     def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'allow'
         }
 
+    def mock_auth_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'error': 'Some Error Message'
+        }
+
+    def mock_auth_status_msg(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return {
+            'status_msg': 'Some Status Error Message'
+        }
+
+    def mock_auth_undefined_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+        return 'Undefined problem'
+
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_valid)
-    def test_activate_duo_success(self):
+    def test_activate_duo_success_with_passcode(self):
         """
         Tests POST method on user_duo to activate a duo
         """
@@ -355,6 +599,217 @@ class DuoTests(APITestCaseExtended):
 
         db_duo = models.Duo.objects.get(pk=duo.id)
         self.assertTrue(db_duo.active)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_activate_duo_success_without_passcode(self):
+        """
+        Tests POST method on user_duo to activate a duo
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        db_duo = models.Duo.objects.get(pk=duo.id)
+        self.assertTrue(db_duo.active)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_error)
+    def test_activate_duo_failure_error(self):
+        """
+        Tests POST method on user_duo to activate a duo and auth returns an error
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_status_msg)
+    def test_activate_duo_failure_error_with_status_msg(self):
+        """
+        Tests POST method on user_duo to activate a duo and auth returns an error with status msg
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_undefined_error)
+    def test_activate_duo_failure_error(self):
+        """
+        Tests POST method on user_duo to activate a duo and auth returns an undefined error
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_activate_duo_failure_duo_id_does_not_exist(self):
+        """
+        Tests POST method on user_duo to activate a duo
+        """
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': 'e3208de5-0f79-46d0-a34c-5d701e48b4b5',
+            'duo_token': '123456',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status_invalid)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_activate_duo_failure_enrollment_status_invalid(self):
+        """
+        Tests POST method on user_duo to activate a duo with an activation code that has expired
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+            'duo_token': '123456',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('duo_client.Auth.check', mock_check)
+    @patch('duo_client.Auth.enroll_status', mock_enroll_status_waiting)
+    @patch('duo_client.Auth.auth', mock_auth_valid)
+    def test_activate_duo_failure_enrollment_status_waiting(self):
+        """
+        Tests POST method on user_duo to activate a duo with an activation code that has not yet scanned by the a mobile
+        """
+
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        url = reverse('user_duo')
+
+        data = {
+            'duo_id': duo.id,
+            'duo_token': '123456',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_user_duo(self):
         """
