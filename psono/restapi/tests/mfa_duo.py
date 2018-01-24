@@ -453,7 +453,7 @@ class DuoTests(APITestCaseExtended):
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll_error)
-    def test_put_user_duo_error_in_check(self):
+    def test_put_user_duo_error_in_enroll(self):
         """
         Tests PUT method on user_duo to create a new duo with an error in duo enroll call
         """
