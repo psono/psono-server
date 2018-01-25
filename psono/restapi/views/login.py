@@ -4,13 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
-from ..models import (
-    Token, Google_Authenticator, Yubikey_OTP
-)
 
-from ..app_settings import (
-    LoginSerializer
-)
+import duo_client
 
 import nacl.encoding
 import nacl.utils
@@ -20,6 +15,14 @@ from nacl.public import PrivateKey, PublicKey, Box
 from datetime import timedelta
 import json
 import six
+
+from ..utils import decrypt_with_db_secret
+from ..models import (
+    Token, Google_Authenticator, Duo, Yubikey_OTP
+)
+from ..app_settings import (
+    LoginSerializer
+)
 
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
@@ -62,12 +65,17 @@ class LoginView(GenericAPIView):
 
         user = serializer.validated_data['user']
 
-        if Google_Authenticator.objects.filter(user=user).exists():
+        if Google_Authenticator.objects.filter(user=user, active=True).exists():
             google_authenticator_2fa = True
         else:
             google_authenticator_2fa = False
 
-        if Yubikey_OTP.objects.filter(user=user).exists():
+        if Duo.objects.filter(user=user, active=True).exists():
+            duo_2fa = True
+        else:
+            duo_2fa = False
+
+        if Yubikey_OTP.objects.filter(user=user, active=True).exists():
             yubikey_otp_2fa = True
         else:
             yubikey_otp_2fa = False
@@ -75,6 +83,7 @@ class LoginView(GenericAPIView):
         token = self.token_model.objects.create(
             user=user,
             google_authenticator_2fa=google_authenticator_2fa,
+            duo_2fa=duo_2fa,
             yubikey_otp_2fa=yubikey_otp_2fa,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
@@ -120,6 +129,9 @@ class LoginView(GenericAPIView):
 
         if token.google_authenticator_2fa:
             required_multifactors.append('google_authenticator_2fa')
+
+        if token.duo_2fa:
+            required_multifactors.append('duo_2fa')
 
         if token.yubikey_otp_2fa:
             required_multifactors.append('yubikey_otp_2fa')

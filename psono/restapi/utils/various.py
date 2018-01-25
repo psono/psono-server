@@ -11,15 +11,13 @@ import nacl.utils
 
 import bcrypt
 import time
-from uuid import UUID
-from .models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
 
 import nacl.encoding
 import nacl.utils
 import nacl.secret
 import hashlib
 import binascii
-from yubico_client import Yubico
 
 import scrypt
 from typing import Tuple, List
@@ -52,7 +50,7 @@ def generate_activation_code(email : str) -> str:
     time_stamp = str(int(time.time()))
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
+    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
     validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
                                          nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
@@ -71,7 +69,7 @@ def validate_activation_code(activation_code : str) -> User:
     """
 
     try:
-        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode('utf-8')).hexdigest()
+        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code)).decode()
 
@@ -79,7 +77,7 @@ def validate_activation_code(activation_code : str) -> User:
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
             email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:
@@ -325,71 +323,6 @@ def set_cache(obj, timeout=None):
     if settings.CACHE_ENABLE:
         cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
 
-def is_uuid(expr):
-    """
-    check if a given expression is a uuid (version 4)
-
-    :param expr: the possible uuid
-    :return: True or False
-    :rtype: bool
-    """
-
-    try:
-        val = UUID(expr, version=4)
-    except ValueError:
-        val = False
-
-    return not not val
-
-def request_misses_uuid(request, attribute):
-    """
-    check if a given request misses an attribute or the attribute is not valid uuid
-    
-    :param request: The request to check
-    :type request: 
-    :param attribute: The Attribute to check
-    :type attribute: str
-    :return: True or False
-    :rtype: bool
-    """
-
-    return attribute not in request.data or not is_uuid(request.data[attribute])
-
-
-def yubikey_authenticate(yubikey_otp):
-    """
-    Checks a YubiKey OTP
-    
-    :param yubikey_otp: Yubikey OTP
-    :type yubikey_otp: 
-    :return: True or False or None
-    :rtype: bool
-    """
-
-    if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
-        return None
-
-    client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY)
-    try:
-        yubikey_is_valid = client.verify(yubikey_otp)
-    except:
-        yubikey_is_valid = False
-
-    return yubikey_is_valid
-
-def yubikey_get_yubikey_id(yubikey_otp):
-    """
-    Returns the yubikey id based
-    
-    :param yubikey_otp: Yubikey OTP
-    :type yubikey_otp: str
-    :return: Yubikey ID
-    :rtype: str
-    """
-
-    yubikey_otp = str(yubikey_otp).strip()
-
-    return yubikey_otp[:12]
 
 def generate_authkey(username, password) -> bytes:
     """
@@ -403,7 +336,7 @@ def generate_authkey(username, password) -> bytes:
     :rtype: str
     """
 
-    salt = hashlib.sha512(username.lower().encode('utf-8')).hexdigest()
+    salt = hashlib.sha512(username.lower().encode()).hexdigest()
 
     return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                          salt=salt.encode("utf-8"),
@@ -633,10 +566,42 @@ def disable_user(username: str) -> dict:
 
     return {}
 
+def encrypt_with_db_secret(plain_text: str) -> str:
+    """
+    Encrypts plain text with the db secret
+
+    :param plain_text: The decrypted plain text
+    :type plain_text: str
+    :return: encrypted text as hex
+    :rtype: str
+    """
+    secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
+    crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+    encrypted_email = crypto_box.encrypt(plain_text.encode(),
+                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+
+    return nacl.encoding.HexEncoder.encode(encrypted_email).decode()
+
+def decrypt_with_db_secret(encrypted_text: str) -> str:
+    """
+    Decrypts encrypted text with the db secret
+
+    :param encrypted_text: The decrypted plain text in hex
+    :type encrypted_text: str
+    :return: decrypted text
+    :rtype: str
+    """
+    secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
+    crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+    plaintext = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(encrypted_text))
+
+    return plaintext.decode()
+
+
 
 def create_user(username, password, email, gen_authkey=True):
 
-    email_bcrypt = bcrypt.hashpw(email.encode('utf-8'), settings.EMAIL_SECRET_SALT.encode('utf-8')).decode().replace(
+    email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
@@ -661,7 +626,7 @@ def create_user(username, password, email, gen_authkey=True):
     (secret_key, secret_key_nonce) = encrypt_secret(secret_key_decrypted, password, user_sauce)
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+    db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
     encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
     email = nacl.encoding.HexEncoder.encode(encrypted_email)

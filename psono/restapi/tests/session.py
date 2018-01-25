@@ -72,7 +72,7 @@ class SessionTests(APITestCaseExtended):
             is_email_active=True
         )
 
-        self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+        self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
         self.token_u1_1 = ''.join(random.choice(string.ascii_lowercase) for _ in range(32))
         models.Token.objects.create(
             key=TokenAuthentication.user_token_to_token_hash(self.token_u1_1),

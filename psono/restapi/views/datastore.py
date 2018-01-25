@@ -1,4 +1,3 @@
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -7,7 +6,7 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import request_misses_uuid, readbuffer, authenticate, get_datastore
+from ..utils import readbuffer, authenticate, get_datastore
 
 from ..app_settings import (
     DatastoreOverviewSerializer,

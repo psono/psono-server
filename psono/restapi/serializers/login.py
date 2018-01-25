@@ -7,7 +7,6 @@ import nacl.utils
 from nacl.public import PrivateKey, PublicKey, Box
 
 import json
-from django.utils.http import urlsafe_base64_decode as uid_decoder
 
 from django.utils.translation import ugettext_lazy as _
 

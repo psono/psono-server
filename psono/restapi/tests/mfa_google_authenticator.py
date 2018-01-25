@@ -1,27 +1,20 @@
 from django.urls import reverse
+from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
-
-from restapi import models
-
-from .base import APITestCaseExtended
-
-from django.utils import timezone
 from datetime import timedelta
-
 import random
 import string
 import binascii
 import os
-
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 import hashlib
 import pyotp
+import bcrypt
 
-
+from restapi import models
+from .base import APITestCaseExtended
+from ..utils import encrypt_with_db_secret
 
 
 class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
@@ -51,9 +44,9 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         )
 
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-        self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
+        self.session_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
         models.Token.objects.create(
-            key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
+            key= hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
             secret_key=self.session_secret_key,
             valid_till = timezone.now() + timedelta(seconds=10)
@@ -62,16 +55,10 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         secret = pyotp.random_base32()
         self.totp = pyotp.TOTP(secret)
 
-        # normally encrypt secrets, so they are not stored in plaintext with a random nonce
-        secret_key = hashlib.sha256(settings.DB_SECRET.encode('utf-8')).hexdigest()
-        crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        encrypted_secret = crypto_box.encrypt(str(secret).encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-        encrypted_secret_hex = nacl.encoding.HexEncoder.encode(encrypted_secret)
-
         models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
             title= 'My Sweet Title',
-            secret = encrypted_secret_hex.decode()
+            secret = encrypt_with_db_secret(str(secret))
         )
 
     def test_get_authentication_ga_verify(self):
@@ -214,6 +201,30 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
             is_email_active=True
         )
 
+        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key2 = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_user_sauce2 = 'a67fef1ff29eb8f866feaccad336fc6311fa4c71bc183b14c8fceff7416add99'
+        self.test_user_obj2 = models.User.objects.create(
+            username=self.test_username2,
+            email=encrypt_with_db_secret(self.test_email2),
+            email_bcrypt=self.test_email_bcrypt2,
+            authkey=make_password(self.test_authkey2),
+            public_key=self.test_public_key2,
+            private_key=self.test_private_key2,
+            private_key_nonce=self.test_private_key_nonce2,
+            secret_key=self.test_secret_key2,
+            secret_key_nonce=self.test_secret_key_nonce2,
+            user_sauce=self.test_user_sauce2,
+            is_email_active=True
+        )
+
     def test_get_user_ga(self):
         """
         Tests GET method on user_ga
@@ -274,7 +285,7 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_user_ga(self):
+    def test_post_user_ga_no_parameters(self):
         """
         Tests POST method on user_ga
         """
@@ -286,7 +297,164 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_success(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator
+        """
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= False
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': totp.now(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        db_ga = models.Google_Authenticator.objects.get(pk=ga.id)
+        self.assertTrue(db_ga.active)
+
+    def test_activate_ga_failure_incorrect_ga_token(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator
+        """
+
+        secret = pyotp.random_base32()
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= False
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': '000000',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_failure_already_active(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator that is already active
+        """
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= True
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': totp.now(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_failure_belongs_to_other_user(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator of another user
+        """
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj2,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= False
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': totp.now(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_failure_non_digits(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator with a code containing non digits
+        """
+
+        secret = pyotp.random_base32()
+
+        ga = models.Google_Authenticator.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            secret = encrypt_with_db_secret(str(secret)),
+            active= False
+        )
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': ga.id,
+            'google_authenticator_token': 'ABCDEF',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_activate_ga_failure_google_auth_does_not_exist(self):
+        """
+        Tests POST method on user_ga to activate a Google Authenticator
+        """
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+
+
+        url = reverse('user_ga')
+
+        data = {
+            'google_authenticator_id': '6ea5c814-b58f-4bbe-b93d-a3d4c31574c7',
+            'google_authenticator_token': totp.now(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_user_ga(self):
         """

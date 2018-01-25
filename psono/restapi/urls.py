@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.conf import settings
+from os.path import join, dirname, abspath
 import django
 from . import views
 
@@ -27,6 +28,7 @@ urlpatterns = [
     url(r'^authentication/login/$', views.LoginView.as_view(), name='authentication_login'),
     url(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
     url(r'^authentication/ga-verify/$', views.GAVerifyView.as_view(), name='authentication_ga_verify'),
+    url(r'^authentication/duo-verify/$', views.DuoVerifyView.as_view(), name='authentication_duo_verify'),
     url(r'^authentication/yubikey-otp-verify/$', views.YubikeyOTPVerifyView.as_view(), name='authentication_yubikey_otp_verify'),
     url(r'^authentication/activate-token/$', views.ActivateTokenView.as_view(), name='authentication_activate_token'),
     url(r'^authentication/sessions/$', views.SessionView.as_view(), name='authentication_session'),
@@ -36,8 +38,10 @@ urlpatterns = [
 
     url(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),
     url(r'^user/ga/$', views.UserGA.as_view(), name='user_ga'),
+    url(r'^user/duo/$', views.UserDuo.as_view(), name='user_duo'),
     url(r'^user/yubikey-otp/$', views.UserYubikeyOTP.as_view(), name='user_yubikey_otp'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
+    url(r'^user/delete/$', views.UserDelete.as_view(), name='user_delete'),
 
     url(r'^password/$', views.PasswordView.as_view(), name='password'),
     url(r'^recoverycode/$', views.RecoveryCodeView.as_view(), name='recoverycode'),
@@ -81,6 +85,6 @@ urlpatterns = [
 if settings.DEBUG:
     # URLs for development purposes only
     urlpatterns += [
-        url(r'^doc/(?P<path>.*)$', django.views.static.serve,
-            {'document_root':'/home/chickahoona/gits/psono-server/docs/_build/html'}),
+        url(r'^coverage/(?P<path>.*)$', django.views.static.serve,
+            {'document_root':join(dirname(abspath(__file__)), '..', '..', 'htmlcov')}),
     ]

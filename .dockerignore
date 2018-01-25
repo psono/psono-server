@@ -1,9 +1,5 @@
-README.md
-.gitignore
-.gitmodules
-Dockerfile*
 configs/apache
-configs/nginx/psono.pw.conf
+configs/nginx
 demo
 .coverage
 .htmlcov
@@ -11,3 +7,15 @@ demo
 .dockerignore
 .git
 .docu
+docu
+.codeclimate.yml
+.csslintrc
+.eslintignore
+.eslintrc.yml
+.gitignore
+.gitlab-ci.yml
+.gitmodules
+Dockerfile*
+README.md
+
+

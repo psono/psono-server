@@ -19,3 +19,4 @@ ntplib
 yubico-client
 scrypt
 python-dateutil
+duo_client

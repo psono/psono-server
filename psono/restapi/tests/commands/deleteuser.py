@@ -46,6 +46,9 @@ class CommandDeleteuserTestCase(TestCase):
         )
 
     def test_deleteuser(self):
+        """
+        Tests to delete a user
+        """
 
         args = [self.test_username]
         opts = {}
@@ -60,6 +63,26 @@ class CommandDeleteuserTestCase(TestCase):
             found = False
 
         self.assertFalse(found)
+
+    def test_deleteuser_not_exist(self):
+        """
+        Tests to delete a user that does not exist
+        """
+
+        args = ['idontexist@psono.pw']
+        opts = {}
+
+        out = StringIO()
+        call_command('deleteuser', stdout=out, *args, **opts)
+
+        found = True
+        try:
+            models.User.objects.get(username=self.test_username)
+        except models.User.DoesNotExist:
+            found = False
+
+        self.assertTrue(found)
+        self.assertEqual(out.getvalue(), 'User does not exist\n')
 
 
 

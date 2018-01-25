@@ -19,6 +19,9 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
+
+
 try:
     # Fall back to psycopg2cffi
     from psycopg2cffi import compat
@@ -117,7 +120,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': (
         'restapi.parsers.DecryptJSONParser',
         # 'rest_framework.parsers.FormParser', # default for Form Parsing
-        'rest_framework.parsers.MultiPartParser' # default for UnitTest Parsing
+        'rest_framework.parsers.MultiPartParser', # default for UnitTest Parsing
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'restapi.renderers.EncryptJSONRenderer',
@@ -131,10 +134,13 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1440/day',
         'user': '28800/day',
-        'health_check': '60/hour',
-        'ga_verify': '10/minute',
-        'yubikey_otp_verify': '10/minute',
-        'registration': '6/day',
+        'health_check': '61/hour',
+        'ga_verify': '6/minute',
+        'duo_verify': '6/minute',
+        'yubikey_otp_verify': '6/minute',
+        'registration': '20/day',
+        'user_delete': '20/day',
+        'user_update': '20/day',
     },
 }
 
@@ -224,6 +230,7 @@ EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
 
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
 YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
+YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 MAILGUN_ACCESS_KEY = config_get('MAILGUN_ACCESS_KEY', '')

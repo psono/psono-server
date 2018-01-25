@@ -528,7 +528,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_put_password_with_incorrect_authkey(self):
         """
@@ -547,7 +547,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_put_password_with_user_who_has_no_recovery_key(self):
         """
@@ -566,7 +566,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_put_password_with_expired_recovery_code_verifier(self):
@@ -586,7 +586,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_put_password_with_missing_authkey(self):
@@ -997,7 +997,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_password_with_incorrect_authkey(self):
         """
@@ -1014,7 +1014,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_password_with_user_who_has_no_recovery_key(self):
         """
@@ -1031,7 +1031,7 @@ class PasswordTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj2)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_password(self):
         """

@@ -48,7 +48,7 @@ class TokenAuthentication(BaseAuthentication):
 
     @staticmethod
     def user_token_to_token_hash(token):
-        return sha512(token.encode('utf-8')).hexdigest()
+        return sha512(token.encode()).hexdigest()
 
     @staticmethod
     def get_token_hash(request):

@@ -10,7 +10,7 @@ except ImportError:
     from io import StringIO
 
 
-class CommandDeleteuserTestCase(TestCase):
+class CommandDisableuserTestCase(TestCase):
 
     def setUp(self):
         self.test_email = "test@example.com"
@@ -46,7 +46,10 @@ class CommandDeleteuserTestCase(TestCase):
             is_active=True,
         )
 
-    def test_deleteuser(self):
+    def test_disableeuser(self):
+        """
+        Tests to disable a user
+        """
 
         args = [self.test_username]
         opts = {}
@@ -57,6 +60,22 @@ class CommandDeleteuserTestCase(TestCase):
         user = models.User.objects.get(username=self.test_username)
 
         self.assertFalse(user.is_active)
+
+    def test_disableeuser_not_exist(self):
+        """
+        Tests to disable a user that does not exist
+        """
+
+        args = ['idontexist@psono.pw']
+        opts = {}
+
+        out = StringIO()
+        call_command('disableuser', stdout=out, *args, **opts)
+
+        user = models.User.objects.get(username=self.test_username)
+
+        self.assertTrue(user.is_active)
+        self.assertEqual(out.getvalue(), 'User does not exist\n')
 
 
 

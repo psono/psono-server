@@ -69,6 +69,8 @@ class Google_Authenticator(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_authenticator')
     title = models.CharField(_('title'), max_length=256)
     secret = models.CharField(_('secret as hex'), max_length=256)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
 
     class Meta:
         abstract = False
@@ -84,6 +86,30 @@ class Yubikey_OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='yubikey_otp')
     title = models.CharField(_('Title'), max_length=256)
     yubikey_id = models.CharField(_('YubiKey ID'), max_length=128)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
+
+    class Meta:
+        abstract = False
+
+
+class Duo(models.Model):
+    """
+    The Duo model
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='duo')
+    title = models.CharField(_('title'), max_length=256)
+    duo_integration_key = models.CharField(_('Duo Integration Key'), max_length=32)
+    duo_secret_key = models.CharField(_('Encrypted Duo Secret Key'), max_length=256)
+    duo_host = models.CharField(_('Duo Host'), max_length=32)
+    enrollment_user_id = models.CharField(_('Duo user_id'), max_length=32)
+    enrollment_expiration_date = models.DateTimeField(null=True, blank=True)
+    enrollment_activation_code = models.CharField(_('Duo Host'), max_length=128)
+    active = models.BooleanField(_('Is Active?'), default=True,
+        help_text=_('Designates whether this 2FA is active or not.'))
 
     class Meta:
         abstract = False
@@ -365,6 +391,10 @@ class Token(models.Model):
 
     yubikey_otp_2fa = models.BooleanField(_('Yubikey Required'), default=False,
         help_text=_('Specifies if Yubikey is required or not'))
+
+    duo_2fa = models.BooleanField(_('Duo Required'), default=False,
+        help_text=_('Specifies if Duo is required or not'))
+
     client_date = models.DateTimeField(null=True)
 
     is_cachable = True
@@ -382,7 +412,7 @@ class Token(models.Model):
         # clear_text_key will not be saved in db but set as property so a "one-time-access" is possible while this
         # object instance is still alive
         self.clear_text_key = binascii.hexlify(os.urandom(64)).decode()
-        self.key = sha512(self.clear_text_key.encode('utf-8')).hexdigest()
+        self.key = sha512(self.clear_text_key.encode()).hexdigest()
 
         self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
         self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()

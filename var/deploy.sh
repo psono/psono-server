@@ -2,8 +2,8 @@
 apk add --update curl
 
 # Deploy to Docker Hub
-docker pull psono-docker-local.jfrog.io/psono/psono-server:latest
-docker tag psono-docker-local.jfrog.io/psono/psono-server:latest psono/psono-server:latest
+docker pull psono-docker.jfrog.io/psono/psono-server:latest
+docker tag psono-docker.jfrog.io/psono/psono-server:latest psono/psono-server:latest
 docker push psono/psono-server:latest
 
 # Inform production stage about new image

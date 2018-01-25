@@ -3,6 +3,7 @@ from django.conf import settings
 from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
+    DuoVerifySerializer as DefaultDuoVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
     LogoutSerializer as DefaultLogoutSerializer,
@@ -10,10 +11,16 @@ from .serializers import (
     RegisterSerializer as DefaultRegisterSerializer,
     UserSearchSerializer as DefaultUserSearchSerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
+    UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
+    NewDuoSerializer as DefaultNewDuoSerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
+    ActivateYubikeySerializer as DefaultActivateYubikeySerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    ActivateGASerializer as DefaultActivateGASerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    ActivateDuoSerializer as DefaultActivateDuoSerializer,
+    DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
@@ -30,7 +37,6 @@ from .serializers import (
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
-    SecretOverviewSerializer as DefaultSecretOverviewSerializer,
     ShareOverviewSerializer as DefaultShareOverviewSerializer,
     ShareRightAcceptSerializer as DefaultShareRightAcceptSerializer,
     ShareRightDeclineSerializer as DefaultShareRightDeclineSerializer,
@@ -58,6 +64,10 @@ LoginSerializer = import_callable(
 
 GAVerifySerializer = import_callable(
     serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
+)
+
+DuoVerifySerializer = import_callable(
+    serializers.get('DUO_VERIFY_SERIALIZER', DefaultDuoVerifySerializer)
 )
 
 YubikeyOTPVerifySerializer = import_callable(
@@ -103,10 +113,24 @@ UserUpdateSerializer = import_callable(
     )
 )
 
+UserDeleteSerializer = import_callable(
+    serializers.get(
+        'USER_DELETE_SERIALIZER',
+        DefaultUserDeleteSerializer
+    )
+)
+
 NewGASerializer = import_callable(
     serializers.get(
         'NEW_GA_SERIALIZER',
         DefaultNewGASerializer
+    )
+)
+
+NewDuoSerializer = import_callable(
+    serializers.get(
+        'NEW_DUO_SERIALIZER',
+        DefaultNewDuoSerializer
     )
 )
 
@@ -117,6 +141,13 @@ NewYubikeyOTPSerializer = import_callable(
     )
 )
 
+ActivateYubikeySerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_YUBIKEY_SERIALIZER',
+        DefaultActivateYubikeySerializer
+    )
+)
+
 DeleteYubikeySerializer = import_callable(
     serializers.get(
         'DELETE_YUBIKEY_SERIALIZER',
@@ -124,10 +155,31 @@ DeleteYubikeySerializer = import_callable(
     )
 )
 
+ActivateGASerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_GA_SERIALIZER',
+        DefaultActivateGASerializer
+    )
+)
+
 DeleteGASerializer = import_callable(
     serializers.get(
         'DELETE_GA_SERIALIZER',
         DefaultDeleteGASerializer
+    )
+)
+
+ActivateDuoSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_DUO_SERIALIZER',
+        DefaultActivateDuoSerializer
+    )
+)
+
+DeleteDuoSerializer = import_callable(
+    serializers.get(
+        'DELETE_DUO_SERIALIZER',
+        DefaultDeleteDuoSerializer
     )
 )
 
@@ -247,13 +299,6 @@ DeleteMembershipSerializer = import_callable(
     serializers.get(
         'DELETE_MEMBERSHIP_SERIALIZER',
         DefaultDeleteMembershipSerializer
-    )
-)
-
-SecretOverviewSerializer = import_callable(
-    serializers.get(
-        'SECRET_OVERVIEW_SERIALIZER',
-        DefaultSecretOverviewSerializer
     )
 )
 

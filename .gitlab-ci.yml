@@ -2,14 +2,13 @@ before_script:
   - docker info
   - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
   - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
-  - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker-local.jfrog.io
   - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
 
 variables:
-  CONTAINER_TEST_IMAGE_UBU1604: psono-docker-local.jfrog.io/psono/psono-server:ubu1604-$CI_BUILD_REF_NAME
-  CONTAINER_TEST_IMAGE_ALPINE: psono-docker-local.jfrog.io/psono/psono-server:alpine-$CI_BUILD_REF_NAME
-  CONTAINER_TEST_IMAGE_CENTOS7: psono-docker-local.jfrog.io/psono/psono-server:centos7-$CI_BUILD_REF_NAME
-  CONTAINER_LATEST_IMAGE: psono-docker-local.jfrog.io/psono/psono-server:latest
+  CONTAINER_TEST_IMAGE_UBU1604: psono-docker.jfrog.io/psono/psono-server:ubu1604-$CI_BUILD_REF_NAME
+  CONTAINER_TEST_IMAGE_ALPINE: psono-docker.jfrog.io/psono/psono-server:alpine-$CI_BUILD_REF_NAME
+  CONTAINER_TEST_IMAGE_CENTOS7: psono-docker.jfrog.io/psono/psono-server:centos7-$CI_BUILD_REF_NAME
+  CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
 stages:
   - build

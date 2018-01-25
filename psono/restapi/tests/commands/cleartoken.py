@@ -48,14 +48,14 @@ class CommandCleartokenTestCase(TestCase):
         # Lets put one tokens validity into the future, and one into the past
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
-            key= hashlib.sha512(self.token.encode('utf-8')).hexdigest(),
+            key= hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
             valid_till=timezone.now() + timedelta(seconds=10)
         )
 
         self.token2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
-            key= hashlib.sha512(self.token2.encode('utf-8')).hexdigest(),
+            key= hashlib.sha512(self.token2.encode()).hexdigest(),
             user=self.test_user_obj,
             valid_till = timezone.now() - timedelta(seconds=10)
         )

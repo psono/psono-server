@@ -1,4 +1,4 @@
-from .base import APITestCaseExtended
+from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer
@@ -23,7 +23,7 @@ def yubico_verify_true(yubikey_otp):
     return True
 
 
-class TestUtils(APITestCaseExtended):
+class TestUtils(TestCase):
     def test_authenticate_with_no_authkey(self):
         """
         Test authentication without authkey
@@ -42,16 +42,16 @@ class TestUtils(APITestCaseExtended):
         """
         self.assertEqual(authenticate('narf', False, 'asdf'), (False, 'USER_NOT_FOUND'))
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
-    @patch('restapi.utils.Yubico.verify', side_effect=yubico_verify_true)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_yubikey_authenticate_works(self, settings_fct, yubico_verify_true_fct):
         self.assertTrue(yubikey_authenticate(5))
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
     def test_yubikey_authenticate_client_id_none(self, settings_fct):
         self.assertIsNone(yubikey_authenticate(5))
 
-    @patch('restapi.utils.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY=None)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY=None)
     def test_yubikey_authenticate_secret_key_none(self, settings_fct):
         self.assertIsNone(yubikey_authenticate(5))
 
@@ -60,7 +60,7 @@ class TestUtils(APITestCaseExtended):
 
 
 
-class TestCalculateShareRightsOnShare(APITestCaseExtended):
+class TestCalculateShareRightsOnShare(TestCase):
 
     def setUp(self):
         self.test_email = "test@example.com"
