@@ -30,8 +30,13 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
 
+        yks = Yubikey_OTP.objects.filter(user_id=token.user_id).all()
+        if len(yks) < 1:
+            msg = _('No Yubikeys found.')
+            raise exceptions.ValidationError(msg)
+
         otp_token_correct = False
-        for yk in Yubikey_OTP.objects.filter(user_id=token.user_id):
+        for yk in yks:
             decrypted_yubikey_id = decrypt_with_db_secret(yk.yubikey_id).encode()
 
             if six.b(yubikey_id) == decrypted_yubikey_id:
