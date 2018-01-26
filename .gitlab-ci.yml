@@ -15,6 +15,8 @@ build-container-alpine:
   image: psono-docker.jfrog.io/ubuntu:16.04
   services:
     - docker:dind
+  variables:
+    DOCKER_HOST: 'tcp://docker:2375'
   script:
     - sh ./var/update_version.sh
     - apt-get update && apt-get install -y curl
