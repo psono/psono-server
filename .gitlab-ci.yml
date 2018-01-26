@@ -136,6 +136,10 @@ deploy-security-scan-image:
   services:
     - docker:dind
   script:
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
     - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
     - docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
