@@ -10,10 +10,11 @@ RUN mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add --no-cache \
-    build-base \
-    libffi-dev \
-    linux-headers \
-    postgresql-dev && \
+        curl \
+        build-base \
+        libffi-dev \
+        linux-headers \
+        postgresql-dev && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
@@ -29,6 +30,10 @@ RUN mkdir -p /root/.pip && \
         linux-headers && \
     rm -Rf \
         /root/.cache
+
+
+HEALTHCHECK --interval=2m --timeout=3s \
+	CMD curl -f http://localhost/healthcheck/ || exit 1
 
 EXPOSE 80
 
