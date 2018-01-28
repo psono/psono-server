@@ -57,7 +57,7 @@ run-unittests-ubuntu1604:
     - docker build -f DockerfileUbuntu1604 -t ubu1604-testimage .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres ubu1604-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test --parallel=8 restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres ubu1604-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --parallel-mode --source='.' ./psono/manage.py test --parallel=8 restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
 run-unittests-alpine:
