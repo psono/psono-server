@@ -2,7 +2,7 @@
 .mypy_cache
 *.py[cod]
 problemtest
-.coverage
+.coverage*
 log
 docs/
 htmlcov/

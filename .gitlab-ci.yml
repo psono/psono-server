@@ -1,13 +1,5 @@
-before_script:
-  - docker info
-  - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-  - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
-  - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
-
 variables:
-  CONTAINER_TEST_IMAGE_UBU1604: psono-docker.jfrog.io/psono/psono-server:ubu1604-$CI_BUILD_REF_NAME
-  CONTAINER_TEST_IMAGE_ALPINE: psono-docker.jfrog.io/psono/psono-server:alpine-$CI_BUILD_REF_NAME
-  CONTAINER_TEST_IMAGE_CENTOS7: psono-docker.jfrog.io/psono/psono-server:centos7-$CI_BUILD_REF_NAME
+  CONTAINER_TEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:$CI_BUILD_REF_NAME
   CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
 stages:
@@ -16,41 +8,30 @@ stages:
   - release
   - deploy
 
-build-container-ubuntu1604:
-  except:
-    - schedules
-  stage: build
-  image: psono-docker.jfrog.io/docker:git
-  services:
-    - docker:dind
-  script:
-    - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu1604 -t $CONTAINER_TEST_IMAGE_UBU1604 .
-    - docker push $CONTAINER_TEST_IMAGE_UBU1604
-
 build-container-alpine:
   except:
     - schedules
   stage: build
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/ubuntu:16.04
   services:
     - docker:dind
+  variables:
+    DOCKER_HOST: 'tcp://docker:2375'
   script:
     - sh ./var/update_version.sh
-    - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE_ALPINE .
-    - docker push $CONTAINER_TEST_IMAGE_ALPINE
+    - apt-get update && apt-get install -y curl
+    - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-17.12.0-ce.tgz" -o docker.tgz && echo "692e1c72937f6214b1038def84463018d8e320c8eaf8530546c84c2f8f9c767d *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
+    - curl -fL https://getcli.jfrog.io | sh
+    - ./jfrog rt c rt-server-1 --url=https://psono.jfrog.io/psono --user=gitlab --password=$artifactory_credentials
+    - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_BUILD_REF_NAME=$CI_BUILD_REF_NAME;CI_COMMIT_SHA=$CI_COMMIT_SHA;CI_COMMIT_URL=$CI_PROJECT_URL/commit/$CI_COMMIT_SHA;CI_PROJECT_ID=$CI_PROJECT_ID;CI_PROJECT_NAME=$CI_PROJECT_NAME;CI_PROJECT_NAMESPACE=$CI_PROJECT_NAMESPACE;CI_PROJECT_URL=$CI_PROJECT_URL;CI_PIPELINE_ID=$CI_PIPELINE_ID;CI_PIPELINE_URL=$CI_PROJECT_URL/pipelines/$CI_PIPELINE_ID;CI_COMMIT_REF_NAME=$CI_COMMIT_REF_NAME;CI_JOB_ID=$CI_JOB_ID;CI_JOB_URL=$CI_PROJECT_URL/-/jobs/$CI_JOB_ID;CI_JOB_NAME=$CI_JOB_NAME;CI_JOB_STAGE=$CI_JOB_STAGE;CI_RUNNER_ID=$CI_RUNNER_ID;GITLAB_USER_ID=$GITLAB_USER_ID;CI_SERVER_VERSION=$CI_SERVER_VERSION"
+    - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_COMMIT_TAG=$CI_COMMIT_TAG" || true
 
-build-container-centos7:
-  except:
-    - schedules
-  stage: build
-  image: psono-docker.jfrog.io/docker:git
-  services:
-    - docker:dind
-  script:
-    - sh ./var/update_version.sh
-    - docker build -f DockerfileCentos7 -t $CONTAINER_TEST_IMAGE_CENTOS7 .
-    - docker push $CONTAINER_TEST_IMAGE_CENTOS7
 
 run-unittests-ubuntu1604:
   except:
@@ -68,10 +49,15 @@ run-unittests-ubuntu1604:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_UBU1604
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - sh ./var/update_version.sh
+    - docker build -f DockerfileUbuntu1604 -t ubu1604-testimage .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_UBU1604 bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres ubu1604-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
 
 
 run-unittests-alpine:
@@ -90,10 +76,14 @@ run-unittests-alpine:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - docker pull $CONTAINER_TEST_IMAGE
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_ALPINE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests"
 
 
 run-unittests-centos7:
@@ -112,10 +102,15 @@ run-unittests-centos7:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_CENTOS7
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - sh ./var/update_version.sh
+    - docker build -f DockerfileCentos7 -t centos7-testimage .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres $CONTAINER_TEST_IMAGE_CENTOS7 bash -c "yum -y install python34-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/middleware/*,psono/restapi/tests*"
+    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python34-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests"
 
 
 run-vulnerability-scan:
@@ -126,20 +121,28 @@ run-vulnerability-scan:
   services:
     - docker:dind
   script:
-    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE_ALPINE sh -c "pip3 install safety && safety check"
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety && safety check"
 
-deploy-security-scan-image:
-  except:
-    - schedules
-  stage: deploy
-  image: psono-docker.jfrog.io/docker:git
-  services:
-    - docker:dind
-  script:
-    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
-    - docker tag $CONTAINER_TEST_IMAGE_ALPINE psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
-    - docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
+#deploy-security-scan-image:
+#  except:
+#    - schedules
+#  stage: deploy
+#  image: psono-docker.jfrog.io/docker:git
+#  services:
+#    - docker:dind
+#  script:
+#    - docker info
+#    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+#    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+#    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+#    - docker pull $CONTAINER_TEST_IMAGE
+#    - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
+#    - docker push psono/security-scans:psono-server-ce-$CI_BUILD_REF_NAME
 
 release-container:
   except:
@@ -150,8 +153,11 @@ release-container:
     - docker:dind
   script:
     - docker info
-    - docker pull $CONTAINER_TEST_IMAGE_ALPINE
-    - docker tag $CONTAINER_TEST_IMAGE_ALPINE $CONTAINER_LATEST_IMAGE
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_LATEST_IMAGE
     - docker push $CONTAINER_LATEST_IMAGE
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
@@ -165,6 +171,10 @@ deploy:
   services:
     - docker:dind
   script:
+    - docker info
+    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
+    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - sh ./var/deploy.sh
   environment:
     name: production

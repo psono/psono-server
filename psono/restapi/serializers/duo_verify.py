@@ -21,7 +21,12 @@ class DuoVerifySerializer(serializers.Serializer):
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
-        for duo in Duo.objects.filter(user_id=token.user_id):
+        duos = Duo.objects.filter(user_id=token.user_id).all()
+        if len(duos) < 1:
+            msg = _('No duo found.')
+            raise exceptions.ValidationError(msg)
+
+        for duo in duos:
             enrollment_status = duo_auth_enroll_status(duo.duo_integration_key, decrypt_with_db_secret(duo.duo_secret_key), duo.duo_host, duo.enrollment_user_id, duo.enrollment_activation_code)
 
             if enrollment_status == 'invalid':

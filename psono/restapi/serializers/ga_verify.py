@@ -23,8 +23,13 @@ class GAVerifySerializer(serializers.Serializer):
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
+        gas = Google_Authenticator.objects.filter(user_id=token.user_id).all()
+        if len(gas) < 1:
+            msg = _('No Google Authenticator found.')
+            raise exceptions.ValidationError(msg)
+
         ga_token_correct = False
-        for ga in Google_Authenticator.objects.filter(user_id=token.user_id):
+        for ga in gas:
             decrypted_ga_secret = decrypt_with_db_secret(ga.secret)
             totp = pyotp.TOTP(decrypted_ga_secret.encode())
             if totp.verify(ga_token):
