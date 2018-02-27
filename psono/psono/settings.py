@@ -327,6 +327,7 @@ def generate_signature():
         'public_key': PUBLIC_KEY,
         'authentication_methods': AUTHENTICATION_METHODS,
         'web_client': web_client,
+        'management': MANAGEMENT_ENABLED,
     }
 
     info = json.dumps(info)
