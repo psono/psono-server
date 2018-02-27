@@ -24,16 +24,7 @@ from typing import Tuple, List
 
 
 import six
-from importlib import import_module
 
-
-def import_callable(path_or_callable):
-    if hasattr(path_or_callable, '__call__'):
-        return path_or_callable
-    else:
-        assert isinstance(path_or_callable, six.string_types)
-        package, attr = path_or_callable.rsplit('.', 1)
-        return getattr(import_module(package), attr)
 
 def generate_activation_code(email : str) -> str:
     """
@@ -529,6 +520,14 @@ def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
 
 
 def delete_user(username: str) -> dict:
+    """
+    Deletes a user by its username
+
+    :param username:
+    :type username:
+    :return:
+    :rtype:
+    """
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
@@ -537,6 +536,24 @@ def delete_user(username: str) -> dict:
         }
 
     user.delete()
+
+    return {}
+
+def promote_user(username: str, role: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    if role == 'superuser':
+        user.is_superuser = True
+        user.save()
+    else:
+        return {
+            'error': 'Role does not exist'
+        }
 
     return {}
 

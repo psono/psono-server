@@ -41,6 +41,10 @@ class User(models.Model):
         help_text=_('Designates whether this user should be treated as '
                     'active. Unselect this instead of deleting accounts.'))
     user_sauce = models.CharField(_('user sauce'), max_length=64)
+    is_superuser = models.BooleanField(_('Admin User'), default=False,
+        help_text=_('Designates whether this user is an admin or not.'))
+    is_staff = models.BooleanField(_('Has managemnet capabilities'), default=False,
+        help_text=_('Designates whether this user has management capabilities or not.'))
 
     is_cachable = True
 

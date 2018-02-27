@@ -19,6 +19,7 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+from urllib.parse import urlparse
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 
 
@@ -90,6 +91,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'rest_framework',
     'restapi',
+    'administration',
 )
 
 MIDDLEWARE = (
@@ -264,6 +266,8 @@ if not config_get('THROTTLING', True):
         }
     }
 
+MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
+
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
 USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
@@ -309,12 +313,20 @@ with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
 
 def generate_signature():
+
+    if WEB_CLIENT_URL:
+        web_client = WEB_CLIENT_URL
+    else:
+        url = urlparse(HOST_URL)
+        web_client = url.scheme + '://' + url.netloc
+
     info = {
         'version': VERSION,
         'api': 1,
         'log_audit': False,
         'public_key': PUBLIC_KEY,
         'authentication_methods': AUTHENTICATION_METHODS,
+        'web_client': web_client,
     }
 
     info = json.dumps(info)
