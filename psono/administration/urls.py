@@ -16,8 +16,10 @@ Including another URLconf
 from django.conf.urls import url
 from django.conf import settings
 from . import views
+from django.urls import RegexURLResolver
+from typing import List
 
-urlpatterns = []
+urlpatterns = [] # type: List[RegexURLResolver]
 
 if settings.MANAGEMENT_ENABLED:
     # URLs for development purposes only
