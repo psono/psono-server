@@ -16,10 +16,10 @@ Including another URLconf
 from django.conf.urls import url
 from django.conf import settings
 from . import views
-from django.urls import RegexURLResolver
+from django.urls import URLPattern
 from typing import List
 
-urlpatterns = [] # type: List[RegexURLResolver]
+urlpatterns = [] # type: List[URLPattern]
 
 if settings.MANAGEMENT_ENABLED:
     # URLs for development purposes only
