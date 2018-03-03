@@ -5,6 +5,12 @@ from importlib import import_module
 
 from .serializers import (
     UserSerializer as DefaultUserSerializer,
+    DeleteSessionSerializer as DefaultDeleteSessionSerializer,
+    DeleteUserSerializer as DefaultDeleteUserSerializer,
+    UpdateUserSerializer as DefaultUpdateUserSerializer,
+    DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    DeleteDuoSerializer as DefaultDeleteDuoSerializer,
+    DeleteGASerializer as DefaultDeleteGASerializer,
 )
 
 def import_callable(path_or_callable):
@@ -19,5 +25,29 @@ serializers = getattr(settings, 'ADMIN_SERIALIZERS', {})
 
 UserSerializer = import_callable(
     serializers.get('USER_SERIALIZER', DefaultUserSerializer)
+)
+
+DeleteSessionSerializer = import_callable(
+    serializers.get('DELETE_SESSION_SERIALIZER', DefaultDeleteSessionSerializer)
+)
+
+DeleteUserSerializer = import_callable(
+    serializers.get('DELETE_USER_SERIALIZER', DefaultDeleteUserSerializer)
+)
+
+UpdateUserSerializer = import_callable(
+    serializers.get('UPDATE_USER_SERIALIZER', DefaultUpdateUserSerializer)
+)
+
+DeleteYubikeySerializer = import_callable(
+    serializers.get('DELETE_YUBIKEY_SERIALIZER', DefaultDeleteYubikeySerializer)
+)
+
+DeleteDuoSerializer = import_callable(
+    serializers.get('DELETE_DUO_SERIALIZER', DefaultDeleteDuoSerializer)
+)
+
+DeleteGASerializer = import_callable(
+    serializers.get('DELETE_GA_SERIALIZER', DefaultDeleteGASerializer)
 )
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    UserSerializer
+    UserSerializer, DeleteSessionSerializer
 )
 
 from ..permissions import AdminPermission
@@ -88,5 +88,27 @@ class SessionView(GenericAPIView):
         # return Response(user_details, status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def delete(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes a session
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = DeleteSessionSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token = serializer.validated_data.get('token')
+
+        # delete it
+        token.delete()
+
+        return Response(status=status.HTTP_200_OK)
