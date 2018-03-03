@@ -4,7 +4,7 @@ from rest_framework import serializers, exceptions
 from restapi.models import Yubikey_OTP
 
 class DeleteYubikeySerializer(serializers.Serializer):
-    yubikey_id = serializers.UUIDField(required=True)
+    yubikey_otp_id = serializers.UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
