@@ -66,7 +66,7 @@ class CommandDemoteuserTestCase(TestCase):
         Tests to demote a user from a role that does not exist
         """
 
-        args = [self.test_username, 'superuser']
+        args = [self.test_username, 'wimp']
         opts = {}
 
         out = StringIO()
@@ -79,7 +79,7 @@ class CommandDemoteuserTestCase(TestCase):
         Tests to demote a user from superuser that does not exist
         """
 
-        args = ['idontexist@psono.pw', 'wimp']
+        args = ['idontexist@psono.pw', 'superuser']
         opts = {}
 
         out = StringIO()

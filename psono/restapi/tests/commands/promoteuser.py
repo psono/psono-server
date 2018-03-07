@@ -65,7 +65,7 @@ class CommandPromoteuserTestCase(TestCase):
         Tests to promote a user to a role that does not exist
         """
 
-        args = [self.test_username, 'superuser']
+        args = [self.test_username, 'wimp']
         opts = {}
 
         out = StringIO()
@@ -78,7 +78,7 @@ class CommandPromoteuserTestCase(TestCase):
         Tests to promote a user to superuser that does not exist
         """
 
-        args = ['idontexist@psono.pw', 'wimp']
+        args = ['idontexist@psono.pw', 'superuser']
         opts = {}
 
         out = StringIO()

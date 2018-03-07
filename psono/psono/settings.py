@@ -332,14 +332,10 @@ def generate_signature():
 
     info = json.dumps(info)
 
-    if PRIVATE_KEY != '':
-        signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
-        verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
-        # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
-        signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
-    else:
-        verify_key = None
-        signature = None
+    signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
+    verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
+    # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
+    signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
 
     return {
         'info': info,
