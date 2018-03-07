@@ -10,7 +10,7 @@ except ImportError:
     from io import StringIO
 
 
-class CommandPromoteuserTestCase(TestCase):
+class CommandDemoteuserTestCase(TestCase):
 
     def setUp(self):
         self.test_email = "test@example.com"
@@ -42,47 +42,48 @@ class CommandPromoteuserTestCase(TestCase):
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce='082202ea53a9f64459b8217ebbdea19f6cb385d8d529327053f54a9b9861dcf1',
-            is_email_active=True
+            is_email_active=True,
+            is_superuser=True
         )
 
-    def test_promoteuser_to_superuser(self):
+    def test_demoteuser_from_superuser(self):
         """
-        Tests to promote a user to superuser
+        Tests to demote a user from superuser
         """
 
         args = [self.test_username, 'superuser']
         opts = {}
 
         out = StringIO()
-        call_command('promoteuser', stdout=out, *args, **opts)
+        call_command('demoteuser', stdout=out, *args, **opts)
 
         user = models.User.objects.get(username=self.test_username)
 
-        self.assertTrue(user.is_superuser)
+        self.assertFalse(user.is_superuser)
 
-    def test_promoteuser_with_role_that_does_not_exist(self):
+    def test_demoteuser_with_role_that_does_not_exist(self):
         """
-        Tests to promote a user to a role that does not exist
+        Tests to demote a user from a role that does not exist
         """
 
         args = [self.test_username, 'superuser']
         opts = {}
 
         out = StringIO()
-        call_command('promoteuser', stdout=out, *args, **opts)
+        call_command('demoteuser', stdout=out, *args, **opts)
 
         self.assertEqual(out.getvalue(), 'Role does not exist\n')
 
-    def test_promoteuser_that_does_not_exist(self):
+    def test_demoteuser_that_does_not_exist(self):
         """
-        Tests to promote a user to superuser that does not exist
+        Tests to demote a user from superuser that does not exist
         """
 
         args = ['idontexist@psono.pw', 'wimp']
         opts = {}
 
         out = StringIO()
-        call_command('promoteuser', stdout=out, *args, **opts)
+        call_command('demoteuser', stdout=out, *args, **opts)
 
         self.assertEqual(out.getvalue(), 'User does not exist\n')
 

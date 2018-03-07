@@ -557,6 +557,24 @@ def promote_user(username: str, role: str) -> dict:
 
     return {}
 
+def demmote_user(username: str, role: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    if role == 'superuser':
+        user.is_superuser = False
+        user.save()
+    else:
+        return {
+            'error': 'Role does not exist'
+        }
+
+    return {}
+
 def enable_user(username: str) -> dict:
     try:
         user = User.objects.get(username=username)
