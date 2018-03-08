@@ -135,6 +135,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1440/day',
+        'login': '48/day',
+        'password': '24/day',
         'user': '28800/day',
         'health_check': '61/hour',
         'ga_verify': '6/minute',
@@ -265,6 +267,8 @@ if not config_get('THROTTLING', True):
             "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
         }
     }
+
+DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
 
 MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
 

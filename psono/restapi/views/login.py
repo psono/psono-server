@@ -5,8 +5,6 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 
-import duo_client
-
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -16,7 +14,6 @@ from datetime import timedelta
 import json
 import six
 
-from ..utils import decrypt_with_db_secret
 from ..models import (
     Token, Google_Authenticator, Duo, Yubikey_OTP
 )
@@ -29,6 +26,7 @@ class LoginView(GenericAPIView):
     serializer_class = LoginSerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    throttle_scope = 'login'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

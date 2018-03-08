@@ -1,14 +1,13 @@
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import serializers, exceptions
+
 import re
 import bcrypt
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
-from django.utils.translation import ugettext_lazy as _
-
-from rest_framework import serializers, exceptions
-from ..models import User
-
+from ..utils import authenticate
+from ..models import User, Old_Credential
 
 
 class UserUpdateSerializer(serializers.Serializer):
@@ -31,6 +30,8 @@ class UserUpdateSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         email = attrs.get('email')
+        authkey_old = attrs.get('authkey_old')
+        authkey = attrs.get('authkey', False)
 
         if email:
             email = email.lower().strip()
@@ -40,6 +41,26 @@ class UserUpdateSerializer(serializers.Serializer):
                 msg = _('E-Mail already exists.')
                 raise exceptions.ValidationError(msg)
             attrs['email'] = email
+
+        user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey_old))
+
+        if not user:
+            msg = _("Your old password was not right.")
+            raise exceptions.ValidationError(msg)
+
+        if authkey and settings.DISABLE_LAST_PASSWORDS > 0:
+            user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))
+            if user:
+                msg = _("You cannot use your old passwords again.")
+                raise exceptions.ValidationError(msg)
+
+            if settings.DISABLE_LAST_PASSWORDS > 1:
+                old_credentials = Old_Credential.objects.filter(user=self.context['request'].user).order_by('-create_date')[:settings.DISABLE_LAST_PASSWORDS-1]
+
+                for old_cred in old_credentials:
+                    if check_password(authkey, old_cred.authkey):
+                        msg = _("You cannot use your old passwords again.")
+                        raise exceptions.ValidationError(msg)
 
         return attrs
 

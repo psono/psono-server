@@ -101,7 +101,7 @@ def authenticate(username : str = "", user : User = None, authkey : str = "", pa
         if 'AUTHKEY' == method:
             if username and not user:
                 try:
-                    user = User.objects.filter(username=username, is_active=True)[0]
+                    user = User.objects.filter(username=username, is_active=True, authentication='AUTHKEY')[0]
                 except IndexError:
                     continue
 
