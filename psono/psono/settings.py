@@ -286,6 +286,7 @@ ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) #
 DEFAULT_TOKEN_TIME_VALID = config_get('DEFAULT_TOKEN_TIME_VALID', 86400) # 24h in seconds
 RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) # in seconds
 REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
+DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 60) # in seconds
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']

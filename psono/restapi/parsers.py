@@ -10,7 +10,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework.parsers import JSONParser
 from rest_framework import renderers
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import AuthenticationFailed, ParseError
 import nacl.encoding
 import nacl.secret
 import json
@@ -51,6 +51,18 @@ class DecryptJSONParser(JSONParser):
         except ValueError:
             raise ParseError('Invalid request')
 
+        # TODO Activate later once all clients send the request_device_fingerprint
+        # if not settings.DEVICE_PROTECTION_DISABLED:
+        #     request_device_fingerprint = data.get('request_device_fingerprint', False)
+        #     if not request_device_fingerprint:
+        #         stream.auth.delete()
+        #         raise AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
+        #     if str(request_device_fingerprint) != stream.auth.device_fingerprint:
+        #         stream.auth.delete()
+        #         raise AuthenticationFailed('Device Fingerprint Protection: device_fingerprint mismatch')
+
+
+
         if not settings.REPLAY_PROTECTION_DISABLED:
 
             client_date = stream.auth.client_date
@@ -59,11 +71,13 @@ class DecryptJSONParser(JSONParser):
             now = timezone.now()
 
             if not request_date:
-                raise ParseError('Replay Protection: request_time missing')
+                stream.auth.delete()
+                raise AuthenticationFailed('Replay Protection: request_time missing')
 
             request_date = dateutil.parser.parse(request_date)
             time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
             if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
-                raise ParseError('Replay Protection: Time difference too big')
+                stream.auth.delete()
+                raise AuthenticationFailed('Replay Protection: Time difference too big')
 
         return data
