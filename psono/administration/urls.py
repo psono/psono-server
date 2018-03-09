@@ -32,4 +32,5 @@ if settings.MANAGEMENT_ENABLED:
         url(r'^duo/$', views.DuoView.as_view(), name='admin_duo'),
         url(r'^session/(?P<session_id>[^/]+)/$', views.SessionView.as_view(), name='admin_session'),
         url(r'^session/$', views.SessionView.as_view(), name='admin_session'),
+        url(r'^group/$', views.GroupView.as_view(), name='admin_group'),
     ]

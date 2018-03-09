@@ -11,6 +11,7 @@ from .serializers import (
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    DeleteGroupSerializer as DefaultDeleteGroupSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -49,5 +50,9 @@ DeleteDuoSerializer = import_callable(
 
 DeleteGASerializer = import_callable(
     serializers.get('DELETE_GA_SERIALIZER', DefaultDeleteGASerializer)
+)
+
+DeleteGroupSerializer = import_callable(
+    serializers.get('DELETE_GROUP_SERIALIZER', DefaultDeleteGroupSerializer)
 )
 
