@@ -23,71 +23,47 @@ class GroupView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, request, group_id = None, *args, **kwargs):
-        """
-        Returns either a list of all groups with own access privileges or the members specified group
-        
-        :param request:
-        :type request:
-        :param group_id:
-        :type group_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 403
-        :rtype:
-        """
 
-        if not group_id:
+    def get_groups(self, request):
+        # Generates a list of groups wherever the user has any rights for it
+        memberships = User_Group_Membership.objects.select_related('group').filter(user=request.user).exclude(
+            accepted=False).distinct()
 
-            # Generates a list of groups wherever the user has any rights for it
-            memberships = User_Group_Membership.objects.select_related('group').filter(user=request.user).exclude(accepted=False).distinct()
+        response = []
 
-            response = []
+        for membership in memberships:
 
-            for membership in memberships:
+            details = {
+                'group_id': membership.group_id,
+                'membership_id': membership.id,
+                'name': membership.group.name,
+                'public_key': membership.group.public_key,
+                'group_admin': membership.group_admin,
+                'accepted': membership.accepted
+            }
 
-                details = {
-                    'group_id': membership.group_id,
-                    'membership_id': membership.id,
-                    'name': membership.group.name,
-                    'public_key': membership.group.public_key,
-                    'group_admin': membership.group_admin,
-                    'accepted': membership.accepted
-                }
+            if membership.accepted:
+                details['secret_key'] = membership.secret_key
+                details['secret_key_nonce'] = membership.secret_key_nonce
+                details['secret_key_type'] = membership.secret_key_type
+                details['private_key'] = membership.private_key
+                details['private_key_nonce'] = membership.private_key_nonce
+                details['private_key_type'] = membership.private_key_type
 
-                if membership.accepted:
-                    details['secret_key'] = membership.secret_key
-                    details['secret_key_nonce'] = membership.secret_key_nonce
-                    details['secret_key_type'] = membership.secret_key_type
-                    details['private_key'] = membership.private_key
-                    details['private_key_nonce'] = membership.private_key_nonce
-                    details['private_key_type'] = membership.private_key_type
+            if membership.accepted is None:
+                details['user_id'] = membership.creator.id if membership.creator is not None else ''
+                details['user_username'] = membership.creator.username if membership.creator is not None else ''
+                details['share_right_grant'] = True
+                for right in membership.group.group_share_rights.all():
+                    if not right.grant:
+                        details['share_right_grant'] = False
+                        break
 
-                if membership.accepted is None:
-                    details['user_id'] = membership.creator.id if membership.creator is not None else ''
-                    details['user_username'] = membership.creator.username if membership.creator is not None else ''
-                    details['share_right_grant'] = True
-                    for right in membership.group.group_share_rights.all():
-                        if not right.grant:
-                            details['share_right_grant'] = False
-                            break
+            response.append(details)
 
+            return response
 
-                response.append(details)
-
-            return Response({'groups': response},
-                status=status.HTTP_200_OK)
-        else:
-
-            # Returns the specified group if the user has any rights for it
-            try:
-                membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
-            except User_Group_Membership.DoesNotExist:
-
-                return Response({"message":"You don't have permission to access or it does not exist.",
-                                 "resource_id": group_id}, status=status.HTTP_400_BAD_REQUEST)
+    def get_group_details(self, request, membership):
 
             members = []
             if membership.group_admin and membership.accepted:
@@ -150,7 +126,41 @@ class GroupView(GenericAPIView):
                 response['user_id'] = membership.creator.id if membership.creator is not None else ''
                 response['user_username'] = membership.creator.username if membership.creator is not None else ''
 
-            return Response(response,
+            return response
+
+
+
+    def get(self, request, group_id = None, *args, **kwargs):
+        """
+        Returns either a list of all groups with own access privileges or the members specified group
+        
+        :param request:
+        :type request:
+        :param group_id:
+        :type group_id:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 403
+        :rtype:
+        """
+
+        if not group_id:
+            return Response({'groups': self.get_groups(request)},
+                status=status.HTTP_200_OK)
+        else:
+
+            # Returns the specified group if the user has any rights for it
+            try:
+                membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
+            except User_Group_Membership.DoesNotExist:
+
+                return Response({"message":"You don't have permission to access or it does not exist.",
+                                 "resource_id": group_id}, status=status.HTTP_400_BAD_REQUEST)
+
+
+            return Response(self.get_group_details(request, membership),
                 status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
