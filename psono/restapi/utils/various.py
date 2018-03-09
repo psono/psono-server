@@ -350,11 +350,7 @@ def get_datastore(datastore_id=None, user=None):
     """
 
     if user and not datastore_id:
-        try:
-            datastores = Data_Store.objects.filter(user=user)
-        except Data_Store.DoesNotExist:
-            datastores = []
-        return datastores
+        return Data_Store.objects.filter(user=user)
 
     datastore = None
     try:
