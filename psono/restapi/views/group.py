@@ -61,7 +61,7 @@ class GroupView(GenericAPIView):
 
             response.append(details)
 
-            return response
+        return response
 
     def get_group_details(self, request, membership):
 
