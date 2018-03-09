@@ -10,13 +10,13 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
+from ..utils import encrypt_with_db_secret
 
 import json
 import random
 import string
 import binascii
 import os
-import six
 
 import nacl.encoding
 import nacl.utils
@@ -653,6 +653,96 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(request_data.get('required_multifactors', False),
                          ['yubikey_otp_2fa'],
                         'yubikey_otp_2fa not part of the required_multifactors')
+
+        self.assertEqual(request_data.get('user', {}).get('public_key', False),
+                         self.test_public_key,
+                         'Public key is wrong in response or does not exist')
+        self.assertEqual(request_data.get('user', {}).get('private_key', False),
+                         self.test_private_key,
+                         'Private key is wrong in response or does not exist')
+        self.assertEqual(request_data.get('user', {}).get('private_key_nonce', False),
+                         self.test_private_key_nonce,
+                         'Private key nonce is wrong in response or does not exist')
+        self.assertEqual(request_data.get('user', {}).get('user_sauce', False),
+                         self.test_user_sauce,
+                         'Secret key nonce is wrong in response or does not exist')
+
+        self.assertNotEqual(request_data.get('session_public_key', False),
+                         False,
+                         'Session public key does not exist')
+        self.assertNotEqual(request_data.get('user_validator', False),
+                            False,
+                            'User validator does not exist')
+        self.assertNotEqual(request_data.get('user_validator_nonce', False),
+                            False,
+                            'User validator nonce does not exist')
+        self.assertNotEqual(request_data.get('session_secret_key', False),
+                         False,
+                         'Session secret key does not exist')
+        self.assertNotEqual(request_data.get('session_secret_key_nonce', False),
+                         False,
+                         'Session secret key nonce does not exist')
+
+        self.assertEqual(models.Token.objects.count(), 1)
+
+    def test_login_with_duo(self):
+        """
+        Ensure we can login with duo
+        """
+        url = reverse('authentication_login')
+
+        models.Duo.objects.create(
+            user=self.user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = True,
+        )
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+        }
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        request_data = json.loads(server_crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info')),
+            nacl.encoding.HexEncoder.decode(response.data.get('login_info_nonce'))
+        ).decode())
+
+        self.assertTrue(request_data.get('token', False),
+                        'Token does not exist in login response')
+
+        self.assertEqual(request_data.get('required_multifactors', False),
+                         ['duo_2fa'],
+                        'duo_2fa not part of the required_multifactors')
 
         self.assertEqual(request_data.get('user', {}).get('public_key', False),
                          self.test_public_key,

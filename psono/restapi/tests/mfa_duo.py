@@ -12,7 +12,6 @@ import binascii
 import os
 import hashlib
 import time
-from uuid import UUID
 
 from restapi import models
 from .base import APITestCaseExtended

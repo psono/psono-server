@@ -4,15 +4,16 @@ from django.contrib.auth.hashers import check_password
 from rest_framework import status
 
 from restapi import models
-
 from .base import APITestCaseExtended
 from ..utils import decrypt_with_db_secret
 
+from mock import patch, ANY
 import binascii
 import random
 import string
 import os
 import bcrypt
+
 
 class RegistrationTests(APITestCaseExtended):
 
@@ -624,3 +625,73 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('username'), [u'Usernames may not be shorter than 3 chars.'])
+
+
+    @patch('restapi.views.register.settings', ALLOW_REGISTRATION=False)
+    def test_create_account_with_disabled_registration(self, patched_allow_registration):
+        """
+        Ensure we cannot create a new account object while registration is disabled.
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @patch('restapi.views.register.send_mail')
+    def test_create_account_sends_mail(self, mock_send_mail):
+        """
+        Ensure a mail is sent if a new account is created
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        mock_send_mail.assert_called_once_with('Registration successful', ANY, settings.EMAIL_FROM, [email], html_message=ANY)
+

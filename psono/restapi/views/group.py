@@ -17,8 +17,6 @@ class GroupView(GenericAPIView):
 
     """
     Check the REST Token and returns a list of all groups or the specified groups details
-
-    Return the user's public key
     """
 
     authentication_classes = (TokenAuthentication, )
@@ -44,11 +42,7 @@ class GroupView(GenericAPIView):
         if not group_id:
 
             # Generates a list of groups wherever the user has any rights for it
-
-            try:
-                memberships = User_Group_Membership.objects.select_related('group').filter(user=request.user).exclude(accepted=False).distinct()
-            except User_Group_Membership.DoesNotExist:
-                memberships = []
+            memberships = User_Group_Membership.objects.select_related('group').filter(user=request.user).exclude(accepted=False).distinct()
 
             response = []
 

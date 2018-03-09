@@ -1,15 +1,23 @@
-from ..authentication import TokenAuthentication
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import exceptions, serializers
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
-from rest_framework import serializers
+from ..models import (
+    Token
+)
 
 class LogoutSerializer(serializers.Serializer):
-    token = serializers.CharField(required=False)
     session_id = serializers.CharField(required=False)
 
     def validate(self, attrs: dict) -> dict:
+        session_id = attrs.get('session_id', False)
 
-        attrs['token_hash'] = TokenAuthentication.get_token_hash(self.context['request'])
+        if session_id:
+            try:
+                attrs['token'] = Token.objects.get(id=session_id, user=self.context['request'].user)
+            except Token.DoesNotExist:
+                msg = _("You don't have permission to access or it does not exist.")
+                raise exceptions.ValidationError(msg)
+        else:
+            attrs['token'] = self.context['request'].auth
 
         return attrs
