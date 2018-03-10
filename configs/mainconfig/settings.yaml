@@ -78,6 +78,9 @@ CACHE_REDIS_LOCATION: 'redis://127.0.0.1:6379/13'
 # https://docs.djangoproject.com/en/1.11/topics/cache/#dummy-caching-for-development
 THROTTLING: False
 
+# Enables the management api endpoints
+MANAGEMENT_ENABLED: True
+
 # Your Postgres Database credentials
 DATABASES:
     default:

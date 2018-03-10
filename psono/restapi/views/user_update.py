@@ -1,5 +1,5 @@
 from django.conf import settings
-from ..utils import authenticate, encrypt_with_db_secret
+from ..utils import encrypt_with_db_secret
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
@@ -9,15 +9,10 @@ from rest_framework.permissions import IsAuthenticated
 from ..app_settings import (
     UserUpdateSerializer
 )
-from rest_framework.exceptions import PermissionDenied
 
 
 from ..authentication import TokenAuthentication
-import nacl.encoding
-import nacl.utils
-import nacl.secret
 import bcrypt
-import hashlib
 
 
 class UserUpdate(GenericAPIView):
@@ -50,11 +45,6 @@ class UserUpdate(GenericAPIView):
         if not serializer.is_valid():
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        user, error_code = authenticate(username=request.user.username, authkey=str(request.data['authkey_old']))
-
-        if not user:
-            raise PermissionDenied({"message":"Your old password was not right."})
 
         # E-Mail Change
         if 'email' in request.data and request.data['email'] is not None:

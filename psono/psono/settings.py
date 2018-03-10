@@ -135,6 +135,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1440/day',
+        'login': '48/day',
+        'password': '24/day',
         'user': '28800/day',
         'health_check': '61/hour',
         'ga_verify': '6/minute',
@@ -266,6 +268,8 @@ if not config_get('THROTTLING', True):
         }
     }
 
+DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
+
 MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
 
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
@@ -282,6 +286,7 @@ ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) #
 DEFAULT_TOKEN_TIME_VALID = config_get('DEFAULT_TOKEN_TIME_VALID', 86400) # 24h in seconds
 RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) # in seconds
 REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
+DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 60) # in seconds
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
@@ -332,14 +337,10 @@ def generate_signature():
 
     info = json.dumps(info)
 
-    if PRIVATE_KEY != '':
-        signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
-        verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
-        # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
-        signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
-    else:
-        verify_key = None
-        signature = None
+    signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
+    verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
+    # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
+    signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
 
     return {
         'info': info,

@@ -14,6 +14,7 @@ import string
 import os
 import json
 import binascii
+from mock import patch
 
 import nacl.encoding
 import nacl.utils
@@ -327,6 +328,184 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    def test_update_user_without_old_password_block(self):
+        """
+        Tests to update the user with the a new password that is the same as an old password but without the block
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        authkey_old = self.test_authkey
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.reset()
+
+    @patch('restapi.serializers.user_update.settings', DISABLE_LAST_PASSWORDS=1, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_update_user_with_old_password_block_1(self, mocked_fnct):
+        """
+        Tests to update the user with the a new password that is the same as an old password
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        authkey_old = self.test_authkey
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'non_field_errors': ['You cannot use your old passwords again.']})
+
+        self.reset()
+
+    @patch('restapi.serializers.user_update.settings', DISABLE_LAST_PASSWORDS=2, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_update_user_with_old_password_block_2(self, mocked_fnct):
+        """
+        Tests to update the user with the a new password that is the same as an old password
+        """
+
+        url = reverse('user_update')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        authkey_old = self.test_authkey
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'cca98e49ea775ee48101df088973d0a229ff14ee0ef42f01de8c8c5fd1b36233'
+
+        data0 = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': authkey_old,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data0)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data1 = {
+            'username': username,
+            'email': email,
+            'authkey':  binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode(),
+            'authkey_old': authkey,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data1)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data2 = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'authkey_old': data1['authkey'],
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data2)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'non_field_errors': ['You cannot use your old passwords again.']})
+
+        self.reset()
+
     def test_update_user_wrong_password(self):
         """
         Tests to update the user with wrong password
@@ -359,7 +538,7 @@ class UserModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_with_email_duplicate(self):
         """

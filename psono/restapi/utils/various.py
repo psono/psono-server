@@ -101,7 +101,7 @@ def authenticate(username : str = "", user : User = None, authkey : str = "", pa
         if 'AUTHKEY' == method:
             if username and not user:
                 try:
-                    user = User.objects.filter(username=username, is_active=True)[0]
+                    user = User.objects.filter(username=username, is_active=True, authentication='AUTHKEY')[0]
                 except IndexError:
                     continue
 
@@ -350,11 +350,7 @@ def get_datastore(datastore_id=None, user=None):
     """
 
     if user and not datastore_id:
-        try:
-            datastores = Data_Store.objects.filter(user=user)
-        except Data_Store.DoesNotExist:
-            datastores = []
-        return datastores
+        return Data_Store.objects.filter(user=user)
 
     datastore = None
     try:
@@ -549,6 +545,24 @@ def promote_user(username: str, role: str) -> dict:
 
     if role == 'superuser':
         user.is_superuser = True
+        user.save()
+    else:
+        return {
+            'error': 'Role does not exist'
+        }
+
+    return {}
+
+def demmote_user(username: str, role: str) -> dict:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    if role == 'superuser':
+        user.is_superuser = False
         user.save()
     else:
         return {

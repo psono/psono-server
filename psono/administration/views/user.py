@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    UserSerializer
+    UserSerializer, DeleteUserSerializer, UpdateUserSerializer
 )
 
 from ..permissions import AdminPermission
@@ -54,8 +54,43 @@ class UserView(GenericAPIView):
             'users': users
         }, status=status.HTTP_200_OK)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+        """
+        Updates a user
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = UpdateUserSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = serializer.validated_data.get('user')
+        is_active = serializer.validated_data.get('is_active')
+        is_email_active = serializer.validated_data.get('is_email_active')
+        email = serializer.validated_data.get('email')
+
+        if is_active is not None:
+            user.is_active = is_active
+
+        if is_email_active is not None:
+            user.is_email_active = is_email_active
+
+        if email is not None:
+            user.email = email
+            user.email_bcrypt = serializer.validated_data.get('email_bcrypt')
+
+        # saves it
+        user.save()
+
+        return Response(status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         # """
@@ -96,5 +131,27 @@ class UserView(GenericAPIView):
         # return Response(user_details, status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def delete(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes a user
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = DeleteUserSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = serializer.validated_data.get('user')
+
+        # delete it
+        user.delete()
+
+        return Response(status=status.HTTP_200_OK)

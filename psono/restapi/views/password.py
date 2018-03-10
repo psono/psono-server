@@ -28,6 +28,7 @@ class PasswordView(GenericAPIView):
 
     permission_classes = (AllowAny,)
     allowed_methods = ('PUT', 'POST', 'OPTIONS', 'HEAD')
+    throttle_scope = 'password'
 
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

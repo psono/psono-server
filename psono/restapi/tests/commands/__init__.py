@@ -5,3 +5,5 @@ from .disableuser import *
 from .cleartoken import *
 from .generateserverkeys import *
 from .sendtestmail import *
+from .demoteuser import *
+from .promoteuser import *

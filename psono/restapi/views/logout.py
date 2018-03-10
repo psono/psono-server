@@ -45,18 +45,8 @@ class LogoutView(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        session_id = serializer.validated_data.get('session_id', False)
-        if session_id:
-            try:
-                self.token_model.objects.filter(id=session_id, user=request.user).delete()
-            except:
-                pass
-        else:
-            try:
-                token_hash = serializer.validated_data['token_hash']
-                self.token_model.objects.filter(key=token_hash, user=request.user).delete()
-            except:
-                pass
+        token = serializer.validated_data.get('token')
+        token.delete()
 
         return Response({"success": "Successfully logged out."},
                         status=status.HTTP_200_OK)

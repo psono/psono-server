@@ -59,49 +59,16 @@ class RegisterSerializer(serializers.Serializer):
 
         forbidden_usernames = [
             # SUPPORT MAILBOX NAMES FOR SPECIFIC INTERNET SERVICES
-            'postmaster',
-            'hostmaster',
-            'usenet',
-            'news',
-            'webmaster',
-            'www',
-            'uucp',
-            'ftp',
+            'postmaster', 'hostmaster', 'usenet', 'news', 'webmaster', 'www', 'uucp', 'ftp',
             # BUSINESS-RELATED MAILBOX NAMES
-            'info',
-            'marketing',
-            'support',
-            'sales',
+            'info', 'marketing', 'support', 'sales',
             # BUSINESS-RELATED MAILBOX NAMES
-            'security',
-            'abuse',
-            'noc',
+            'security', 'abuse', 'noc',
             # OTHER NOT RFC2142 MAILBOX NAMES
-            'admin',
-            'administrator',
-            'contact',
+            'admin', 'administrator', 'contact',
             # maybe we want later subdomains
-            'smtp',
-            'www',
-            'mail',
-            'remote',
-            'blog',
-            'webmail',
-            'ns1',
-            'ns2',
-            'ns3',
-            'ftp',
-            'cdn',
-            'api',
-            'secure',
-            'dev',
-            'web',
-            'cloud',
-            'stage',
-            'staging',
-            'exchange',
-            'autodiscover',
-            'irc',
+            'smtp', 'www', 'mail', 'remote',  'blog', 'webmail', 'ns1', 'ns2', 'ns3', 'ftp', 'cdn', 'api', 'secure',
+            'dev', 'web', 'cloud', 'stage', 'staging', 'exchange', 'autodiscover', 'irc',
         ]
 
         value = value.lower().strip()

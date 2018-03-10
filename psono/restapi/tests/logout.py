@@ -152,6 +152,20 @@ class LogoutTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_delete_authentication_logout(self):
+        """
+        Tests DELETE method on authentication_register
+        """
+
+        url = reverse('authentication_logout')
+
+        data = {}
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_logout(self):
         """
         Ensure we can logout
@@ -190,5 +204,21 @@ class LogoutTests(APITestCaseExtended):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Logout has no real affect, Token not deleted')
+
+    def test_logout_other_token_that_does_not_exist(self):
+        """
+        Ensure we can logout other token
+        """
+
+        url = reverse('authentication_logout')
+
+
+        updated_data = {
+            'session_id': '5ae48987-29c2-4c07-b50e-4ee35556d63e'
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        response = self.client.post(url, updated_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 

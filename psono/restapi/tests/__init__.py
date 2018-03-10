@@ -27,3 +27,5 @@ from .share_right import *
 from .share_rights import *
 from .user import *
 from .utils import *
+from .info import *
+from .authentication import *
