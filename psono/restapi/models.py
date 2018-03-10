@@ -24,8 +24,8 @@ class User(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     username = models.EmailField(_('Username'), unique=True)
-    email = models.CharField(_('email address'), max_length=512, unique=True)
-    email_bcrypt = models.CharField(_('bcrypt of email address'), max_length=60, unique=True)
+    email = models.CharField(_('email address'), max_length=512)
+    email_bcrypt = models.CharField(_('bcrypt of email address'), db_index=True, max_length=60)
     authkey = models.CharField(_('auth key'), max_length=128, null=True)
     public_key = models.CharField(_('public key'), max_length=256)
     private_key = models.CharField(_('private key'), max_length=256)
@@ -234,7 +234,7 @@ class Old_Email(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='old_emails')
     email = models.CharField(_('email address'), max_length=512, unique=True)
-    email_bcrypt = models.CharField(_('bcrypt of email address'), max_length=60, unique=True)
+    email_bcrypt = models.CharField(_('bcrypt of email address'), max_length=60)
 
     class Meta:
         abstract = False
