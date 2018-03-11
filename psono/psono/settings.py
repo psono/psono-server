@@ -201,6 +201,8 @@ CORS_ALLOW_METHODS = (
 CORS_ALLOW_HEADERS = default_headers + (
     'authorization-validator',
     'pragma',
+    'if-modified-since',
+    'cache-control',
 )
 
 TEMPLATES = config_get('TEMPLATES')
