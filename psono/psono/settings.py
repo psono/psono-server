@@ -20,6 +20,7 @@ import nacl.signing
 import binascii
 import six
 from urllib.parse import urlparse
+from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 
 
@@ -196,15 +197,11 @@ CORS_ALLOW_METHODS = (
         'DELETE',
         'OPTIONS'
     )
-CORS_ALLOW_HEADERS = (
-        'x-requested-with',
-        'content-type',
-        'accept',
-        'origin',
-        'authorization',
-        'x-csrftoken',
-        'accept-encoding'
-    )
+
+CORS_ALLOW_HEADERS = default_headers + (
+    'authorization-validator',
+    'pragma',
+)
 
 TEMPLATES = config_get('TEMPLATES')
 

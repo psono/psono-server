@@ -48,66 +48,6 @@ class User(models.Model):
     authentication = models.CharField(_('Authentication method'), max_length=16, default='AUTHKEY')
 
     is_cachable = True
-    #
-    # __original_authkey = None
-    # __original_public_key = None
-    # __original_secret_key = None
-    # __original_secret_key_nonce = None
-    # __original_private_key = None
-    # __original_private_key_nonce = None
-    # __original_email = None
-    # __original_email_bcrypt = None
-    #
-    # def __init__(self, *args, **kwargs):
-    #     super(User, self).__init__(*args, **kwargs)
-    #     self.__original_authkey = self.authkey
-    #     self.__original_public_key = self.public_key
-    #     self.__original_secret_key = self.secret_key
-    #     self.__original_secret_key_nonce = self.secret_key_nonce
-    #     self.__original_private_key = self.private_key
-    #     self.__original_private_key_nonce = self.private_key_nonce
-    #     self.__original_email = self.email
-    #     self.__original_email_bcrypt = self.email_bcrypt
-
-    # def save(self, *args, **kwargs):
-    #
-    #     authkey_changed = self.authkey != self.__original_authkey
-    #     public_key_changed = self.public_key != self.__original_public_key
-    #     secret_key_changed = self.secret_key != self.__original_secret_key
-    #     secret_key_nonce_changed = self.secret_key_nonce != self.__original_secret_key_nonce
-    #     private_key_changed = self.private_key != self.__original_private_key
-    #     private_key_nonce_changed = self.private_key_nonce != self.__original_private_key_nonce
-    #     email_changed = self.email != self.__original_email
-    #     email_bcrypt_changed = self.email_bcrypt != self.__original_email_bcrypt
-    #
-    #     if authkey_changed or public_key_changed  or secret_key_changed  or secret_key_nonce_changed  or private_key_changed  or private_key_nonce_changed :
-    #         Old_Credential.objects.create(
-    #             user_id=self.id,
-    #             authkey=self.__original_authkey,
-    #             public_key=self.__original_public_key,
-    #             secret_key=self.__original_secret_key,
-    #             secret_key_nonce=self.__original_secret_key_nonce,
-    #             private_key=self.__original_private_key,
-    #             private_key_nonce=self.__original_private_key_nonce,
-    #         )
-    #
-    #     if email_changed or email_bcrypt_changed :
-    #         Old_Email.objects.create(
-    #             user_id=self.id,
-    #             email=self.__original_email,
-    #             email_bcrypt=self.__original_email_bcrypt,
-    #         )
-    #
-    #     super(User, self).save(*args, **kwargs)
-    #
-    #     self.__original_authkey = self.authkey
-    #     self.__original_public_key = self.public_key
-    #     self.__original_secret_key = self.secret_key
-    #     self.__original_secret_key_nonce = self.secret_key_nonce
-    #     self.__original_private_key = self.private_key
-    #     self.__original_private_key_nonce = self.private_key_nonce
-    #     self.__original_email = self.email
-    #     self.__original_email_bcrypt = self.email_bcrypt
 
     def save(self, *args, **kwargs):
 
@@ -145,50 +85,6 @@ class User(models.Model):
 
         super(User, self).save(*args, **kwargs)
 
-    # @staticmethod
-    # def post_save(sender, **kwargs):
-    #     instance = kwargs.get('instance')
-    #     created = kwargs.get('created', False)
-    #
-    #     authkey_changed = instance.authkey != instance.__original_authkey
-    #     public_key_changed = instance.public_key != instance.__original_public_key
-    #     secret_key_changed = instance.secret_key != instance.__original_secret_key
-    #     secret_key_nonce_changed = instance.secret_key_nonce != instance.__original_secret_key_nonce
-    #     private_key_changed = instance.private_key != instance.__original_private_key
-    #     private_key_nonce_changed = instance.private_key_nonce != instance.__original_private_key_nonce
-    #     email_changed = instance.email != instance.__original_email
-    #     email_bcrypt_changed = instance.email_bcrypt != instance.__original_email_bcrypt
-    #
-    #     if not created and (authkey_changed or public_key_changed  or secret_key_changed  or secret_key_nonce_changed  or private_key_changed  or private_key_nonce_changed) :
-    #         Old_Credential.objects.create(
-    #             user_id=instance.id,
-    #             authkey=instance.__original_authkey,
-    #             public_key=instance.__original_public_key,
-    #             secret_key=instance.__original_secret_key,
-    #             secret_key_nonce=instance.__original_secret_key_nonce,
-    #             private_key=instance.__original_private_key,
-    #             private_key_nonce=instance.__original_private_key_nonce,
-    #         )
-    #
-    #     if not created and (email_changed or email_bcrypt_changed) :
-    #         Old_Email.objects.create(
-    #             user_id=instance.id,
-    #             email=instance.__original_email,
-    #             email_bcrypt=instance.__original_email_bcrypt,
-    #         )
-    #
-    # @staticmethod
-    # def remember_state(sender, **kwargs):
-    #     instance = kwargs.get('instance')
-    #     instance.__original_authkey = instance.authkey
-    #     instance.__original_public_key = instance.public_key
-    #     instance.__original_secret_key = instance.secret_key
-    #     instance.__original_secret_key_nonce = instance.secret_key_nonce
-    #     instance.__original_private_key = instance.private_key
-    #     instance.__original_private_key_nonce = instance.private_key_nonce
-    #     instance.__original_email = instance.email
-    #     instance.__original_email_bcrypt = instance.email_bcrypt
-
     class Meta:
         abstract = False
 
@@ -203,8 +99,6 @@ class User(models.Model):
         """
         return True
 
-# post_save.connect(User.post_save, sender=User)
-# post_init.connect(User.remember_state, sender=User)
 
 class Old_Credential(models.Model):
     """
