@@ -1,8 +1,6 @@
 from django.conf import settings
 from yubico_client import Yubico
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
@@ -16,6 +14,10 @@ class NewYubikeyOTPSerializer(serializers.Serializer):
     def validate_yubikey_otp(self, value):
 
         value = value.strip()
+
+        if settings.ALLOWED_SECOND_FACTORS and 'yubikey_otp' not in settings.ALLOWED_SECOND_FACTORS:
+            msg = _('The server does not allow Yubikeys.')
+            raise exceptions.ValidationError(msg)
 
         if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
             msg = _('Server does not support Yubikeys')

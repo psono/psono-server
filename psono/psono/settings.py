@@ -71,10 +71,14 @@ ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
 ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
+ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
     REGISTRATION_EMAIL_FILTER[index] = REGISTRATION_EMAIL_FILTER[index].lower().strip()
+
+for index in range(len(ALLOWED_SECOND_FACTORS)):
+    ALLOWED_SECOND_FACTORS[index] = ALLOWED_SECOND_FACTORS[index].lower().strip()
 
 
 HOST_URL = config_get('HOST_URL')
@@ -332,6 +336,7 @@ def generate_signature():
         'authentication_methods': AUTHENTICATION_METHODS,
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
+        'allowed_second_factors': ALLOWED_SECOND_FACTORS,
     }
 
     info = json.dumps(info)
