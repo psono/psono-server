@@ -146,7 +146,7 @@ class UserDuo(GenericAPIView):
         duo_count = serializer.validated_data.get('duo_count')
 
         # Update the user attribute if we only had 1 duo
-        if duo_count < 2:
+        if duo_count < 2 and duo.active:
             request.user.duo_enabled = False
             request.user.save()
 

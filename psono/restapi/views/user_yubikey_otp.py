@@ -136,7 +136,7 @@ class UserYubikeyOTP(GenericAPIView):
         yubikey_otp_count = serializer.validated_data.get('yubikey_otp_count')
 
         # Update the user attribute if we only had 1 yubikey
-        if yubikey_otp_count < 2:
+        if yubikey_otp_count < 2 and yubikey_otp.active:
             request.user.yubikey_otp_enabled = False
             request.user.save()
 

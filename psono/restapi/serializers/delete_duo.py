@@ -17,7 +17,7 @@ class DeleteDuoSerializer(serializers.Serializer):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 
-        duo_count = Duo.objects.filter(user=self.context['request'].user).count()
+        duo_count = Duo.objects.filter(user=self.context['request'].user, active=True).count()
 
 
 

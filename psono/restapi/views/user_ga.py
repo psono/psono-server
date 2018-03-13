@@ -132,7 +132,7 @@ class UserGA(GenericAPIView):
         google_authenticator_count = serializer.validated_data.get('google_authenticator_count')
 
         # Update the user attribute if we only had 1 yubikey
-        if google_authenticator_count < 2:
+        if google_authenticator_count < 2 and google_authenticator.active:
             request.user.google_authenticator_enabled = False
             request.user.save()
 
