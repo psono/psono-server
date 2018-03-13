@@ -73,6 +73,10 @@ class UserYubikeyOTP(GenericAPIView):
             active=True # YubiKeys don't need validation
         )
 
+        # Also update the user immediately and don't wait for the activation
+        request.user.yubikey_otp_enabled = True
+        request.user.save()
+
         return Response({
             "id": new_yubikey.id,
         },
@@ -105,6 +109,9 @@ class UserYubikeyOTP(GenericAPIView):
         yubikey_otp.active = True
         yubikey_otp.save()
 
+        request.user.yubikey_otp_enabled = True
+        request.user.save()
+
         return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
@@ -126,6 +133,12 @@ class UserYubikeyOTP(GenericAPIView):
             )
 
         yubikey_otp = serializer.validated_data.get('yubikey_otp')
+        yubikey_otp_count = serializer.validated_data.get('yubikey_otp_count')
+
+        # Update the user attribute if we only had 1 yubikey
+        if yubikey_otp_count < 2 and yubikey_otp.active:
+            request.user.yubikey_otp_enabled = False
+            request.user.save()
 
         # delete it
         yubikey_otp.delete()

@@ -50,20 +50,27 @@ class UserSearch(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        user = serializer.validated_data.get('user')
+        users = serializer.validated_data.get('users')
 
-        user_details = {
-            'id': user.id,
-            'public_key': user.public_key,
-            'username': user.username
-        }
+        result = []
+        for user in users:
+            user_details = {
+                'id': user.id,
+                'public_key': user.public_key,
+                'username': user.username
+            }
 
-        if user.id == request.user.id:
-            user_details['multifactor_auth_enabled'] = user.any_2fa_active()
-            user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
+            if user.id == request.user.id:
+                user_details['multifactor_auth_enabled'] = user.any_2fa_active()
+                user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
 
+            result.append(user_details)
 
-        return Response(user_details, status=status.HTTP_200_OK)
+        if len(result) == 1:
+            search_result = result[0]
+        else:
+            search_result = result
+        return Response(search_result, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
