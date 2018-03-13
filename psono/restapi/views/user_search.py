@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from ..models import (
-    Google_Authenticator, Yubikey_OTP, Recovery_Code
+    Recovery_Code
 )
 
 from ..app_settings import (
@@ -59,7 +59,7 @@ class UserSearch(GenericAPIView):
         }
 
         if user.id == request.user.id:
-            user_details['multifactor_auth_enabled'] = Google_Authenticator.objects.filter(user=user).exists() or Yubikey_OTP.objects.filter(user=user).exists()
+            user_details['multifactor_auth_enabled'] = user.any_2fa_active()
             user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
 
 

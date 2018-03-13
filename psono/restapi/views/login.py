@@ -63,20 +63,9 @@ class LoginView(GenericAPIView):
 
         user = serializer.validated_data['user']
 
-        if Google_Authenticator.objects.filter(user=user, active=True).exists():
-            google_authenticator_2fa = True
-        else:
-            google_authenticator_2fa = False
-
-        if Duo.objects.filter(user=user, active=True).exists():
-            duo_2fa = True
-        else:
-            duo_2fa = False
-
-        if Yubikey_OTP.objects.filter(user=user, active=True).exists():
-            yubikey_otp_2fa = True
-        else:
-            yubikey_otp_2fa = False
+        google_authenticator_2fa = user.google_authenticator_active()
+        duo_2fa = user.duo_active()
+        yubikey_otp_2fa = user.yubikey_otp_active()
 
         token = self.token_model.objects.create(
             user=user,
@@ -98,22 +87,18 @@ class LoginView(GenericAPIView):
         user_session_public_key_hex = serializer.validated_data['user_session_public_key']
         user_public_key_hex = user.public_key
 
-        # both our crypto boxes
-        user_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                              PublicKey(user_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        # encrypt session secret with session_crypto_box
         session_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
                                  PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
-
-        # encrypt session secret with session_crypto_box
         session_secret_key_nonce = nacl.utils.random(Box.NONCE_SIZE)
         session_secret_key_nonce_hex = nacl.encoding.HexEncoder.encode(session_secret_key_nonce)
         encrypted = session_crypto_box.encrypt(token.secret_key.encode(), session_secret_key_nonce)
         session_secret_key = encrypted[len(session_secret_key_nonce):]
         session_secret_key_hex = nacl.encoding.HexEncoder.encode(session_secret_key)
 
-
-
         # encrypt user_validator with user_crypto_box
+        user_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                              PublicKey(user_public_key_hex, encoder=nacl.encoding.HexEncoder))
         user_validator_nonce = nacl.utils.random(Box.NONCE_SIZE)
         user_validator_nonce_hex = nacl.encoding.HexEncoder.encode(user_validator_nonce)
         encrypted = user_crypto_box.encrypt(token.user_validator.encode(), user_validator_nonce)

@@ -9,7 +9,8 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, Duo, Google_Authenticator, Yubikey_OTP
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code
+# from restapi.utils import decrypt_with_db_secret
 
 
 class UserView(GenericAPIView):
@@ -19,9 +20,82 @@ class UserView(GenericAPIView):
     serializer_class = UserSerializer
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
-    def get(self, *args, **kwargs):
+    def get_user_info(self, user_id):
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+        groups = []
+        for m in User_Group_Membership.objects.filter(user=user).select_related('group').only("id", "accepted", "group_admin", "create_date", "group__id", "group__name", "group__create_date", "group__public_key"):
+            groups.append({
+                'id': m.group.id,
+                'name': m.group.name,
+                'create_date': m.group.create_date,
+                'public_key': m.group.public_key,
+                'membership_id': m.id,
+                'membership_create_date': m.create_date,
+                'accepted': m.accepted,
+                'admin': m.group_admin,
+            })
+
+        duos = []
+        for d in Duo.objects.filter(user=user).only("id", "title", "duo_integration_key", "duo_secret_key", "duo_host", "create_date", "active"):
+            duos.append({
+                'id': d.id,
+                'title': d.title,
+                'duo_integration_key': d.duo_integration_key,
+                'duo_secret_key': d.duo_secret_key,
+                'duo_host': d.duo_host,
+                'create_date': d.create_date,
+                'active': d.active,
+            })
+
+        google_authenticators = []
+        for g in Google_Authenticator.objects.filter(user=user).only("id", "title", "create_date", "active"):
+            duos.append({
+                'id': g.id,
+                'title': g.title,
+                'create_date': g.create_date,
+                'active': g.active,
+            })
+
+        yubikey_otps = []
+        for y in Yubikey_OTP.objects.filter(user=user).only("id", "title", "create_date", "active"):
+            yubikey_otps.append({
+                'id': y.id,
+                'title': y.title,
+                'create_date': y.create_date,
+                'active': y.active,
+            })
+
+        recovery_codes = []
+        for r in Recovery_Code.objects.filter(user=user).only("id", "create_date"):
+            recovery_codes.append({
+                'id': r.id,
+                'create_date': r.create_date,
+            })
+
+        return {
+            'id': user.id,
+            'username': user.username,
+            # 'email': decrypt_with_db_secret(user.email),
+            'create_date': user.create_date,
+            'public_key': user.public_key,
+            'is_email_active': user.is_email_active,
+            'is_superuser': user.is_staff,
+            'authentication': user.authentication,
+
+            'groups': groups,
+            'duos': duos,
+            'google_authenticators': google_authenticators,
+            'yubikey_otps': yubikey_otps,
+        }
+
+    def get(self, request, user_id = None, *args, **kwargs):
         """
-        Returns a list of all users
+        Returns a list of all users or a the infos of a single user
 
         :param args:
         :type args:
@@ -30,29 +104,43 @@ class UserView(GenericAPIView):
         :return:
         :rtype:
         """
-
-        duos = Duo.objects.filter(user = OuterRef('pk')).only('id')
-        gas = Google_Authenticator.objects.filter(user = OuterRef('pk')).only('id')
-        yubikeys = Yubikey_OTP.objects.filter(user = OuterRef('pk')).only('id')
+        if user_id:
 
 
-        users = []
-        for u in  User.objects.annotate(duo_2fa=Exists(duos), ga_2fa=Exists(gas), yubikey_2fa=Exists(yubikeys))\
-                .only('id', 'create_date', 'username', 'is_active', 'is_email_active').order_by('-create_date'):
-            users.append({
-                'id': u.id,
-                'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
-                'username': u.username,
-                'is_active': u.is_active,
-                'is_email_active': u.is_email_active,
-                'duo_2fa': u.duo_2fa,
-                'ga_2fa': u.duo_2fa,
-                'yubikey_2fa': u.yubikey_2fa,
-            })
+            user_info = self.get_user_info(user_id)
 
-        return Response({
-            'users': users
-        }, status=status.HTTP_200_OK)
+            if not user_info:
+                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(user_info,
+                status=status.HTTP_200_OK)
+
+        else:
+
+            duos = Duo.objects.filter(user = OuterRef('pk')).only('id')
+            gas = Google_Authenticator.objects.filter(user = OuterRef('pk')).only('id')
+            yubikeys = Yubikey_OTP.objects.filter(user = OuterRef('pk')).only('id')
+            recovery_codes = Recovery_Code.objects.filter(user = OuterRef('pk')).only('id')
+
+
+            users = []
+            for u in  User.objects.annotate(duo_2fa=Exists(duos), ga_2fa=Exists(gas), yubikey_2fa=Exists(yubikeys), recovery_code_exist=Exists(recovery_codes))\
+                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active').order_by('-create_date'):
+                users.append({
+                    'id': u.id,
+                    'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    'username': u.username,
+                    'is_active': u.is_active,
+                    'is_email_active': u.is_email_active,
+                    'duo_2fa': u.duo_2fa,
+                    'ga_2fa': u.ga_2fa,
+                    'yubikey_2fa': u.yubikey_2fa,
+                    'recovery_code': u.recovery_code_exist,
+                })
+
+            return Response({
+                'users': users
+            }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
