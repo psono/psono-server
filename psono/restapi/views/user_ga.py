@@ -105,6 +105,9 @@ class UserGA(GenericAPIView):
         google_authenticator.active = True
         google_authenticator.save()
 
+        request.user.google_authenticator_enabled = True
+        request.user.save()
+
         return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
@@ -126,6 +129,12 @@ class UserGA(GenericAPIView):
             )
 
         google_authenticator = serializer.validated_data.get('google_authenticator')
+        google_authenticator_count = serializer.validated_data.get('google_authenticator_count')
+
+        # Update the user attribute if we only had 1 yubikey
+        if google_authenticator_count < 2:
+            request.user.google_authenticator_enabled = False
+            request.user.save()
 
         # delete it
         google_authenticator.delete()

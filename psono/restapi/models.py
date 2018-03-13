@@ -46,6 +46,12 @@ class User(models.Model):
         help_text=_('Designates whether this user has management capabilities or not.'))
 
     authentication = models.CharField(_('Authentication method'), max_length=16, default='AUTHKEY')
+    duo_enabled = models.BooleanField(_('Duo 2FA enabled'), default=False,
+        help_text=_('True once duo 2fa is enabled'))
+    google_authenticator_enabled = models.BooleanField(_('GA 2FA enabled'), default=False,
+        help_text=_('True once ga 2fa is enabled'))
+    yubikey_otp_enabled = models.BooleanField(_('Yubikey OTP 2FA enabled'), default=False,
+        help_text=_('True once yubikey 2fa is enabled'))
 
     is_cachable = True
 
@@ -91,17 +97,8 @@ class User(models.Model):
     def get_cache_time(self):
         return settings.DEFAULT_TOKEN_TIME_VALID
 
-    def google_authenticator_active(self):
-        return Google_Authenticator.objects.filter(user=self, active=True).exists()
-
-    def yubikey_otp_active(self):
-        return Yubikey_OTP.objects.filter(user=self, active=True).exists()
-
-    def duo_active(self):
-        return Duo.objects.filter(user=self, active=True).exists()
-
     def any_2fa_active(self):
-        return self.google_authenticator_active() or self.yubikey_otp_active() or self.duo_active()
+        return self.yubikey_otp_enabled or self.google_authenticator_enabled or self.duo_enabled
 
     @staticmethod
     def is_authenticated():

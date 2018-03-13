@@ -63,15 +63,11 @@ class LoginView(GenericAPIView):
 
         user = serializer.validated_data['user']
 
-        google_authenticator_2fa = user.google_authenticator_active()
-        duo_2fa = user.duo_active()
-        yubikey_otp_2fa = user.yubikey_otp_active()
-
         token = self.token_model.objects.create(
             user=user,
-            google_authenticator_2fa=google_authenticator_2fa,
-            duo_2fa=duo_2fa,
-            yubikey_otp_2fa=yubikey_otp_2fa,
+            google_authenticator_2fa=user.google_authenticator_enabled,
+            duo_2fa=user.duo_enabled,
+            yubikey_otp_2fa=user.yubikey_otp_enabled,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),
@@ -110,13 +106,13 @@ class LoginView(GenericAPIView):
 
         required_multifactors = []
 
-        if token.google_authenticator_2fa:
+        if user.google_authenticator_enabled:
             required_multifactors.append('google_authenticator_2fa')
 
-        if token.duo_2fa:
+        if user.duo_enabled:
             required_multifactors.append('duo_2fa')
 
-        if token.yubikey_otp_2fa:
+        if user.yubikey_otp_enabled:
             required_multifactors.append('yubikey_otp_2fa')
 
         response = {

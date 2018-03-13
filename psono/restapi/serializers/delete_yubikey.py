@@ -17,7 +17,11 @@ class DeleteYubikeySerializer(serializers.Serializer):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 
+        yubikey_otp_count = Yubikey_OTP.objects.filter(user=self.context['request'].user).count()
+
+
 
         attrs['yubikey_otp'] = yubikey_otp
+        attrs['yubikey_otp_count'] = yubikey_otp_count
 
         return attrs

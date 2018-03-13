@@ -116,15 +116,11 @@ class UserView(GenericAPIView):
                 status=status.HTTP_200_OK)
 
         else:
-
-            duos = Duo.objects.filter(user = OuterRef('pk')).only('id')
-            gas = Google_Authenticator.objects.filter(user = OuterRef('pk')).only('id')
-            yubikeys = Yubikey_OTP.objects.filter(user = OuterRef('pk')).only('id')
             recovery_codes = Recovery_Code.objects.filter(user = OuterRef('pk')).only('id')
 
 
             users = []
-            for u in  User.objects.annotate(duo_2fa=Exists(duos), ga_2fa=Exists(gas), yubikey_2fa=Exists(yubikeys), recovery_code_exist=Exists(recovery_codes))\
+            for u in  User.objects.annotate(recovery_code_exist=Exists(recovery_codes))\
                     .only('id', 'create_date', 'username', 'is_active', 'is_email_active').order_by('-create_date'):
                 users.append({
                     'id': u.id,
@@ -132,9 +128,9 @@ class UserView(GenericAPIView):
                     'username': u.username,
                     'is_active': u.is_active,
                     'is_email_active': u.is_email_active,
-                    'duo_2fa': u.duo_2fa,
-                    'ga_2fa': u.ga_2fa,
-                    'yubikey_2fa': u.yubikey_2fa,
+                    'duo_2fa': u.duo_enabled,
+                    'ga_2fa': u.google_authenticator_enabled,
+                    'yubikey_2fa': u.yubikey_otp_enabled,
                     'recovery_code': u.recovery_code_exist,
                 })
 

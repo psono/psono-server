@@ -528,6 +528,9 @@ class LoginTests(APITestCaseExtended):
                 secret = '1234'
         )
 
+        self.user_obj.google_authenticator_enabled = True
+        self.user_obj.save()
+
         # our public / private key box
         box = PrivateKey.generate()
 
@@ -612,6 +615,9 @@ class LoginTests(APITestCaseExtended):
                 title= 'My TItle',
                 yubikey_id = '1234'
         )
+
+        self.user_obj.yubikey_otp_enabled = True
+        self.user_obj.save()
 
         # our public / private key box
         box = PrivateKey.generate()
@@ -702,6 +708,9 @@ class LoginTests(APITestCaseExtended):
             enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
             active = True,
         )
+
+        self.user_obj.duo_enabled = True
+        self.user_obj.save()
 
         # our public / private key box
         box = PrivateKey.generate()

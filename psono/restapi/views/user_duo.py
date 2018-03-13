@@ -119,6 +119,9 @@ class UserDuo(GenericAPIView):
         duo.active = True
         duo.save()
 
+        request.user.duo_enabled = True
+        request.user.save()
+
         return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
@@ -140,6 +143,12 @@ class UserDuo(GenericAPIView):
             )
 
         duo = serializer.validated_data.get('duo')
+        duo_count = serializer.validated_data.get('duo_count')
+
+        # Update the user attribute if we only had 1 duo
+        if duo_count < 2:
+            request.user.duo_enabled = False
+            request.user.save()
 
         # delete it
         duo.delete()
