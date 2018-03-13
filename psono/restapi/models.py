@@ -91,6 +91,18 @@ class User(models.Model):
     def get_cache_time(self):
         return settings.DEFAULT_TOKEN_TIME_VALID
 
+    def google_authenticator_active(self):
+        return Google_Authenticator.objects.filter(user=self, active=True).exists()
+
+    def yubikey_otp_active(self):
+        return Yubikey_OTP.objects.filter(user=self, active=True).exists()
+
+    def duo_active(self):
+        return Duo.objects.filter(user=self, active=True).exists()
+
+    def any_2fa_active(self):
+        return self.google_authenticator_active() or self.yubikey_otp_active() or self.duo_active()
+
     @staticmethod
     def is_authenticated():
         """

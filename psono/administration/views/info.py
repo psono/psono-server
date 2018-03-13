@@ -31,7 +31,7 @@ class InfoView(GenericAPIView):
         :rtype:
         """
 
-        info = settings.SIGNATURE
+        info = settings.SIGNATURE.copy()
 
         info['user_count_active'] = User.objects.filter(is_active=True).count()
         info['user_count_total'] = User.objects.count()
