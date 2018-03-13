@@ -124,7 +124,7 @@ class UserView(GenericAPIView):
 
 
             users = []
-            for u in  User.objects.annotate(duo_2fa=Exists(duos), ga_2fa=Exists(gas), yubikey_2fa=Exists(yubikeys), recovery_code=Exists(recovery_codes))\
+            for u in  User.objects.annotate(duo_2fa=Exists(duos), ga_2fa=Exists(gas), yubikey_2fa=Exists(yubikeys), recovery_code_exist=Exists(recovery_codes))\
                     .only('id', 'create_date', 'username', 'is_active', 'is_email_active').order_by('-create_date'):
                 users.append({
                     'id': u.id,
@@ -135,7 +135,7 @@ class UserView(GenericAPIView):
                     'duo_2fa': u.duo_2fa,
                     'ga_2fa': u.duo_2fa,
                     'yubikey_2fa': u.yubikey_2fa,
-                    'recovery_code': u.recovery_code,
+                    'recovery_code': u.recovery_code_exist,
                 })
 
             return Response({
