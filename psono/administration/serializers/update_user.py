@@ -48,8 +48,7 @@ class UpdateUserSerializer(serializers.Serializer):
                 msg = _('E-Mail already exists.')
                 raise exceptions.ValidationError(msg)
 
-            email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
-            attrs['email_bcrypt'] = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            attrs['email_bcrypt'] = email_bcrypt
 
             # normally encrypt emails, so they are not stored in plaintext with a random nonce
             email = encrypt_with_db_secret(email)

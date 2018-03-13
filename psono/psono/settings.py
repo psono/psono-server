@@ -72,6 +72,9 @@ ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
 ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
 ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
+ALLOW_USER_SEARCH_BY_EMAIL = config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)
+ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)
+
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
@@ -337,6 +340,7 @@ def generate_signature():
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
+        'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
     }
 
     info = json.dumps(info)
