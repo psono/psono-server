@@ -133,7 +133,7 @@ class UserView(GenericAPIView):
                     'is_active': u.is_active,
                     'is_email_active': u.is_email_active,
                     'duo_2fa': u.duo_2fa,
-                    'ga_2fa': u.duo_2fa,
+                    'ga_2fa': u.ga_2fa,
                     'yubikey_2fa': u.yubikey_2fa,
                     'recovery_code': u.recovery_code_exist,
                 })
