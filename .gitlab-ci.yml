@@ -186,7 +186,7 @@ deploy:
 deploy-changelog:
   except:
     - schedules
-  stage: test
+  stage: build
   image: psono-docker.jfrog.io/ubuntu:16.04
   script:
     - sh ./var/deploy_changelog.sh
