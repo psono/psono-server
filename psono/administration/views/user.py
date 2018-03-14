@@ -9,7 +9,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token
 # from restapi.utils import decrypt_with_db_secret
 
 
@@ -76,6 +76,19 @@ class UserView(GenericAPIView):
                 'id': r.id,
                 'create_date': r.create_date,
             })
+        sessions = []
+
+        for u in Token.objects.filter(user=user).only('id', 'create_date', 'active',
+                                                           'valid_till', 'device_description',
+                                                           'device_fingerprint').order_by('-create_date'):
+            sessions.append({
+                'id': u.id,
+                'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'active': u.active,
+                'valid_till': u.valid_till.strftime('%Y-%m-%d %H:%M:%S'),
+                'device_description': u.device_description,
+                'device_fingerprint': u.device_fingerprint,
+            })
 
         return {
             'id': user.id,
@@ -83,6 +96,7 @@ class UserView(GenericAPIView):
             # 'email': decrypt_with_db_secret(user.email),
             'create_date': user.create_date,
             'public_key': user.public_key,
+            'is_active': user.is_active,
             'is_email_active': user.is_email_active,
             'is_superuser': user.is_staff,
             'authentication': user.authentication,
@@ -91,6 +105,8 @@ class UserView(GenericAPIView):
             'duos': duos,
             'google_authenticators': google_authenticators,
             'yubikey_otps': yubikey_otps,
+            'recovery_codes': recovery_codes,
+            'sessions': sessions,
         }
 
     def get(self, request, user_id = None, *args, **kwargs):
