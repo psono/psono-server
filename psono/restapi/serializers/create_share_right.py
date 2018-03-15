@@ -3,6 +3,7 @@ from ..utils import user_has_rights_on_share
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField, BooleanField
 from ..models import User, Group, User_Share_Right, Group_Share_Right
 
 
@@ -13,12 +14,12 @@ class CreateShareRightSerializer(serializers.Serializer):
     title_nonce = serializers.CharField(max_length=64, required=True)
     type = serializers.CharField(max_length=512, required=True)
     type_nonce = serializers.CharField(max_length=64, required=True)
-    share_id = serializers.UUIDField(required=True)
-    user_id = serializers.UUIDField(required=False)
-    group_id = serializers.UUIDField(required=False)
-    read = serializers.BooleanField()
-    write = serializers.BooleanField()
-    grant = serializers.BooleanField()
+    share_id = UUIDField(required=True)
+    user_id = UUIDField(required=False)
+    group_id = UUIDField(required=False)
+    read = BooleanField()
+    write = BooleanField()
+    grant = BooleanField()
 
     def validate(self, attrs: dict) -> dict:
 

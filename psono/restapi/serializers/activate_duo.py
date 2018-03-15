@@ -1,12 +1,13 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from urllib.parse import urlencode
 
 from ..utils import decrypt_with_db_secret, duo_auth_auth, duo_auth_enroll_status
 from ..models import Duo
 
 class ActivateDuoSerializer(serializers.Serializer):
-    duo_id = serializers.UUIDField(required=True)
+    duo_id = UUIDField(required=True)
     duo_token = serializers.CharField(max_length=6, min_length=6, required=False)
 
     def validate(self, attrs: dict) -> dict:

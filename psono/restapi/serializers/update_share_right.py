@@ -1,20 +1,19 @@
 from ..utils import user_has_rights_on_share
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField, BooleanField
 from ..models import User_Share_Right, Group_Share_Right
 
 
 class UpdateShareRightSerializer(serializers.Serializer):
-    share_id = serializers.UUIDField(required=True)
-    user_id = serializers.UUIDField(required=False)
-    group_id = serializers.UUIDField(required=False)
-    read = serializers.BooleanField()
-    write = serializers.BooleanField()
-    grant = serializers.BooleanField()
+    share_id = UUIDField(required=True)
+    user_id = UUIDField(required=False)
+    group_id = UUIDField(required=False)
+    read = BooleanField()
+    write = BooleanField()
+    grant = BooleanField()
 
     def validate(self, attrs: dict) -> dict:
 

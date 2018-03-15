@@ -1,15 +1,16 @@
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
+from restapi.fields import UUIDField, BooleanField
 import bcrypt
 
 from restapi.utils import encrypt_with_db_secret
 from restapi.models import User
 
 class UpdateUserSerializer(serializers.Serializer):
-    user_id = serializers.UUIDField(required=True)
-    is_active = serializers.BooleanField(required=False)
-    is_email_active = serializers.BooleanField(required=False)
+    user_id = UUIDField(required=True)
+    is_active = BooleanField(required=False)
+    is_email_active = BooleanField(required=False)
     email = serializers.EmailField(required=False)
 
 

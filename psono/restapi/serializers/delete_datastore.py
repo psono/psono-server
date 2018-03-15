@@ -3,11 +3,12 @@ from django.utils.translation import ugettext_lazy as _
 
 from ..models import Data_Store
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 
 class DeleteDatastoreSerializer(serializers.Serializer):
 
-    datastore_id = serializers.UUIDField(required=True)
+    datastore_id = UUIDField(required=True)
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True,
                                     max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
                                     min_length=settings.AUTH_KEY_LENGTH_BYTES*2)

@@ -1,17 +1,16 @@
 from ..utils import user_has_rights_on_share
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import User_Share_Right, Group_Share_Right
 
 
 class DeleteShareRightSerializer(serializers.Serializer):
 
-    user_share_right_id = serializers.UUIDField(required=False)
-    group_share_right_id = serializers.UUIDField(required=False)
+    user_share_right_id = UUIDField(required=False)
+    group_share_right_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
         user_share_right_id = attrs.get('user_share_right_id', None)

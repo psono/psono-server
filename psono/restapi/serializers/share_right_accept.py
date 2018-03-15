@@ -1,15 +1,13 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
-from ..utils import user_has_rights_on_share, get_datastore
 from ..models import User_Share_Right
 
 class ShareRightAcceptSerializer(serializers.Serializer):
 
-    share_right_id = serializers.UUIDField(required=True)
+    share_right_id = UUIDField(required=True)
     key = serializers.CharField(max_length=256, required=False)
     key_type = serializers.CharField(max_length=256, required=False, default='symmetric')
     key_nonce = serializers.CharField(max_length=64, required=False)

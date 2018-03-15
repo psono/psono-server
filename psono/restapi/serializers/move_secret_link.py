@@ -4,14 +4,15 @@ from  more_itertools import unique_everseen
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import Secret_Link, Data_Store
 
 
 class MoveSecretLinkSerializer(serializers.Serializer):
 
-    link_id = serializers.UUIDField(required=True)
-    new_parent_share_id = serializers.UUIDField(required=False)
-    new_parent_datastore_id = serializers.UUIDField(required=False)
+    link_id = UUIDField(required=True)
+    new_parent_share_id = UUIDField(required=False)
+    new_parent_datastore_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
         link_id = attrs.get('link_id')

@@ -3,14 +3,15 @@ from ..utils import user_has_rights_on_share
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import Data_Store
 
 class CreateShareLinkSerializer(serializers.Serializer):
 
-    link_id = serializers.UUIDField(required=True)
-    share_id = serializers.UUIDField(required=True)
-    parent_share_id = serializers.UUIDField(required=False)
-    parent_datastore_id = serializers.UUIDField(required=False)
+    link_id = UUIDField(required=True)
+    share_id = UUIDField(required=True)
+    parent_share_id = UUIDField(required=False)
+    parent_datastore_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 

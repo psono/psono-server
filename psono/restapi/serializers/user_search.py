@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 import bcrypt
 
@@ -9,7 +10,7 @@ from ..models import User
 
 class UserSearchSerializer(serializers.Serializer):
 
-    user_id = serializers.UUIDField(required=False)
+    user_id = UUIDField(required=False)
     user_username = serializers.CharField(required=False)
     user_email = serializers.CharField(required=False)
 

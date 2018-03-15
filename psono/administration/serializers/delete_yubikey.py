@@ -1,10 +1,11 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from restapi.fields import UUIDField
 
 from restapi.models import Yubikey_OTP
 
 class DeleteYubikeySerializer(serializers.Serializer):
-    yubikey_otp_id = serializers.UUIDField(required=True)
+    yubikey_otp_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 

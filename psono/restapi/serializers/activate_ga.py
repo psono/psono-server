@@ -2,11 +2,12 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
 import pyotp
 
+from ..fields import UUIDField
 from ..models import Google_Authenticator
 from ..utils import decrypt_with_db_secret
 
 class ActivateGASerializer(serializers.Serializer):
-    google_authenticator_id = serializers.UUIDField(required=True)
+    google_authenticator_id = UUIDField(required=True)
     google_authenticator_token = serializers.CharField(max_length=6, min_length=6, required=True)
 
     def validate(self, attrs: dict) -> dict:

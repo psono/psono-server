@@ -4,12 +4,13 @@ from  more_itertools import unique_everseen
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import Secret_Link, Data_Store
 
 
 class DeleteSecretLinkSerializer(serializers.Serializer):
 
-    link_id = serializers.UUIDField(required=True)
+    link_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
         link_id = attrs.get('link_id')

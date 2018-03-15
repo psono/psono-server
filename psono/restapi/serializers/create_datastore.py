@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from ..fields import BooleanField
 
 class CreateDatastoreSerializer(serializers.Serializer):
 
@@ -8,4 +9,4 @@ class CreateDatastoreSerializer(serializers.Serializer):
     data_nonce = serializers.CharField(required=False, allow_blank=True, max_length=64)
     secret_key = serializers.CharField(max_length=256)
     secret_key_nonce = serializers.CharField(max_length=64)
-    is_default = serializers.BooleanField(required=False, default=True)
+    is_default = BooleanField(required=False, default=True)
