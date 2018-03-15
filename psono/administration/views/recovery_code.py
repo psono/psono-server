@@ -3,22 +3,24 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    DeleteMembershipSerializer
+    DeleteRecoveryCodeSerializer
 )
+
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User_Group_Membership
+from restapi.models import Recovery_Code
 
 
-class MembershipView(GenericAPIView):
+class RecoveryCodeView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    serializer_class = DeleteRecoveryCodeSerializer
+    allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         """
-        Returns a list of all memberships
+        Returns a list of all recovery codes
 
         :param args:
         :type args:
@@ -28,29 +30,27 @@ class MembershipView(GenericAPIView):
         :rtype:
         """
 
-        memberships = []
-        for g in  User_Group_Membership.objects.select_related('user', 'group').order_by('-create_date'):
-            memberships.append({
+        recovery_codes = []
+        for g in  Recovery_Code.objects.select_related('user').order_by('-create_date'):
+            recovery_codes.append({
                 'id': g.id,
                 'create_date': g.create_date.strftime('%Y-%m-%d %H:%M:%S'),
-                'username': g.user.username,
-                'group': g.group.name,
+                'user': g.user.username,
             })
 
         return Response({
-            'memberships': memberships
+            'recovery_codes': recovery_codes
         }, status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
 
     def delete(self, request, *args, **kwargs):
         """
-        Deletes a membership
+        Deletes a Recovery Code
 
         :param request:
         :param args:
@@ -58,7 +58,7 @@ class MembershipView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteRecoveryCodeSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
@@ -66,9 +66,9 @@ class MembershipView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        membership = serializer.validated_data.get('membership')
+        recovery_code = serializer.validated_data.get('recovery_code')
 
         # delete it
-        membership.delete()
+        recovery_code.delete()
 
         return Response(status=status.HTTP_200_OK)

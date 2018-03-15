@@ -7,3 +7,4 @@ from .delete_ga import DeleteGASerializer
 from .delete_yubikey import DeleteYubikeySerializer
 from .delete_group import DeleteGroupSerializer
 from .delete_membership import DeleteMembershipSerializer
+from .delete_recovery_code import DeleteRecoveryCodeSerializer
