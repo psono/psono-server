@@ -341,6 +341,7 @@ def generate_signature():
         'management': MANAGEMENT_ENABLED,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
+        'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'type': 'CE',
     }
 
