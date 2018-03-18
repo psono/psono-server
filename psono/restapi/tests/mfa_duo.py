@@ -12,6 +12,11 @@ import binascii
 import os
 import hashlib
 import time
+import json
+
+import nacl.encoding
+import nacl.utils
+import nacl.secret
 
 from restapi import models
 from .base import APITestCaseExtended
@@ -63,6 +68,20 @@ class DuoVerifyTests(APITestCaseExtended):
             enrollment_activation_code = 'enrollment_activation_code',
             enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
         )
+
+
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(self.session_secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
 
     def test_get_authentication_duo_verify(self):
         """
@@ -142,7 +161,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -161,7 +180,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'token': self.token,
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -181,7 +200,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -201,7 +220,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -224,7 +243,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -244,7 +263,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + '12345')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + '12345', HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -264,7 +283,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -285,7 +304,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -305,7 +324,7 @@ class DuoVerifyTests(APITestCaseExtended):
             'duo_token': '123456'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

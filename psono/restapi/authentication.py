@@ -7,6 +7,7 @@ from rest_framework import HTTP_HEADER_ENCODING, exceptions
 
 from hashlib import sha512
 import json
+import binascii
 import dateutil.parser
 
 from .parsers import decrypt
@@ -58,7 +59,13 @@ class TokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
 
         token_validator_encrypted = self.get_token_validator(request)
-        token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
+        try:
+            token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
+        except binascii.Error:
+            msg = _('Invalid token header. Not proper encrypted.')
+            raise exceptions.AuthenticationFailed(msg)
+
+
         token_validator = json.loads(token_validator_json.decode())
 
         if not settings.DEVICE_PROTECTION_DISABLED:

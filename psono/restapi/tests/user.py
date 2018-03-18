@@ -984,6 +984,19 @@ class UserActivateTokenTests(APITestCaseExtended):
             nacl.encoding.HexEncoder.decode(self.request_data.get('user_validator_nonce'))
         )
 
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(self.session_secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
+
 
     def test_get_authentication_activate_token(self):
         """
@@ -1034,7 +1047,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
 
         response = self.client.post(url, data)
 
@@ -1071,7 +1084,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
 
         response = self.client.post(url, data)
 
@@ -1104,7 +1117,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
 
         response = self.client.post(url, data)
 
@@ -1136,7 +1149,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
 
         response = self.client.post(url, data)
 
@@ -1168,7 +1181,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
 
         response = self.client.post(url, data)
 
@@ -1195,7 +1208,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + 'ABC')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + 'ABC', HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -1221,7 +1234,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'.encode("utf-8")),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -1248,7 +1261,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'verification_nonce': nacl.encoding.HexEncoder.encode(verification_nonce).decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'))
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

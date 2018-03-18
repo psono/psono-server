@@ -13,8 +13,12 @@ from datetime import timedelta
 
 import random
 import string
-
 import hashlib
+import json
+
+import nacl.encoding
+import nacl.utils
+import nacl.secret
 
 
 
@@ -104,6 +108,20 @@ class SessionTests(APITestCaseExtended):
         )
 
 
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(self.session_secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
+
+
     def test_list_datastores_without_credentials(self):
         """
         Tests if someone gets datastores without credentials
@@ -113,7 +131,7 @@ class SessionTests(APITestCaseExtended):
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_u1_1)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_u1_1, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.get(url, data, user=self.test_user_obj)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
