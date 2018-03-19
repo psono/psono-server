@@ -9,7 +9,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token, User_Share_Right
 # from restapi.utils import decrypt_with_db_secret
 
 
@@ -85,6 +85,18 @@ class UserView(GenericAPIView):
                 'device_fingerprint': u.device_fingerprint,
             })
 
+        share_rights = []
+        for m in User_Share_Right.objects.filter(user=user).only("id", "create_date", "read", "write", "grant", "accepted", "share_id"):
+            share_rights.append({
+                'id': m.id,
+                'create_date': m.create_date,
+                'read': m.read,
+                'write': m.write,
+                'grant': m.grant,
+                'accepted': m.accepted,
+                'share_id': m.share_id,
+            })
+
         return {
             'id': user.id,
             'username': user.username,
@@ -103,6 +115,7 @@ class UserView(GenericAPIView):
             'yubikey_otps': yubikey_otps,
             'recovery_codes': recovery_codes,
             'sessions': sessions,
+            'share_rights': share_rights,
         }
 
     def get(self, request, user_id = None, *args, **kwargs):
