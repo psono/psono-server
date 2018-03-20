@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from typing import Dict
+
 from ..fields import UUIDField
 
 import bcrypt
@@ -19,7 +21,7 @@ class UserSearchSerializer(serializers.Serializer):
         user_id = attrs.get('user_id', '')
         user_username = attrs.get('user_username', '').lower().strip()
         user_email = attrs.get('user_email', '').lower().strip()
-        user_index = {}
+        user_index = {} # type: Dict
         users = []
 
         if user_id:
