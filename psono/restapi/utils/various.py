@@ -633,6 +633,7 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
 def create_user(username, password, email, gen_authkey=True):
 
     username = username.lower()
+    email = email.encode().strip().lower()
 
     email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
@@ -661,7 +662,7 @@ def create_user(username, password, email, gen_authkey=True):
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
     db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    encrypted_email = crypto_box.encrypt(email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
     email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
     user = User.objects.create(
