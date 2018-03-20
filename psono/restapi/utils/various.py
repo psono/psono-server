@@ -635,7 +635,7 @@ def create_user(username, password, email, gen_authkey=True):
     username = username.lower()
     email = email.encode().strip().lower()
 
-    email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
+    email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
