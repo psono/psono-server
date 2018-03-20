@@ -525,7 +525,7 @@ def delete_user(username: str) -> dict:
     :rtype:
     """
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -537,7 +537,7 @@ def delete_user(username: str) -> dict:
 
 def promote_user(username: str, role: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -555,7 +555,7 @@ def promote_user(username: str, role: str) -> dict:
 
 def demmote_user(username: str, role: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -573,7 +573,7 @@ def demmote_user(username: str, role: str) -> dict:
 
 def enable_user(username: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -586,7 +586,7 @@ def enable_user(username: str) -> dict:
 
 def disable_user(username: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -631,6 +631,8 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
 
 
 def create_user(username, password, email, gen_authkey=True):
+
+    username = username.lower()
 
     email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
