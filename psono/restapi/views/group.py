@@ -220,7 +220,7 @@ class GroupView(GenericAPIView):
             "private_key_type": 'symmetric',
             "public_key": str(request.data['public_key']),
             "group_admin": True,
-            "group_admin": True,
+            "share_admin": True,
             "accepted": True,
         }, status=status.HTTP_201_CREATED)
 
