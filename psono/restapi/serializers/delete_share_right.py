@@ -41,7 +41,7 @@ class DeleteShareRightSerializer(serializers.Serializer):
 
             #check Permissions on group
             try:
-                attrs['group'] = User_Group_Membership.objects.get(group_id=share_right.group_id, user_id=self.context['request'].user.id, share_admin=True)
+                User_Group_Membership.objects.get(group_id=share_right.group_id, user_id=self.context['request'].user.id, share_admin=True)
             except User_Group_Membership.DoesNotExist:
                 msg = _('You don\'t have the necessary rights to share with this group.')
                 raise exceptions.ValidationError(msg)
