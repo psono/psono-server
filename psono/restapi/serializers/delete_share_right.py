@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
-from ..models import User_Share_Right, Group_Share_Right
+from ..models import User_Share_Right, Group_Share_Right, User_Group_Membership
 
 
 class DeleteShareRightSerializer(serializers.Serializer):
@@ -37,6 +37,13 @@ class DeleteShareRightSerializer(serializers.Serializer):
                 share_right = Group_Share_Right.objects.get(pk=group_share_right_id)
             except Group_Share_Right.DoesNotExist:
                 msg = _("You don't have permission to access or it does not exist.")
+                raise exceptions.ValidationError(msg)
+
+            #check Permissions on group
+            try:
+                attrs['group'] = User_Group_Membership.objects.get(group_id=share_right.group_id, user_id=self.context['request'].user.id, share_admin=True)
+            except User_Group_Membership.DoesNotExist:
+                msg = _('You don\'t have the necessary rights to share with this group.')
                 raise exceptions.ValidationError(msg)
 
         # check if the user has grant rights on this share

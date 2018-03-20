@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
-from ..models import User, Group, User_Share_Right, Group_Share_Right
+from ..models import User, Group, User_Share_Right, Group_Share_Right, User_Group_Membership
 
 
 class CreateShareRightSerializer(serializers.Serializer):
@@ -62,6 +62,13 @@ class CreateShareRightSerializer(serializers.Serializer):
                 attrs['group'] = Group.objects.get(pk=attrs['group_id'])
             except Group.DoesNotExist:
                 msg = _('Target group does not exist.')
+                raise exceptions.ValidationError(msg)
+
+            #check Permissions on group
+            try:
+                User_Group_Membership.objects.get(group_id=attrs['group_id'], user_id=self.context['request'].user.id, share_admin=True)
+            except User_Group_Membership.DoesNotExist:
+                msg = _('You don\'t have the necessary rights to share with this group.')
                 raise exceptions.ValidationError(msg)
 
             try:

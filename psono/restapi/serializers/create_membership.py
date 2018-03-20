@@ -17,6 +17,7 @@ class CreateMembershipSerializer(serializers.Serializer):
     private_key_nonce = serializers.CharField(max_length=64, required=True)
     private_key_type = serializers.CharField(default='asymmetric')
     group_admin = BooleanField(default=False)
+    share_admin = BooleanField(default=True)
 
     def validate_secret_key(self, value):
         value = value.strip()

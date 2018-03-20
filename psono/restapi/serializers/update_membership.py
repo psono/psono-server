@@ -8,6 +8,7 @@ class UpdateMembershipSerializer(serializers.Serializer):
 
     membership_id = UUIDField(required=True)
     group_admin = BooleanField(default=False)
+    share_admin = BooleanField(default=True)
 
     def validate(self, attrs: dict) -> dict:
 

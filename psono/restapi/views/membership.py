@@ -61,6 +61,7 @@ class MembershipView(GenericAPIView):
             private_key_nonce = str(serializer.validated_data['private_key_nonce']),
             private_key_type = str(serializer.validated_data['private_key_type']),
             group_admin = serializer.validated_data['group_admin'],
+            share_admin = serializer.validated_data['share_admin'],
         )
 
         return Response({'membership_id': membership.id}, status=status.HTTP_201_CREATED)
@@ -89,6 +90,7 @@ class MembershipView(GenericAPIView):
 
         membership = serializer.validated_data['membership']
         membership.group_admin = serializer.validated_data['group_admin']
+        membership.share_admin = serializer.validated_data['share_admin']
         membership.save()
 
         return Response(status=status.HTTP_200_OK)
