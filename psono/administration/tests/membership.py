@@ -12,7 +12,7 @@ from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
 
-class ReadGroupTests(APITestCaseExtended):
+class ReadMembershipTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
@@ -49,9 +49,37 @@ class ReadGroupTests(APITestCaseExtended):
             public_key = 'a123',
         )
 
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
+
         self.test_group_ob2 = models.Group.objects.create(
             name = 'Test Group',
             public_key = 'a123',
+        )
+
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_ob2,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
         )
 
         self.admin = models.User.objects.create(
@@ -70,12 +98,12 @@ class ReadGroupTests(APITestCaseExtended):
         )
 
 
-    def test_read_group_success(self):
+    def test_read_membership_success(self):
         """
-        Tests GET method on group
+        Tests GET method on membership
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
         }
@@ -84,42 +112,9 @@ class ReadGroupTests(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['groups']), 2)
+        self.assertEqual(len(response.data['memberships']), 2)
 
-
-    def test_read_specific_user_success(self):
-        """
-        Tests GET method on user
-        """
-
-        url = reverse('admin_group')
-
-        data = {
-            'group_id': self.test_group_obj.id
-        }
-
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-    def test_read_group_failure_without_admin_privileges(self):
-        """
-        Tests GET method on group
-        """
-
-        url = reverse('admin_group')
-
-        data = {
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-class CreateGroupTests(APITestCaseExtended):
+class CreateMembershipTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
@@ -167,12 +162,12 @@ class CreateGroupTests(APITestCaseExtended):
 
 
 
-    def test_create_group(self):
+    def test_create_membership(self):
         """
-        Tests POST method on group
+        Tests POST method on membership
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
         }
@@ -182,7 +177,7 @@ class CreateGroupTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class UpdateGroupTests(APITestCaseExtended):
+class UpdateMembershipTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
@@ -230,12 +225,12 @@ class UpdateGroupTests(APITestCaseExtended):
 
 
 
-    def test_update_group(self):
+    def test_update_membership(self):
         """
-        Tests PUT method on group
+        Tests PUT method on membership
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
         }
@@ -245,22 +240,27 @@ class UpdateGroupTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class DeleteGroupTests(APITestCaseExtended):
+class DeleteMembershipTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
+        self.test_email3 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test3@example.com'
         self.test_email_bcrypt = 'a'
         self.test_email_bcrypt2 = 'b'
+        self.test_email_bcrypt3 = 'c'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
+        self.test_username3 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
         self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_private_key_nonce3 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
         self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        self.test_secret_key_nonce3 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -297,21 +297,63 @@ class DeleteGroupTests(APITestCaseExtended):
             public_key = 'a123',
         )
 
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
+
         self.test_group_ob2 = models.Group.objects.create(
             name = 'Test Group',
             public_key = 'a123',
         )
 
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_ob2,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
 
-    def test_delete_group_success(self):
+        self.admin = models.User.objects.create(
+            email=self.test_email3,
+            email_bcrypt=self.test_email_bcrypt3,
+            username=self.test_username3,
+            authkey=make_password(self.test_authkey),
+            public_key=self.test_public_key,
+            private_key=self.test_private_key,
+            private_key_nonce=self.test_private_key_nonce3,
+            secret_key=self.test_secret_key,
+            secret_key_nonce=self.test_secret_key_nonce3,
+            user_sauce=self.test_user_sauce,
+            is_email_active=True,
+            is_superuser=True
+        )
+
+    def test_delete_membership_success(self):
         """
-        Tests DELETE method on group
+        Tests DELETE method on membership
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
-            'group_id': self.test_group_obj.id
+            'membership_id': self.test_membership_obj.id
         }
 
         self.client.force_authenticate(user=self.admin)
@@ -322,15 +364,15 @@ class DeleteGroupTests(APITestCaseExtended):
         self.assertEqual(models.Duo.objects.all().count(), 0)
 
 
-    def test_delete_group_failure_no_admin(self):
+    def test_delete_membership_failure_no_admin(self):
         """
-        Tests DELETE method on group without being an admin
+        Tests DELETE method on membership without being an admin
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
-            'group_id': self.test_group_obj.id
+            'membership_id': self.test_membership_obj.id
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -339,12 +381,12 @@ class DeleteGroupTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-    def test_delete_group_failure_no_group_id(self):
+    def test_delete_membership_failure_no_membership_id(self):
         """
-        Tests DELETE method on group without a group id
+        Tests DELETE method on membership without a membership id
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
         }
@@ -355,15 +397,15 @@ class DeleteGroupTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_delete_group_failure_group_id_not_exist(self):
+    def test_delete_membership_failure_membership_id_not_exist(self):
         """
-        Tests DELETE method on group with a group id that does not exist
+        Tests DELETE method on membership with a membership id that does not exist
         """
 
-        url = reverse('admin_group')
+        url = reverse('admin_membership')
 
         data = {
-            'group_id': '499d3c84-e8ae-4a6b-a4c2-43c79beb069a'
+            'membership_id': '499d3c84-e8ae-4a6b-a4c2-43c79beb069a'
         }
 
         self.client.force_authenticate(user=self.admin)

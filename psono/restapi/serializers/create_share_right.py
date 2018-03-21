@@ -3,7 +3,8 @@ from ..utils import user_has_rights_on_share
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import User, Group, User_Share_Right, Group_Share_Right
+from ..fields import UUIDField, BooleanField
+from ..models import User, Group, User_Share_Right, Group_Share_Right, User_Group_Membership
 
 
 class CreateShareRightSerializer(serializers.Serializer):
@@ -13,12 +14,12 @@ class CreateShareRightSerializer(serializers.Serializer):
     title_nonce = serializers.CharField(max_length=64, required=True)
     type = serializers.CharField(max_length=512, required=True)
     type_nonce = serializers.CharField(max_length=64, required=True)
-    share_id = serializers.UUIDField(required=True)
-    user_id = serializers.UUIDField(required=False)
-    group_id = serializers.UUIDField(required=False)
-    read = serializers.BooleanField()
-    write = serializers.BooleanField()
-    grant = serializers.BooleanField()
+    share_id = UUIDField(required=True)
+    user_id = UUIDField(required=False)
+    group_id = UUIDField(required=False)
+    read = BooleanField()
+    write = BooleanField()
+    grant = BooleanField()
 
     def validate(self, attrs: dict) -> dict:
 
@@ -61,6 +62,13 @@ class CreateShareRightSerializer(serializers.Serializer):
                 attrs['group'] = Group.objects.get(pk=attrs['group_id'])
             except Group.DoesNotExist:
                 msg = _('Target group does not exist.')
+                raise exceptions.ValidationError(msg)
+
+            #check Permissions on group
+            try:
+                User_Group_Membership.objects.get(group_id=attrs['group_id'], user_id=self.context['request'].user.id, share_admin=True)
+            except User_Group_Membership.DoesNotExist:
+                msg = _('You don\'t have the necessary rights to share with this group.')
                 raise exceptions.ValidationError(msg)
 
             try:

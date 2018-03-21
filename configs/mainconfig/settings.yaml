@@ -81,6 +81,10 @@ THROTTLING: False
 # Enables the management api endpoints
 MANAGEMENT_ENABLED: True
 
+# Disables protections (necessary for unittests to pass)
+REPLAY_PROTECTION_DISABLED: True
+DEVICE_PROTECTION_DISABLED: True
+
 # Your Postgres Database credentials
 DATABASES:
     default:

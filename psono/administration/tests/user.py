@@ -76,6 +76,40 @@ class ReadUserTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['users']), 2)
 
+
+    def test_read_specific_user_success(self):
+        """
+        Tests GET method on user
+        """
+
+        url = reverse('admin_user')
+
+        data = {
+            'user_id': self.test_user_obj.id
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_read_user_failure_without_admin_privileges(self):
+        """
+        Tests GET method on user
+        """
+
+        url = reverse('admin_user')
+
+        data = {
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class CreateUserTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'

@@ -10,7 +10,7 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import encrypt_with_db_secret
+from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
 
 import json
 import random
@@ -468,7 +468,6 @@ class LoginTests(APITestCaseExtended):
 
         models.Token.objects.all().delete()
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -508,8 +507,6 @@ class LoginTests(APITestCaseExtended):
         url = reverse('authentication_login')
 
         models.Token.objects.all().delete()
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -862,6 +859,13 @@ class LoginTests(APITestCaseExtended):
         verification = encrypted[len(verification_nonce):]
         verification_hex = nacl.encoding.HexEncoder.encode(verification)
 
+        # encrypt authorization validator with session key
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
         url = reverse('authentication_activate_token')
 
         data = {
@@ -870,7 +874,13 @@ class LoginTests(APITestCaseExtended):
             'verification_nonce': verification_nonce_hex.decode(),
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token,
+            HTTP_AUTHORIZATION_VALIDATOR=json.dumps({
+                'text': authorization_validator_hex.decode(),
+                'nonce': authorization_validator_nonce_hex.decode(),
+            })
+        )
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -984,13 +994,26 @@ class LoginTests(APITestCaseExtended):
         tok.user_validator=None
         tok.save()
 
+
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(tok.secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
         # to test we first query our datastores with the valid token
 
         url = reverse('datastore')
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token,
+            HTTP_AUTHORIZATION_VALIDATOR=json.dumps({
+                'text': authorization_validator_hex.decode(),
+                'nonce': authorization_validator_nonce_hex.decode(),
+            }))
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1009,7 +1032,11 @@ class LoginTests(APITestCaseExtended):
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token,
+            HTTP_AUTHORIZATION_VALIDATOR=json.dumps({
+                'text': authorization_validator_hex.decode(),
+                'nonce': authorization_validator_nonce_hex.decode(),
+            }))
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

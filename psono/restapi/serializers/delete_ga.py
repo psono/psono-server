@@ -1,11 +1,12 @@
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import Google_Authenticator
 
 class DeleteGASerializer(serializers.Serializer):
 
-    google_authenticator_id = serializers.UUIDField(required=True)
+    google_authenticator_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 

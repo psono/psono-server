@@ -1,11 +1,12 @@
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import User_Group_Membership, Group
+from ..fields import UUIDField
+from ..models import Group
 
 class DeleteGroupSerializer(serializers.Serializer):
 
-    group_id = serializers.UUIDField(required=True)
+    group_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 

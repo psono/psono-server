@@ -6,7 +6,8 @@ COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 WORKDIR /root
 
-RUN mkdir -p /root/.pip && \
+RUN apk upgrade --no-cache && \
+    mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add --no-cache \

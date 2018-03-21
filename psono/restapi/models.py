@@ -377,7 +377,9 @@ class User_Group_Membership(models.Model):
                                         help_text=_('Key type of the private key, either "symmetric", or "asymmetric"'),
                                         max_length=16)
     group_admin = models.BooleanField(_('Group admin'), default=False,
-                                      help_text=_('Designates whether this user can invite other users to this group, and adjust other user rights'))
+                                      help_text=_('Designates whether this user can invite other users to this group, and adjust other user rights.'))
+    share_admin = models.BooleanField(_('Share admin'), default=True,
+                                      help_text=_('Designates whether this user can add or remove shares from this group.'))
     accepted = models.NullBooleanField(_('Accepted'), null=True, blank=True, default=None,
                                        help_text=_('Defines if the share has been accepted, declined, or still waits for approval'))
 

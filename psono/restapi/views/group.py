@@ -39,6 +39,7 @@ class GroupView(GenericAPIView):
                 'name': membership.group.name,
                 'public_key': membership.group.public_key,
                 'group_admin': membership.group_admin,
+                'share_admin': membership.share_admin,
                 'accepted': membership.accepted
             }
 
@@ -74,6 +75,7 @@ class GroupView(GenericAPIView):
                         'name': m.user.username,
                         'public_key': m.user.public_key,
                         'group_admin': m.group_admin,
+                        'share_admin': m.share_admin,
                         'accepted': m.accepted,
                     })
             else:
@@ -83,6 +85,7 @@ class GroupView(GenericAPIView):
                     'name': request.user.username,
                     'public_key': request.user.public_key,
                     'group_admin': membership.group_admin,
+                    'share_admin': membership.share_admin,
                     'accepted': membership.accepted,
                 })
 
@@ -109,6 +112,7 @@ class GroupView(GenericAPIView):
                 'name': membership.group.name,
                 'public_key': membership.group.public_key,
                 'group_admin': membership.group_admin,
+                'share_admin': membership.share_admin,
                 'accepted': membership.accepted,
             }
 
@@ -201,6 +205,7 @@ class GroupView(GenericAPIView):
             private_key_nonce = str(request.data['private_key_nonce']),
             private_key_type = 'symmetric',
             group_admin = True,
+            share_admin = True,
             accepted = True,
         )
 
@@ -215,6 +220,7 @@ class GroupView(GenericAPIView):
             "private_key_type": 'symmetric',
             "public_key": str(request.data['public_key']),
             "group_admin": True,
+            "share_admin": True,
             "accepted": True,
         }, status=status.HTTP_201_CREATED)
 

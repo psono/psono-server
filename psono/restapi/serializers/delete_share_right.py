@@ -1,17 +1,16 @@
 from ..utils import user_has_rights_on_share
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..models import User_Share_Right, Group_Share_Right
+from ..fields import UUIDField
+from ..models import User_Share_Right, Group_Share_Right, User_Group_Membership
 
 
 class DeleteShareRightSerializer(serializers.Serializer):
 
-    user_share_right_id = serializers.UUIDField(required=False)
-    group_share_right_id = serializers.UUIDField(required=False)
+    user_share_right_id = UUIDField(required=False)
+    group_share_right_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
         user_share_right_id = attrs.get('user_share_right_id', None)
@@ -38,6 +37,13 @@ class DeleteShareRightSerializer(serializers.Serializer):
                 share_right = Group_Share_Right.objects.get(pk=group_share_right_id)
             except Group_Share_Right.DoesNotExist:
                 msg = _("You don't have permission to access or it does not exist.")
+                raise exceptions.ValidationError(msg)
+
+            #check Permissions on group
+            try:
+                User_Group_Membership.objects.get(group_id=share_right.group_id, user_id=self.context['request'].user.id, share_admin=True)
+            except User_Group_Membership.DoesNotExist:
+                msg = _('You don\'t have the necessary rights to share with this group.')
                 raise exceptions.ValidationError(msg)
 
         # check if the user has grant rights on this share

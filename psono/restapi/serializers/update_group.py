@@ -1,13 +1,12 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 from ..models import User_Group_Membership
 
 class UpdateGroupSerializer(serializers.Serializer):
 
-    group_id = serializers.UUIDField(required=True)
+    group_id = UUIDField(required=True)
     name = serializers.CharField(max_length=64, required=False)
 
     def validate(self, attrs: dict) -> dict:

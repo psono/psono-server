@@ -1,6 +1,7 @@
 import uuid
 
 from rest_framework import serializers
+from ..fields import UUIDField
 
 class PublicUserDetailsSerializer(serializers.Serializer):
-    id = serializers.UUIDField(default=uuid.uuid4)
+    id = UUIDField(default=uuid.uuid4)

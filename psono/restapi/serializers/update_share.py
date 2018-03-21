@@ -1,13 +1,14 @@
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 from ..utils import user_has_rights_on_share
 from ..models import Share
 
 class UpdateShareSerializer(serializers.Serializer):
 
-    share_id = serializers.UUIDField(required=True)
+    share_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
 

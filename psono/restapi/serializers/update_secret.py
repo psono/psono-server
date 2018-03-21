@@ -1,15 +1,14 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 from ..utils import user_has_rights_on_secret
 from ..models import Secret
 
 class UpdateSecretSerializer(serializers.Serializer):
 
-    secret_id = serializers.UUIDField(required=True)
+    secret_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
 

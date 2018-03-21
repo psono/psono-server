@@ -1,23 +1,23 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField, BooleanField
 from ..models import User, User_Group_Membership
 
 import re
 
 class CreateMembershipSerializer(serializers.Serializer):
 
-    user_id = serializers.UUIDField(required=True)
-    group_id = serializers.UUIDField(required=True)
+    user_id = UUIDField(required=True)
+    group_id = UUIDField(required=True)
     secret_key = serializers.CharField(required=True)
     secret_key_nonce = serializers.CharField(max_length=64, required=True)
     secret_key_type = serializers.CharField(default='asymmetric')
     private_key = serializers.CharField(required=True)
     private_key_nonce = serializers.CharField(max_length=64, required=True)
     private_key_type = serializers.CharField(default='asymmetric')
-    group_admin = serializers.BooleanField(default=False)
+    group_admin = BooleanField(default=False)
+    share_admin = BooleanField(default=True)
 
     def validate_secret_key(self, value):
         value = value.strip()

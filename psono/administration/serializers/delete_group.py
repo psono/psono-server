@@ -1,10 +1,11 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from restapi.fields import UUIDField
 
 from restapi.models import Group
 
 class DeleteGroupSerializer(serializers.Serializer):
-    group_id = serializers.UUIDField(required=True)
+    group_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 

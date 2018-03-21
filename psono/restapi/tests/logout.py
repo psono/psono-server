@@ -111,6 +111,32 @@ class LogoutTests(APITestCaseExtended):
         self.tok2.user_validator=None
         self.tok2.save()
 
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(tok.secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator1 = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
+
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(self.tok2.secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator2 = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
+
     def test_logout_false_token(self):
         """
         Try to use a fake token
@@ -118,7 +144,7 @@ class LogoutTests(APITestCaseExtended):
 
         url = reverse('authentication_logout')
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token + 'hackIT')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token + 'hackIT', HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Any login is accepted')
@@ -133,7 +159,7 @@ class LogoutTests(APITestCaseExtended):
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -147,7 +173,7 @@ class LogoutTests(APITestCaseExtended):
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -161,7 +187,7 @@ class LogoutTests(APITestCaseExtended):
 
         data = {}
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -173,12 +199,12 @@ class LogoutTests(APITestCaseExtended):
 
         url = reverse('authentication_logout')
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK,
                          'Cannot logout with correct credentials')
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Logout has no real affect, Token not deleted')
@@ -195,12 +221,12 @@ class LogoutTests(APITestCaseExtended):
             'session_id': self.tok2.id,
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.post(url, updated_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK,
                          'Cannot logout with correct credentials')
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token2)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token2, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator2)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED,
                          'Logout has no real affect, Token not deleted')
@@ -217,7 +243,7 @@ class LogoutTests(APITestCaseExtended):
             'session_id': '5ae48987-29c2-4c07-b50e-4ee35556d63e'
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.test_token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator1)
         response = self.client.post(url, updated_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

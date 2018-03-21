@@ -525,7 +525,7 @@ def delete_user(username: str) -> dict:
     :rtype:
     """
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -537,7 +537,7 @@ def delete_user(username: str) -> dict:
 
 def promote_user(username: str, role: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -555,7 +555,7 @@ def promote_user(username: str, role: str) -> dict:
 
 def demmote_user(username: str, role: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -573,7 +573,7 @@ def demmote_user(username: str, role: str) -> dict:
 
 def enable_user(username: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -586,7 +586,7 @@ def enable_user(username: str) -> dict:
 
 def disable_user(username: str) -> dict:
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
         return {
             'error': 'User does not exist'
@@ -632,7 +632,10 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
 
 def create_user(username, password, email, gen_authkey=True):
 
-    email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
+    username = username.lower()
+    email = email.encode().strip().lower()
+
+    email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
@@ -659,7 +662,7 @@ def create_user(username, password, email, gen_authkey=True):
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
     db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_email = crypto_box.encrypt(email.encode("utf-8"), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    encrypted_email = crypto_box.encrypt(email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
     email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
     user = User.objects.create(

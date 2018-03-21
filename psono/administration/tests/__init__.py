@@ -5,3 +5,5 @@ from .user import *
 from .session import *
 from .info import *
 from .group import *
+from .membership import *
+from .recovery_code import *

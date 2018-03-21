@@ -5,3 +5,5 @@ from .duo import DuoView
 from .ga import GaView
 from .yubikey import YubikeyOTPView
 from .group import GroupView
+from .membership import MembershipView
+from .recovery_code import RecoveryCodeView

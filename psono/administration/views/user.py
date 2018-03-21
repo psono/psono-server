@@ -9,7 +9,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token, User_Share_Right
 # from restapi.utils import decrypt_with_db_secret
 
 
@@ -27,17 +27,15 @@ class UserView(GenericAPIView):
         except User.DoesNotExist:
             return None
 
-        groups = []
+        memberships = []
         for m in User_Group_Membership.objects.filter(user=user).select_related('group').only("id", "accepted", "group_admin", "create_date", "group__id", "group__name", "group__create_date", "group__public_key"):
-            groups.append({
-                'id': m.group.id,
-                'name': m.group.name,
-                'create_date': m.group.create_date,
-                'public_key': m.group.public_key,
-                'membership_id': m.id,
-                'membership_create_date': m.create_date,
+            memberships.append({
+                'id': m.id,
+                'create_date': m.create_date,
                 'accepted': m.accepted,
                 'admin': m.group_admin,
+                'group_id': m.group.id,
+                'group_name': m.group.name,
             })
 
         duos = []
@@ -45,16 +43,13 @@ class UserView(GenericAPIView):
             duos.append({
                 'id': d.id,
                 'title': d.title,
-                'duo_integration_key': d.duo_integration_key,
-                'duo_secret_key': d.duo_secret_key,
-                'duo_host': d.duo_host,
                 'create_date': d.create_date,
                 'active': d.active,
             })
 
         google_authenticators = []
         for g in Google_Authenticator.objects.filter(user=user).only("id", "title", "create_date", "active"):
-            duos.append({
+            google_authenticators.append({
                 'id': g.id,
                 'title': g.title,
                 'create_date': g.create_date,
@@ -76,8 +71,8 @@ class UserView(GenericAPIView):
                 'id': r.id,
                 'create_date': r.create_date,
             })
-        sessions = []
 
+        sessions = []
         for u in Token.objects.filter(user=user).only('id', 'create_date', 'active',
                                                            'valid_till', 'device_description',
                                                            'device_fingerprint').order_by('-create_date'):
@@ -90,6 +85,18 @@ class UserView(GenericAPIView):
                 'device_fingerprint': u.device_fingerprint,
             })
 
+        share_rights = []
+        for m in User_Share_Right.objects.filter(user=user).only("id", "create_date", "read", "write", "grant", "accepted", "share_id"):
+            share_rights.append({
+                'id': m.id,
+                'create_date': m.create_date,
+                'read': m.read,
+                'write': m.write,
+                'grant': m.grant,
+                'accepted': m.accepted,
+                'share_id': m.share_id,
+            })
+
         return {
             'id': user.id,
             'username': user.username,
@@ -98,15 +105,17 @@ class UserView(GenericAPIView):
             'public_key': user.public_key,
             'is_active': user.is_active,
             'is_email_active': user.is_email_active,
-            'is_superuser': user.is_staff,
+            'is_superuser': user.is_superuser,
+            'is_staff': user.is_staff or user.is_superuser,
             'authentication': user.authentication,
 
-            'groups': groups,
+            'memberships': memberships,
             'duos': duos,
             'google_authenticators': google_authenticators,
             'yubikey_otps': yubikey_otps,
             'recovery_codes': recovery_codes,
             'sessions': sessions,
+            'share_rights': share_rights,
         }
 
     def get(self, request, user_id = None, *args, **kwargs):
@@ -137,7 +146,7 @@ class UserView(GenericAPIView):
 
             users = []
             for u in  User.objects.annotate(recovery_code_exist=Exists(recovery_codes))\
-                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active').order_by('-create_date'):
+                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled').order_by('-create_date'):
                 users.append({
                     'id': u.id,
                     'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),

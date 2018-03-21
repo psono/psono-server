@@ -1,14 +1,13 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 from ..models import User_Share_Right
 
 class ShareRightDeclineSerializer(serializers.Serializer):
 
-    share_right_id = serializers.UUIDField(required=True)
+    share_right_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 

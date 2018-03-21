@@ -16,6 +16,11 @@ import random
 import string
 import os
 import hashlib
+import json
+
+import nacl.encoding
+import nacl.utils
+import nacl.secret
 
 
 def yubico_verify_true(yubikey_otp):
@@ -75,7 +80,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         )
 
         self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
-        models.Token.objects.create(
+        db_token = models.Token.objects.create(
             key= hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
             secret_key = binascii.hexlify(os.urandom(32)).decode(),
@@ -90,6 +95,19 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             title= 'Dummy Title',
             yubikey_id = encrypt_with_db_secret(str(self.yubikey_id))
         )
+
+        # encrypt authorization validator with session key
+        secret_box = nacl.secret.SecretBox(db_token.secret_key, encoder=nacl.encoding.HexEncoder)
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = secret_box.encrypt(json.dumps({}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        self.authorization_validator = json.dumps({
+            'text': authorization_validator_hex.decode(),
+            'nonce': authorization_validator_nonce_hex.decode(),
+        })
 
     def test_get_authentication_yubikey_otp_verify(self):
         """
@@ -148,7 +166,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -167,7 +185,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -188,7 +206,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': self.yubikey_token,
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -210,7 +228,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             'yubikey_otp': '12345678',
         }
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

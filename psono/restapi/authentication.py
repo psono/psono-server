@@ -7,6 +7,7 @@ from rest_framework import HTTP_HEADER_ENCODING, exceptions
 
 from hashlib import sha512
 import json
+import binascii
 import dateutil.parser
 
 from .parsers import decrypt
@@ -57,37 +58,40 @@ class TokenAuthentication(BaseAuthentication):
         if not user.is_email_active:
             raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
 
+        token_validator_encrypted = self.get_token_validator(request)
+        try:
+            token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
+        except binascii.Error:
+            msg = _('Invalid token header. Not proper encrypted.')
+            raise exceptions.AuthenticationFailed(msg)
 
-        # TODO Activate later once all clients send the new security header
 
-        # token_validator_encrypted = self.get_token_validator(request)
-        # token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
-        # token_validator = json.loads(token_validator_json.decode())
-        #
-        # if not settings.DEVICE_PROTECTION_DISABLED:
-        #     request_device_fingerprint = token_validator.get('request_device_fingerprint', False)
-        #     if not request_device_fingerprint:
-        #         token.delete()
-        #         raise exceptions.AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
-        #     if str(request_device_fingerprint) != token.device_fingerprint:
-        #         token.delete()
-        #         raise exceptions.AuthenticationFailed('Device Fingerprint Protection: device_fingerprint mismatch')
-        # if not settings.REPLAY_PROTECTION_DISABLED:
-        #
-        #     client_date = token.client_date
-        #     create_date = token.create_date
-        #     request_date = token_validator.get('request_time', False)
-        #     now = timezone.now()
-        #
-        #     if not request_date:
-        #         token.delete()
-        #         raise exceptions.AuthenticationFailed('Replay Protection: request_time missing')
-        #
-        #     request_date = dateutil.parser.parse(request_date)
-        #     time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
-        #     if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
-        #         token.delete()
-        #         raise exceptions.AuthenticationFailed('Replay Protection: Time difference too big')
+        token_validator = json.loads(token_validator_json.decode())
+
+        if not settings.DEVICE_PROTECTION_DISABLED:
+            request_device_fingerprint = token_validator.get('request_device_fingerprint', False)
+            if not request_device_fingerprint:
+                token.delete()
+                raise exceptions.AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
+            if str(request_device_fingerprint) != token.device_fingerprint:
+                token.delete()
+                raise exceptions.AuthenticationFailed('Device Fingerprint Protection: device_fingerprint mismatch')
+
+        if not settings.REPLAY_PROTECTION_DISABLED:
+            client_date = token.client_date
+            create_date = token.create_date
+            request_date = token_validator.get('request_time', False)
+            now = timezone.now()
+
+            if not request_date:
+                token.delete()
+                raise exceptions.AuthenticationFailed('Replay Protection: request_time missing')
+
+            request_date = dateutil.parser.parse(request_date)
+            time_difference = abs(((client_date - create_date) - (request_date - now)).total_seconds())
+            if time_difference > settings.REPLAY_PROTECTION_TIME_DFFERENCE:
+                token.delete()
+                raise exceptions.AuthenticationFailed('Replay Protection: Time difference too big')
 
         request.user = user
         user.session_secret_key = token.secret_key

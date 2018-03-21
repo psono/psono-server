@@ -1,12 +1,13 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 import six
 
 from ..models import Yubikey_OTP
 from ..utils import yubikey_authenticate, yubikey_get_yubikey_id, decrypt_with_db_secret
 
 class ActivateYubikeySerializer(serializers.Serializer):
-    yubikey_id = serializers.UUIDField(required=True)
+    yubikey_id = UUIDField(required=True)
     yubikey_otp = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:

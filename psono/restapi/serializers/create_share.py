@@ -1,19 +1,18 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
+from ..fields import UUIDField
 
 from ..utils import user_has_rights_on_share, get_datastore
 from ..models import Share
 
 class CreateShareSerializer(serializers.Serializer):
 
-    link_id = serializers.UUIDField(required=True)
+    link_id = UUIDField(required=True)
     data = serializers.CharField(required=True)
     data_nonce = serializers.CharField(required=True, max_length=64)
-    parent_share_id = serializers.UUIDField(required=False)
-    parent_datastore_id = serializers.UUIDField(required=False)
+    parent_share_id = UUIDField(required=False)
+    parent_datastore_id = UUIDField(required=False)
     key = serializers.CharField(required=True)
     key_nonce = serializers.CharField(max_length=64, required=True)
     key_type = serializers.CharField(default='asymmetric')
