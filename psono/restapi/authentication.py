@@ -73,7 +73,7 @@ class TokenAuthentication(BaseAuthentication):
             if not request_device_fingerprint:
                 token.delete()
                 raise exceptions.AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
-            if str(request_device_fingerprint) != token.device_fingerprint:
+            if str(request_device_fingerprint) != str(token.device_fingerprint):
                 token.delete()
                 raise exceptions.AuthenticationFailed('Device Fingerprint Protection: device_fingerprint mismatch')
 
