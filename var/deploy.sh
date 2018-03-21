@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+apk upgrade --no-cache
 apk add --update curl
 
 # Deploy to Docker Hub
