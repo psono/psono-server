@@ -13,8 +13,8 @@ from ..models import User
 class UserSearchSerializer(serializers.Serializer):
 
     user_id = UUIDField(required=False)
-    user_username = serializers.CharField(required=False)
-    user_email = serializers.CharField(required=False)
+    user_username = serializers.CharField(required=False, allow_blank=True)
+    user_email = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs: dict) -> dict:
 
