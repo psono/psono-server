@@ -70,6 +70,55 @@ class ReadGroupTests(APITestCaseExtended):
         )
 
 
+    def test_read_specific_group_success(self):
+        """
+        Tests GET method on a specific group
+        """
+
+        url = reverse('admin_group', kwargs={'group_id': str(self.test_group_obj.id)})
+
+        data = {
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_read_specific_group_failure_not_exist(self):
+        """
+        Tests GET method on a specific group
+        """
+
+        url = reverse('admin_group', kwargs={'group_id': '6fdbe7bb-b93f-4ef5-817d-7ef9aa7dd9de'})
+
+        data = {
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_read_specific_group_failure_no_admin_rights(self):
+        """
+        Tests GET method on group
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': self.test_group_obj.id
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
     def test_read_group_success(self):
         """
         Tests GET method on group
@@ -85,23 +134,6 @@ class ReadGroupTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['groups']), 2)
-
-
-    def test_read_specific_user_success(self):
-        """
-        Tests GET method on user
-        """
-
-        url = reverse('admin_group')
-
-        data = {
-            'group_id': self.test_group_obj.id
-        }
-
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
     def test_read_group_failure_without_admin_privileges(self):

@@ -10,7 +10,7 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
+from ..utils import encrypt_with_db_secret
 
 import json
 import random

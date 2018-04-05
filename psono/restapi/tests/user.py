@@ -684,7 +684,7 @@ class UserModificationTests(APITestCaseExtended):
 class UserSearchTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
+        self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
         self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
@@ -708,8 +708,8 @@ class UserSearchTests(APITestCaseExtended):
         )
 
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
+        self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'some-partial-username@psono.pw'
         self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
@@ -818,7 +818,9 @@ class UserSearchTests(APITestCaseExtended):
         self.assertEqual(response.data.get('public_key', False), self.test_user_obj2.public_key,
                          'public_key from response does not match our public_key')
 
-    def test_user_search_with_user_email(self):
+
+    @patch('restapi.serializers.user_search.settings', ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=False, ALLOW_USER_SEARCH_BY_EMAIL=True, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_user_search_with_user_username(self, mocked_settings_fnc):
         """
         Tests users search with user_email as parameter
         """
@@ -848,6 +850,24 @@ class UserSearchTests(APITestCaseExtended):
                          'username from response does not match our username')
         self.assertEqual(response.data.get('public_key', False), self.test_user_obj2.public_key,
                          'public_key from response does not match our public_key')
+
+
+    @patch('restapi.serializers.user_search.settings', ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=True, ALLOW_USER_SEARCH_BY_EMAIL=True, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_user_search_with_partial_user_username(self, mocked_settings_fnc):
+        """
+        Tests users search with user_email as parameter
+        """
+
+        url = reverse('user_search')
+
+        data = {
+            'user_username': 'Partial', # search should be case insensitive too
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_user_search_with_bad_formatted_user_id(self):
         """
@@ -881,7 +901,8 @@ class UserSearchTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_user_search_with_bad_user_email(self):
+    @patch('restapi.serializers.user_search.settings', ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=False, ALLOW_USER_SEARCH_BY_EMAIL=True, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_user_search_with_bad_user_username(self, mocked_settings_fnc):
         """
         Tests users search with user_email as parameter
         """
@@ -896,6 +917,40 @@ class UserSearchTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('restapi.serializers.user_search.settings', ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=True, ALLOW_USER_SEARCH_BY_EMAIL=True, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_user_search_with_bad_user_email(self, mocked_settings_fnc):
+        """
+        Tests users search with user_email as parameter
+        """
+
+        url = reverse('user_search')
+
+        data = {
+            'user_email': 'sexy-not-existing-email@example.com',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('restapi.serializers.user_search.settings', ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=True, ALLOW_USER_SEARCH_BY_EMAIL=True, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
+    def test_user_search_with_good_user_email(self, mocked_settings_fnc):
+        """
+        Tests users search with user_email as parameter
+        """
+
+        url = reverse('user_search')
+
+        data = {
+            'user_email': self.test_email2,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 
