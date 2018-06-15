@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
 
+from typing import Optional
 import os
 from nacl.public import PrivateKey
 import nacl.secret
@@ -48,7 +49,7 @@ def generate_activation_code(email : str) -> str:
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
-def validate_activation_code(activation_code : str) -> User:
+def validate_activation_code(activation_code : str) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure

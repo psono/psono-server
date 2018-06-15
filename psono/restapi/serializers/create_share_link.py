@@ -15,8 +15,8 @@ class CreateShareLinkSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        link_id = attrs.get('link_id')
-        share_id = attrs.get('share_id')
+        link_id = attrs.get('link_id', '')
+        share_id = attrs.get('share_id', '')
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
 

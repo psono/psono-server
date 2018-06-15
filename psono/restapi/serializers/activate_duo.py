@@ -12,7 +12,7 @@ class ActivateDuoSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        duo_id = attrs.get('duo_id')
+        duo_id = attrs.get('duo_id', '')
         duo_token = attrs.get('duo_token', None)
 
         try:

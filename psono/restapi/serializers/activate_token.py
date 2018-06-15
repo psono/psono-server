@@ -13,9 +13,9 @@ class ActivateTokenSerializer(serializers.Serializer):
     verification_nonce = serializers.CharField(max_length=64, required=True)
 
     def validate(self, attrs: dict) -> dict:
-        verification_hex = attrs.get('verification')
+        verification_hex = attrs.get('verification', '')
         verification = nacl.encoding.HexEncoder.decode(verification_hex)
-        verification_nonce_hex = attrs.get('verification_nonce')
+        verification_nonce_hex = attrs.get('verification_nonce', '')
         verification_nonce = nacl.encoding.HexEncoder.decode(verification_nonce_hex)
 
         token = self.context['request'].auth
