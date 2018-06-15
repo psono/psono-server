@@ -11,7 +11,7 @@ class GAVerifySerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        ga_token = attrs.get('ga_token').lower().strip()
+        ga_token = attrs.get('ga_token', '').lower().strip()
 
         if not ga_token.isdigit():
             msg = _('GA Tokens only contain digits.')

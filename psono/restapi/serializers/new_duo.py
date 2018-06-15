@@ -15,10 +15,10 @@ class NewDuoSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        title = attrs.get('title').strip()
-        integration_key = attrs.get('integration_key').strip()
-        secret_key = attrs.get('secret_key').strip()
-        host = attrs.get('host').strip()
+        title = attrs.get('title', '').strip()
+        integration_key = attrs.get('integration_key', '').strip()
+        secret_key = attrs.get('secret_key', '').strip()
+        host = attrs.get('host', '').strip()
 
         if Duo.objects.filter(user=self.context['request'].user).count() > 0:
             msg = _('Only one Duo device allowed.')

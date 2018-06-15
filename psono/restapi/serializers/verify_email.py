@@ -11,7 +11,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
     activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
     def validate(self, attrs: dict) -> dict:
-        activation_code = attrs.get('activation_code').strip()
+        activation_code = attrs.get('activation_code', '').strip()
 
         user = validate_activation_code(activation_code)
 

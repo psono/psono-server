@@ -10,7 +10,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        yubikey_otp = attrs.get('yubikey_otp').strip()
+        yubikey_otp = attrs.get('yubikey_otp', '').strip()
 
         yubikey_is_valid = yubikey_authenticate(yubikey_otp)
 

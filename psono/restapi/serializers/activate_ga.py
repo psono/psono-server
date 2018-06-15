@@ -12,8 +12,8 @@ class ActivateGASerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        google_authenticator_id = attrs.get('google_authenticator_id')
-        google_authenticator_token = attrs.get('google_authenticator_token').strip()
+        google_authenticator_id = attrs.get('google_authenticator_id', '')
+        google_authenticator_token = attrs.get('google_authenticator_token', '').strip()
 
         if not google_authenticator_token.isdigit():
             msg = _('GA Tokens only contain digits.')
