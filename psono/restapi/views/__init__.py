@@ -1,5 +1,6 @@
 from .activate_token import ActivateTokenView
 from .datastore import DatastoreView
+from .file import FileView
 from .ga_verify import GAVerifyView
 from .duo_verify import DuoVerifyView
 from .group import GroupView

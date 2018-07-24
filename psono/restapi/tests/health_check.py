@@ -53,7 +53,7 @@ class HealthCheckTest(APITestCaseExtended):
 
     def test_get_healthcheckn(self):
         """
-        Tests GET method on healthcheck
+        Tests GET method on
         """
 
         url = reverse('healthcheck')

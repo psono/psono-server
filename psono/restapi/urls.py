@@ -50,6 +50,7 @@ urlpatterns = [
     url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 
     url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
+    url(r'^file/$', views.FileView.as_view(), name='file'),
 
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
     url(r'^secret/(?P<secret_id>[^/]+)/$', views.SecretView.as_view(), name='secret'),

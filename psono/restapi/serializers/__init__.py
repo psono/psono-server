@@ -1,5 +1,6 @@
 from .activate_token import *
 from .create_datastore import *
+from .create_file import *
 from .create_recoverycode import *
 from .create_share import *
 from .create_share_right import *

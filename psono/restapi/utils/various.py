@@ -73,7 +73,7 @@ def validate_activation_code(activation_code : str) -> User:
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
     except:
         #wrong format or whatever could happen
-        pass
+        return None
 
     return None
 

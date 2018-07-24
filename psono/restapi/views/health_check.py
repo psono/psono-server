@@ -35,6 +35,7 @@ class HealthCheckView(GenericAPIView):
         db_read = True
         db_sync = True
         time_sync = True
+        not_debug_mode = True
 
         def db_read_unhealthy():
 
@@ -75,6 +76,10 @@ class HealthCheckView(GenericAPIView):
             unhealthy = True
             time_sync = False
 
+        if not settings.DEBUG:
+            unhealthy = True
+            not_debug_mode = False
+
         if unhealthy:
             health_status = status.HTTP_400_BAD_REQUEST
 
@@ -86,6 +91,7 @@ class HealthCheckView(GenericAPIView):
             'db_read': { 'healthy': db_read },
             'db_sync': { 'healthy': db_sync },
             'time_sync': { 'healthy': time_sync },
+            'debug_mode': { 'healthy': not_debug_mode },
         }, status=health_status)
 
     def put(self, *args, **kwargs):

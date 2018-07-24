@@ -9,10 +9,16 @@ from hashlib import sha512
 import json
 import binascii
 import dateutil.parser
+import datetime
 
 from .parsers import decrypt
-from .models import Token, User
-from .utils import get_cache
+from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link
+from .utils import get_cache, decrypt_with_db_secret
+
+import nacl.encoding
+import nacl.utils
+import nacl.secret
+from nacl.public import PrivateKey, PublicKey, Box
 
 
 def get_authorization_validator_header(request):
@@ -26,6 +32,7 @@ def get_authorization_validator_header(request):
         # Work around django test client oddness
         auth = auth.encode(HTTP_HEADER_ENCODING)
     return auth
+
 
 class TokenAuthentication(BaseAuthentication):
     """
@@ -166,6 +173,127 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate_header(self, request):
         return 'Token'
+
+class FileserverAuthentication(TokenAuthentication):
+
+    def authenticate(self, request):
+        token_hash = self.get_token_hash(request)
+
+        try:
+            fileserver = Fileserver_Cluster_Members.objects.get(key=token_hash, valid_till__gte=timezone.now())
+        except Fileserver_Cluster_Members.DoesNotExist:
+            msg = _('Fileserver not alive.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        return fileserver, fileserver
+
+class FileserverAliveAuthentication(TokenAuthentication):
+
+    def authenticate(self, request):
+        token_hash = self.get_token_hash(request)
+
+        try:
+            fileserver = Fileserver_Cluster_Members.objects.get(key=token_hash)
+            fileserver.valid_till=timezone.now()+datetime.timedelta(seconds=60)
+            fileserver.save()
+        except Fileserver_Cluster_Members.DoesNotExist:
+            cluster_id, fileserver_info_enc = self.get_fileserver_validator(request)
+            try:
+                cluster = Fileserver_Cluster.objects.get(pk=cluster_id)
+            except Fileserver_Cluster.DoesNotExist:
+                msg = _('Invalid token header. Cluster ID does not exist.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            cluster_public_key = decrypt_with_db_secret(cluster.auth_public_key)
+
+            cluster_crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
+                                     PublicKey(cluster_public_key, encoder=nacl.encoding.HexEncoder))
+
+            fileserver_info = json.loads(cluster_crypto_box.decrypt(nacl.encoding.HexEncoder.decode(fileserver_info_enc)).decode())
+
+            if fileserver_info['CLUSTER_ID'] != cluster_id:
+                msg = _('Invalid fileserver info.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            if FileserverAliveAuthentication.user_token_to_token_hash(fileserver_info['FILESERVER_ID']) != token_hash:
+                msg = _('Invalid fileserver info.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            self.validate_cluster_shard_access(cluster_id, fileserver_info['SHARDS_PUBLIC'])
+
+            fileserver = Fileserver_Cluster_Members.objects.create(
+                fileserver_cluster_id=cluster_id,
+                key=token_hash,
+                public_key=fileserver_info['FILESERVER_PUBLIC_KEY'],
+                secret_key=fileserver_info['FILESERVER_SESSION_KEY'],
+                url=fileserver_info['HOST_URL'],
+                read=fileserver_info['READ'],
+                write=fileserver_info['WRITE'],
+                valid_till=timezone.now()+datetime.timedelta(seconds=60),
+            )
+
+            for shard in fileserver_info['SHARDS_PUBLIC']:
+                Fileserver_Cluster_Member_Shard_Link.objects.create(
+                    shard_id=shard['shard_id'],
+                    member_id=fileserver.id,
+                    read=shard['read'],
+                    write=shard['write'],
+                    ip_read_whitelist=json.dumps(fileserver_info['IP_READ_WHITELIST']),
+                    ip_read_blacklist=json.dumps(fileserver_info['IP_READ_BLACKLIST']),
+                    ip_write_whitelist=json.dumps(fileserver_info['IP_WRITE_WHITELIST']),
+                    ip_write_blacklist=json.dumps(fileserver_info['IP_WRITE_BLACKLIST']),
+                )
+
+        return fileserver, fileserver
+
+    @staticmethod
+    def validate_cluster_shard_access(cluster_id, announced_shards):
+
+        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).all()
+        shards = {}
+        for fcsl in fcsls:
+            shards[str(fcsl.shard_id)] = {
+                'read': fcsl.read,
+                'write': fcsl.write,
+            }
+
+        for shard in announced_shards:
+            if shard['shard_id'] not in shards:
+                msg = _('No permission for shard.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            if shard['read'] and not shards[shard['shard_id']]['read']:
+                msg = _('No read permission for shard.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            if shard['write'] and not shards[shard['shard_id']]['write']:
+                msg = _('No write permission for shard.')
+                raise exceptions.AuthenticationFailed(msg)
+
+    @staticmethod
+    def get_fileserver_validator(request):
+        auth = get_authorization_validator_header(request)
+        try:
+            auth = auth.decode()
+        except UnicodeError:
+            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        try:
+            auth = json.loads(auth)
+        except ValueError:
+            msg = _('Invalid token header. Incorrect format in token header.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        if 'cluster_id' not in auth:
+            msg = _('Invalid token header. Token attribute not present.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        if 'fileserver_info' not in auth:
+            msg = _('Invalid token header. Token attribute not present.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        return auth['cluster_id'], auth['fileserver_info']
 
 class TokenAuthenticationAllowInactive(TokenAuthentication):
     allow_inactive = True

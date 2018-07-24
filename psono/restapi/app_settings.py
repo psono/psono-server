@@ -35,6 +35,7 @@ from .serializers import (
     DeleteShareLinkSerializer as DefaultDeleteShareLinkSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     UpdateShareSerializer as DefaultUpdateShareSerializer,
+    CreateFileSerializer as DefaultCreateFileSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
@@ -61,7 +62,6 @@ def import_callable(path_or_callable):
     if hasattr(path_or_callable, '__call__'):
         return path_or_callable
     else:
-        assert isinstance(path_or_callable, six.string_types)
         package, attr = path_or_callable.rsplit('.', 1)
         return getattr(import_module(package), attr)
 
@@ -272,6 +272,14 @@ UpdateShareSerializer = import_callable(
     serializers.get(
         'UPDATE_SHARE_SERIALIZER',
         DefaultUpdateShareSerializer
+    )
+)
+
+
+CreateFileSerializer = import_callable(
+    serializers.get(
+        'FILE_SERIALIZER',
+        DefaultCreateFileSerializer
     )
 )
 

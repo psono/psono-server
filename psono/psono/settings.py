@@ -34,7 +34,7 @@ except ImportError:
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
-    config = yaml.load(stream)
+    config = yaml.safe_load(stream)
 
 
 
@@ -100,6 +100,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'restapi',
     'administration',
+    'fileserver',
 )
 
 MIDDLEWARE = (
@@ -117,10 +118,7 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher'
 )
 
 REST_FRAMEWORK = {
@@ -153,6 +151,7 @@ REST_FRAMEWORK = {
         'registration': '20/day',
         'user_delete': '20/day',
         'user_update': '20/day',
+        'fileserver': '61/minute',
     },
 }
 
@@ -277,6 +276,8 @@ if not config_get('THROTTLING', True):
 DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
 
 MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
+FILESERVER_HANDLER_ENABLED = config_get('FILESERVER_HANDLER_ENABLED', True)
+FILES_ENABLED = config_get('FILES_ENABLED', False)
 
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
@@ -339,6 +340,7 @@ def generate_signature():
         'authentication_methods': AUTHENTICATION_METHODS,
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
+        'files': FILES_ENABLED,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,

@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(help_text='The public (yet encrypted) type of the share right.', max_length=512, null=True, verbose_name='Type')),
                 ('type_nonce', models.CharField(max_length=64, null=True, verbose_name='Type nonce')),
                 ('read', models.BooleanField(default=True, help_text='Designates whether this user has "read" rights and can read this share', verbose_name='Read right')),
-                ('write', models.BooleanField(default=False, help_text='Designates whether this user has "write" rights and can update this share', verbose_name='Wright right')),
+                ('write', models.BooleanField(default=False, help_text='Designates whether this user has "write" rights and can update this share', verbose_name='Write right')),
                 ('grant', models.BooleanField(default=False, help_text='Designates whether this user has "grant" rights and can re-share this share', verbose_name='Grant right')),
                 ('creator', models.ForeignKey(help_text='The user who created this share right', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='own_group_share_rights', to='restapi.User')),
             ],

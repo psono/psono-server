@@ -20,7 +20,7 @@ PUBLIC_KEY: '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 # Switch DEBUG to false if you go into production
 DEBUG: True
 
-# Adjust this according to Django Documentation https://docs.djangoproject.com/en/1.10/ref/settings/
+# Adjust this according to Django Documentation https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts
 ALLOWED_HOSTS: ['*']
 
 # Should be your domain without "www."
@@ -75,7 +75,7 @@ CACHE_REDIS: False
 CACHE_REDIS_LOCATION: 'redis://127.0.0.1:6379/13'
 
 # Disables Throttling (necessary for unittests to pass) by overriding the cache with a dummy cache
-# https://docs.djangoproject.com/en/1.11/topics/cache/#dummy-caching-for-development
+# https://docs.djangoproject.com/en/2.0/topics/cache/#dummy-caching-for-development
 THROTTLING: False
 
 # Enables the management api endpoints
