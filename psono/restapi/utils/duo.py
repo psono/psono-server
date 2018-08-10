@@ -167,7 +167,7 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
 
 
 
-def duo_auth_auth(integration_key: str, secret_key: str, host: str, user_id: str, factor: str, device: str, pushinfo: str = None, passcode: str = None, async: bool = False) -> dict:
+def duo_auth_auth(integration_key: str, secret_key: str, host: str, user_id: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async: bool = False) -> dict:
     """
     Auth call with the user id
 
