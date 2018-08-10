@@ -19,7 +19,6 @@ RUN mkdir -p /root/.pip && \
         openssl-devel \
         postgresql \
         postgresql-devel \
-        postgresql-client \
         python34 \
         python34-devel \
         python34-pip && \
