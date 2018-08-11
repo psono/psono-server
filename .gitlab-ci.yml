@@ -32,26 +32,6 @@ build-container-alpine:
     - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_BUILD_REF_NAME=$CI_BUILD_REF_NAME;CI_COMMIT_SHA=$CI_COMMIT_SHA;CI_COMMIT_URL=$CI_PROJECT_URL/commit/$CI_COMMIT_SHA;CI_PROJECT_ID=$CI_PROJECT_ID;CI_PROJECT_NAME=$CI_PROJECT_NAME;CI_PROJECT_NAMESPACE=$CI_PROJECT_NAMESPACE;CI_PROJECT_URL=$CI_PROJECT_URL;CI_PIPELINE_ID=$CI_PIPELINE_ID;CI_PIPELINE_URL=$CI_PROJECT_URL/pipelines/$CI_PIPELINE_ID;CI_COMMIT_REF_NAME=$CI_COMMIT_REF_NAME;CI_JOB_ID=$CI_JOB_ID;CI_JOB_URL=$CI_PROJECT_URL/-/jobs/$CI_JOB_ID;CI_JOB_NAME=$CI_JOB_NAME;CI_JOB_STAGE=$CI_JOB_STAGE;CI_RUNNER_ID=$CI_RUNNER_ID;GITLAB_USER_ID=$GITLAB_USER_ID;CI_SERVER_VERSION=$CI_SERVER_VERSION"
     - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_COMMIT_TAG=$CI_COMMIT_TAG" || true
 
-build-test:
-  except:
-    - schedules
-  stage: build
-  image: psono-docker.jfrog.io/docker:git
-  script:
-    - export CI_COMMIT_TAG=v1.4.3
-    - mkdir -p /root/.ssh
-    - echo "$github_deploy_key" > /root/.ssh/id_rsa
-    - chmod 600 /root/.ssh/id_rsa
-    - ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
-    - git checkout master
-    - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
-    - git remote -v
-    - git config --global user.email "buildserver@psono.com"
-    - git config --global user.name "Build Server"
-    - sh ./var/update_version.sh
-    - git add psono/VERSION.txt
-    - git commit -m "Bump version [skip ci]"
-    - git push
 
 run-unittests-ubuntu1804:
   except:
@@ -179,6 +159,28 @@ release-container:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_LATEST_IMAGE
     - docker push $CONTAINER_LATEST_IMAGE
+  only:
+    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
+
+rease-version-bump:
+  except:
+    - schedules
+  stage: release
+  image: psono-docker.jfrog.io/docker:git
+  script:
+    - sh ./var/update_version.sh
+    - mkdir -p /root/.ssh
+    - echo "$github_deploy_key" > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
+    - ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
+    - git checkout master
+    - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
+    - git remote -v
+    - git config --global user.email "buildserver@psono.com"
+    - git config --global user.name "Build Server"
+    - git add psono/VERSION.txt
+    - git commit -m "Bump version [skip ci]"
+    - git push
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
