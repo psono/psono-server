@@ -22,7 +22,6 @@ RUN mkdir -p /root/.pip && \
         python34 \
         python34-devel \
         python34-pip && \
-    pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
     pip3 install typing && \
