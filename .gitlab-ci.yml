@@ -40,8 +40,10 @@ build-test:
   script:
     - export CI_COMMIT_TAG=v1.4.3
     - mkdir -p /root/.ssh
+    - echo "$github_deploy_key" > /root/.ssh/id_rsa
     - ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
     - git checkout master
+    - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
     - git remote -v
     - git config --global user.email "buildserver@psono.com"
     - git config --global user.name "Build Server"
