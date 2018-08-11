@@ -22,9 +22,9 @@ RUN mkdir -p /root/.pip && \
         python36u \
         python36u-devel \
         python36u-pip && \
-    pip3 install -r requirements.txt && \
-    pip3 install uwsgi && \
-    pip3 install typing && \
+    pip3.6 install -r requirements.txt && \
+    pip3.6 install uwsgi && \
+    pip3.6 install typing && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \
