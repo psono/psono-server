@@ -12,7 +12,7 @@ curl -X POST https://hooks.microbadger.com/images/psono/psono-server/8BDLpDMSMHR
 curl -X POST $psono_image_updater_url
 
 # Deploy to GitHub
-echo "Clonging gitlab.com/psono/psono-server.git"
+echo "Cloning gitlab.com/psono/psono-server.git"
 git clone https://gitlab.com/psono/psono-server.git
 cd psono-server
 git branch --track develop origin/develop
