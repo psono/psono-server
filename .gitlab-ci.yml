@@ -110,7 +110,7 @@ run-unittests-centos7:
     - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy && python3 /usr/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests"
+    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy && python3.6 /usr/bin/mypy -p psono --ignore-missing-imports && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests"
 
 
 run-vulnerability-scan:
