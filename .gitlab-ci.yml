@@ -39,7 +39,6 @@ build-test:
   image: psono-docker.jfrog.io/docker:git
   script:
     - export CI_COMMIT_TAG=v1.4.3
-    - git fetch --unshallow
     - git checkout master
     - sh ./var/update_version.sh
     - git add psono/VERSION.txt
