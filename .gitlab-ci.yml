@@ -12,7 +12,7 @@ build-container-alpine:
   except:
     - schedules
   stage: build
-  image: psono-docker.jfrog.io/ubuntu:16.04
+  image: psono-docker.jfrog.io/ubuntu:18.04
   services:
     - docker:dind
   variables:
@@ -33,7 +33,7 @@ build-container-alpine:
     - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_COMMIT_TAG=$CI_COMMIT_TAG" || true
 
 
-run-unittests-ubuntu1604:
+run-unittests-ubuntu1804:
   except:
     - schedules
   stage: test
@@ -54,10 +54,10 @@ run-unittests-ubuntu1604:
     - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu1604 -t ubu1604-testimage --pull .
+    - docker build -f DockerfileUbuntu1804 -t ubu1804-testimage --pull .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres ubu1604-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*"
+    - docker run --link db:postgres ubu1804-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*"
 
 
 run-unittests-alpine:
@@ -187,7 +187,7 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:16.04
+  image: psono-docker.jfrog.io/ubuntu:18.04
   script:
     - sh ./var/deploy_changelog.sh
   environment:

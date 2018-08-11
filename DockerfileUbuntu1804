@@ -1,5 +1,5 @@
-# PSONO Dockerfile for Ubuntu 16.04
-FROM psono-docker.jfrog.io/ubuntu:16.04
+# PSONO Dockerfile for Ubuntu 18.04
+FROM psono-docker.jfrog.io/ubuntu:18.04
 ENV DEBIAN_FRONTEND noninteractive
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
