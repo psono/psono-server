@@ -45,9 +45,11 @@ build-test:
     - git checkout master
     - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
     - git remote -v
+    - git config --global user.email "buildserver@psono.com"
+    - git config --global user.name "Build Server"
     - sh ./var/update_version.sh
     - git add psono/VERSION.txt
-    - git commit --author="Build Server <buildserver@psono.com>" -m "Bump version [skip ci]"
+    - git commit -m "Bump version [skip ci]"
     - git push
 
 run-unittests-ubuntu1804:
