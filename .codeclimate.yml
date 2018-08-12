@@ -38,4 +38,6 @@ exclude_paths:
 - var/**/*
 - psono/restapi/tests/**/*
 - psono/restapi/migrations/**/*
+- psono/administration/tests/**/*
+- psono/administration/migrations/**/*
 - psono/static/**/*
