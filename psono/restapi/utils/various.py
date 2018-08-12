@@ -20,6 +20,7 @@ import nacl.secret
 import hashlib
 import binascii
 
+import scrypt
 from typing import Tuple, List
 
 
@@ -329,12 +330,12 @@ def generate_authkey(username, password) -> bytes:
 
     salt = hashlib.sha512(username.lower().encode()).hexdigest()
 
-    return binascii.hexlify(hashlib.scrypt(password=password.encode("utf-8"),
-                                           salt=salt.encode("utf-8"),
-                                           n=16384,
-                                           r=8,
-                                           p=1,
-                                           dklen=64))
+    return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
+                                        salt=salt.encode("utf-8"),
+                                        N=16384,
+                                        r=8,
+                                        p=1,
+                                        buflen=64))
 
 
 def get_datastore(datastore_id=None, user=None):
@@ -501,12 +502,12 @@ def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
 
     salt = hashlib.sha512(user_sauce).hexdigest()
 
-    k = hashlib.sha256(binascii.hexlify(hashlib.scrypt(password=password.encode("utf-8"),
-                                                       salt=salt.encode("utf-8"),
-                                                       n=16384,
-                                                       r=8,
-                                                       p=1,
-                                                       dklen=64))).hexdigest()
+    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
+                                                    salt=salt.encode("utf-8"),
+                                                    N=16384,
+                                                    r=8,
+                                                    p=1,
+                                                    buflen=64))).hexdigest()
     crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
