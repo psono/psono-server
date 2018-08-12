@@ -49,6 +49,17 @@ class CommandCreateuserTestCase(TestCase):
             is_active=False,
         )
 
+    def test_generate_authkey(self):
+        """
+        Tests generate authkey function
+        """
+
+        username = 'username@example.com'
+        password = 'myPassword'
+        authkey = '2d67919ba1021eb38b0647cfdf926aab6d25c7465a179551894a2b2d6fc1c8a8183076c5f7b7f7245419c3cf57c574f84386a1b1e30cddfc10606c67a28e2587'
+
+        self.assertEqual(generate_authkey(username, password).decode(), authkey)
+
     def test_createuser(self):
         """
         Tests to create a user
