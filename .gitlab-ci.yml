@@ -168,16 +168,16 @@ rease-version-bump:
   stage: release
   image: psono-docker.jfrog.io/docker:git
   script:
-    - sh ./var/update_version.sh
     - mkdir -p /root/.ssh
     - echo "$github_deploy_key" > /root/.ssh/id_rsa
     - chmod 600 /root/.ssh/id_rsa
     - ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
-    - git checkout master
     - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
     - git config --global user.email "buildserver@psono.com"
     - git config --global user.name "Build Server"
+    - git checkout master
     - git pull
+    - sh ./var/update_version.sh
     - git add psono/VERSION.txt
     - git commit -m "Bump version [skip ci]"
     - git push
