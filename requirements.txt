@@ -17,6 +17,6 @@ django-mailgun
 pyotp
 ntplib
 yubico-client
-scrypt
 python-dateutil
 duo_client
+scrypt

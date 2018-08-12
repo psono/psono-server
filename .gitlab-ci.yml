@@ -12,7 +12,7 @@ build-container-alpine:
   except:
     - schedules
   stage: build
-  image: psono-docker.jfrog.io/ubuntu:16.04
+  image: psono-docker.jfrog.io/ubuntu:18.04
   services:
     - docker:dind
   variables:
@@ -33,7 +33,7 @@ build-container-alpine:
     - ./jfrog rt sp "docker/psono/psono-server/$CI_BUILD_REF_NAME/manifest.json" "CI_COMMIT_TAG=$CI_COMMIT_TAG" || true
 
 
-run-unittests-ubuntu1604:
+run-unittests-ubuntu1804:
   except:
     - schedules
   stage: test
@@ -54,10 +54,10 @@ run-unittests-ubuntu1604:
     - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu1604 -t ubu1604-testimage --pull .
+    - docker build -f DockerfileUbuntu1804 -t ubu1804-testimage --pull .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres ubu1604-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*"
+    - docker run --link db:postgres ubu1804-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*"
 
 
 run-unittests-alpine:
@@ -110,7 +110,7 @@ run-unittests-centos7:
     - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
     - docker run -d --name db postgres:9.6
     - sleep 20
-    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python34-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests"
+    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy && python3.6 /usr/bin/mypy -p psono --ignore-missing-imports && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests"
 
 
 run-vulnerability-scan:
@@ -162,6 +162,28 @@ release-container:
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
+rease-version-bump:
+  except:
+    - schedules
+  stage: release
+  image: psono-docker.jfrog.io/docker:git
+  script:
+    - sh ./var/update_version.sh
+    - mkdir -p /root/.ssh
+    - echo "$github_deploy_key" > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
+    - ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
+    - git checkout master
+    - git remote set-url --push origin "git@gitlab.com:${CI_PROJECT_PATH}.git"
+    - git remote -v
+    - git config --global user.email "buildserver@psono.com"
+    - git config --global user.name "Build Server"
+    - git add psono/VERSION.txt
+    - git commit -m "Bump version [skip ci]"
+    - git push
+  only:
+    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
+
 
 deploy:
   except:
@@ -187,7 +209,7 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:16.04
+  image: psono-docker.jfrog.io/ubuntu:18.04
   script:
     - sh ./var/deploy_changelog.sh
   environment:
