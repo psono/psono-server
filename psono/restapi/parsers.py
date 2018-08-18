@@ -41,7 +41,7 @@ class DecryptJSONParser(JSONParser):
         if 'text' not in data or 'nonce' not in data:
             return data
 
-        decrypted_data = decrypt(stream.auth.secret_key, data['text'], data['nonce'])
+        decrypted_data = decrypt(parser_context['request'].auth.secret_key, data['text'], data['nonce'])
 
         try:
             data = json.loads(decrypted_data.decode())
