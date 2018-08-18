@@ -179,6 +179,7 @@ rease-version-bump:
     - git pull
     - sh ./var/update_version.sh
     - git add psono/VERSION.txt
+    - git add psono/SHA.txt
     - git commit -m "Bump version [skip ci]"
     - git push
   only:

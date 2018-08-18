@@ -20,3 +20,4 @@ yubico-client
 python-dateutil
 duo_client
 scrypt
+raven

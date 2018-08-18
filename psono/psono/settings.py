@@ -88,7 +88,7 @@ HOST_URL = config_get('HOST_URL')
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -100,7 +100,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'restapi',
     'administration',
-)
+]
+
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
@@ -322,6 +323,18 @@ STATIC_URL = '/static/'
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
+
+with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
+    SHA = f.readline().rstrip()
+
+# Add Sentry logging
+SENTRY_DSN = config_get('SENTRY_DSN', False)
+if SENTRY_DSN:
+    RAVEN_CONFIG = {
+        'dsn': SENTRY_DSN,
+        'release': SHA,
+    }
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
 
 def generate_signature():
 
