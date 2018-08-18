@@ -332,7 +332,8 @@ SENTRY_DSN = config_get('SENTRY_DSN', False)
 if SENTRY_DSN:
     RAVEN_CONFIG = {
         'dsn': SENTRY_DSN,
-        'release': SHA,
+        'release': VERSION,
+        'site': PUBLIC_KEY,
     }
     INSTALLED_APPS.append('raven.contrib.django.raven_compat')
 
