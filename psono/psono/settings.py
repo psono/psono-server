@@ -332,6 +332,7 @@ SENTRY_DSN = config_get('SENTRY_DSN', False)
 if SENTRY_DSN:
     RAVEN_CONFIG = {
         'dsn': SENTRY_DSN,
+        'environment': config_get('SENTRY_ENVIRONMENT', 'development'),
         'release': VERSION,
         'site': PUBLIC_KEY,
     }
