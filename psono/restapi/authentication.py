@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework import HTTP_HEADER_ENCODING, exceptions
+from raven.contrib.django.raven_compat.models import client
 
 from hashlib import sha512
 import json
@@ -95,6 +96,10 @@ class TokenAuthentication(BaseAuthentication):
 
         request.user = user
         user.session_secret_key = token.secret_key
+
+        client.context.merge({'user': {
+            'username': request.user.username
+        }})
 
         return user, token
 
