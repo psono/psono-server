@@ -43,6 +43,8 @@ urlpatterns = [
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
     url(r'^user/delete/$', views.UserDelete.as_view(), name='user_delete'),
 
+    url(r'^user/status/$', views.StatusView.as_view(), name='user_status'),
+
     url(r'^password/$', views.PasswordView.as_view(), name='password'),
     url(r'^recoverycode/$', views.RecoveryCodeView.as_view(), name='recoverycode'),
 

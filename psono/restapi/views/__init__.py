@@ -8,6 +8,7 @@ from .membership_decline import MembershipDeclineView
 from .membership import MembershipView
 from .health_check import HealthCheckView
 from .info import InfoView
+from .status import StatusView
 from .login import LoginView
 from .logout import LogoutView
 from .password import PasswordView
