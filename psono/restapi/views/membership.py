@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 
 from ..app_settings import (
     CreateMembershipSerializer,
@@ -64,6 +66,10 @@ class MembershipView(GenericAPIView):
             share_admin = serializer.validated_data['share_admin'],
         )
 
+        if settings.CACHE_ENABLE:
+            cache_key = 'psono_user_status_' + str(serializer.validated_data['user_id'])
+            cache.delete(cache_key)
+
         return Response({'membership_id': membership.id}, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
@@ -114,6 +120,10 @@ class MembershipView(GenericAPIView):
             )
 
         membership = serializer.validated_data.get('membership')
+
+        if settings.CACHE_ENABLE:
+            cache_key = 'psono_user_status_' + str(membership.user.id)
+            cache.delete(cache_key)
 
         # delete it
         membership.delete()
