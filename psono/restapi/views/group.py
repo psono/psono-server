@@ -278,8 +278,8 @@ class GroupView(GenericAPIView):
         group = serializer.validated_data.get('group')
 
         if settings.CACHE_ENABLE:
-            for user in group.members.all():
-                cache_key = 'psono_user_status_' + str(user.id)
+            for member in group.members.only('id').all():
+                cache_key = 'psono_user_status_' + str(member.user.id)
                 cache.delete(cache_key)
 
         # delete it
