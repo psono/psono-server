@@ -54,7 +54,10 @@ urlpatterns = [
     url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
 
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
+    url(r'^secret/history/(?P<secret_id>[^/]+)/$', views.SecretHistoryView.as_view(), name='secret_history'),
     url(r'^secret/(?P<secret_id>[^/]+)/$', views.SecretView.as_view(), name='secret'),
+
+    url(r'^history/(?P<secret_history_id>[^/]+)/$', views.HistoryView.as_view(), name='history'),
 
     url(r'^share/rights/(?P<share_id>[^/]+)/$', views.ShareRightsView.as_view(), name='share_rights'),
 
