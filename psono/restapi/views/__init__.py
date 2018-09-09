@@ -8,6 +8,8 @@ from .membership_decline import MembershipDeclineView
 from .membership import MembershipView
 from .health_check import HealthCheckView
 from .info import InfoView
+from .status import StatusView
+from .secret_history import SecretHistoryView
 from .login import LoginView
 from .logout import LogoutView
 from .password import PasswordView
@@ -31,3 +33,4 @@ from .user_delete import UserDelete
 from .verify_email import VerifyEmailView
 from .yubikey_otp_verify import YubikeyOTPVerifyView
 from .group_rights import GroupRightsView
+from .history import HistoryView

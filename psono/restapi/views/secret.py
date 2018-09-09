@@ -8,6 +8,7 @@ from .secret_link import create_secret_link
 from ..utils import user_has_rights_on_secret, readbuffer
 from ..models import (
     Secret,
+    Secret_History,
 )
 
 from ..app_settings import (
@@ -140,6 +141,15 @@ class SecretView(GenericAPIView):
             )
 
         secret = serializer.validated_data['secret']
+
+        Secret_History.objects.create(
+            secret = secret,
+            data = secret.data,
+            data_nonce = secret.data_nonce,
+            user = secret.user,
+            type = secret.type
+        )
+
         if serializer.validated_data['data']:
             secret.data = six.b(str(serializer.validated_data['data']))
         if serializer.validated_data['data_nonce']:

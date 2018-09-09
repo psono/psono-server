@@ -256,6 +256,23 @@ class Secret(models.Model):
         abstract = False
 
 
+class Secret_History(models.Model):
+    """
+    The copy of a secret that is created every time a secret is updated.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='secret_history')
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='history')
+    data = models.BinaryField()
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
+    type = models.CharField(max_length=64, db_index=True, default='password')
+
+    class Meta:
+        abstract = False
+
+
 class Share(models.Model):
     """
     The share objects for shares between users. All data encoded.

@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
         'password': '24/day',
         'user': '28800/day',
         'health_check': '61/hour',
+        'status_check': '6/minute',
         'ga_verify': '6/minute',
         'duo_verify': '6/minute',
         'yubikey_otp_verify': '6/minute',

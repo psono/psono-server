@@ -13,6 +13,8 @@ from .serializers import (
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     UserSearchSerializer as DefaultUserSearchSerializer,
+    ReadSecretHistorySerializer as DefaultReadSecretHistorySerializer,
+    ReadHistorySerializer as DefaultReadHistorySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
@@ -112,6 +114,22 @@ UserSearchSerializer = import_callable(
     serializers.get(
         'USER_SEARCH_SERIALIZER',
         DefaultUserSearchSerializer
+    )
+)
+
+
+ReadSecretHistorySerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_HISTORY_SERIALIZER',
+        DefaultReadSecretHistorySerializer
+    )
+)
+
+
+ReadHistorySerializer = import_callable(
+    serializers.get(
+        'READ_HISTORY_SERIALIZER',
+        DefaultReadHistorySerializer
     )
 )
 

@@ -52,3 +52,5 @@ from .activate_yubikey import *
 from .delete_ga import *
 from .delete_duo import *
 from .delete_yubikey import *
+from .read_secret_history import *
+from .read_history import *
