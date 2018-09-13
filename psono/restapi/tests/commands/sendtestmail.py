@@ -28,7 +28,7 @@ def fake_send_mail(subject, content, email_from, target_email_list, html_message
     :rtype:
     """
 
-    pass
+    return 1
 
 
 class CommandSendtestmailTestCase(TestCase):
