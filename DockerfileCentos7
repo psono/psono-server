@@ -37,7 +37,6 @@ RUN mkdir -p /root/.pip && \
     yum clean all && \
     rm -Rf \
         /root/requirements.txt \
-        /root/psono/static \
         /root/var \
         /root/.cache \
         /tmp/* \
