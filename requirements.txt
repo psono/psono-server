@@ -13,7 +13,7 @@ psycopg2cffi
 more_itertools
 pynacl
 django-redis
-django-mailgun
+django-anymail[mailgun]
 pyotp
 ntplib
 yubico-client
