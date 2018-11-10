@@ -263,8 +263,14 @@ class ShareRightView(GenericAPIView):
         share_right = serializer.validated_data['share_right']
 
         if settings.CACHE_ENABLE:
-            cache_key = 'psono_user_status_' + str(share_right.user.id)
-            cache.delete(cache_key)
+
+            if isinstance(share_right, User_Share_Right):
+                cache_key = 'psono_user_status_' + str(share_right.user.id)
+                cache.delete(cache_key)
+            else:
+                for member in share_right.group.members.only('id').all():
+                    cache_key = 'psono_user_status_' + str(member.user.id)
+                    cache.delete(cache_key)
 
         # delete it
         share_right.delete()
