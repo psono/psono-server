@@ -13,6 +13,7 @@ from .secret_history import SecretHistoryView
 from .login import LoginView
 from .logout import LogoutView
 from .password import PasswordView
+from .emergency_login import EmergencyLoginView
 from .recoverycode import RecoveryCodeView
 from .register import RegisterView
 from .secret import SecretView
@@ -34,3 +35,4 @@ from .verify_email import VerifyEmailView
 from .yubikey_otp_verify import YubikeyOTPVerifyView
 from .group_rights import GroupRightsView
 from .history import HistoryView
+from .emergencycode import EmergencyCodeView

@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
         content = 'If you read this, then everything is correctly configured.'
 
-        send_mail(
+        successful_emails = send_mail(
             'Testmail successfull',
             content,
             settings.EMAIL_FROM,
@@ -21,4 +21,7 @@ class Command(BaseCommand):
             html_message=content,
         )
 
-        self.stdout.write('Successfully sent a testmail to: ' + target_email )
+        if successful_emails > 0:
+            self.stdout.write('Successfully sent a testmail to: ' + target_email )
+        else:
+            self.stdout.write('Error sending the testmail')

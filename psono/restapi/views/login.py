@@ -15,7 +15,7 @@ import json
 import six
 
 from ..models import (
-    Token, Google_Authenticator, Duo, Yubikey_OTP
+    Token
 )
 from ..app_settings import (
     LoginSerializer

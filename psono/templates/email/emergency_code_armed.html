@@ -281,7 +281,7 @@
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">Registration successful, please activate.</span>
+            <span class="preheader">Emergency code armed.</span>
             <table class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -292,29 +292,12 @@
                       <td>
                         <p><img style="user-select: none;" src="cid:logo.png" width="172" height="35"></p>
                         <p>Hello,</p>
-                        <p>You registered for an account with username:</p>
-                        <p><b>{{ username }}</b></p>
-                        <p>If you registered with a browser extension, make sure to open the link in the browser with the extension.</p>
-                        <p>Click to activate:</p>
-                        <table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-                          <tbody>
-                            <tr>
-                              <td align="center">
-                                <table border="0" cellpadding="0" cellspacing="0">
-                                  <tbody>
-                                    <tr>
-                                      <td> <a href="{{ activation_link }}" target="_blank">Activate</a> </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        <p>Should the link not work, then please copy / paste the following link into your browser.</p>
-                        <p style="font-family:monospace;">
-                            <a style="color: #b1b6c1">{{ activation_link_with_wbr | safe }}</a>
-                        </p>
+                        <p>One of your emergency codes has been armed. Description of the code:</p>
+                        <p><b>{{ emergency_code_description }}</b></p>
+                        <p>The code will grant access to your account in:</p>
+                        <p><b>{{ emergency_code_activation_delay }} sec</b></p>
+                        <p>If you don't want that, then please delete login and delete the emergency code.</p>
+
                         <p>Best regards</p>
                         <p>Your Psono Team</p>
                       </td>

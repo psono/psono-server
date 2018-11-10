@@ -1,0 +1,11 @@
+Hello,
+One of your emergency codes has been armed. Description of the code::
+{{ emergency_code_description }}
+
+The code will grant access to your account in:
+{{ emergency_code_activation_delay }} sec
+
+If you don't want that, then please delete login and delete the emergency code.
+
+Best regards
+Your Psono Team

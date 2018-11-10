@@ -33,7 +33,6 @@ RUN mkdir -p /root/.pip && \
     apt-get purge -y \
         python3-pip && \
     apt-get clean && \
-    rm -Rf /root/psono/static && \
     rm -Rf /root/var && \
     rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 

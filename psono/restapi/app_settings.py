@@ -30,6 +30,10 @@ from .serializers import (
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
+    CreateEmergencycodeSerializer as DefaultCreateEmergencycodeSerializer,
+    EmergencyLoginSerializer as DefaultEmergencyLoginSerializer,
+    ActivateEmergencyLoginSerializer as DefaultActivateEmergencyLoginSerializer,
+    DeleteEmergencycodeSerializer as DefaultDeleteEmergencycodeSerializer,
     EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
     SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
     CreateShareLinkSerializer as DefaultCreateShareLinkSerializer,
@@ -237,6 +241,38 @@ CreateRecoverycodeSerializer = import_callable(
     serializers.get(
         'CREATE_RECOVERYCODE_SERIALIZER',
         DefaultCreateRecoverycodeSerializer
+    )
+)
+
+
+CreateEmergencycodeSerializer = import_callable(
+    serializers.get(
+        'CREATE_EMERGENCYCODE_SERIALIZER',
+        DefaultCreateEmergencycodeSerializer
+    )
+)
+
+
+EmergencyLoginSerializer = import_callable(
+    serializers.get(
+        'EMERGENCY_LOGIN_SERIALIZER',
+        DefaultEmergencyLoginSerializer
+    )
+)
+
+
+ActivateEmergencyLoginSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_EMERGENCY_LOGIN_SERIALIZER',
+        DefaultActivateEmergencyLoginSerializer
+    )
+)
+
+
+DeleteEmergencycodeSerializer = import_callable(
+    serializers.get(
+        'DELETE_EMERGENCYCODE_SERIALIZER',
+        DefaultDeleteEmergencycodeSerializer
     )
 )
 
