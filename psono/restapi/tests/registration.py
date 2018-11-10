@@ -1,13 +1,14 @@
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.core.mail import EmailMultiAlternatives
 from rest_framework import status
 
 from restapi import models
 from .base import APITestCaseExtended
 from ..utils import decrypt_with_db_secret
 
-from mock import patch, ANY
+from mock import patch
 import binascii
 import random
 import string
@@ -661,8 +662,8 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    @patch('restapi.views.register.send_mail')
-    def test_create_account_sends_mail(self, mock_send_mail):
+    @patch.object(EmailMultiAlternatives, 'send')
+    def test_create_account_sends_mail(self, mocked_send):
         """
         Ensure a mail is sent if a new account is created
         """
@@ -693,5 +694,5 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        mock_send_mail.assert_called_once_with('Registration successful', ANY, settings.EMAIL_FROM, [email], html_message=ANY)
+        mocked_send.assert_called_once()
 
