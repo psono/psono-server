@@ -112,7 +112,7 @@ class UserGA(GenericAPIView):
 
     def delete(self, request, *args, **kwargs):
         """
-        Deletes an Google Authenticator
+        Deletes a Google Authenticator
 
         :param request:
         :param args:

@@ -48,6 +48,9 @@ urlpatterns = [
     url(r'^password/$', views.PasswordView.as_view(), name='password'),
     url(r'^recoverycode/$', views.RecoveryCodeView.as_view(), name='recoverycode'),
 
+    url(r'^emergencycode/$', views.EmergencyCodeView.as_view(), name='emergencycode'),
+    url(r'^emergency-login/$', views.EmergencyLoginView.as_view(), name='emergency_login'),
+
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 

@@ -217,6 +217,30 @@ class Recovery_Code(models.Model):
         abstract = False
 
 
+class Emergency_Code(models.Model):
+    """
+    The emergency codes for the lost password recovery process.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emergency_code')
+    emergency_authkey = models.CharField(_('emergency auth key'), max_length=128)
+    emergency_data = models.BinaryField()
+    emergency_data_nonce = models.CharField(_('emergency data nonce'), max_length=64, unique=True)
+    verifier = models.CharField(_('last verifier'), max_length=256)
+    verifier_issue_date = models.DateTimeField(null=True, blank=True)
+    emergency_sauce = models.CharField(_('user sauce'), max_length=64)
+
+    description = models.CharField(max_length=256, null=True)
+
+    activation_delay = models.PositiveIntegerField(_('Delay till activation in seconds'))
+    activation_date = models.DateTimeField(_('Date this emergency code becomes active'), null=True, blank=True)
+
+    class Meta:
+        abstract = False
+
+
 class Data_Store(models.Model):
     """
     The data storage where the folder structure is saved
@@ -488,6 +512,8 @@ class Token(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auth_tokens')
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
+    is_emergency_session = models.BooleanField(_('Is an emergency session'), default=False,
+        help_text=_('Specifies if the token has been created with an emergency code or not'))
     google_authenticator_2fa = models.BooleanField(_('Google Authenticator Required'), default=False,
         help_text=_('Specifies if Google Authenticator is required or not'))
 
