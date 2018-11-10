@@ -93,3 +93,14 @@ class CreateMembershipSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         return value
+
+    def validate(self, attrs: dict) -> dict:
+
+        user_id = attrs.get('user_id')
+        group_id = attrs.get('group_id')
+
+        if User_Group_Membership.objects.filter(group_id=group_id, user_id=user_id).count() > 0:
+            msg = _("User is already part of the group.")
+            raise exceptions.ValidationError(msg)
+
+        return attrs
