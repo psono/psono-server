@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'anymail',
     'corsheaders',
     'rest_framework',
     'restapi',
@@ -245,8 +246,13 @@ YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-MAILGUN_ACCESS_KEY = config_get('MAILGUN_ACCESS_KEY', '')
-MAILGUN_SERVER_NAME = config_get('MAILGUN_SERVER_NAME', '')
+
+ANYMAIL = {
+    "MAILGUN_API_KEY": config_get('MAILGUN_ACCESS_KEY', ''),
+    "MAILGUN_SENDER_DOMAIN": config_get('MAILGUN_SERVER_NAME', '')
+}
+
+DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
 CACHE_ENABLE = config_get('CACHE_ENABLE', False)
 
