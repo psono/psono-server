@@ -21,3 +21,4 @@ python-dateutil
 duo_client
 scrypt
 raven
+requests

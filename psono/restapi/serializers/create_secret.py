@@ -9,6 +9,9 @@ class CreateSecretSerializer(serializers.Serializer):
 
     data = serializers.CharField(required=True)
     data_nonce = serializers.CharField(required=True, max_length=64)
+    callback_url = serializers.CharField(required=False, max_length=2048, default='')
+    callback_user = serializers.CharField(required=False, max_length=128, default='')
+    callback_pass = serializers.CharField(required=False, max_length=128, default='')
     link_id = UUIDField(required=True)
     parent_share_id = UUIDField(required=False)
     parent_datastore_id = UUIDField(required=False)

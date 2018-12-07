@@ -5,18 +5,15 @@ from django.db import connection
 
 from typing import Optional
 import os
-from nacl.public import PrivateKey
-import nacl.secret
-import nacl.encoding
-import nacl.utils
 
 import bcrypt
 import time
 from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
 
+from nacl.public import PrivateKey
+import nacl.secret
 import nacl.encoding
 import nacl.utils
-import nacl.secret
 import hashlib
 import binascii
 
@@ -25,6 +22,7 @@ from typing import Tuple, List
 
 
 import six
+import json
 
 
 def generate_activation_code(email : str) -> str:
@@ -687,3 +685,41 @@ def create_user(username, password, email, gen_authkey=True):
         'private_key_decrypted': private_key_decrypted,
         'secret_key_decrypted': secret_key_decrypted,
     }
+
+def filter_as_json(data, filter):
+    """
+    Takes any string and interprets it as nested json encoded objects which will be filtered by the filter array.
+    The function will return a string with the filtered content
+
+    :param data:
+    :type data:
+    :param filter:
+    :type filter:
+    :return:
+    :rtype:
+    """
+    try:
+        decrypted_data = json.loads(data)
+    except TypeError:
+        return ''
+
+    for f in filter:
+        try:
+            decrypted_data = json.loads(decrypted_data)
+        except TypeError:
+            pass
+
+        try:
+            decrypted_data = decrypted_data[f]
+            continue
+        except KeyError:
+            # Key is not present
+            pass
+
+        decrypted_data = ''
+        break
+
+    if isinstance(decrypted_data, str):
+        return decrypted_data
+    else:
+        return json.dumps(decrypted_data)

@@ -51,6 +51,14 @@ urlpatterns = [
     url(r'^emergencycode/$', views.EmergencyCodeView.as_view(), name='emergencycode'),
     url(r'^emergency-login/$', views.EmergencyLoginView.as_view(), name='emergency_login'),
 
+    url(r'^api-key-access/secret/$', views.APIKeyAccessSecretView.as_view(), name='api_key_access_secret'),
+
+    url(r'^api-key/secret/(?P<api_key_id>[^/]+)/$', views.APIKeySecretView.as_view(), name='api_key_secret'),
+    url(r'^api-key/secret/$', views.APIKeySecretView.as_view(), name='api_key_secret'),
+    url(r'^api-key/login/$', views.APIKeyLoginView.as_view(), name='api_key_login'),
+    url(r'^api-key/(?P<api_key_id>[^/]+)/$', views.APIKeyView.as_view(), name='api_key'),
+    url(r'^api-key/$', views.APIKeyView.as_view(), name='api_key'),
+
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 

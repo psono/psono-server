@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
 
 from ..models import Yubikey_OTP
 from ..app_settings import NewYubikeyOTPSerializer, ActivateYubikeySerializer, DeleteYubikeySerializer
