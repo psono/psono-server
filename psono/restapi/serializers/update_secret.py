@@ -11,9 +11,9 @@ class UpdateSecretSerializer(serializers.Serializer):
     secret_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
-    callback_url = serializers.CharField(required=False, max_length=2048)
-    callback_user = serializers.CharField(required=False, max_length=128)
-    callback_pass = serializers.CharField(required=False, max_length=128)
+    callback_url = serializers.CharField(required=False, max_length=2048, default='', allow_blank=True)
+    callback_user = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
+    callback_pass = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -32,8 +32,5 @@ class UpdateSecretSerializer(serializers.Serializer):
         attrs['secret'] = secret
         attrs['data'] = attrs.get('data', False)
         attrs['data_nonce'] = attrs.get('data_nonce', False)
-        attrs['callback_url'] = attrs.get('callback_url', False)
-        attrs['callback_user'] = attrs.get('callback_user', False)
-        attrs['callback_pass'] = attrs.get('callback_pass', False)
 
         return attrs

@@ -65,6 +65,11 @@ class SecretView(GenericAPIView):
 
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
+        try:
+            callback_pass = decrypt_with_db_secret(secret.callback_pass)
+        except:
+            callback_pass = ''
+
         return Response({
             'create_date': secret.create_date,
             'write_date': secret.write_date,
@@ -73,6 +78,7 @@ class SecretView(GenericAPIView):
             'type': secret.type,
             'callback_url': secret.callback_url,
             'callback_user': secret.callback_user,
+            'callback_pass': callback_pass,
         }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
@@ -102,10 +108,8 @@ class SecretView(GenericAPIView):
             )
 
         try:
-            if serializer.validated_data['callback_pass'] == '':
-                callback_pass = ''
-            else:
-                callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+
+            callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
 
             secret = Secret.objects.create(
                 data = readbuffer(str(request.data['data'])),
@@ -170,20 +174,9 @@ class SecretView(GenericAPIView):
         if serializer.validated_data['data_nonce']:
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 
-        if serializer.validated_data['callback_url'] == '':
-            secret.callback_url = ''
-        elif serializer.validated_data['callback_url']:
-            secret.callback_url = serializer.validated_data['callback_url']
-
-        if serializer.validated_data['callback_user'] == '':
-            secret.callback_user = ''
-        elif serializer.validated_data['callback_user']:
-            secret.callback_user = serializer.validated_data['callback_user']
-
-        if serializer.validated_data['callback_pass'] == '':
-            secret.callback_pass = ''
-        elif serializer.validated_data['callback_pass']:
-            secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+        secret.callback_url = serializer.validated_data['callback_url']
+        secret.callback_user = serializer.validated_data['callback_user']
+        secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
 
         secret.save()
 
@@ -194,8 +187,14 @@ class SecretView(GenericAPIView):
                 'secret_id': secret.id,
             }
 
-            if secret.callback_user and secret.callback_pass:
-                callback_pass = decrypt_with_db_secret(secret.callback_pass)
+            callback_pass = ''
+            if secret.callback_user:
+                try:
+                    callback_pass = decrypt_with_db_secret(secret.callback_pass)
+                except:
+                    pass
+
+            if callback_pass:
                 auth = (secret.callback_user, callback_pass)
             else:
                 auth = None

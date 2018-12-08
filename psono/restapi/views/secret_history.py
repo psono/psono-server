@@ -47,13 +47,14 @@ class SecretHistoryView(GenericAPIView):
 
         secret = serializer.validated_data.get('secret')
 
-        history_items = Secret_History.objects.filter(secret_id=secret.id).only('id', 'create_date')
+        history_items = Secret_History.objects.filter(secret_id=secret.id).values('id', 'create_date', 'user__username')
 
         history = []
         for item in history_items:
             history.append({
-                'id': str(item.id),
-                'create_date': item.create_date
+                'id': str(item['id']),
+                'create_date': item['create_date'],
+                'username': item['user__username'],
             })
 
         return Response({

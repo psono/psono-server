@@ -50,11 +50,16 @@ class APIKeyAccessSecretView(GenericAPIView):
         secret = serializer.validated_data.get('secret')
         secret_key = serializer.validated_data.get('secret_key')
         json_filter = serializer.validated_data.get('json_filter')
+        api_key_secret = serializer.validated_data.get('api_key_secret')
+
+
 
         if not secret_key:
             return Response(json.dumps({
                 'data': secret.data.tobytes().decode(),
                 'data_nonce': str(secret.data_nonce),
+                'secret_key': api_key_secret.secret_key,
+                'secret_key_nonce': api_key_secret.secret_key_nonce,
             }), status=status.HTTP_200_OK)
 
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)

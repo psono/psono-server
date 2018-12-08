@@ -55,6 +55,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             json_filter = []
 
         attrs['secret'] = secret
+        attrs['api_key_secret'] = api_key_secret
         attrs['secret_key'] = secret_key
         attrs['json_filter'] = json_filter
 
