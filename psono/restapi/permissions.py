@@ -10,9 +10,9 @@ class IsAuthenticated(BasePermission):
 
     def has_permission(self, request, view):
 
-        if request.method == 'GET' and not request.auth.read:
+        if request.method == 'GET' and request.auth and not request.auth.read:
             return False
-        if request.method != 'GET' and not request.auth.write:
+        if request.method != 'GET' and request.auth and not request.auth.write:
             return False
 
         return request.user and request.user.is_authenticated

@@ -2,7 +2,6 @@
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
 from ..authentication import TokenAuthentication
@@ -12,9 +11,6 @@ from .base import APITestCaseExtended
 from hashlib import sha512
 from mock import patch
 
-import random
-import string
-import dateutil.parser
 import binascii
 import os
 import json
@@ -121,6 +117,8 @@ class AuthenticateTests(APITestCaseExtended):
         self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
         self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
         self.test_user_sauce = '0865977160de11fe18806e6843bc14663433982fdeadc45c217d6127f260ff33'
+        self.device_fingerprint = '123456'
+        self.device_time = timezone.now()
 
 
         data = {
@@ -173,6 +171,8 @@ class AuthenticateTests(APITestCaseExtended):
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
             'authkey': self.test_authkey,
+            'device_fingerprint': self.device_fingerprint,
+            'device_time': str(self.device_time),
         }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 
