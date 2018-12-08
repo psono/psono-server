@@ -1,12 +1,10 @@
 from django.conf import settings
-from ..utils import authenticate
 
 import dateutil.parser
 import nacl.encoding
 import nacl.utils
 import nacl.signing
 from  nacl.exceptions import BadSignatureError
-from nacl.public import PrivateKey, PublicKey, Box
 
 import json
 import binascii
@@ -24,8 +22,8 @@ class APIKeyLoginSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        info_json = attrs.get('info')
-        signature = attrs.get('signature')
+        info_json = attrs.get('info', '')
+        signature = attrs.get('signature', '')
 
         try:
             info = json.loads(info_json)
