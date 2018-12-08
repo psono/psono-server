@@ -58,3 +58,10 @@ from .delete_duo import *
 from .delete_yubikey import *
 from .read_secret_history import *
 from .read_history import *
+from .create_api_key import *
+from .update_api_key import *
+from .delete_api_key import *
+from .add_secret_to_api_key import *
+from .remove_secret_from_api_key import *
+from .read_secret_with_api_key import *
+from .api_key_login import *

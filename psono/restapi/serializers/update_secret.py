@@ -11,6 +11,9 @@ class UpdateSecretSerializer(serializers.Serializer):
     secret_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
+    callback_url = serializers.CharField(required=False, max_length=2048, default='', allow_blank=True)
+    callback_user = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
+    callback_pass = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
 
     def validate(self, attrs: dict) -> dict:
 

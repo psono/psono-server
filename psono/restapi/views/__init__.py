@@ -36,3 +36,7 @@ from .yubikey_otp_verify import YubikeyOTPVerifyView
 from .group_rights import GroupRightsView
 from .history import HistoryView
 from .emergencycode import EmergencyCodeView
+from .api_key import APIKeyView
+from .api_key_login import APIKeyLoginView
+from .api_key_secret import APIKeySecretView
+from .api_key_access_secret import APIKeyAccessSecretView

@@ -5,6 +5,7 @@ from importlib import import_module
 
 from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
+    APIKeyLoginSerializer as DefaultAPIKeyLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
     DuoVerifySerializer as DefaultDuoVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
@@ -61,6 +62,12 @@ from .serializers import (
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     MembershipAcceptSerializer as DefaultMembershipAcceptSerializer,
     MembershipDeclineSerializer as DefaultMembershipDeclineSerializer,
+    CreateAPIKeySerializer as DefaultCreateAPIKeySerializer,
+    UpdateAPIKeySerializer as DefaultUpdateAPIKeySerializer,
+    ReadSecretWithAPIKeySerializer as DefaultReadSecretWithAPIKeySerializer,
+    DeleteAPIKeySerializer as DefaultDeleteAPIKeySerializer,
+    AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
+    RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
 )
 
 def import_callable(path_or_callable):
@@ -75,6 +82,9 @@ serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
 
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
+)
+APIKeyLoginSerializer = import_callable(
+    serializers.get('API_KEY_LOGIN_SERIALIZER', DefaultAPIKeyLoginSerializer)
 )
 
 GAVerifySerializer = import_callable(
@@ -467,6 +477,48 @@ MembershipDeclineSerializer = import_callable(
     serializers.get(
         'MEMBERSHIP_DECLINE_SERIALIZER',
         DefaultMembershipDeclineSerializer
+    )
+)
+
+CreateAPIKeySerializer = import_callable(
+    serializers.get(
+        'CREATE_API_KEY_SERIALIZER',
+        DefaultCreateAPIKeySerializer
+    )
+)
+
+UpdateAPIKeySerializer = import_callable(
+    serializers.get(
+        'UPDATE_API_KEY_SERIALIZER',
+        DefaultUpdateAPIKeySerializer
+    )
+)
+
+ReadSecretWithAPIKeySerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_WITH_API_KEY_SERIALIZER',
+        DefaultReadSecretWithAPIKeySerializer
+    )
+)
+
+DeleteAPIKeySerializer = import_callable(
+    serializers.get(
+        'DELETE_API_KEY_SERIALIZER',
+        DefaultDeleteAPIKeySerializer
+    )
+)
+
+AddSecretToAPIKeySerializer = import_callable(
+    serializers.get(
+        'ADD_SECRET_TO_API_KEY_SERIALIZER',
+        DefaultAddSecretToAPIKeySerializer
+    )
+)
+
+RemoveSecretFromAPIKeySerializer = import_callable(
+    serializers.get(
+        'REMOVE_SECRET_FROM_API_KEY_SERIALIZER',
+        DefaultRemoveSecretFromAPIKeySerializer
     )
 )
 

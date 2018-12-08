@@ -1,11 +1,14 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
+import requests
+
 from .secret_link import create_secret_link
-from ..utils import user_has_rights_on_secret, readbuffer
+from ..utils import user_has_rights_on_secret, readbuffer, decrypt_with_db_secret, encrypt_with_db_secret
 from ..models import (
     Secret,
     Secret_History,
@@ -16,7 +19,6 @@ from ..app_settings import (
     UpdateSecretSerializer,
 )
 
-from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
 import six
@@ -63,12 +65,20 @@ class SecretView(GenericAPIView):
 
             raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
 
+        try:
+            callback_pass = decrypt_with_db_secret(secret.callback_pass)
+        except:
+            callback_pass = ''
+
         return Response({
             'create_date': secret.create_date,
             'write_date': secret.write_date,
             'data': readbuffer(secret.data),
             'data_nonce': secret.data_nonce if secret.data_nonce else '',
             'type': secret.type,
+            'callback_url': secret.callback_url,
+            'callback_user': secret.callback_user,
+            'callback_pass': callback_pass,
         }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
@@ -98,9 +108,15 @@ class SecretView(GenericAPIView):
             )
 
         try:
+
+            callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+
             secret = Secret.objects.create(
                 data = readbuffer(str(request.data['data'])),
                 data_nonce = str(request.data['data_nonce']),
+                callback_url = serializer.validated_data['callback_url'],
+                callback_user = serializer.validated_data['callback_user'],
+                callback_pass = callback_pass,
                 user = request.user
             )
         except IntegrityError:
@@ -147,7 +163,10 @@ class SecretView(GenericAPIView):
             data = secret.data,
             data_nonce = secret.data_nonce,
             user = secret.user,
-            type = secret.type
+            type = secret.type,
+            callback_url = secret.callback_url,
+            callback_user = secret.callback_user,
+            callback_pass = secret.callback_pass,
         )
 
         if serializer.validated_data['data']:
@@ -155,7 +174,35 @@ class SecretView(GenericAPIView):
         if serializer.validated_data['data_nonce']:
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 
+        secret.callback_url = serializer.validated_data['callback_url']
+        secret.callback_user = serializer.validated_data['callback_user']
+        secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+
         secret.save()
+
+        if secret.callback_url:
+            headers = {'content-type': 'application/json'}
+            data = {
+                'event': 'UPDATE_SECRET_SUCCESS',
+                'secret_id': secret.id,
+            }
+
+            callback_pass = ''
+            if secret.callback_user:
+                try:
+                    callback_pass = decrypt_with_db_secret(secret.callback_pass)
+                except:
+                    pass
+
+            if callback_pass:
+                auth = (secret.callback_user, callback_pass)
+            else:
+                auth = None
+
+            try:
+                requests.post(secret.callback_url, data=data, headers=headers, auth=auth)
+            except:
+                pass
 
         return Response({"success": "Data updated."},
                         status=status.HTTP_200_OK)

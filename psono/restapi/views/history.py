@@ -1,9 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 
-from ..utils import readbuffer
+from ..permissions import IsAuthenticated
+from ..utils import readbuffer, decrypt_with_db_secret
 
 from ..app_settings import (
     ReadHistorySerializer
@@ -46,12 +46,20 @@ class HistoryView(GenericAPIView):
 
         secret_history = serializer.validated_data.get('secret_history')
 
+        try:
+            callback_pass = decrypt_with_db_secret(secret_history.callback_pass)
+        except:
+            callback_pass = ''
+
         return Response({
             'create_date': secret_history.create_date,
             'write_date': secret_history.write_date,
             'data': readbuffer(secret_history.data),
             'data_nonce': secret_history.data_nonce if secret_history.data_nonce else '',
             'type': secret_history.type,
+            'callback_url': secret_history.callback_url,
+            'callback_user': secret_history.callback_user,
+            'callback_pass': callback_pass,
         }, status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
