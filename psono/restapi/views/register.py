@@ -101,7 +101,13 @@ class RegisterView(GenericAPIView):
             msg_img.add_header('Content-ID', '<{}>'.format(f))
             msg.attach(msg_img)
 
-        msg.send()
+        try:
+            msg.send()
+        except:
+            user.delete()
+            return Response({"custom": ["Registration E-Mail delivery failed. Account not created."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
         return Response({"success": "Successfully registered."},
                         status=status.HTTP_201_CREATED)
