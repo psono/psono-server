@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from django.db import IntegrityError
 
 import os
 from email.mime.image import MIMEImage
@@ -59,7 +60,12 @@ class RegisterView(GenericAPIView):
         activation_code = generate_activation_code(serializer.validated_data['email'])
 
         # serializer.validated_data['email'] gets now encrypted
-        user = serializer.save()
+        try:
+            user = serializer.save()
+        except IntegrityError:
+            return Response({"custom": ["Registration failed. Username already exists."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
         # if len(self.request.data.get('base_url', '')) < 1:
         #    raise exceptions.ValidationError(msg)
