@@ -17,7 +17,7 @@ class HistoryView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
-    def get(self, request, secret_history_id = None, *args, **kwargs):
+    def get(self, request, secret_history_id, *args, **kwargs):
         """
         Returns a specific history item
 

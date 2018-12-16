@@ -6,6 +6,7 @@ from rest_framework import serializers, exceptions
 
 from ..fields import UUIDField
 from ..models import API_Key, Secret
+from ..utils import user_has_rights_on_secret
 
 class AddSecretToAPIKeySerializer(serializers.Serializer):
 
@@ -71,6 +72,11 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         try:
             secret = Secret.objects.get(pk=secret_id)
         except Secret.DoesNotExist:
+            msg = _("You don't have permission to access or it does not exist.")
+            raise exceptions.ValidationError(msg)
+
+
+        if not user_has_rights_on_secret(self.context['request'].user.id, secret.id):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 

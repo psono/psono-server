@@ -74,6 +74,46 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         return value
 
+    def validate_user_private_key(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('User private key must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_user_private_key_nonce(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('User private key nonce must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_user_secret_key(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('User secret key must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
+    def validate_user_secret_key_nonce(self, value):
+
+        value = value.strip()
+
+        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+            msg = _('User secret key nonce must be in hex representation')
+            raise exceptions.ValidationError(msg)
+
+        return value
+
     def validate_verify_key(self, value):
 
         value = value.strip()

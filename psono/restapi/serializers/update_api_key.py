@@ -1,17 +1,17 @@
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers, exceptions
-from ..fields import UUIDField, BooleanField
+from ..fields import UUIDField, NullBooleanField
 from ..models import API_Key
 
 class UpdateAPIKeySerializer(serializers.Serializer):
 
     api_key_id = UUIDField(required=True)
     title = serializers.CharField(max_length=256, required=False)
-    read = BooleanField(required=False)
-    write = BooleanField(required=False)
-    restrict_to_secrets = BooleanField(required=False)
-    allow_insecure_access = BooleanField(required=False)
+    read = NullBooleanField(required=False)
+    write = NullBooleanField(required=False)
+    restrict_to_secrets = NullBooleanField(required=False)
+    allow_insecure_access = NullBooleanField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 

@@ -162,7 +162,7 @@ class SecretView(GenericAPIView):
             secret = secret,
             data = secret.data,
             data_nonce = secret.data_nonce,
-            user = secret.user,
+            user = request.user,
             type = secret.type,
             callback_url = secret.callback_url,
             callback_user = secret.callback_user,
@@ -174,9 +174,12 @@ class SecretView(GenericAPIView):
         if serializer.validated_data['data_nonce']:
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 
-        secret.callback_url = serializer.validated_data['callback_url']
-        secret.callback_user = serializer.validated_data['callback_user']
-        secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+        if serializer.validated_data.get('callback_url', None) is not None:
+            secret.callback_url = serializer.validated_data['callback_url']
+        if serializer.validated_data.get('callback_user', None) is not None:
+            secret.callback_user = serializer.validated_data['callback_user']
+        if serializer.validated_data.get('callback_pass', None) is not None:
+            secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
 
         secret.save()
 
@@ -184,17 +187,17 @@ class SecretView(GenericAPIView):
             headers = {'content-type': 'application/json'}
             data = {
                 'event': 'UPDATE_SECRET_SUCCESS',
-                'secret_id': secret.id,
+                'secret_id': str(secret.id),
             }
 
             callback_pass = ''
-            if secret.callback_user:
+            if secret.callback_user and secret.callback_pass:
                 try:
                     callback_pass = decrypt_with_db_secret(secret.callback_pass)
                 except:
-                    pass
+                    callback_pass = secret.callback_pass
 
-            if callback_pass:
+            if secret.callback_user and callback_pass:
                 auth = (secret.callback_user, callback_pass)
             else:
                 auth = None

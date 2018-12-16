@@ -58,7 +58,6 @@ class APIKeyView(GenericAPIView):
             return Response({'api_keys': api_keys},
                 status=status.HTTP_200_OK)
         else:
-            print(api_key_id)
             # Returns the specified api_key if the user has any rights for it
             try:
                 api_key = API_Key.objects.get(id=api_key_id, user=request.user)
@@ -164,13 +163,13 @@ class APIKeyView(GenericAPIView):
 
         if read is not None and api_key.read != read:
             api_key.read = read
-            for token in api_key.tokens:
+            for token in api_key.tokens.all():
                 token.read = read
                 token.save()
 
         if write is not None and api_key.write != write:
             api_key.write = write
-            for token in api_key.tokens:
+            for token in api_key.tokens.all():
                 token.write = write
                 token.save()
 
