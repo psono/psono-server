@@ -24,7 +24,7 @@ class APIKeySecretView(GenericAPIView):
     allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
 
-    def get(self, request, api_key_id, *args, **kwargs):
+    def get(self, request, api_key_id=None, *args, **kwargs):
         """
         Returns a list of all api key secrets of an API key
         

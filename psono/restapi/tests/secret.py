@@ -6,11 +6,21 @@ from rest_framework import status
 from .base import APITestCaseExtended
 from ..utils import readbuffer
 from restapi import models
+from mock import patch
 
 import random
 import string
 import binascii
 import os
+
+from ..utils import encrypt_with_db_secret
+
+BAD_URL='BAD_URL'
+
+def mock_request_post(url, data=None, json=None, **kwargs):
+    if url == BAD_URL:
+        raise Exception
+
 
 class UserCreateSecretTest(APITestCaseExtended):
     """
@@ -536,6 +546,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
     """
     Test to update a secret (POST)
     """
+
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "a"
@@ -622,7 +633,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
     def test_with_badly_formatted_uuid(self):
         """
-        Tests to get a specific share without rights
+        Tests to update a specific secret with a malformed UUID
         """
 
         url = reverse('secret')
@@ -639,7 +650,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
     def test_with_not_existing_secret(self):
         """
-        Tests to get a specific share without rights
+        Tests to update a specific secret that does not exist
         """
 
         url = reverse('secret')
@@ -656,7 +667,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
     def test_without_rights(self):
         """
-        Tests to get a specific share without rights
+        Tests to update a specific secret without rights
         """
 
         url = reverse('secret')
@@ -671,9 +682,9 @@ class UserUpdateSecretTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_with_rights(self):
+    def test_success(self):
         """
-        Tests to get a specific share with rights
+        Tests to update a specific secret successful
         """
 
         url = reverse('secret')
@@ -696,3 +707,180 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
         self.assertEqual(str(updated_secret.data_nonce), data['data_nonce'],
                             'data_nonce in secret was not updated')
+
+        self.assertEqual(models.Secret_History.objects.filter(secret=updated_secret).count(), 1)
+
+
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_callback_url(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        target_data = {
+            'event': 'UPDATE_SECRET_SUCCESS',
+            'secret_id': str(self.secret_id)
+        }
+
+        target_headers = {'content-type': 'application/json'}
+        target_auth = None
+
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)
+
+
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_updated_callback_url(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url in the update parameters
+        """
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'callback_url': 'https://example.com',
+            'callback_user': 'myUser',
+            'callback_pass': 'myPass'
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        target_data = {
+            'event': 'UPDATE_SECRET_SUCCESS',
+            'secret_id': str(self.secret_id)
+        }
+
+        target_headers = {'content-type': 'application/json'}
+        target_auth = (data.get('callback_user'), data.get('callback_pass'))
+
+        mock_request_post.assert_any_call(data.get('callback_url'), data=target_data, headers=target_headers, auth=target_auth)
+
+
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_callback_url_that_is_malformed(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url that is invalid. The function should pass anyway without
+        exception for the user
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = BAD_URL
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_callback_url_user_and_pass(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url, user and password
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.callback_user = 'AnyUserName'
+        callback_pass = 'PassWord'
+        secret.callback_pass = encrypt_with_db_secret(callback_pass)
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        target_data = {
+            'event': 'UPDATE_SECRET_SUCCESS',
+            'secret_id': str(self.secret_id)
+        }
+
+        target_headers = {'content-type': 'application/json'}
+        target_auth = (secret.callback_user, callback_pass)
+
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)
+
+
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_callback_url_user_and_pass_that_is_not_proper_encrypted(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url, user and password, that can fail (e.g empty, Null, ...)
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.callback_user = 'AnyUserName'
+        secret.callback_pass = 'SomeThing'
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        target_data = {
+            'event': 'UPDATE_SECRET_SUCCESS',
+            'secret_id': str(self.secret_id)
+        }
+
+        target_headers = {'content-type': 'application/json'}
+        target_auth = (secret.callback_user, secret.callback_pass)
+
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)

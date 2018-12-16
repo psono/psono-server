@@ -12,8 +12,8 @@ from ..models import API_Key_Secret
 
 class ReadSecretWithAPIKeySerializer(serializers.Serializer):
     api_key_id = UUIDField(required=True)
-    api_key_secret_key = serializers.CharField(required=False)
     secret_id = UUIDField(required=True)
+    api_key_secret_key = serializers.CharField(required=False)
     json_filter = serializers.CharField(required=False)
 
     def validate(self, attrs: dict) -> dict:

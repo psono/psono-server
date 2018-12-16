@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    UserSerializer, DeleteUserSerializer, UpdateUserSerializer
+    DeleteUserSerializer, UpdateUserSerializer
 )
 
 from ..permissions import AdminPermission
@@ -17,7 +17,6 @@ class UserView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
-    serializer_class = UserSerializer
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
     def get_user_info(self, user_id):

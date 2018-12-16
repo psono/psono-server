@@ -18,7 +18,7 @@ class SecretHistoryView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
-    def get(self, request, secret_id = None, *args, **kwargs):
+    def get(self, request, secret_id, *args, **kwargs):
         """
         Lists a the history of a specific secret
 
@@ -69,3 +69,4 @@ class SecretHistoryView(GenericAPIView):
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
