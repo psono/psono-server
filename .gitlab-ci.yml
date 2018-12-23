@@ -164,7 +164,7 @@ release-container:
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
-rease-version-bump:
+release-version-bump:
   except:
     - schedules
   stage: release
