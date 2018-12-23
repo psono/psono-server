@@ -1,7 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 
 from ..app_settings import (
     CreateGroupSerializer,
@@ -274,6 +276,11 @@ class GroupView(GenericAPIView):
             )
 
         group = serializer.validated_data.get('group')
+
+        if settings.CACHE_ENABLE:
+            for member in group.members.only('id').all():
+                cache_key = 'psono_user_status_' + str(member.user.id)
+                cache.delete(cache_key)
 
         # delete it
         group.delete()

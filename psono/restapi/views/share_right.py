@@ -2,7 +2,9 @@ from ..utils import get_all_inherited_rights
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 
 from ..models import (
     User_Share_Right,
@@ -148,6 +150,7 @@ class ShareRightView(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
         if serializer.validated_data.get('user_id', False):
             # lets check if the user has already a path to access the share. if yes automatically approve rights
             accepted = None
@@ -169,6 +172,11 @@ class ShareRightView(GenericAPIView):
                 grant=serializer.validated_data['grant'],
                 accepted=accepted,
             )
+
+            if settings.CACHE_ENABLE:
+                cache_key = 'psono_user_status_' + str(serializer.validated_data['user'].id)
+                cache.delete(cache_key)
+
         else:
             share_right = Group_Share_Right.objects.create(
                 key=serializer.validated_data['key'],
@@ -184,6 +192,10 @@ class ShareRightView(GenericAPIView):
                 write=serializer.validated_data['write'],
                 grant=serializer.validated_data['grant'],
             )
+
+            if settings.CACHE_ENABLE:
+                cache_key = 'psono_user_status_' + str(request.user.id)
+                cache.delete(cache_key)
 
         return Response({"share_right_id": share_right.id},
                         status=status.HTTP_201_CREATED)
@@ -249,6 +261,16 @@ class ShareRightView(GenericAPIView):
 
 
         share_right = serializer.validated_data['share_right']
+
+        if settings.CACHE_ENABLE:
+
+            if isinstance(share_right, User_Share_Right):
+                cache_key = 'psono_user_status_' + str(share_right.user.id)
+                cache.delete(cache_key)
+            else:
+                for member in share_right.group.members.only('id').all():
+                    cache_key = 'psono_user_status_' + str(member.user.id)
+                    cache.delete(cache_key)
 
         # delete it
         share_right.delete()

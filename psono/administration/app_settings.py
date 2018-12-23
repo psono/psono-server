@@ -4,7 +4,6 @@ import six
 from importlib import import_module
 
 from .serializers import (
-    UserSerializer as DefaultUserSerializer,
     DeleteSessionSerializer as DefaultDeleteSessionSerializer,
     DeleteUserSerializer as DefaultDeleteUserSerializer,
     UpdateUserSerializer as DefaultUpdateUserSerializer,
@@ -24,10 +23,6 @@ def import_callable(path_or_callable):
         return getattr(import_module(package), attr)
 
 serializers = getattr(settings, 'ADMIN_SERIALIZERS', {})
-
-UserSerializer = import_callable(
-    serializers.get('USER_SERIALIZER', DefaultUserSerializer)
-)
 
 DeleteSessionSerializer = import_callable(
     serializers.get('DELETE_SESSION_SERIALIZER', DefaultDeleteSessionSerializer)

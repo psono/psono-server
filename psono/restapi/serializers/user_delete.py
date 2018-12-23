@@ -13,7 +13,7 @@ class UserDeleteSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        authkey = attrs.get('authkey')
+        authkey = attrs.get('authkey', '')
 
         user, error_code = authenticate(username=self.context['request'].user.username, authkey=authkey)
 

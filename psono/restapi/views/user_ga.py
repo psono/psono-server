@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
 import pyotp
 
 from ..models import Google_Authenticator
@@ -112,7 +112,7 @@ class UserGA(GenericAPIView):
 
     def delete(self, request, *args, **kwargs):
         """
-        Deletes an Google Authenticator
+        Deletes a Google Authenticator
 
         :param request:
         :param args:

@@ -14,7 +14,7 @@ class UpdateShareSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        share_id = attrs.get('share_id')
+        share_id = attrs.get('share_id', '')
 
         try:
             share = Share.objects.get(pk=share_id)

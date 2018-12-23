@@ -1,7 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 
 from ..authentication import TokenAuthentication
 
@@ -50,6 +52,10 @@ class ShareRightDeclineView(GenericAPIView):
         user_share_right_obj.key = ''
         user_share_right_obj.key_nonce = ''
         user_share_right_obj.save()
+
+        if settings.CACHE_ENABLE:
+            cache_key = 'psono_user_status_' + str(user_share_right_obj.user.id)
+            cache.delete(cache_key)
 
         return Response(status=status.HTTP_200_OK)
 

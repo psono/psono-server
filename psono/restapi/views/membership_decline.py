@@ -1,7 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 
 from ..authentication import TokenAuthentication
 
@@ -44,6 +46,10 @@ class MembershipDeclineView(GenericAPIView):
         membership_obj = serializer.validated_data.get('membership_obj')
         membership_obj.accepted = False
         membership_obj.save()
+
+        if settings.CACHE_ENABLE:
+            cache_key = 'psono_user_status_' + str(membership_obj.user.id)
+            cache.delete(cache_key)
 
         return Response(status=status.HTTP_200_OK)
 

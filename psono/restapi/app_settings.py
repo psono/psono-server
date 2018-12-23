@@ -5,6 +5,7 @@ from importlib import import_module
 
 from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
+    APIKeyLoginSerializer as DefaultAPIKeyLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
     DuoVerifySerializer as DefaultDuoVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
@@ -13,6 +14,8 @@ from .serializers import (
     VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     UserSearchSerializer as DefaultUserSearchSerializer,
+    ReadSecretHistorySerializer as DefaultReadSecretHistorySerializer,
+    ReadHistorySerializer as DefaultReadHistorySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
@@ -28,6 +31,10 @@ from .serializers import (
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
     CreateRecoverycodeSerializer as DefaultCreateRecoverycodeSerializer,
+    CreateEmergencycodeSerializer as DefaultCreateEmergencycodeSerializer,
+    EmergencyLoginSerializer as DefaultEmergencyLoginSerializer,
+    ActivateEmergencyLoginSerializer as DefaultActivateEmergencyLoginSerializer,
+    DeleteEmergencycodeSerializer as DefaultDeleteEmergencycodeSerializer,
     EnableNewPasswordSerializer as DefaultEnableNewPasswordSerializer,
     SetNewPasswordSerializer as DefaultSetNewPasswordSerializer,
     CreateShareLinkSerializer as DefaultCreateShareLinkSerializer,
@@ -56,6 +63,12 @@ from .serializers import (
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     MembershipAcceptSerializer as DefaultMembershipAcceptSerializer,
     MembershipDeclineSerializer as DefaultMembershipDeclineSerializer,
+    CreateAPIKeySerializer as DefaultCreateAPIKeySerializer,
+    UpdateAPIKeySerializer as DefaultUpdateAPIKeySerializer,
+    ReadSecretWithAPIKeySerializer as DefaultReadSecretWithAPIKeySerializer,
+    DeleteAPIKeySerializer as DefaultDeleteAPIKeySerializer,
+    AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
+    RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
 )
 
 def import_callable(path_or_callable):
@@ -69,6 +82,9 @@ serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
 
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
+)
+APIKeyLoginSerializer = import_callable(
+    serializers.get('API_KEY_LOGIN_SERIALIZER', DefaultAPIKeyLoginSerializer)
 )
 
 GAVerifySerializer = import_callable(
@@ -112,6 +128,22 @@ UserSearchSerializer = import_callable(
     serializers.get(
         'USER_SEARCH_SERIALIZER',
         DefaultUserSearchSerializer
+    )
+)
+
+
+ReadSecretHistorySerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_HISTORY_SERIALIZER',
+        DefaultReadSecretHistorySerializer
+    )
+)
+
+
+ReadHistorySerializer = import_callable(
+    serializers.get(
+        'READ_HISTORY_SERIALIZER',
+        DefaultReadHistorySerializer
     )
 )
 
@@ -219,6 +251,38 @@ CreateRecoverycodeSerializer = import_callable(
     serializers.get(
         'CREATE_RECOVERYCODE_SERIALIZER',
         DefaultCreateRecoverycodeSerializer
+    )
+)
+
+
+CreateEmergencycodeSerializer = import_callable(
+    serializers.get(
+        'CREATE_EMERGENCYCODE_SERIALIZER',
+        DefaultCreateEmergencycodeSerializer
+    )
+)
+
+
+EmergencyLoginSerializer = import_callable(
+    serializers.get(
+        'EMERGENCY_LOGIN_SERIALIZER',
+        DefaultEmergencyLoginSerializer
+    )
+)
+
+
+ActivateEmergencyLoginSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_EMERGENCY_LOGIN_SERIALIZER',
+        DefaultActivateEmergencyLoginSerializer
+    )
+)
+
+
+DeleteEmergencycodeSerializer = import_callable(
+    serializers.get(
+        'DELETE_EMERGENCYCODE_SERIALIZER',
+        DefaultDeleteEmergencycodeSerializer
     )
 )
 
@@ -421,6 +485,48 @@ MembershipDeclineSerializer = import_callable(
     serializers.get(
         'MEMBERSHIP_DECLINE_SERIALIZER',
         DefaultMembershipDeclineSerializer
+    )
+)
+
+CreateAPIKeySerializer = import_callable(
+    serializers.get(
+        'CREATE_API_KEY_SERIALIZER',
+        DefaultCreateAPIKeySerializer
+    )
+)
+
+UpdateAPIKeySerializer = import_callable(
+    serializers.get(
+        'UPDATE_API_KEY_SERIALIZER',
+        DefaultUpdateAPIKeySerializer
+    )
+)
+
+ReadSecretWithAPIKeySerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_WITH_API_KEY_SERIALIZER',
+        DefaultReadSecretWithAPIKeySerializer
+    )
+)
+
+DeleteAPIKeySerializer = import_callable(
+    serializers.get(
+        'DELETE_API_KEY_SERIALIZER',
+        DefaultDeleteAPIKeySerializer
+    )
+)
+
+AddSecretToAPIKeySerializer = import_callable(
+    serializers.get(
+        'ADD_SECRET_TO_API_KEY_SERIALIZER',
+        DefaultAddSecretToAPIKeySerializer
+    )
+)
+
+RemoveSecretFromAPIKeySerializer = import_callable(
+    serializers.get(
+        'REMOVE_SECRET_FROM_API_KEY_SERIALIZER',
+        DefaultRemoveSecretFromAPIKeySerializer
     )
 )
 

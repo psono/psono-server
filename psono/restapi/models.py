@@ -142,6 +142,51 @@ class Old_Email(models.Model):
     class Meta:
         abstract = False
 
+
+class API_Key(models.Model):
+    """
+    The API Keys
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='api_keys')
+    title = models.CharField(_('title'), max_length=256)
+
+    public_key = models.CharField(_('public key'), max_length=256)
+    private_key = models.CharField(_('private key'), max_length=256)
+    private_key_nonce = models.CharField(_('private key nonce'), max_length=64, unique=True)
+    secret_key = models.CharField(_('secret key'), max_length=256)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64, unique=True)
+
+    user_private_key = models.CharField(_('user private key'), max_length=256)
+    user_private_key_nonce = models.CharField(_('user private key nonce'), max_length=64, unique=True)
+    user_secret_key = models.CharField(_('user secret key'), max_length=256)
+    user_secret_key_nonce = models.CharField(_('user secret key nonce'), max_length=64, unique=True)
+
+    verify_key = models.CharField(_('verify key'), max_length=64)
+
+    read = models.BooleanField(_('Read right'), default=True,
+                               help_text=_('Allows reading'))
+    write = models.BooleanField(_('Write right'), default=False,
+                                help_text=_('Allows writing / updating'))
+
+    restrict_to_secrets = models.BooleanField(_('Restrict to specific secrets'), default=False,
+                                              help_text=_('Allows access to only spcific secrets'))
+    allow_insecure_access = models.BooleanField(_('Allow Insecure Access'), default=False,
+                                               help_text=_('Allows API access insecurely without transport encryption or even server side decryption'))
+    active = models.BooleanField(_('Is Active?'), default=True,
+                                 help_text=_('Designates whether this API key is active or not.'))
+
+    is_cachable = True
+
+    def get_cache_time(self):
+        return settings.DEFAULT_TOKEN_TIME_VALID
+
+    class Meta:
+        abstract = False
+
+
 class Google_Authenticator(models.Model):
     """
     The Google authenticator model
@@ -217,6 +262,30 @@ class Recovery_Code(models.Model):
         abstract = False
 
 
+class Emergency_Code(models.Model):
+    """
+    The emergency codes for the lost password recovery process.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emergency_code')
+    emergency_authkey = models.CharField(_('emergency auth key'), max_length=128)
+    emergency_data = models.BinaryField()
+    emergency_data_nonce = models.CharField(_('emergency data nonce'), max_length=64, unique=True)
+    verifier = models.CharField(_('last verifier'), max_length=256)
+    verifier_issue_date = models.DateTimeField(null=True, blank=True)
+    emergency_sauce = models.CharField(_('user sauce'), max_length=64)
+
+    description = models.CharField(max_length=256, null=True)
+
+    activation_delay = models.PositiveIntegerField(_('Delay till activation in seconds'))
+    activation_date = models.DateTimeField(_('Date this emergency code becomes active'), null=True, blank=True)
+
+    class Meta:
+        abstract = False
+
+
 class Data_Store(models.Model):
     """
     The data storage where the folder structure is saved
@@ -227,7 +296,7 @@ class Data_Store(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='data_stores')
     data = models.BinaryField()
     data_nonce = models.CharField(_('data nonce'), max_length=64)
-    type = models.CharField(max_length=64, default='password')
+    type = models.CharField(max_length=64, db_index=True, default='password')
     description = models.CharField(max_length=64, default='default')
     secret_key = models.CharField(_('secret key'), max_length=256)
     secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
@@ -250,7 +319,50 @@ class Secret(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='secrets')
     data = models.BinaryField()
     data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
-    type = models.CharField(max_length=64, default='password')
+    type = models.CharField(max_length=64, db_index=True, default='password')
+    callback_url = models.CharField(_('Callback URL'), max_length=2048, default='')
+    callback_user = models.CharField(_('Callback User'), max_length=128, default='')
+    callback_pass = models.CharField(_('Callback Password'), max_length=128, default='')
+
+    class Meta:
+        abstract = False
+
+
+class API_Key_Secret(models.Model):
+    """
+    The API Key Secrets
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    api_key = models.ForeignKey(API_Key, on_delete=models.CASCADE, related_name='api_key_secrets')
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='api_key_secrets')
+    secret_key = models.CharField(_('secret key'), max_length=256)
+    secret_key_nonce = models.CharField(_('secret key nonce'), max_length=64)
+    title = models.CharField(_('title'), max_length=256)
+    title_nonce = models.CharField(_('title nonce'), max_length=64)
+
+    class Meta:
+        abstract = False
+        unique_together = ('api_key', 'secret',)
+
+
+
+class Secret_History(models.Model):
+    """
+    The copy of a secret that is created every time a secret is updated.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='secret_history')
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='history')
+    data = models.BinaryField()
+    data_nonce = models.CharField(_('data nonce'), max_length=64, unique=True)
+    type = models.CharField(max_length=64, db_index=True, default='password')
+    callback_url = models.CharField(_('Callback URL'), max_length=2048, default='')
+    callback_user = models.CharField(_('Callback User'), max_length=128, default='')
+    callback_pass = models.CharField(_('Callback Password'), max_length=128, default='')
 
     class Meta:
         abstract = False
@@ -654,8 +766,13 @@ class Token(models.Model):
     device_fingerprint = models.CharField(max_length=128, null=True)
     device_description = models.CharField(max_length=256, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auth_tokens')
+    api_key = models.ForeignKey(API_Key, on_delete=models.CASCADE, null=True, related_name='tokens')
+    read = models.BooleanField(_('Read'), default=True, help_text=_('Read permissions'))
+    write = models.BooleanField(_('Write'), default=True, help_text=_('Write permissions'))
     active = models.BooleanField(_('Activated'), default=False,
         help_text=_('Specifies if the token has already been activated'))
+    is_emergency_session = models.BooleanField(_('Is an emergency session'), default=False,
+        help_text=_('Specifies if the token has been created with an emergency code or not'))
     google_authenticator_2fa = models.BooleanField(_('Google Authenticator Required'), default=False,
         help_text=_('Specifies if Google Authenticator is required or not'))
 
@@ -718,3 +835,14 @@ def user_post_delete_receiver(sender, **kwargs):
         pk = str(kwargs['instance'].pk)
         cache.delete('psono_user_' + pk)
 
+@receiver(post_save, sender=API_Key)
+def api_key_post_save_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.set('psono_api_key_' + pk, kwargs['instance'], kwargs['instance'].get_cache_time())
+
+@receiver(post_delete, sender=API_Key)
+def api_key_post_delete_receiver(sender, **kwargs):
+    if settings.CACHE_ENABLE:
+        pk = str(kwargs['instance'].pk)
+        cache.delete('api_key' + pk)

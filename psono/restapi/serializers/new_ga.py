@@ -7,7 +7,8 @@ class NewGASerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        title = attrs.get('title').strip()
+
+        title = attrs.get('title', '').strip()
 
         if settings.ALLOWED_SECOND_FACTORS and 'google_authenticator' not in settings.ALLOWED_SECOND_FACTORS:
             msg = _('The server does not allow Google Authenticator.')

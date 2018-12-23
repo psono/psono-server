@@ -88,7 +88,7 @@ HOST_URL = config_get('HOST_URL')
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -96,12 +96,13 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'anymail',
     'corsheaders',
     'rest_framework',
     'restapi',
     'administration',
     'fileserver',
-)
+]
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
@@ -145,6 +146,7 @@ REST_FRAMEWORK = {
         'password': '24/day',
         'user': '28800/day',
         'health_check': '61/hour',
+        'status_check': '6/minute',
         'ga_verify': '6/minute',
         'duo_verify': '6/minute',
         'yubikey_otp_verify': '6/minute',
@@ -242,8 +244,13 @@ YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-MAILGUN_ACCESS_KEY = config_get('MAILGUN_ACCESS_KEY', '')
-MAILGUN_SERVER_NAME = config_get('MAILGUN_SERVER_NAME', '')
+
+ANYMAIL = {
+    "MAILGUN_API_KEY": config_get('MAILGUN_ACCESS_KEY', ''),
+    "MAILGUN_SENDER_DOMAIN": config_get('MAILGUN_SERVER_NAME', '')
+}
+
+DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
 CACHE_ENABLE = config_get('CACHE_ENABLE', False)
 
@@ -323,6 +330,20 @@ STATIC_URL = '/static/'
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
+
+with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
+    SHA = f.readline().rstrip()
+
+# Add Sentry logging
+SENTRY_DSN = config_get('SENTRY_DSN', False)
+if SENTRY_DSN:
+    RAVEN_CONFIG = {
+        'dsn': SENTRY_DSN,
+        'environment': config_get('SENTRY_ENVIRONMENT', 'development'),
+        'release': VERSION,
+        'site': PUBLIC_KEY,
+    }
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
 
 def generate_signature():
 

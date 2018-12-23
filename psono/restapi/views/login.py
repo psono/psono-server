@@ -15,7 +15,7 @@ import json
 import six
 
 from ..models import (
-    Token, Google_Authenticator, Duo, Yubikey_OTP
+    Token
 )
 from ..app_settings import (
     LoginSerializer
@@ -24,7 +24,6 @@ from ..app_settings import (
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
-    token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'login'
 
@@ -36,7 +35,7 @@ class LoginView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Check the credentials and return the REST Token
+        Check the username and authkey and return the REST Token
         if the credentials are valid and authenticated.
 
         Clients should later authenticate by passing the token key in the "Authorization"
@@ -63,7 +62,7 @@ class LoginView(GenericAPIView):
 
         user = serializer.validated_data['user']
 
-        token = self.token_model.objects.create(
+        token = Token.objects.create(
             user=user,
             google_authenticator_2fa=user.google_authenticator_enabled,
             duo_2fa=user.duo_enabled,
@@ -72,6 +71,8 @@ class LoginView(GenericAPIView):
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),
             valid_till=timezone.now() + timedelta(seconds=serializer.validated_data.get('session_duration')),
+            read=True,
+            write=True,
         )
 
         # our public / private key box

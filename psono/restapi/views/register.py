@@ -1,10 +1,14 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from django.db import IntegrityError
+
+import os
+from email.mime.image import MIMEImage
 
 from ..app_settings import (
     RegisterSerializer,
@@ -56,7 +60,12 @@ class RegisterView(GenericAPIView):
         activation_code = generate_activation_code(serializer.validated_data['email'])
 
         # serializer.validated_data['email'] gets now encrypted
-        user = serializer.save()
+        try:
+            user = serializer.save()
+        except IntegrityError:
+            return Response({"custom": ["Registration failed. Username already exists."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
         # if len(self.request.data.get('base_url', '')) < 1:
         #    raise exceptions.ValidationError(msg)
@@ -84,13 +93,27 @@ class RegisterView(GenericAPIView):
             'host_url': settings.HOST_URL,
         })
 
-        send_mail(
-            'Registration successful',
-            msg_plain,
-            settings.EMAIL_FROM,
-            [self.request.data.get('email', '')],
-            html_message=msg_html,
-        )
+        msg = EmailMultiAlternatives('Registration successful', msg_plain, settings.EMAIL_FROM,
+                                     [self.request.data.get('email', '')])
+
+        msg.attach_alternative(msg_html, "text/html")
+        msg.mixed_subtype = 'related'
+
+        for f in ['logo.png']:
+            fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+
+            msg_img = MIMEImage(fp.read())
+            fp.close()
+            msg_img.add_header('Content-ID', '<{}>'.format(f))
+            msg.attach(msg_img)
+
+        try:
+            msg.send()
+        except:
+            user.delete()
+            return Response({"custom": ["Registration E-Mail delivery failed. Account not created."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
         return Response({"success": "Successfully registered."},
                         status=status.HTTP_201_CREATED)

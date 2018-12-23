@@ -13,7 +13,7 @@ import os
 
 class CreateGroupTest(APITestCaseExtended):
     """
-    Test to create a secret (PUT)
+    Test to create a group (PUT)
     """
     def setUp(self):
         self.test_email = "test@example.com"
@@ -303,6 +303,50 @@ class CreateGroupTest(APITestCaseExtended):
             'private_key': 'a123',
             'private_key_nonce': 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
             'public_key': 'a123X',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_name_too_short(self):
+        """
+        Tests to create a group with just two chars as name (min is 3)
+        """
+
+        url = reverse('group')
+
+        data = {
+            'name': 'Te',
+            'secret_key': 'a123',
+            'secret_key_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+            'private_key': 'a123',
+            'private_key_nonce': 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
+            'public_key': 'a123',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_invalid_char_in_group(self):
+        """
+        Tests to create a group with an @ in the group name
+        """
+
+        url = reverse('group')
+
+        data = {
+            'name': 'Test@Group',
+            'secret_key': 'a123',
+            'secret_key_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+            'private_key': 'a123',
+            'private_key_nonce': 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
+            'public_key': 'a123',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
