@@ -1,6 +1,5 @@
 from django.conf import settings
 
-import six
 from importlib import import_module
 
 from .serializers import (
@@ -69,6 +68,7 @@ from .serializers import (
     DeleteAPIKeySerializer as DefaultDeleteAPIKeySerializer,
     AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
     RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
+    ReadShardSerializer as DefaultReadShardSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -527,6 +527,14 @@ RemoveSecretFromAPIKeySerializer = import_callable(
     serializers.get(
         'REMOVE_SECRET_FROM_API_KEY_SERIALIZER',
         DefaultRemoveSecretFromAPIKeySerializer
+    )
+)
+
+
+ReadShardSerializer = import_callable(
+    serializers.get(
+        'READ_SHARD_SERIALIZER',
+        DefaultReadShardSerializer
     )
 )
 

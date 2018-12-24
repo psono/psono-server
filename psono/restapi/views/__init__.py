@@ -41,3 +41,4 @@ from .api_key import APIKeyView
 from .api_key_login import APIKeyLoginView
 from .api_key_secret import APIKeySecretView
 from .api_key_access_secret import APIKeyAccessSecretView
+from .shard import ShardView
