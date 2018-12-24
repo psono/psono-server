@@ -633,7 +633,7 @@ class Fileserver_Cluster_Members(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
 
-    key = models.CharField(max_length=128, db_index=True)
+    key = models.CharField(max_length=128, unique=True)
 
     fileserver_cluster = models.ForeignKey(Fileserver_Cluster, on_delete=models.CASCADE, related_name='members',
                               help_text=_('The cluster this member belongs to'))
@@ -647,7 +647,7 @@ class Fileserver_Cluster_Members(models.Model):
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this server accepts writes'))
 
-    valid_till = models.DateTimeField(default=timezone.now)
+    valid_till = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         abstract = False

@@ -24,7 +24,7 @@ class AliveView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
-        Does not do actually anything as "FileserverAliveAuthentication" already marks the
+        Updates the "alive" value in the database
 
         :param request:
         :type request:
