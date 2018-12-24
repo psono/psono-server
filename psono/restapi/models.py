@@ -660,5 +660,5 @@ def api_key_post_save_receiver(sender, **kwargs):
 def api_key_post_delete_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
         pk = str(kwargs['instance'].pk)
-        cache.delete('api_key' + pk)
+        cache.delete('psono_api_key_' + pk)
 
