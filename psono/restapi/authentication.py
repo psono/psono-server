@@ -199,9 +199,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
         token_hash = self.get_token_hash(request)
 
         try:
-            fileserver = Fileserver_Cluster_Members.objects.get(key=token_hash)
-            fileserver.valid_till=timezone.now()+datetime.timedelta(seconds=60)
-            fileserver.save()
+            fileserver = Fileserver_Cluster_Members.objects.only('pk').get(key=token_hash)
         except Fileserver_Cluster_Members.DoesNotExist:
             cluster_id, fileserver_info_enc = self.get_fileserver_validator(request)
             try:
@@ -235,7 +233,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 url=fileserver_info['HOST_URL'],
                 read=fileserver_info['READ'],
                 write=fileserver_info['WRITE'],
-                valid_till=timezone.now()+datetime.timedelta(seconds=60),
+                valid_till=timezone.now()+datetime.timedelta(seconds=30),
             )
 
             for shard in fileserver_info['SHARDS_PUBLIC']:
