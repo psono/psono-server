@@ -1,6 +1,4 @@
-from rest_framework import serializers, exceptions
-from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError
+from rest_framework import serializers
 from django.utils import timezone
 from django.conf import settings
 
@@ -15,6 +13,17 @@ from ..utils import get_ip
 class ReadShardSerializer(serializers.Serializer):
 
     def in_networks(self, ip_address, networks):
+        """
+        Takes an ip address and and array of networks, each in String representation.
+        Will return whether the ip address in one of the network ranges
+
+        :param ip_address:
+        :type ip_address:
+        :param networks:
+        :type networks:
+        :return:
+        :rtype:
+        """
 
         for network in networks:
             ip_network = ipaddress.ip_network(network)
