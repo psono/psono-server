@@ -16,6 +16,7 @@ import nacl.encoding
 import nacl.utils
 import hashlib
 import binascii
+import ipaddress
 
 import scrypt
 from typing import Tuple, List
@@ -741,3 +742,23 @@ def get_ip(request):
 
 def get_country(request):
     return request.META.get('HTTP_CF_IPCOUNTRY', None)
+
+def in_networks(ip_address, networks):
+    """
+    Takes an ip address and and array of networks, each in String representation.
+    Will return whether the ip address in one of the network ranges
+
+    :param ip_address:
+    :type ip_address:
+    :param networks:
+    :type networks:
+    :return:
+    :rtype:
+    """
+
+    for network in networks:
+        ip_network = ipaddress.ip_network(network)
+        if ip_address in ip_network:
+            return True
+
+    return False

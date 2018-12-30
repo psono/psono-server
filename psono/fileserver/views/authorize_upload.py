@@ -11,7 +11,7 @@ class AuthorizeUploadView(GenericAPIView):
     authentication_classes = (FileserverAuthentication, )
     permission_classes = (IsFileserver,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver'
+    throttle_scope = 'fileserver_upload'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -38,9 +38,14 @@ class AuthorizeUploadView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
+        file = serializer.validated_data.get('file')
+        shard_id = serializer.validated_data.get('shard_id')
+        chunk_position = serializer.validated_data.get('chunk_position')
+        hash_blake2b = serializer.validated_data.get('hash_blake2b')
+
 
         return Response({
-
+            'shard_id': shard_id,
         }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):

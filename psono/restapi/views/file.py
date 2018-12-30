@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -5,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import (
     Data_Store,
     File,
+    File_Link,
 )
 
 from ..utils import readbuffer, authenticate, get_datastore
@@ -79,14 +81,24 @@ class FileView(GenericAPIView):
         shard = serializer.validated_data['shard']
         chunk_count = serializer.validated_data['chunk_count']
         size = serializer.validated_data['size']
+        link_id = serializer.validated_data['link_id']
+        parent_datastore_id = serializer.validated_data['parent_datastore_id']
+        parent_share_id = serializer.validated_data['parent_share_id']
 
-        file = File.objects.create(
-            shard = shard,
-            chunk_count = chunk_count,
-            size = size,
-            user = request.user,
-        )
+        with transaction.atomic():
+            file = File.objects.create(
+                shard = shard,
+                chunk_count = chunk_count,
+                size = size,
+                user = request.user,
+            )
 
+            File_Link.objects.create(
+                link_id = link_id,
+                file_id = file.id,
+                parent_datastore_id = parent_datastore_id,
+                parent_share_id = parent_share_id
+            )
 
         return Response({"file_id": file.id}, status=status.HTTP_201_CREATED)
 

@@ -405,13 +405,13 @@ class Group(models.Model):
 
 class Secret_Link(models.Model):
     """
-    The link object for secrets, identifying the position of the Secret in a share or datastore
+    The link object for secrets, identifying the position of the secret in a share or datastore
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='links',
-                              help_text=_('The Secret, that this link links to.'))
+                              help_text=_('The secret, that this link links to.'))
     link_id = models.UUIDField(unique=True)
     parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_links', null=True,
                               help_text=_('The share, where this link ends and gets its permissions from'))
@@ -699,7 +699,6 @@ class File(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file')
-    secret = models.ForeignKey(Secret, on_delete=models.SET_NULL, null=True, related_name='file')
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='file')
     upload_start = models.DateTimeField(null=True)
     upload_end = models.DateTimeField(null=True)
@@ -709,6 +708,26 @@ class File(models.Model):
         help_text=_('The size of the files in bytes (including encryption overhead)'))
     size_uploaded = models.BigIntegerField('Size Uploaded',
         help_text=_('The amount of bytes (including encryption overhead) already uploaded'), default=0)
+
+    class Meta:
+        abstract = False
+
+
+class File_Link(models.Model):
+    """
+    The link object for files, identifying the position of the file in a share or datastore
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The file, that this link links to.'))
+    link_id = models.UUIDField(unique=True)
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='files', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='files', null=True,
+                                         help_text=_('The datastore, where this link ends'))
 
     class Meta:
         abstract = False

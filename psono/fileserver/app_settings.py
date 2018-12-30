@@ -4,6 +4,7 @@ from importlib import import_module
 
 from .serializers import (
     AuthorizeUploadSerializer as DefaultAuthorizeUploadSerializer,
+    AuthorizeDownloadSerializer as DefaultAuthorizeDownloadSerializer,
     FileserverAliveSerializer as DefaultFileserverAliveSerializer,
 )
 
@@ -18,6 +19,10 @@ serializers = getattr(settings, 'FILESERVER_SERIALIZERS', {})
 
 AuthorizeUploadSerializer = import_callable(
     serializers.get('AUTHORIZE_UPLOAD_SERIALIZER', DefaultAuthorizeUploadSerializer)
+)
+
+AuthorizeDownloadSerializer = import_callable(
+    serializers.get('AUTHORIZE_DOWNLOAD_SERIALIZER', DefaultAuthorizeDownloadSerializer)
 )
 
 

@@ -1,2 +1,3 @@
 from .authorize_upload import AuthorizeUploadSerializer
+from .authorize_download import AuthorizeDownloadSerializer
 from .fileserver_alive import FileserverAliveSerializer

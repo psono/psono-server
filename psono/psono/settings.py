@@ -153,7 +153,8 @@ REST_FRAMEWORK = {
         'registration': '20/day',
         'user_delete': '20/day',
         'user_update': '20/day',
-        'fileserver': '61/minute',
+        'fileserver_alive': '61/minute',
+        'fileserver_upload': '10000/minute',
     },
 }
 

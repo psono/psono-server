@@ -4,33 +4,15 @@ from django.conf import settings
 
 from datetime import timedelta
 import ipaddress
+import json
+
 from ..models import (
     Fileserver_Cluster_Member_Shard_Link,
 )
 
-from ..utils import get_ip
+from ..utils import get_ip, in_networks
 
 class ReadShardSerializer(serializers.Serializer):
-
-    def in_networks(self, ip_address, networks):
-        """
-        Takes an ip address and and array of networks, each in String representation.
-        Will return whether the ip address in one of the network ranges
-
-        :param ip_address:
-        :type ip_address:
-        :param networks:
-        :type networks:
-        :return:
-        :rtype:
-        """
-
-        for network in networks:
-            ip_network = ipaddress.ip_network(network)
-            if ip_address in ip_network:
-                return True
-
-        return False
 
     def validate(self, attrs: dict) -> dict:
 
@@ -50,9 +32,12 @@ class ReadShardSerializer(serializers.Serializer):
             read = cmsl.read and cluster_member.read
             write = cmsl.write and cluster_member.write
 
-            has_read_whitelist = len(cmsl.ip_read_whitelist) > 0
-            read_blacklisted = self.in_networks(ip_address, cmsl.ip_read_blacklist)
-            read_whitelisted = self.in_networks(ip_address, cmsl.ip_read_whitelist)
+            ip_read_blacklist = json.loads(cmsl.ip_read_blacklist)
+            ip_read_whitelist = json.loads(cmsl.ip_read_whitelist)
+
+            has_read_whitelist = len(ip_read_whitelist) > 0
+            read_blacklisted = in_networks(ip_address, ip_read_blacklist)
+            read_whitelisted = in_networks(ip_address, ip_read_whitelist)
 
             if has_read_whitelist and not read_whitelisted:
                 read = False
@@ -60,9 +45,12 @@ class ReadShardSerializer(serializers.Serializer):
             if read_blacklisted:
                 read = False
 
-            has_write_whitelist = len(cmsl.ip_write_whitelisted) > 0
-            write_blacklisted = self.in_networks(ip_address, cmsl.ip_write_blacklist)
-            write_whitelisted = self.in_networks(ip_address, cmsl.ip_write_whitelist)
+            ip_write_whitelist = json.loads(cmsl.ip_write_whitelist)
+            ip_write_blacklist = json.loads(cmsl.ip_write_blacklist)
+
+            has_write_whitelist = len(ip_write_blacklist) > 0
+            write_blacklisted = in_networks(ip_address, ip_write_blacklist)
+            write_whitelisted = in_networks(ip_address, ip_write_whitelist)
 
             if has_write_whitelist and not write_whitelisted:
                 write = False

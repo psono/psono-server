@@ -17,7 +17,7 @@ class AliveView(GenericAPIView):
     authentication_classes = (FileserverAliveAuthentication, )
     permission_classes = (IsFileserver,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver'
+    throttle_scope = 'fileserver_alive'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
