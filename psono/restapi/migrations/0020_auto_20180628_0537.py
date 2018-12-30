@@ -19,8 +19,6 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
-                ('upload_start', models.DateTimeField(null=True)),
-                ('upload_end', models.DateTimeField(null=True)),
                 ('chunk_count', models.IntegerField(help_text='The amount of chunks', verbose_name='Chunk Count')),
                 ('size', models.BigIntegerField(help_text='The size of the files in bytes (including encryption overhead)', verbose_name='Size')),
             ],

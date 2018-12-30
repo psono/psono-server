@@ -704,6 +704,8 @@ class File(models.Model):
     upload_end = models.DateTimeField(null=True)
     chunk_count = models.IntegerField('Chunk Count',
         help_text=_('The amount of chunks'))
+    chunk_count_uploaded = models.IntegerField('Chunks Uploaded',
+        help_text=_('The amount of chunks already uploaded'), default=0)
     size = models.BigIntegerField('Size',
         help_text=_('The size of the files in bytes (including encryption overhead)'))
     size_uploaded = models.BigIntegerField('Size Uploaded',

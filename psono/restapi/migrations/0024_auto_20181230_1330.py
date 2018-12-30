@@ -74,4 +74,9 @@ class Migration(migrations.Migration):
             name='parent_share',
             field=models.ForeignKey(help_text='The share, where this link ends and gets its permissions from', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='files', to='restapi.Share'),
         ),
+        migrations.AddField(
+            model_name='file',
+            name='chunk_count_uploaded',
+            field=models.IntegerField(default=0, help_text='The amount of chunks already uploaded', verbose_name='Chunks Uploaded'),
+        ),
     ]

@@ -71,6 +71,9 @@ class AuthorizeUploadSerializer(serializers.Serializer):
         if chunk_size > chunk_size_limit:
             msg = _("Chunk size exceeds limit.")
             raise exceptions.ValidationError(msg)
+        if chunk_size < 40:
+            msg = _("Chunk size too small.")
+            raise exceptions.ValidationError(msg)
 
         shard_id = ticket['shard_id']
         file_id = ticket['file_id']
@@ -114,13 +117,21 @@ class AuthorizeUploadSerializer(serializers.Serializer):
         # TODO Test user quota
 
         try:
-            file = File.objects.get(pk=file_id, shard_id=shard_id, user=token.user_id)
+            file = File.objects.only('chunk_count', 'size', 'chunk_count_uploaded', 'size_uploaded').get(pk=file_id, shard_id=shard_id, user=token.user_id)
         except File.DoesNotExist:
             msg = _('File does not exist.')
             raise exceptions.ValidationError(msg)
 
+        if file.chunk_count_uploaded + 1 > file.chunk_count:
+            msg = _('Chunk count exceeded.')
+            raise exceptions.ValidationError(msg)
+
+        if file.size_uploaded + chunk_size > file.size:
+            msg = _('Chunk size exceeded.')
+            raise exceptions.ValidationError(msg)
 
         attrs['file'] = file
+        attrs['user_id'] = token.user_id
         attrs['shard_id'] = shard_id
         attrs['chunk_position'] = chunk_position
         attrs['chunk_size'] = chunk_size

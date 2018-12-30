@@ -90,7 +90,7 @@ class FileView(GenericAPIView):
                 shard = shard,
                 chunk_count = chunk_count,
                 size = size,
-                user = request.user,
+                user_id = request.user.id,
             )
 
             File_Link.objects.create(
