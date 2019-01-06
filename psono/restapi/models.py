@@ -700,8 +700,6 @@ class File(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file')
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='file')
-    upload_start = models.DateTimeField(null=True)
-    upload_end = models.DateTimeField(null=True)
     chunk_count = models.IntegerField('Chunk Count',
         help_text=_('The amount of chunks'))
     chunk_count_uploaded = models.IntegerField('Chunks Uploaded',
