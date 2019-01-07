@@ -10,7 +10,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('restapi', '0022_auto_20181207_1954'),
+        ('restapi', '0023_auto_20190107_1719'),
     ]
 
     operations = [

@@ -26,7 +26,7 @@ class CreateFileSerializer(serializers.Serializer):
         try:
             shard = Fileserver_Shard.objects.only('id').get(pk=shard_id)
         except Fileserver_Shard.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
 
@@ -42,13 +42,13 @@ class CreateFileSerializer(serializers.Serializer):
         if parent_share_id is not None:
             # check permissions on parent
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         if parent_datastore_id is not None:
             parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
             if not parent_datastore:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # TODO Test user quota
@@ -57,7 +57,7 @@ class CreateFileSerializer(serializers.Serializer):
             credit = settings.CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024
 
         if credit > 0 and self.context['request'].user.credit < credit:
-            msg = _("Insufficient funds.")
+            msg = _("INSUFFICIENT_FUNDS")
             raise exceptions.ValidationError(msg)
 
         attrs['shard'] = shard
