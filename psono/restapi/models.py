@@ -322,7 +322,7 @@ class Secret(models.Model):
     type = models.CharField(max_length=64, db_index=True, default='password')
     callback_url = models.CharField(_('Callback URL'), max_length=2048, default='')
     callback_user = models.CharField(_('Callback User'), max_length=128, default='')
-    callback_pass = models.CharField(_('Callback Password'), max_length=128, default='')
+    callback_pass = models.CharField(_('Callback Password'), max_length=256, default='')
 
     class Meta:
         abstract = False
