@@ -7,7 +7,7 @@ from rest_framework.generics import GenericAPIView
 from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
 from ..app_settings import AuthorizeUploadSerializer
-from restapi.models import File_Chunk, File_Transfer
+from restapi.models import File_Chunk
 
 class AuthorizeUploadView(GenericAPIView):
 
@@ -41,37 +41,29 @@ class AuthorizeUploadView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        file = serializer.validated_data.get('file')
+        file_transfer = serializer.validated_data.get('file_transfer')
         user_id = serializer.validated_data.get('user_id')
-        shard_id = serializer.validated_data.get('shard_id')
         chunk_position = serializer.validated_data.get('chunk_position')
         chunk_size = serializer.validated_data.get('chunk_size')
         hash_blake2b = serializer.validated_data.get('hash_blake2b')
 
 
         with transaction.atomic():
-            file_chunk = File_Chunk.objects.create(
+            File_Chunk.objects.create(
                 user_id=user_id,
-                file=file,
+                file_id=file_transfer.file_id,
                 hash_blake2b=hash_blake2b,
                 position=chunk_position,
                 size=chunk_size,
             )
 
-            File_Transfer.objects.create(
-                user_id=user_id,
-                file_chunk=file_chunk,
-                size=chunk_size,
-                type='upload',
-            )
-
-            file.chunk_count_uploaded = F('chunk_count_uploaded') + 1
-            file.size_uploaded = F('size_uploaded') + chunk_size
-            file.save(update_fields=["chunk_count_uploaded", "size_uploaded"])
+            file_transfer.size_transferred = F('size_transferred') + chunk_size
+            file_transfer.chunk_count_transferred = F('chunk_count_transferred') + 1
+            file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
 
 
         return Response({
-            'shard_id': shard_id,
+            'shard_id': file_transfer.shard_id,
         }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):

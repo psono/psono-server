@@ -2,6 +2,7 @@ from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
+from decimal import Decimal
 import re
 import bcrypt
 
@@ -127,5 +128,6 @@ class RegisterSerializer(serializers.Serializer):
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
         validated_data['email'] = encrypt_with_db_secret(validated_data['email'])
+        validated_data['credit'] = settings.CREDIT_DEFAULT_NEW_USER
 
         return User.objects.create(**validated_data)

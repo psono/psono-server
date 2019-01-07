@@ -678,7 +678,8 @@ def create_user(username, password, email, gen_authkey=True):
         secret_key_nonce=secret_key_nonce.decode(),
         is_email_active=True,
         is_active=True,
-        user_sauce=user_sauce.decode()
+        user_sauce=user_sauce.decode(),
+        credit=settings.CREDIT_DEFAULT_NEW_USER,
     )
 
     return {

@@ -1,10 +1,14 @@
 from django.db import transaction
+from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+
+from decimal import Decimal
+
 from ..models import (
-    Data_Store,
+    File_Transfer,
     File,
     File_Link,
 )
@@ -84,6 +88,7 @@ class FileView(GenericAPIView):
         link_id = serializer.validated_data['link_id']
         parent_datastore_id = serializer.validated_data['parent_datastore_id']
         parent_share_id = serializer.validated_data['parent_share_id']
+        credit = serializer.validated_data['credit']
 
         with transaction.atomic():
             file = File.objects.create(
@@ -93,6 +98,18 @@ class FileView(GenericAPIView):
                 user_id = request.user.id,
             )
 
+            file_transfer = File_Transfer.objects.create(
+                user_id=request.user.id,
+                shard=shard,
+                file=file,
+                size=size,
+                size_transferred=0,
+                chunk_count=chunk_count,
+                chunk_count_transferred=0,
+                credit=credit,
+                type='upload',
+            )
+
             File_Link.objects.create(
                 link_id = link_id,
                 file_id = file.id,
@@ -100,7 +117,14 @@ class FileView(GenericAPIView):
                 parent_share_id = parent_share_id
             )
 
-        return Response({"file_id": file.id}, status=status.HTTP_201_CREATED)
+            if credit != Decimal(str(0)):
+                request.user.credit = F('credit') - credit
+                file.save(update_fields=["credit"])
+
+        return Response({
+            "file_id": file.id,
+            "file_transfer_id": file_transfer.id
+        }, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
 

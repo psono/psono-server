@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
 
+from decimal import Decimal
 import binascii
 import os
 from hashlib import sha512
@@ -52,6 +53,8 @@ class User(models.Model):
         help_text=_('True once ga 2fa is enabled'))
     yubikey_otp_enabled = models.BooleanField(_('Yubikey OTP 2FA enabled'), default=False,
         help_text=_('True once yubikey 2fa is enabled'))
+
+    credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
     is_cachable = True
 
@@ -702,12 +705,8 @@ class File(models.Model):
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='file')
     chunk_count = models.IntegerField('Chunk Count',
         help_text=_('The amount of chunks'))
-    chunk_count_uploaded = models.IntegerField('Chunks Uploaded',
-        help_text=_('The amount of chunks already uploaded'), default=0)
     size = models.BigIntegerField('Size',
         help_text=_('The size of the files in bytes (including encryption overhead)'))
-    size_uploaded = models.BigIntegerField('Size Uploaded',
-        help_text=_('The amount of bytes (including encryption overhead) already uploaded'), default=0)
 
     class Meta:
         abstract = False
@@ -760,11 +759,20 @@ class File_Transfer(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
-    file_chunk = models.ForeignKey(File_Chunk, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     type = models.CharField(max_length=8, default='download')
+    credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
     size = models.BigIntegerField('Size',
-        help_text=_('The amount transfered in bytes (including encryption overhead)'))
+                                  help_text=_('The amount in bytes that will be transferred (including encryption overhead)'))
+
+    size_transferred = models.BigIntegerField('Transferred Size',
+                                              help_text=_('The amount in bytes that have been transferred (including encryption overhead)'))
+    chunk_count = models.IntegerField('Chunk Count',
+        help_text=_('The amount of chunks'))
+    chunk_count_transferred = models.IntegerField('Chunk Count Transfered',
+        help_text=_('The amount of chunks already transfered'))
 
     class Meta:
         abstract = False

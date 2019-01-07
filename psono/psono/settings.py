@@ -19,6 +19,7 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+from decimal import Decimal
 from urllib.parse import urlparse
 from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
@@ -304,6 +305,12 @@ RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) #
 REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
 DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20) # in seconds
+
+# Credit costs
+CREDIT_DEFAULT_NEW_USER = Decimal(str(config_get('CREDIT_DEFAULT_NEW_USER', 0))) # the default credits in Euro for new users
+CREDIT_COSTS_UPLOAD = Decimal(str(config_get('CREDIT_COSTS_UPLOAD', 0))) # costs in Euro for an upload of 1 GB
+CREDIT_COSTS_DOWNLOAD = Decimal(str(config_get('CREDIT_COSTS_DOWNLOAD', 0))) # costs in Euro for a download of 1 GB
+CREDIT_COSTS_STORAGE = Decimal(str(config_get('CREDIT_COSTS_STORAGE', 0))) # costs in Euro for the storage of 1 GB per day
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
 

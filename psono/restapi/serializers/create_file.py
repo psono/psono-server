@@ -1,4 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..models import Fileserver_Shard
@@ -19,6 +20,7 @@ class CreateFileSerializer(serializers.Serializer):
         shard_id = attrs.get('shard_id')
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
+        size = attrs.get('size', None)
 
         # check if the shard exists
         try:
@@ -49,9 +51,20 @@ class CreateFileSerializer(serializers.Serializer):
                 msg = _("You don't have permission to access or it does not exist.")
                 raise exceptions.ValidationError(msg)
 
+        # TODO Test user quota
+        credit = 0
+        if settings.CREDIT_COSTS_UPLOAD > 0:
+            credit = settings.CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024
+
+        if credit > 0 and self.context['request'].user.credit < credit:
+            msg = _("Insufficient funds.")
+            raise exceptions.ValidationError(msg)
+
         attrs['shard'] = shard
         attrs['parent_share_id'] = parent_share_id
         attrs['parent_datastore_id'] = parent_datastore_id
+        attrs['size'] = size
+        attrs['credit'] = credit
 
         return attrs
 

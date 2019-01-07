@@ -6,7 +6,7 @@ from rest_framework import serializers, exceptions
 
 from restapi.utils import get_cache, in_networks
 from restapi.authentication import TokenAuthentication
-from restapi.models import Token, File, Fileserver_Cluster_Member_Shard_Link
+from restapi.models import Token, File_Transfer, Fileserver_Cluster_Member_Shard_Link
 from restapi.parsers import decrypt
 
 from datetime import timedelta
@@ -51,12 +51,8 @@ class AuthorizeUploadSerializer(serializers.Serializer):
         ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
         ticket = json.loads(ticket_json)
 
-        if 'file_id' not in ticket:
-            msg = _('Malformed ticket. File ID missing.')
-            raise exceptions.ValidationError(msg)
-
-        if 'shard_id' not in ticket:
-            msg = _('Malformed ticket. Shard ID missing.')
+        if 'file_transfer_id' not in ticket:
+            msg = _('Malformed ticket. Filetransfer ID missing.')
             raise exceptions.ValidationError(msg)
 
         if 'chunk_position' not in ticket:
@@ -74,9 +70,7 @@ class AuthorizeUploadSerializer(serializers.Serializer):
         if chunk_size < 40:
             msg = _("Chunk size too small.")
             raise exceptions.ValidationError(msg)
-
-        shard_id = ticket['shard_id']
-        file_id = ticket['file_id']
+        file_transfer_id = ticket['file_transfer_id']
         chunk_position = ticket['chunk_position']
         hash_blake2b_ticket = ticket['hash_blake2b']
 
@@ -84,9 +78,15 @@ class AuthorizeUploadSerializer(serializers.Serializer):
             msg = _('Chunk corrupted.')
             raise exceptions.ValidationError(msg)
 
+        try:
+            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id)
+        except File_Transfer.DoesNotExist:
+            msg = _('Filetransfer does not exist.')
+            raise exceptions.ValidationError(msg)
+
         cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
-                 shard__active=True, member=self.context['request'].user, shard_id=shard_id)\
+                 shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id)\
             .only('write', 'ip_write_blacklist', 'ip_write_whitelist', 'member__write')
 
         if len(cluster_member_shard_link_objs) != 1:
@@ -114,25 +114,16 @@ class AuthorizeUploadSerializer(serializers.Serializer):
             msg = _('Permission denied by IP.')
             raise exceptions.ValidationError(msg)
 
-        # TODO Test user quota
-
-        try:
-            file = File.objects.only('chunk_count', 'size', 'chunk_count_uploaded', 'size_uploaded').get(pk=file_id, shard_id=shard_id, user=token.user_id)
-        except File.DoesNotExist:
-            msg = _('File does not exist.')
-            raise exceptions.ValidationError(msg)
-
-        if file.chunk_count_uploaded + 1 > file.chunk_count:
+        if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
             msg = _('Chunk count exceeded.')
             raise exceptions.ValidationError(msg)
 
-        if file.size_uploaded + chunk_size > file.size:
+        if file_transfer.size_transferred + chunk_size > file_transfer.size:
             msg = _('Chunk size exceeded.')
             raise exceptions.ValidationError(msg)
 
-        attrs['file'] = file
+        attrs['file_transfer'] = file_transfer
         attrs['user_id'] = token.user_id
-        attrs['shard_id'] = shard_id
         attrs['chunk_position'] = chunk_position
         attrs['chunk_size'] = chunk_size
 
