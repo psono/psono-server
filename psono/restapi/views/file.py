@@ -119,7 +119,7 @@ class FileView(GenericAPIView):
 
             if credit != Decimal(str(0)):
                 request.user.credit = F('credit') - credit
-                file.save(update_fields=["credit"])
+                request.user.save(update_fields=["credit"])
 
         return Response({
             "file_id": file.id,

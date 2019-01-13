@@ -156,6 +156,7 @@ REST_FRAMEWORK = {
         'user_update': '20/day',
         'fileserver_alive': '61/minute',
         'fileserver_upload': '10000/minute',
+        'fileserver_download': '10000/minute',
     },
 }
 
