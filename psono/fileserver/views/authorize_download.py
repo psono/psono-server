@@ -7,7 +7,6 @@ from rest_framework.generics import GenericAPIView
 from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
 from ..app_settings import AuthorizeDownloadSerializer
-from restapi.models import File_Chunk
 
 class AuthorizeDownloadView(GenericAPIView):
 
@@ -41,19 +40,18 @@ class AuthorizeDownloadView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        shard_id = serializer.validated_data.get('shard_id')
+        file_transfer = serializer.validated_data.get('file_transfer')
         hash_blake2b = serializer.validated_data.get('hash_blake2b')
+        file_chunk = serializer.validated_data.get('file_chunk')
 
 
-        # with transaction.atomic():
-        #     file_transfer.size_transferred = F('size_transferred') + chunk_size
-        #     file_transfer.chunk_count_transferred = F('chunk_count_transferred') + 1
-        #     file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
-        # TODO create FILE_CHUNK and deduct credits
-
+        with transaction.atomic():
+            file_transfer.size_transferred = F('size_transferred') + file_chunk.size
+            file_transfer.chunk_count_transferred = F('chunk_count_transferred') + 1
+            file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
 
         return Response({
-            'shard_id': shard_id,
+            'shard_id': file_transfer.shard_id,
             'hash_blake2b': hash_blake2b,
         }, status=status.HTTP_200_OK)
 

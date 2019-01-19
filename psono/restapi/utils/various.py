@@ -8,7 +8,7 @@ import os
 
 import bcrypt
 import time
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -269,11 +269,50 @@ def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : b
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
-        secret_links = Secret_Link.objects.filter(secret_id=secret_id).order_by('parent_datastore_id')
+        secret_links = Secret_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(secret_id=secret_id).order_by('parent_datastore_id')
     except Secret_Link.DoesNotExist:
         return False
 
     for link in secret_links:
+
+        if link.parent_datastore_id is not None:
+            if not datastores_loaded:
+                try:
+                    datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
+                except Data_Store.DoesNotExist:
+                    datastores = []
+                datastores_loaded = True
+
+            if link.parent_datastore_id in datastores:
+                return True
+
+        elif link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
+            return True
+
+    return False
+
+
+def user_has_rights_on_file(user_id : str = "", file_id : str = "", read : bool = None, write : bool = None) -> bool:
+    """
+    Checks if the given user has the requested rights for the given file
+
+    :param user_id:
+    :param file_id:
+    :param read:
+    :param write:
+    :return:
+    """
+
+    datastores_loaded = False
+    datastores = [] # type: List[str]
+
+    try:
+        # get all file links. Get the ones with datastores as parents first, as they are less expensive to check later
+        file_links = File_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(file_id=file_id).order_by('parent_datastore_id')
+    except File_Link.DoesNotExist:
+        return False
+
+    for link in file_links:
 
         if link.parent_datastore_id is not None:
             if not datastores_loaded:

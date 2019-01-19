@@ -51,7 +51,6 @@ class CreateFileSerializer(serializers.Serializer):
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
-        # TODO Test user quota
         credit = 0
         if settings.CREDIT_COSTS_UPLOAD > 0:
             credit = settings.CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024

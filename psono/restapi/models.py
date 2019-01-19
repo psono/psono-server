@@ -624,8 +624,7 @@ class Fileserver_Cluster_Shard_Link(models.Model):
 
     class Meta:
         abstract = False
-
-    unique_together = ('cluster', 'shard',)
+        unique_together = ('cluster', 'shard',)
 
 
 class Fileserver_Cluster_Members(models.Model):
@@ -690,8 +689,7 @@ class Fileserver_Cluster_Member_Shard_Link(models.Model):
 
     class Meta:
         abstract = False
-
-    unique_together = ('member', 'shard',)
+        unique_together = ('member', 'shard',)
 
 
 class File(models.Model):
@@ -740,7 +738,7 @@ class File_Chunk(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_chunk')
-    hash_blake2b = models.CharField(max_length=128, db_index=True)
+    hash_blake2b = models.CharField(max_length=128, unique=True)
     position = models.IntegerField('Position',
         help_text=_('The position of the chunk in the file'))
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='file_chunk')
@@ -749,6 +747,8 @@ class File_Chunk(models.Model):
 
     class Meta:
         abstract = False
+        unique_together = ('position', 'file',)
+
 
 
 class File_Transfer(models.Model):
