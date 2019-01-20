@@ -242,6 +242,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                     member_id=fileserver.id,
                     read=shard['read'],
                     write=shard['write'],
+                    delete=shard['delete'],
                     ip_read_whitelist=json.dumps(fileserver_info['IP_READ_WHITELIST']),
                     ip_read_blacklist=json.dumps(fileserver_info['IP_READ_BLACKLIST']),
                     ip_write_whitelist=json.dumps(fileserver_info['IP_WRITE_WHITELIST']),

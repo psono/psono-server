@@ -12,4 +12,5 @@ if settings.FILESERVER_HANDLER_ENABLED:
         url(r'^alive/$', views.AliveView.as_view(), name='fileserver_alive'),
         url(r'^authorize/upload/$', views.AuthorizeUploadView.as_view(), name='fileserver_authorize_upload'),
         url(r'^authorize/download/$', views.AuthorizeDownloadView.as_view(), name='fileserver_authorize_download'),
+        url(r'^cleanup/chunks/$', views.CleanupChunksView.as_view(), name='fileserver_cleanup_chunks'),
     ]

@@ -42,6 +42,7 @@ from .serializers import (
     CreateShareSerializer as DefaultCreateShareSerializer,
     UpdateShareSerializer as DefaultUpdateShareSerializer,
     CreateFileSerializer as DefaultCreateFileSerializer,
+    DeleteFileSerializer as DefaultDeleteFileSerializer,
     ReadFileSerializer as DefaultReadFileSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
@@ -53,6 +54,8 @@ from .serializers import (
     ShareRightDeclineSerializer as DefaultShareRightDeclineSerializer,
     MoveSecretLinkSerializer as DefaultMoveSecretLinkSerializer,
     DeleteSecretLinkSerializer as DefaultDeleteSecretLinkSerializer,
+    MoveFileLinkSerializer as DefaultMoveFileLinkSerializer,
+    DeleteFileLinkSerializer as DefaultDeleteFileLinkSerializer,
     CreateGroupSerializer as DefaultCreateGroupSerializer,
     ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
     CreateSecretSerializer as DefaultCreateSecretSerializer,
@@ -349,6 +352,14 @@ CreateFileSerializer = import_callable(
 )
 
 
+DeleteFileSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_SERIALIZER',
+        DefaultDeleteFileSerializer
+    )
+)
+
+
 ReadFileSerializer = import_callable(
     serializers.get(
         'READ_FILE_SERIALIZER',
@@ -424,6 +435,20 @@ DeleteSecretLinkSerializer = import_callable(
     serializers.get(
         'DELETE_SECRET_LINK_SERIALIZER',
         DefaultDeleteSecretLinkSerializer
+    )
+)
+
+MoveFileLinkSerializer = import_callable(
+    serializers.get(
+        'MOVE_FILE_LINK_SERIALIZER',
+        DefaultMoveFileLinkSerializer
+    )
+)
+
+DeleteFileLinkSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_LINK_SERIALIZER',
+        DefaultDeleteFileLinkSerializer
     )
 )
 

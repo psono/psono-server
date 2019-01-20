@@ -18,6 +18,8 @@ import hashlib
 import binascii
 import ipaddress
 
+from uuid import UUID
+
 import scrypt
 from typing import Tuple, List
 
@@ -802,3 +804,22 @@ def in_networks(ip_address, networks):
             return True
 
     return False
+
+def get_uuid_start_and_end(count, position):
+    """
+    Divides 128 bit into count amount of chunks and returns the borders for the given position (smallest and biggest
+    possible uuid)
+
+    :param count:
+    :type count:
+    :param position:
+    :type position:
+    :return:
+    :rtype:
+    """
+    max = int('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',16)
+
+    start = UUID(int=int(position * float(max) / count))
+    end = UUID(int=int((position + 1) * float(max) / count)-1)
+
+    return start, end

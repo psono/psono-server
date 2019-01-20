@@ -62,11 +62,13 @@ urlpatterns = [
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 
-    url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
+    url(r'^file/link/$', views.FileLinkView.as_view(), name='file_link'),
 
     url(r'^file/$', views.FileView.as_view(), name='file'),
     url(r'^file/(?P<file_id>[^/]+)/$', views.FileView.as_view(), name='file'),
     url(r'^shard/$', views.ShardView.as_view(), name='shard'),
+
+    url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
 
     url(r'^secret/$', views.SecretView.as_view(), name='secret'),
     url(r'^secret/history/(?P<secret_id>[^/]+)/$', views.SecretHistoryView.as_view(), name='secret_history'),

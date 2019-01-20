@@ -1,4 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..models import File
@@ -11,17 +12,24 @@ class ReadFileSerializer(serializers.Serializer):
 
         file_id = self.context['request'].parser_context['kwargs'].get('file_id', False)
 
-        # check if the shard exists
+        # check if the file exists
         try:
             file = File.objects.get(pk=file_id)
         except File.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
+        # check if it has been marked for deletion
+        if file.delete_date < timezone.now():
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            raise exceptions.ValidationError(msg)
+
+        # check if the user has the necessary rights
         if not user_has_rights_on_file(self.context['request'].user.id, file_id, read=True):
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
+        # calculate the required credits and check if the user has those
         credit = 0
         if settings.CREDIT_COSTS_DOWNLOAD > 0:
             credit = settings.CREDIT_COSTS_DOWNLOAD * file.size / 1024 / 1024 / 1024

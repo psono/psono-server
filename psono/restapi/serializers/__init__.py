@@ -68,3 +68,6 @@ from .read_secret_with_api_key import *
 from .api_key_login import *
 from .read_shard import *
 from .read_file import *
+from .delete_file import *
+from .delete_file_link import *
+from .move_file_link import *

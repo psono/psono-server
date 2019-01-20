@@ -27,4 +27,14 @@ class Migration(migrations.Migration):
             name='fileserver_cluster_shard_link',
             unique_together={('cluster', 'shard')},
         ),
+        migrations.AddField(
+            model_name='file',
+            name='delete_date',
+            field=models.DateTimeField(null=True),
+        ),
+        migrations.AddField(
+            model_name='fileserver_cluster_member_shard_link',
+            name='delete',
+            field=models.BooleanField(default=True, help_text='Weather this shard accepts delete jobs', verbose_name='Delete'),
+        ),
     ]

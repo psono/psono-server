@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -15,7 +16,8 @@ from ..models import (
 
 from ..app_settings import (
     CreateFileSerializer,
-    ReadFileSerializer
+    ReadFileSerializer,
+    DeleteFileSerializer,
 )
 from ..authentication import TokenAuthentication
 
@@ -23,9 +25,21 @@ class FileView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'PUT', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, request, *args, **kwargs):
+        """
+        Indirectly reads a file by providing a filetransfer id for download
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 400
+        :rtype:
+        """
 
         serializer = ReadFileSerializer(data=request.data, context=self.get_serializer_context())
 
@@ -62,7 +76,7 @@ class FileView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
-        Creates a new file
+        Indirectly creats a file by providing a filetransfer id for download
 
         :param request:
         :type request:
@@ -128,4 +142,28 @@ class FileView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def delete(self, request, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        """
+        Deletes a File or better marks it for deletion
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = DeleteFileSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        # Not sure if we want to allow direct deletion. Usually delete on file link should trigger the deletion
+        # file = serializer.validated_data.get('file')
+        #
+        #
+        # # mark it for deletion
+        # file.delete_date = timezone.now()
+        # file.save()
+
+        return Response(status=status.HTTP_200_OK)

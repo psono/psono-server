@@ -678,6 +678,8 @@ class Fileserver_Cluster_Member_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this shard accepts delete jobs'))
     ip_read_whitelist = models.CharField(_('IP read whitelist'), max_length=2048,
         help_text=_('IP Whitelist for read operations'), null=True)
     ip_write_whitelist = models.CharField(_('IP write whitelist'), max_length=2048,
@@ -705,6 +707,8 @@ class File(models.Model):
         help_text=_('The amount of chunks'))
     size = models.BigIntegerField('Size',
         help_text=_('The size of the files in bytes (including encryption overhead)'))
+
+    delete_date = models.DateTimeField(null=True)
 
     class Meta:
         abstract = False
