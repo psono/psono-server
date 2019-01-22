@@ -254,12 +254,13 @@ class FileserverAliveAuthentication(TokenAuthentication):
     @staticmethod
     def validate_cluster_shard_access(cluster_id, announced_shards):
 
-        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).all()
+        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).only('read', 'write', 'delete').all()
         shards = {}
         for fcsl in fcsls:
             shards[str(fcsl.shard_id)] = {
                 'read': fcsl.read,
                 'write': fcsl.write,
+                'delete': fcsl.delete,
             }
 
         for shard in announced_shards:
@@ -272,6 +273,10 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 raise exceptions.AuthenticationFailed(msg)
 
             if shard['write'] and not shards[shard['shard_id']]['write']:
+                msg = _('No write permission for shard.')
+                raise exceptions.AuthenticationFailed(msg)
+
+            if shard['delete'] and not shards[shard['shard_id']]['delete']:
                 msg = _('No write permission for shard.')
                 raise exceptions.AuthenticationFailed(msg)
 

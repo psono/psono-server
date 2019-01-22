@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 print('    Shard: Not found for this cluster. You can create one with "fsshardcreate TITLE \'Some description\'" and then link it to this cluster with "fsshardlink '+ str(cluster.id) +' SHARD_ID"')
 
             for links in cluster.links.all():
-                print('    Shard: ' + str(links.shard.title) + ' (link_id: ' + str(links.id) + ', shard_id: ' + str(links.shard_id) + ', read: ' + str(links.read) + ', write: ' + str(links.write) + ')')
+                print('    Shard: ' + str(links.shard.title) + ' (link_id: ' + str(links.id) + ', shard_id: ' + str(links.shard_id) + ', read: ' + str(links.read) + ', write: ' + str(links.write) + ', delete: ' + str(links.delete) + ')')
 
 
 

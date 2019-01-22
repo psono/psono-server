@@ -11,22 +11,36 @@ from datetime import timedelta
 from restapi.authentication import FileserverAuthentication
 from restapi.utils import get_uuid_start_and_end
 from ..permissions import IsFileserver
-from ..app_settings import AuthorizeUploadSerializer
+from ..app_settings import FileserverConfirmChunkDeletionSerializer
 from restapi.models import Fileserver_Cluster_Member_Shard_Link, File_Chunk
 
 class CleanupChunksView(GenericAPIView):
 
     authentication_classes = (FileserverAuthentication, )
     permission_classes = (IsFileserver,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'fileserver_upload'
 
     def get(self, request, *args, **kwargs):
+        """
+        Returns the chunks that should be cleaned up by this fileserver
 
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 200 / 401
+        :rtype:
+        """
+
+        # Get a list of all shards that are handled by this particular fileserver
         shard_ids = Fileserver_Cluster_Member_Shard_Link.objects.filter(member=request.user, delete=True).values_list('shard_id', flat=True)
 
+        # get a list of all fileservers, that are responsible for these shards with the capability to delete
         links = Fileserver_Cluster_Member_Shard_Link.objects\
-            .filter(shard_id__in=shard_ids, member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT))\
+            .filter(shard_id__in=shard_ids, member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT), delete=True)\
             .values('member_id', 'shard_id', 'member__create_date')\
             .distinct()\
             .order_by('member__create_date')
@@ -58,7 +72,20 @@ class CleanupChunksView(GenericAPIView):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = FileserverConfirmChunkDeletionSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user_id = serializer.validated_data.get('chunks')
+
+        chunks.delete()
+
+        return Response(status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -1,3 +1,4 @@
-from .authorize_upload import AuthorizeUploadSerializer
-from .authorize_download import AuthorizeDownloadSerializer
-from .fileserver_alive import FileserverAliveSerializer
+from .authorize_upload import FileserverAuthorizeUploadSerializer
+from .authorize_download import FileserverAuthorizeDownloadSerializer
+from .alive import FileserverAliveSerializer
+from .confirm_chunk_deletion import FileserverConfirmChunkDeletionSerializer

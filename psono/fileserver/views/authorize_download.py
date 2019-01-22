@@ -6,7 +6,7 @@ from rest_framework.generics import GenericAPIView
 
 from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
-from ..app_settings import AuthorizeDownloadSerializer
+from ..app_settings import FileserverAuthorizeDownloadSerializer
 
 class AuthorizeDownloadView(GenericAPIView):
 
@@ -32,7 +32,7 @@ class AuthorizeDownloadView(GenericAPIView):
         :rtype:
         """
 
-        serializer = AuthorizeDownloadSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverAuthorizeDownloadSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 

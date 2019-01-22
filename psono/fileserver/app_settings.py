@@ -3,9 +3,10 @@ from django.conf import settings
 from importlib import import_module
 
 from .serializers import (
-    AuthorizeUploadSerializer as DefaultAuthorizeUploadSerializer,
-    AuthorizeDownloadSerializer as DefaultAuthorizeDownloadSerializer,
+    FileserverAuthorizeUploadSerializer as DefaultFileserverAuthorizeUploadSerializer,
+    FileserverAuthorizeDownloadSerializer as DefaultFileserverAuthorizeDownloadSerializer,
     FileserverAliveSerializer as DefaultFileserverAliveSerializer,
+    FileserverConfirmChunkDeletionSerializer as DefaultFileserverConfirmChunkDeletionSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -17,16 +18,21 @@ def import_callable(path_or_callable):
 
 serializers = getattr(settings, 'FILESERVER_SERIALIZERS', {})
 
-AuthorizeUploadSerializer = import_callable(
-    serializers.get('AUTHORIZE_UPLOAD_SERIALIZER', DefaultAuthorizeUploadSerializer)
+FileserverAuthorizeUploadSerializer = import_callable(
+    serializers.get('FILESERVER_AUTHORIZE_UPLOAD_SERIALIZER', DefaultFileserverAuthorizeUploadSerializer)
 )
 
-AuthorizeDownloadSerializer = import_callable(
-    serializers.get('AUTHORIZE_DOWNLOAD_SERIALIZER', DefaultAuthorizeDownloadSerializer)
+FileserverAuthorizeDownloadSerializer = import_callable(
+    serializers.get('FILESERVER_AUTHORIZE_DOWNLOAD_SERIALIZER', DefaultFileserverAuthorizeDownloadSerializer)
 )
 
 
 FileserverAliveSerializer = import_callable(
     serializers.get('FILESERVER_ALIVE_SERIALIZER', DefaultFileserverAliveSerializer)
+)
+
+
+FileserverConfirmChunkDeletionSerializer = import_callable(
+    serializers.get('FILESERVER_CONFIRM_CHUNK_DELETION_SERIALIZER', DefaultFileserverConfirmChunkDeletionSerializer)
 )
 

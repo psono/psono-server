@@ -12,7 +12,7 @@ from restapi.parsers import decrypt
 from datetime import timedelta
 import json
 
-class AuthorizeDownloadSerializer(serializers.Serializer):
+class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
 
 
     token = serializers.CharField(required=True)

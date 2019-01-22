@@ -621,6 +621,8 @@ class Fileserver_Cluster_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this connection accepts deletes'))
 
     class Meta:
         abstract = False

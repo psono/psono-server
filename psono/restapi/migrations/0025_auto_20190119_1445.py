@@ -37,4 +37,9 @@ class Migration(migrations.Migration):
             name='delete',
             field=models.BooleanField(default=True, help_text='Weather this shard accepts delete jobs', verbose_name='Delete'),
         ),
+        migrations.AddField(
+            model_name='fileserver_cluster_shard_link',
+            name='delete',
+            field=models.BooleanField(default=True, help_text='Weather this connection accepts deletes', verbose_name='Delete'),
+        ),
     ]

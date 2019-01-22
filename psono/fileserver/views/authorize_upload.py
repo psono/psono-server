@@ -6,7 +6,7 @@ from rest_framework.generics import GenericAPIView
 
 from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
-from ..app_settings import AuthorizeUploadSerializer
+from ..app_settings import FileserverAuthorizeUploadSerializer
 from restapi.models import File_Chunk
 
 class AuthorizeUploadView(GenericAPIView):
@@ -33,7 +33,7 @@ class AuthorizeUploadView(GenericAPIView):
         :rtype:
         """
 
-        serializer = AuthorizeUploadSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverAuthorizeUploadSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
