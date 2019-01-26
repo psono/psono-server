@@ -233,6 +233,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 url=fileserver_info['HOST_URL'],
                 read=fileserver_info['READ'],
                 write=fileserver_info['WRITE'],
+                delete=fileserver_info['DELETE'],
                 valid_till=timezone.now()+datetime.timedelta(seconds=30),
             )
 

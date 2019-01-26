@@ -650,6 +650,8 @@ class Fileserver_Cluster_Members(models.Model):
         help_text=_('Weather this server accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this server accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this server accepts deletes'))
 
     valid_till = models.DateTimeField(default=timezone.now, db_index=True)
 

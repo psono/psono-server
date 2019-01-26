@@ -12,7 +12,7 @@ from restapi.authentication import FileserverAuthentication
 from restapi.utils import get_uuid_start_and_end
 from ..permissions import IsFileserver
 from ..app_settings import FileserverConfirmChunkDeletionSerializer
-from restapi.models import Fileserver_Cluster_Member_Shard_Link, File_Chunk
+from restapi.models import Fileserver_Cluster_Member_Shard_Link, File_Chunk, File
 
 class CleanupChunksView(GenericAPIView):
 
@@ -81,9 +81,11 @@ class CleanupChunksView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        user_id = serializer.validated_data.get('chunks')
+        hash_blake2bs = serializer.validated_data.get('hash_blake2bs')
 
-        chunks.delete()
+        File_Chunk.objects.filter(hash_blake2b__in=hash_blake2bs).delete()
+
+        File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now())
 
         return Response(status=status.HTTP_200_OK)
 

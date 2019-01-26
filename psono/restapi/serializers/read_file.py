@@ -20,7 +20,7 @@ class ReadFileSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # check if it has been marked for deletion
-        if file.delete_date < timezone.now():
+        if file.delete_date and file.delete_date < timezone.now():
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
