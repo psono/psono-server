@@ -322,7 +322,7 @@ class Secret(models.Model):
     type = models.CharField(max_length=64, db_index=True, default='password')
     callback_url = models.CharField(_('Callback URL'), max_length=2048, default='')
     callback_user = models.CharField(_('Callback User'), max_length=128, default='')
-    callback_pass = models.CharField(_('Callback Password'), max_length=128, default='')
+    callback_pass = models.CharField(_('Callback Password'), max_length=256, default='')
 
     class Meta:
         abstract = False
@@ -660,5 +660,5 @@ def api_key_post_save_receiver(sender, **kwargs):
 def api_key_post_delete_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
         pk = str(kwargs['instance'].pk)
-        cache.delete('api_key' + pk)
+        cache.delete('psono_api_key_' + pk)
 
