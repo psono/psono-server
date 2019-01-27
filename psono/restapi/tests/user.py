@@ -6,9 +6,8 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
+from ..utils import encrypt_with_db_secret, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
-import six
 import random
 import string
 import os

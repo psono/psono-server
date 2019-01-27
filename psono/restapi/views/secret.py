@@ -204,7 +204,7 @@ class SecretView(GenericAPIView):
 
             try:
                 requests.post(secret.callback_url, data=data, headers=headers, auth=auth)
-            except:
+            except: # nosec
                 pass
 
         return Response({"success": "Data updated."},
