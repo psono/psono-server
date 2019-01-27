@@ -637,6 +637,8 @@ class Fileserver_Cluster_Members(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
 
+    create_ip = models.GenericIPAddressField()
+
     key = models.CharField(max_length=128, unique=True)
 
     fileserver_cluster = models.ForeignKey(Fileserver_Cluster, on_delete=models.CASCADE, related_name='members',

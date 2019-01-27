@@ -113,6 +113,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
+                ('create_ip', models.GenericIPAddressField()),
                 ('key', models.CharField(max_length=128, unique=True)),
                 ('public_key', models.CharField(help_text='Public key of the member that is sent to the client', max_length=256, verbose_name='public key')),
                 ('secret_key', models.CharField(help_text='Symmetric Key for the transport encryption', max_length=256, verbose_name='Secret Key')),

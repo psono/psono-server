@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'restapi',
     'administration',
     'fileserver',
+    'credit',
 ]
 
 MIDDLEWARE = (
@@ -287,6 +288,7 @@ DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
 
 MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
 FILESERVER_HANDLER_ENABLED = config_get('FILESERVER_HANDLER_ENABLED', True)
+CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
 FILES_ENABLED = config_get('FILES_ENABLED', False)
 
 FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)

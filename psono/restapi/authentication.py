@@ -14,7 +14,7 @@ import datetime
 
 from .parsers import decrypt
 from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link
-from .utils import get_cache, decrypt_with_db_secret
+from .utils import get_cache, decrypt_with_db_secret, get_ip
 
 import nacl.encoding
 import nacl.utils
@@ -226,6 +226,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
             self.validate_cluster_shard_access(cluster_id, fileserver_info['SHARDS_PUBLIC'])
 
             fileserver = Fileserver_Cluster_Members.objects.create(
+                create_ip=get_ip(request),
                 fileserver_cluster_id=cluster_id,
                 key=token_hash,
                 public_key=fileserver_info['FILESERVER_PUBLIC_KEY'],

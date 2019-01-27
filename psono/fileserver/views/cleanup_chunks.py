@@ -1,5 +1,3 @@
-from django.db import transaction
-from django.db.models import F
 from django.utils import timezone
 from django.conf import settings
 from rest_framework import status
@@ -85,7 +83,7 @@ class CleanupChunksView(GenericAPIView):
 
         File_Chunk.objects.filter(hash_blake2b__in=hash_blake2bs).delete()
 
-        File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now())
+        File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now()).delete()
 
         return Response(status=status.HTTP_200_OK)
 
