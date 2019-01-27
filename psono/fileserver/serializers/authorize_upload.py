@@ -27,7 +27,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
         token = attrs.get('token')
         ticket_encrypted = attrs.get('ticket')
         ticket_nonce = attrs.get('ticket_nonce')
-        chunk_size = attrs.get('chunk_size')
+        chunk_size = attrs.get('chunk_size', 0)
         hash_blake2b = attrs.get('hash_blake2b')
         ip_address = attrs.get('ip_address')
 

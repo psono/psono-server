@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from datetime import timedelta
+from typing import List, Dict
 import ipaddress
 import json
 
@@ -24,8 +25,8 @@ class ReadShardSerializer(serializers.Serializer):
             .only('read', 'write', 'ip_read_blacklist', 'ip_read_whitelist', 'ip_write_blacklist', 'ip_write_whitelist',
                   'member__url', 'member__read', 'member__write', 'member__public_key', 'shard__id', 'shard__title', 'shard__description')
 
-        shards = []
-        shard_dic = {}
+        shards: List[Dict] = []
+        shard_dic: Dict[str, Dict] = {}
 
         for cmsl in cluster_member_shard_link_objs:
             cluster_member = cmsl.member

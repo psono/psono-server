@@ -50,6 +50,24 @@ def generate_activation_code(email : str) -> str:
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
+def get_static_bcrypt_hash_from_email(email):
+    """
+    Takes an email address. Removes all leading and trailing whitespaces and casts it to lowercase.
+
+    Returns the case invariant hash without the static salt.
+
+    :param email:
+    :type email:
+    :return:
+    :rtype:
+    """
+    email = email.lower().strip().encode()
+    email_salt = settings.EMAIL_SECRET_SALT.encode()
+    bcrypt_with_salt = bcrypt.hashpw(email, email_salt).decode()
+
+    return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, '', 1)
+
+
 def validate_activation_code(activation_code : str) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
@@ -69,17 +87,16 @@ def validate_activation_code(activation_code : str) -> Optional[User]:
         time_stamp, email = validation_secret.split("#", 1)
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
-            email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
-    except:
+    except: # nosec
         #wrong format or whatever could happen
         pass
 
     return None
 
-def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple:
+def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple: # nosec
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 

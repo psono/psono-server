@@ -11,7 +11,7 @@ class DeleteFileSerializer(serializers.Serializer):
     file_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
-        file_id = attrs.get('file_id')
+        file_id = attrs.get('file_id', '')
 
         try:
             file = File.objects.get(pk=file_id)

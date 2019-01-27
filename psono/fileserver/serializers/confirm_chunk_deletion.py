@@ -1,7 +1,9 @@
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
 
+from typing import List
 from datetime import timedelta
 
 from restapi.models import File_Chunk, Fileserver_Cluster_Member_Shard_Link
@@ -13,9 +15,9 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        deleted_chunks = attrs.get('deleted_chunks')
+        deleted_chunks = attrs.get('deleted_chunks', [])
 
-        hash_blake2bs = []
+        hash_blake2bs: List[str] = []
         for c in deleted_chunks:
             if not Fileserver_Cluster_Member_Shard_Link.objects.select_related('member') \
                     .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
