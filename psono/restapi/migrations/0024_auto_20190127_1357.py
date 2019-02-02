@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
-                ('hash_blake2b', models.CharField(max_length=128, unique=True)),
+                ('hash_checksum', models.CharField(max_length=128, unique=True)),
                 ('position', models.IntegerField(help_text='The position of the chunk in the file', verbose_name='Position')),
                 ('size', models.BigIntegerField(help_text='The size of the chunk in bytes (including encryption overhead)', verbose_name='Size')),
                 ('file', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_chunk', to='restapi.File')),

@@ -60,7 +60,7 @@ class CleanupChunksView(GenericAPIView):
                 continue
 
             start, end = get_uuid_start_and_end(value['count'], value['position'])
-            shards[str(shard_id)] = list(File_Chunk.objects.values_list('hash_blake2b', flat=True).filter(pk__gte=start, pk__lte=end, file__delete_date__lte=timezone.now(), file__shard_id=shard_id))
+            shards[str(shard_id)] = list(File_Chunk.objects.values_list('hash_checksum', flat=True).filter(pk__gte=start, pk__lte=end, file__delete_date__lte=timezone.now(), file__shard_id=shard_id))
 
         return Response({
             'shards': shards
@@ -79,9 +79,9 @@ class CleanupChunksView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        hash_blake2bs = serializer.validated_data.get('hash_blake2bs')
+        hash_checksums = serializer.validated_data.get('hash_checksums')
 
-        File_Chunk.objects.filter(hash_blake2b__in=hash_blake2bs).delete()
+        File_Chunk.objects.filter(hash_checksum__in=hash_checksums).delete()
 
         File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now()).delete()
 

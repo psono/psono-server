@@ -51,12 +51,12 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             msg = _('Malformed ticket. File transfer ID missing.')
             raise exceptions.ValidationError(msg)
 
-        if 'hash_blake2b' not in ticket:
+        if 'hash_checksum' not in ticket:
             msg = _('Malformed ticket. Blake2b hash missing.')
             raise exceptions.ValidationError(msg)
 
         file_transfer_id = ticket['file_transfer_id']
-        hash_blake2b = ticket['hash_blake2b']
+        hash_checksum = ticket['hash_checksum']
 
         try:
             file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id)
@@ -95,7 +95,7 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         try:
-            file_chunk = File_Chunk.objects.get(hash_blake2b=hash_blake2b)
+            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
         except File_Chunk.DoesNotExist:
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
@@ -111,6 +111,6 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
         attrs['file_transfer'] = file_transfer
         attrs['user_id'] = token.user_id
         attrs['file_chunk'] = file_chunk
-        attrs['hash_blake2b'] = hash_blake2b
+        attrs['hash_checksum'] = hash_checksum
 
         return attrs

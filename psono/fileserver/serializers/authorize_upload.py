@@ -19,7 +19,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
     ticket = serializers.CharField(required=True)
     ticket_nonce = serializers.CharField(required=True)
     chunk_size = serializers.IntegerField(required=True)
-    hash_blake2b = serializers.CharField(required=True)
+    hash_checksum = serializers.CharField(required=True)
     ip_address = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -28,7 +28,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
         ticket_encrypted = attrs.get('ticket')
         ticket_nonce = attrs.get('ticket_nonce')
         chunk_size = attrs.get('chunk_size', 0)
-        hash_blake2b = attrs.get('hash_blake2b')
+        hash_checksum = attrs.get('hash_checksum')
         ip_address = attrs.get('ip_address')
 
         token_hash = TokenAuthentication.user_token_to_token_hash(token)
@@ -59,7 +59,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
             msg = _('Malformed ticket. Chunk Position missing.')
             raise exceptions.ValidationError(msg)
 
-        if 'hash_blake2b' not in ticket:
+        if 'hash_checksum' not in ticket:
             msg = _('Malformed ticket. Blake2b hash missing.')
             raise exceptions.ValidationError(msg)
 
@@ -72,9 +72,9 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
         file_transfer_id = ticket['file_transfer_id']
         chunk_position = ticket['chunk_position']
-        hash_blake2b_ticket = ticket['hash_blake2b']
+        hash_checksum_ticket = ticket['hash_checksum']
 
-        if hash_blake2b_ticket != hash_blake2b:
+        if hash_checksum_ticket != hash_checksum:
             msg = _('Chunk corrupted.')
             raise exceptions.ValidationError(msg)
 

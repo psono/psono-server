@@ -17,7 +17,7 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
 
         deleted_chunks = attrs.get('deleted_chunks', [])
 
-        hash_blake2bs: List[str] = []
+        hash_checksums: List[str] = []
         for c in deleted_chunks:
             if not Fileserver_Cluster_Member_Shard_Link.objects.select_related('member') \
                     .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
@@ -26,13 +26,13 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
                 msg = _('Permission denied.')
                 raise exceptions.ValidationError(msg)
 
-            if File_Chunk.objects.only('id').filter(hash_blake2b__in=c['chunks']).exclude(file__shard_id=c['shard_id']) \
+            if File_Chunk.objects.only('id').filter(hash_checksum__in=c['chunks']).exclude(file__shard_id=c['shard_id']) \
                     .exists():
                 msg = _('Permission denied.')
                 raise exceptions.ValidationError(msg)
 
-            hash_blake2bs = hash_blake2bs + c['chunks']
+            hash_checksums = hash_checksums + c['chunks']
 
-        attrs['hash_blake2bs'] = hash_blake2bs
+        attrs['hash_checksums'] = hash_checksums
 
         return attrs

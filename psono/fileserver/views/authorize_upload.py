@@ -45,14 +45,14 @@ class AuthorizeUploadView(GenericAPIView):
         user_id = serializer.validated_data.get('user_id')
         chunk_position = serializer.validated_data.get('chunk_position')
         chunk_size = serializer.validated_data.get('chunk_size')
-        hash_blake2b = serializer.validated_data.get('hash_blake2b')
+        hash_checksum = serializer.validated_data.get('hash_checksum')
 
 
         with transaction.atomic():
             File_Chunk.objects.create(
                 user_id=user_id,
                 file_id=file_transfer.file_id,
-                hash_blake2b=hash_blake2b,
+                hash_checksum=hash_checksum,
                 position=chunk_position,
                 size=chunk_size,
             )

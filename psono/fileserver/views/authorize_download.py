@@ -41,7 +41,7 @@ class AuthorizeDownloadView(GenericAPIView):
             )
 
         file_transfer = serializer.validated_data.get('file_transfer')
-        hash_blake2b = serializer.validated_data.get('hash_blake2b')
+        hash_checksum = serializer.validated_data.get('hash_checksum')
         file_chunk = serializer.validated_data.get('file_chunk')
 
 
@@ -52,7 +52,7 @@ class AuthorizeDownloadView(GenericAPIView):
 
         return Response({
             'shard_id': file_transfer.shard_id,
-            'hash_blake2b': hash_blake2b,
+            'hash_checksum': hash_checksum,
         }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):

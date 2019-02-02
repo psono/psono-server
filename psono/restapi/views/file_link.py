@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -15,7 +16,6 @@ from ..app_settings import (
 from ..models import (
     File_Link,
     File,
-    File_Transfer,
 )
 
 from ..authentication import TokenAuthentication
@@ -129,20 +129,6 @@ class FileLinkView(GenericAPIView):
             file_ids_with_links = list(unique_everseen(file_ids_with_links))
             file_ids_deletable = list(set(file_ids).difference(set(file_ids_with_links)))
 
-            for file in File.objects.filter(pk__in=file_ids_deletable).all():
-                file_transfer = File_Transfer.objects.create(
-                    user_id=file.user_id,
-                    shard_id=file.shard_id,
-                    file=file,
-                    size=file.size,
-                    size_transferred=0,
-                    chunk_count=file.chunk_count,
-                    chunk_count_transferred=0,
-                    credit=0,
-                    type='delete',
-                )
-
-                file.delete_date=file_transfer.create_date
-                file.save()
+            File.objects.filter(pk__in=file_ids_deletable).update(delete_date=timezone.now())
 
         return Response(status=status.HTTP_200_OK)

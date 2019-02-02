@@ -748,7 +748,7 @@ class File_Chunk(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_chunk')
-    hash_blake2b = models.CharField(max_length=128, unique=True)
+    hash_checksum = models.CharField(max_length=128, unique=True)
     position = models.IntegerField('Position',
         help_text=_('The position of the chunk in the file'))
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='file_chunk')
