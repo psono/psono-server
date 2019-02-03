@@ -4,7 +4,7 @@ from django.conf import settings
 
 from rest_framework import serializers, exceptions
 
-from restapi.utils import get_cache, in_networks
+from restapi.utils import get_cache
 from restapi.authentication import TokenAuthentication
 from restapi.models import Token, File_Transfer, Fileserver_Cluster_Member_Shard_Link
 from restapi.parsers import decrypt
@@ -84,34 +84,12 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)
 
-        cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
+        count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
-                 shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id)\
-            .only('write', 'ip_write_blacklist', 'ip_write_whitelist', 'member__write')
+                 shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
 
-        if len(cluster_member_shard_link_objs) != 1:
+        if count_cmsl != 1:
             msg = _('Permission denied.')
-            raise exceptions.ValidationError(msg)
-
-        cmsl = cluster_member_shard_link_objs[0]
-
-        if not cmsl.write or not cmsl.member.write:
-            msg = _('Permission denied.')
-            raise exceptions.ValidationError(msg)
-
-        ip_write_whitelist = json.loads(cmsl.ip_write_whitelist)
-        ip_write_blacklist = json.loads(cmsl.ip_write_blacklist)
-
-        has_write_whitelist = len(ip_write_whitelist) > 0
-        write_blacklisted = in_networks(ip_address, ip_write_blacklist)
-        write_whitelisted = in_networks(ip_address, ip_write_whitelist)
-
-        if has_write_whitelist and not write_whitelisted:
-            msg = _('Permission denied by IP.')
-            raise exceptions.ValidationError(msg)
-
-        if write_blacklisted:
-            msg = _('Permission denied by IP.')
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:

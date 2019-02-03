@@ -840,3 +840,54 @@ def get_uuid_start_and_end(count, position):
     end = UUID(int=int((position + 1) * float(max) / count)-1)
 
     return start, end
+
+
+def fileserver_access(cmsl, ip_address, read=None, write=None):
+    """
+    Tests weather an ip address has access for a specific cluster member shard link
+
+    :param cmsl:
+    :type cmsl:
+    :param ip_address:
+    :type ip_address:
+    :param read:
+    :type read:
+    :param write:
+    :type write:
+    :return:
+    :rtype:
+    """
+
+    if write:
+        if not cmsl.write or not cmsl.member.write:
+            return False
+
+        ip_write_whitelist = json.loads(cmsl.ip_write_whitelist)
+        ip_write_blacklist = json.loads(cmsl.ip_write_blacklist)
+
+        has_write_whitelist = len(ip_write_whitelist) > 0
+        write_blacklisted = in_networks(ip_address, ip_write_blacklist)
+        write_whitelisted = in_networks(ip_address, ip_write_whitelist)
+        if has_write_whitelist and not write_whitelisted:
+            return False
+
+        if write_blacklisted:
+            return False
+
+    if read:
+        if not cmsl.read or not cmsl.member.read:
+            return False
+
+        ip_read_whitelist = json.loads(cmsl.ip_read_whitelist)
+        ip_read_blacklist = json.loads(cmsl.ip_read_blacklist)
+
+        has_read_whitelist = len(ip_read_whitelist) > 0
+        read_blacklisted = in_networks(ip_address, ip_read_blacklist)
+        read_whitelisted = in_networks(ip_address, ip_read_whitelist)
+        if has_read_whitelist and not read_whitelisted:
+            return False
+
+        if read_blacklisted:
+            return False
+
+    return True

@@ -5,13 +5,12 @@ from django.conf import settings
 from datetime import timedelta
 from typing import List, Dict
 import ipaddress
-import json
 
 from ..models import (
     Fileserver_Cluster_Member_Shard_Link,
 )
 
-from ..utils import get_ip, in_networks
+from ..utils import get_ip, fileserver_access
 
 class ReadShardSerializer(serializers.Serializer):
 
@@ -29,39 +28,9 @@ class ReadShardSerializer(serializers.Serializer):
         shard_dic: Dict[str, Dict] = {}
 
         for cmsl in cluster_member_shard_link_objs:
-            cluster_member = cmsl.member
 
-            read = cmsl.read and cluster_member.read
-            write = cmsl.write and cluster_member.write
-
-            ip_read_blacklist = json.loads(cmsl.ip_read_blacklist)
-            ip_read_whitelist = json.loads(cmsl.ip_read_whitelist)
-
-            has_read_whitelist = len(ip_read_whitelist) > 0
-            read_blacklisted = in_networks(ip_address, ip_read_blacklist)
-            read_whitelisted = in_networks(ip_address, ip_read_whitelist)
-
-            if has_read_whitelist and not read_whitelisted:
-                read = False
-
-            if read_blacklisted:
-                read = False
-
-            ip_write_whitelist = json.loads(cmsl.ip_write_whitelist)
-            ip_write_blacklist = json.loads(cmsl.ip_write_blacklist)
-
-            has_write_whitelist = len(ip_write_blacklist) > 0
-            write_blacklisted = in_networks(ip_address, ip_write_blacklist)
-            write_whitelisted = in_networks(ip_address, ip_write_whitelist)
-
-            if has_write_whitelist and not write_whitelisted:
-                write = False
-
-            if write_blacklisted:
-                write = False
-
-            if not read and not write:
-                continue
+            read = fileserver_access(cmsl, ip_address, read=True)
+            write = fileserver_access(cmsl, ip_address, write=True)
 
             if cmsl.shard.id not in shard_dic:
                 shard_dic[cmsl.shard.id] = {

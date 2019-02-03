@@ -1,10 +1,13 @@
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers, exceptions
-from ..fields import UUIDField
-from ..models import Fileserver_Shard
 
-from ..utils import user_has_rights_on_share, get_datastore
+from datetime import timedelta
+
+from ..fields import UUIDField
+from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link
+from ..utils import user_has_rights_on_share, get_datastore, fileserver_access, get_ip
 
 class CreateFileSerializer(serializers.Serializer):
 
@@ -24,12 +27,10 @@ class CreateFileSerializer(serializers.Serializer):
 
         # check if the shard exists
         try:
-            shard = Fileserver_Shard.objects.only('id').get(pk=shard_id)
+            shard = Fileserver_Shard.objects.only('id').get(pk=shard_id, active=True)
         except Fileserver_Shard.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
-
-
 
         if parent_share_id is None and parent_datastore_id is None:
             msg = _("Either parent share or datastore need to be specified.")
@@ -50,6 +51,22 @@ class CreateFileSerializer(serializers.Serializer):
             if not parent_datastore:
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
+
+        cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
+            .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
+                    shard__active=True, write=True, member__write=True, shard=shard)\
+            .only('write', 'ip_write_blacklist', 'ip_write_whitelist', 'member__write')
+
+        ip_address = get_ip(self.context['request'])
+        cmsl_available = False
+        for cmsl in cluster_member_shard_link_objs:
+            if fileserver_access(cmsl, ip_address, write=True):
+                cmsl_available = True
+                break
+
+        if not cmsl_available:
+            msg = _("NO_FILESERVER_AVAILABLE")
+            raise exceptions.ValidationError(msg)
 
         credit = 0
         if settings.CREDIT_COSTS_UPLOAD > 0:
