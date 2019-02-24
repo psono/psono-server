@@ -1,15 +1,24 @@
+from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
+from  more_itertools import unique_everseen
+
+import json
+
 from ..permissions import IsAuthenticated
+from ..utils import decrypt_with_db_secret, gcs_delete
 
 from ..app_settings import (
     MoveFileLinkSerializer,
+    DeleteFileLinkSerializer,
 )
 
 from ..models import (
     File_Link,
+    File,
 )
 
 from ..authentication import TokenAuthentication
@@ -89,5 +98,48 @@ class FileLinkView(GenericAPIView):
 
         return Response(status=status.HTTP_200_OK)
 
-    def delete(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Delete File_Link obj
+
+        Necessary Rights:
+            - write on parent_share
+            - write on parent_datastore
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = DeleteFileLinkSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        link_id = serializer.validated_data['link_id']
+        file_ids = serializer.validated_data['file_ids']
+
+        with transaction.atomic():
+            File_Link.objects.filter(link_id=link_id).delete()
+
+            # Check if links to the files still exist. If not mark the files for deletion.
+
+            file_ids_with_links = File_Link.objects.filter(file_id__in=file_ids).values_list('file_id', flat=True)
+            file_ids_with_links = list(unique_everseen(file_ids_with_links))
+            file_ids_deletable = list(set(file_ids).difference(set(file_ids_with_links)))
+
+            File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=True).update(delete_date=timezone.now())
+            for file in File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=False):
+
+                data = json.loads(decrypt_with_db_secret(file.file_exchange.data))
+
+                for c in file.file_chunk.all():
+                    gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
+
+            File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=False).delete()
+
+        return Response(status=status.HTTP_200_OK)

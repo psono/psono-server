@@ -6,9 +6,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from decimal import Decimal
-import json
 
-from ..utils import gcs_delete, decrypt_with_db_secret
 from ..models import (
     File_Transfer,
     File,
@@ -18,7 +16,6 @@ from ..models import (
 from ..app_settings import (
     CreateFileSerializer,
     ReadFileSerializer,
-    DeleteFileSerializer,
 )
 from ..authentication import TokenAuthentication
 
@@ -146,37 +143,8 @@ class FileView(GenericAPIView):
             "file_transfer_id": file_transfer.id
         }, status=status.HTTP_201_CREATED)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Deletes a File or better marks it for deletion
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
-        """
-
-        serializer = DeleteFileSerializer(data=request.data, context=self.get_serializer_context())
-
-        if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file = serializer.validated_data.get('file')
-
-        if file.file_exchange_id:
-            # Delete file from file exchange
-
-            data = json.loads(decrypt_with_db_secret(file.file_exchange.data))
-
-            for c in file.file_chunk:
-                gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
-
-            file.delete()
-
-        return Response(status=status.HTTP_200_OK)
+    def delete(self, *args, **kwargs):
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

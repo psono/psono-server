@@ -50,7 +50,7 @@ def gcs_construct_signed_download_url(bucket, json_key, hash_checksum):
     return construct_signed_url(bucket, json_key, hash_checksum, method)
 
 
-def gcs_onstruct_signed_delete_url(bucket, json_key, hash_checksum):
+def gcs_construct_signed_delete_url(bucket, json_key, hash_checksum):
     """
     Constructs the signed delete url
 
@@ -225,7 +225,7 @@ def gcs_download(bucket, json_key, hash_checksum):
     :rtype:
     """
 
-    base_url, query_params = construct_signed_download_url(bucket, json_key, hash_checksum)
+    base_url, query_params = gcs_construct_signed_download_url(bucket, json_key, hash_checksum)
 
     return requests.get(base_url, params=query_params)
 
@@ -247,7 +247,7 @@ def gcs_upload(bucket, json_key, hash_checksum, data):
     :rtype:
     """
 
-    base_url, query_params = construct_signed_upload_url(bucket, json_key, hash_checksum)
+    base_url, query_params = gcs_construct_signed_upload_url(bucket, json_key, hash_checksum)
     headers = {}
     headers['Content-Type'] = 'application/octet-stream'
 
@@ -269,7 +269,7 @@ def gcs_delete(bucket, json_key, hash_checksum):
     :rtype:
     """
 
-    base_url, query_params = construct_signed_delete_url(bucket, json_key, hash_checksum)
+    base_url, query_params = gcs_construct_signed_delete_url(bucket, json_key, hash_checksum)
 
     return requests.delete(base_url, params=query_params)
 
