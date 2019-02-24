@@ -4,7 +4,7 @@ from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..models import File_Transfer
 
-class FileExchangeUploadSerializer(serializers.Serializer):
+class FileRepositoryUploadSerializer(serializers.Serializer):
     file_transfer_id = UUIDField(required=True)
     chunk_size = serializers.IntegerField(required=True)
     chunk_position = serializers.IntegerField(required=True)
@@ -25,7 +25,7 @@ class FileExchangeUploadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         try:
-            file_transfer = File_Transfer.objects.select_related('file_exchange').only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_exchange__type', 'file_exchange__data').get(pk=file_transfer_id, user=self.context['request'].user)
+            file_transfer = File_Transfer.objects.select_related('file_repository').only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_repository__type', 'file_repository__data').get(pk=file_transfer_id, user=self.context['request'].user)
         except File_Transfer.DoesNotExist:
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)

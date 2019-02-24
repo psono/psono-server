@@ -17,7 +17,7 @@ class ReadFileSerializer(serializers.Serializer):
 
         # check if the file exists
         try:
-            file = File.objects.only('id', 'delete_date', 'delete_date', 'shard_id', 'file_exchange_id', 'size', 'chunk_count').get(pk=file_id)
+            file = File.objects.only('id', 'delete_date', 'delete_date', 'shard_id', 'file_repository_id', 'size', 'chunk_count').get(pk=file_id)
         except File.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)

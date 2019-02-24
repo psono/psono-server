@@ -53,7 +53,7 @@ class FileView(GenericAPIView):
             file_transfer = File_Transfer.objects.create(
                 user_id=request.user.id,
                 shard_id=file.shard_id,
-                file_exchange_id=file.file_exchange_id,
+                file_repository_id=file.file_repository_id,
                 file=file,
                 size=file.size,
                 size_transferred=0,
@@ -94,7 +94,7 @@ class FileView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         shard = serializer.validated_data['shard']
-        file_exchange = serializer.validated_data['file_exchange']
+        file_repository = serializer.validated_data['file_repository']
         chunk_count = serializer.validated_data['chunk_count']
         size = serializer.validated_data['size']
         link_id = serializer.validated_data['link_id']
@@ -108,7 +108,7 @@ class FileView(GenericAPIView):
         with transaction.atomic():
             file = File.objects.create(
                 shard = shard,
-                file_exchange = file_exchange,
+                file_repository = file_repository,
                 chunk_count = chunk_count,
                 size = size,
                 user_id = request.user.id,
@@ -117,7 +117,7 @@ class FileView(GenericAPIView):
             file_transfer = File_Transfer.objects.create(
                 user_id=request.user.id,
                 shard=shard,
-                file_exchange=file_exchange,
+                file_repository=file_repository,
                 file=file,
                 size=size,
                 size_transferred=size_transferred,

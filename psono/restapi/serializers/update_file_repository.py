@@ -6,11 +6,11 @@ from rest_framework import serializers, exceptions
 import json
 
 from ..fields import UUIDField
-from ..models import File_Exchange
+from ..models import File_Repository
 
-class UpdateFileExchangeSerializer(serializers.Serializer):
+class UpdateFileRepositorySerializer(serializers.Serializer):
 
-    file_exchange_id = UUIDField(required=True)
+    file_repository_id = UUIDField(required=True)
     title = serializers.CharField(max_length=256, required=True)
     type = serializers.CharField(max_length=32, required=True)
     gcp_cloud_storage_bucket = serializers.CharField(required=False)
@@ -19,7 +19,7 @@ class UpdateFileExchangeSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        file_exchange_id = attrs.get('file_exchange_id')
+        file_repository_id = attrs.get('file_repository_id')
         title = attrs.get('title').strip()
         type = attrs.get('type').lower().strip()
         gcp_cloud_storage_bucket = attrs.get('gcp_cloud_storage_bucket', '').strip()
@@ -27,8 +27,8 @@ class UpdateFileExchangeSerializer(serializers.Serializer):
 
         # Lets check if the current user can do that
         try:
-            file_exchange = File_Exchange.objects.get(id=file_exchange_id, file_exchange_user__user=self.context['request'].user, file_exchange_user__write=True)
-        except File_Exchange.DoesNotExist:
+            file_repository = File_Repository.objects.get(id=file_repository_id, file_repository_user__user=self.context['request'].user, file_repository_user__write=True)
+        except File_Repository.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
@@ -40,7 +40,7 @@ class UpdateFileExchangeSerializer(serializers.Serializer):
             msg = _("TYPE_IS_REQUIRED")
             raise exceptions.ValidationError(msg)
 
-        if type not in settings.FILE_EXCHANGE_TYPES:
+        if type not in settings.FILE_REPOSITORY_TYPES:
             msg = _("UNKNOWN_TYPE")
             raise exceptions.ValidationError(msg)
 
@@ -68,7 +68,7 @@ class UpdateFileExchangeSerializer(serializers.Serializer):
             }
 
 
-        attrs['file_exchange'] = file_exchange
+        attrs['file_repository'] = file_repository
         attrs['title'] = title
         attrs['type'] = type
         attrs['data'] = data

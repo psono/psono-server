@@ -5,7 +5,7 @@ from rest_framework import serializers, exceptions
 
 import json
 
-class CreateFileExchangeSerializer(serializers.Serializer):
+class CreateFileRepositorySerializer(serializers.Serializer):
 
     title = serializers.CharField(max_length=256, required=True)
     type = serializers.CharField(max_length=32, required=True)
@@ -27,7 +27,7 @@ class CreateFileExchangeSerializer(serializers.Serializer):
             msg = _("TYPE_IS_REQUIRED")
             raise exceptions.ValidationError(msg)
 
-        if type not in settings.FILE_EXCHANGE_TYPES:
+        if type not in settings.FILE_REPOSITORY_TYPES:
             msg = _("UNKNOWN_TYPE")
             raise exceptions.ValidationError(msg)
 

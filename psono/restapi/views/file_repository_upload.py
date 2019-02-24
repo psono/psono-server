@@ -10,14 +10,16 @@ import urllib
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
-    FileExchangeDownloadSerializer,
+    FileRepositoryUploadSerializer
 )
 
-from ..utils import decrypt_with_db_secret, gcs_construct_signed_download_url
+from ..models import File_Chunk
+
+from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url
 from ..authentication import TokenAuthentication
 
 
-class FileExchangeDownloadView(GenericAPIView):
+class FileRepositoryUploadView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -28,7 +30,7 @@ class FileExchangeDownloadView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
-        Creates a signed url for the download of a chunk
+        Prepares a chunk upload to a file repository
 
         :param request:
         :type request:
@@ -40,7 +42,7 @@ class FileExchangeDownloadView(GenericAPIView):
         :rtype:
         """
 
-        serializer = FileExchangeDownloadSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileRepositoryUploadSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
             return Response(
@@ -48,19 +50,29 @@ class FileExchangeDownloadView(GenericAPIView):
             )
 
         file_transfer = serializer.validated_data.get('file_transfer')
-        file_chunk = serializer.validated_data.get('file_chunk')
+        user_id = serializer.validated_data.get('user_id')
+        chunk_position = serializer.validated_data.get('chunk_position')
+        chunk_size = serializer.validated_data.get('chunk_size')
         hash_checksum = serializer.validated_data.get('hash_checksum')
 
 
         with transaction.atomic():
-            file_transfer.size_transferred = F('size_transferred') + file_chunk.size
+            File_Chunk.objects.create(
+                user_id=user_id,
+                file_id=file_transfer.file_id,
+                hash_checksum=hash_checksum,
+                position=chunk_position,
+                size=chunk_size,
+            )
+
+            file_transfer.size_transferred = F('size_transferred') + chunk_size
             file_transfer.chunk_count_transferred = F('chunk_count_transferred') + 1
             file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
 
 
-        data = json.loads(decrypt_with_db_secret(file_transfer.file_exchange.data))
+        data = json.loads(decrypt_with_db_secret(file_transfer.file_repository.data))
 
-        base_url, query_params = gcs_construct_signed_download_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
+        base_url, query_params = gcs_construct_signed_upload_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
 
         # create an url that contains all the url encoded params
         url = base_url + "?" + urllib.parse.urlencode(query_params)

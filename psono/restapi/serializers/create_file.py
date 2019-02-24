@@ -6,13 +6,13 @@ from rest_framework import serializers, exceptions
 from datetime import timedelta
 
 from ..fields import UUIDField
-from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link, File_Exchange
+from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link, File_Repository
 from ..utils import user_has_rights_on_share, get_datastore, fileserver_access, get_ip
 
 class CreateFileSerializer(serializers.Serializer):
 
     shard_id = UUIDField(required=False)
-    file_exchange_id = UUIDField(required=False)
+    file_repository_id = UUIDField(required=False)
     chunk_count = serializers.IntegerField(required=False)
     size = serializers.IntegerField(required=False)
     link_id = UUIDField(required=True)
@@ -22,18 +22,18 @@ class CreateFileSerializer(serializers.Serializer):
     def validate(self, attrs: dict) -> dict:
 
         shard_id = attrs.get('shard_id', None)
-        file_exchange_id = attrs.get('file_exchange_id', None)
+        file_repository_id = attrs.get('file_repository_id', None)
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
         size = attrs.get('size', None)
 
-        file_exchange = None
+        file_repository = None
         shard = None
         credit = 0
 
 
-        if shard_id is None and file_exchange_id is None:
-            msg = _("SELECT_EITHER_SHARD_OR_EXCHANGE")
+        if shard_id is None and file_repository_id is None:
+            msg = _("SELECT_EITHER_SHARD_OR_REPOSITORY")
             raise exceptions.ValidationError(msg)
 
 
@@ -45,11 +45,11 @@ class CreateFileSerializer(serializers.Serializer):
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
-        if file_exchange_id is not None:
-            # check if the file exchange exists
+        if file_repository_id is not None:
+            # check if the file repository exists
             try:
-                file_exchange = File_Exchange.objects.only('id', 'type', 'data').get(pk=file_exchange_id, file_exchange_user__user=self.context['request'].user, active=True)
-            except File_Exchange.DoesNotExist:
+                file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, file_repository_user__user=self.context['request'].user, active=True)
+            except File_Repository.DoesNotExist:
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
@@ -98,7 +98,7 @@ class CreateFileSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
         attrs['shard'] = shard
-        attrs['file_exchange'] = file_exchange
+        attrs['file_repository'] = file_repository
         attrs['parent_share_id'] = parent_share_id
         attrs['parent_datastore_id'] = parent_datastore_id
         attrs['size'] = size

@@ -69,7 +69,7 @@ class RegisterSerializer(serializers.Serializer):
             'admin', 'administrator', 'contact',
             # maybe we want later subdomains
             'smtp', 'www', 'mail', 'remote',  'blog', 'webmail', 'ns1', 'ns2', 'ns3', 'ftp', 'cdn', 'api', 'secure',
-            'dev', 'web', 'cloud', 'stage', 'staging', 'exchange', 'autodiscover', 'irc',
+            'dev', 'web', 'cloud', 'stage', 'staging', 'repository', 'autodiscover', 'irc',
         ]
 
         value = value.lower().strip()

@@ -6,7 +6,7 @@ from restapi.models import File_Transfer, File_Chunk
 
 from ..fields import UUIDField
 
-class FileExchangeDownloadSerializer(serializers.Serializer):
+class FileRepositoryDownloadSerializer(serializers.Serializer):
 
     file_transfer_id = UUIDField(required=True)
     hash_checksum = serializers.CharField(required=True)
@@ -17,7 +17,7 @@ class FileExchangeDownloadSerializer(serializers.Serializer):
         hash_checksum = attrs.get('hash_checksum', '').lower()
 
         try:
-            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_exchange__type', 'file_exchange__data').get(pk=file_transfer_id, user=self.context['request'].user)
+            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_repository__type', 'file_repository__data').get(pk=file_transfer_id, user=self.context['request'].user)
         except File_Transfer.DoesNotExist:
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)

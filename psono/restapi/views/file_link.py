@@ -132,14 +132,14 @@ class FileLinkView(GenericAPIView):
             file_ids_with_links = list(unique_everseen(file_ids_with_links))
             file_ids_deletable = list(set(file_ids).difference(set(file_ids_with_links)))
 
-            File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=True).update(delete_date=timezone.now())
-            for file in File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=False):
+            File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=True).update(delete_date=timezone.now())
+            for file in File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False):
 
-                data = json.loads(decrypt_with_db_secret(file.file_exchange.data))
+                data = json.loads(decrypt_with_db_secret(file.file_repository.data))
 
                 for c in file.file_chunk.all():
                     gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
 
-            File.objects.filter(pk__in=file_ids_deletable, file_exchange__isnull=False).delete()
+            File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False).delete()
 
         return Response(status=status.HTTP_200_OK)

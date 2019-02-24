@@ -70,8 +70,8 @@ from .read_shard import *
 from .read_file import *
 from .delete_file_link import *
 from .move_file_link import *
-from .create_file_exchange import *
-from .update_file_exchange import *
-from .delete_file_exchange import *
-from .file_exchange_download import *
-from .file_exchange_upload import *
+from .create_file_repository import *
+from .update_file_repository import *
+from .delete_file_repository import *
+from .file_repository_download import *
+from .file_repository_upload import *

@@ -160,7 +160,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='File_Exchange',
+            name='File_Repository',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
@@ -175,14 +175,14 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='File_Exchange_User',
+            name='File_Repository_User',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('write_date', models.DateTimeField(auto_now=True)),
-                ('read', models.BooleanField(default=True, help_text='Weather this user can read the configured file exchange details', verbose_name='Read')),
-                ('write', models.BooleanField(default=True, help_text='Weather this user can update the configured file exchange', verbose_name='Write')),
-                ('grant', models.BooleanField(default=True, help_text='Weather this user can change permissions and delete the configured file exchange', verbose_name='Grant')),
+                ('read', models.BooleanField(default=True, help_text='Weather this user can read the configured file repository details', verbose_name='Read')),
+                ('write', models.BooleanField(default=True, help_text='Weather this user can update the configured file repository', verbose_name='Write')),
+                ('grant', models.BooleanField(default=True, help_text='Weather this user can change permissions and delete the configured file repository', verbose_name='Grant')),
             ],
             options={
                 'abstract': False,
@@ -225,8 +225,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='file_transfer',
-            name='file_exchange',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_transfer', to='restapi.File_Exchange'),
+            name='file_repository',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_transfer', to='restapi.File_Repository'),
         ),
         migrations.AddField(
             model_name='file_chunk',
@@ -240,8 +240,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='file',
-            name='file_exchange',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='file', to='restapi.File_Exchange'),
+            name='file_repository',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='file', to='restapi.File_Repository'),
         ),
         migrations.AddField(
             model_name='file',
@@ -261,13 +261,13 @@ class Migration(migrations.Migration):
             unique_together={('position', 'file')},
         ),
         migrations.AddField(
-            model_name='file_exchange_user',
-            name='file_exchange',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_exchange_user', to='restapi.File_Exchange'),
+            model_name='file_repository_user',
+            name='file_repository',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_user', to='restapi.File_Repository'),
         ),
         migrations.AddField(
-            model_name='file_exchange_user',
+            model_name='file_repository_user',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_exchange_user', to='restapi.User'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_user', to='restapi.User'),
         ),
     ]

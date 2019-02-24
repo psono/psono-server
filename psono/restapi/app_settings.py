@@ -72,11 +72,11 @@ from .serializers import (
     AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
     RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
     ReadShardSerializer as DefaultReadShardSerializer,
-    CreateFileExchangeSerializer as DefaultCreateFileExchangeSerializer,
-    UpdateFileExchangeSerializer as DefaultUpdateFileExchangeSerializer,
-    DeleteFileExchangeSerializer as DefaultDeleteFileExchangeSerializer,
-    FileExchangeUploadSerializer as DefaultFileExchangeUploadSerializer,
-    FileExchangeDownloadSerializer as DefaultFileExchangeDownloadSerializer,
+    CreateFileRepositorySerializer as DefaultCreateFileRepositorySerializer,
+    UpdateFileRepositorySerializer as DefaultUpdateFileRepositorySerializer,
+    DeleteFileRepositorySerializer as DefaultDeleteFileRepositorySerializer,
+    FileRepositoryUploadSerializer as DefaultFileRepositoryUploadSerializer,
+    FileRepositoryDownloadSerializer as DefaultFileRepositoryDownloadSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -568,38 +568,38 @@ ReadShardSerializer = import_callable(
     )
 )
 
-CreateFileExchangeSerializer = import_callable(
+CreateFileRepositorySerializer = import_callable(
     serializers.get(
-        'CREATE_FILE_EXCHANGE_SERIALIZER',
-        DefaultCreateFileExchangeSerializer
+        'CREATE_FILE_REPOSITORY_SERIALIZER',
+        DefaultCreateFileRepositorySerializer
     )
 )
 
-UpdateFileExchangeSerializer = import_callable(
+UpdateFileRepositorySerializer = import_callable(
     serializers.get(
-        'UPDATE_FILE_EXCHANGE_SERIALIZER',
-        DefaultUpdateFileExchangeSerializer
+        'UPDATE_FILE_REPOSITORY_SERIALIZER',
+        DefaultUpdateFileRepositorySerializer
     )
 )
 
-DeleteFileExchangeSerializer = import_callable(
+DeleteFileRepositorySerializer = import_callable(
     serializers.get(
-        'DELETE_FILE_EXCHANGE_SERIALIZER',
-        DefaultDeleteFileExchangeSerializer
+        'DELETE_FILE_REPOSITORY_SERIALIZER',
+        DefaultDeleteFileRepositorySerializer
     )
 )
 
-FileExchangeUploadSerializer = import_callable(
+FileRepositoryUploadSerializer = import_callable(
     serializers.get(
-        'FILE_EXCHANGE_UPLOAD_SERIALIZER',
-        DefaultFileExchangeUploadSerializer
+        'FILE_REPOSITORY_UPLOAD_SERIALIZER',
+        DefaultFileRepositoryUploadSerializer
     )
 )
 
-FileExchangeDownloadSerializer = import_callable(
+FileRepositoryDownloadSerializer = import_callable(
     serializers.get(
-        'FILE_EXCHANGE_DOWNLOAD_SERIALIZER',
-        DefaultFileExchangeDownloadSerializer
+        'FILE_REPOSITORY_DOWNLOAD_SERIALIZER',
+        DefaultFileRepositoryDownloadSerializer
     )
 )
 

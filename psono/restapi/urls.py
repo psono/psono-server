@@ -68,10 +68,10 @@ urlpatterns = [
     url(r'^file/(?P<file_id>[^/]+)/$', views.FileView.as_view(), name='file'),
     url(r'^shard/$', views.ShardView.as_view(), name='shard'),
 
-    url(r'^file-exchange/download/$', views.FileExchangeDownloadView.as_view(), name='file_exchange_download'),
-    url(r'^file-exchange/upload/$', views.FileExchangeUploadView.as_view(), name='file_exchange_upload'),
-    url(r'^file-exchange/(?P<file_exchange_id>[^/]+)/$', views.FileExchangeView.as_view(), name='file_exchange'),
-    url(r'^file-exchange/$', views.FileExchangeView.as_view(), name='file_exchange'),
+    url(r'^file-repository/download/$', views.FileRepositoryDownloadView.as_view(), name='file_repository_download'),
+    url(r'^file-repository/upload/$', views.FileRepositoryUploadView.as_view(), name='file_repository_upload'),
+    url(r'^file-repository/(?P<file_repository_id>[^/]+)/$', views.FileRepositoryView.as_view(), name='file_repository'),
+    url(r'^file-repository/$', views.FileRepositoryView.as_view(), name='file_repository'),
 
     url(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
 

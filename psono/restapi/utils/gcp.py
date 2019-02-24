@@ -97,7 +97,7 @@ def construct_signed_url(bucket, json_key, hash_checksum, method, content_type='
     # Create parameters
     client_id_email = json_config['client_email']
     key = RSA.importKey(json_config['private_key'])
-    path = create_file_exchange_path(bucket, hash_checksum)
+    path = create_file_repository_path(bucket, hash_checksum)
 
     # create the url as base url and params
     base_url, query_params = create_url(client_id_email, key, method, path, content_type, md5_digest)
@@ -105,7 +105,7 @@ def construct_signed_url(bucket, json_key, hash_checksum, method, content_type='
     return base_url, query_params
 
 
-def create_file_exchange_path(bucket, hash_checksum):
+def create_file_repository_path(bucket, hash_checksum):
     """
     Takes the bucket and the hash checksum and returns the path on the server
 
