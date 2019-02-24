@@ -291,6 +291,10 @@ FILESERVER_HANDLER_ENABLED = config_get('FILESERVER_HANDLER_ENABLED', True)
 CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
 FILES_ENABLED = config_get('FILES_ENABLED', False)
 
+FILE_EXCHANGE_TYPES = [
+    'gcp_cloud_storage'
+]
+
 FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
@@ -310,11 +314,11 @@ DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # d
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20) # in seconds
 
 # Credit costs
-CREDIT_BUY_ADDRESS = config_get('CREDIT_BUY_ADDRESS', 'https://example.com')
-CREDIT_DEFAULT_NEW_USER = Decimal(str(config_get('CREDIT_DEFAULT_NEW_USER', 0))) # the default credits in Euro for new users
-CREDIT_COSTS_UPLOAD = Decimal(str(config_get('CREDIT_COSTS_UPLOAD', 0))) # costs in Euro for an upload of 1 GB
-CREDIT_COSTS_DOWNLOAD = Decimal(str(config_get('CREDIT_COSTS_DOWNLOAD', 0))) # costs in Euro for a download of 1 GB
-CREDIT_COSTS_STORAGE = Decimal(str(config_get('CREDIT_COSTS_STORAGE', 0))) # costs in Euro for the storage of 1 GB per day
+SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
+SHARD_CREDIT_DEFAULT_NEW_USER = Decimal(str(config_get('SHARD_CREDIT_DEFAULT_NEW_USER', 0))) # the default credits in Euro for new users
+SHARD_CREDIT_COSTS_UPLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_UPLOAD', 0))) # costs in Euro for an upload of 1 GB
+SHARD_CREDIT_COSTS_DOWNLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_DOWNLOAD', 0))) # costs in Euro for a download of 1 GB
+SHARD_CREDIT_COSTS_STORAGE = Decimal(str(config_get('SHARD_CREDIT_COSTS_STORAGE', 0))) # costs in Euro for the storage of 1 GB per day
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
 
@@ -379,10 +383,10 @@ def generate_signature():
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'type': 'CE',
-        'credit_buy_address': CREDIT_BUY_ADDRESS,
-        'credit_costs_upload': str(CREDIT_COSTS_UPLOAD),
-        'credit_costs_download': str(CREDIT_COSTS_DOWNLOAD),
-        'credit_costs_storage': str(CREDIT_COSTS_STORAGE),
+        'credit_buy_address': SHARD_CREDIT_BUY_ADDRESS,
+        'credit_costs_upload': str(SHARD_CREDIT_COSTS_UPLOAD),
+        'credit_costs_download': str(SHARD_CREDIT_COSTS_DOWNLOAD),
+        'credit_costs_storage': str(SHARD_CREDIT_COSTS_STORAGE),
     }
 
     info = json.dumps(info)

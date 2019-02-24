@@ -128,6 +128,6 @@ class RegisterSerializer(serializers.Serializer):
 
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
         validated_data['email'] = encrypt_with_db_secret(validated_data['email'])
-        validated_data['credit'] = settings.CREDIT_DEFAULT_NEW_USER
+        validated_data['credit'] = settings.SHARD_CREDIT_DEFAULT_NEW_USER
 
         return User.objects.create(**validated_data)

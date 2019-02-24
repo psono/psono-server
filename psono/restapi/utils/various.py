@@ -737,7 +737,7 @@ def create_user(username, password, email, gen_authkey=True):
         is_email_active=True,
         is_active=True,
         user_sauce=user_sauce.decode(),
-        credit=settings.CREDIT_DEFAULT_NEW_USER,
+        credit=settings.SHARD_CREDIT_DEFAULT_NEW_USER,
     )
 
     return {

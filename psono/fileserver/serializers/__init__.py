@@ -2,3 +2,4 @@ from .authorize_upload import FileserverAuthorizeUploadSerializer
 from .authorize_download import FileserverAuthorizeDownloadSerializer
 from .alive import FileserverAliveSerializer
 from .confirm_chunk_deletion import FileserverConfirmChunkDeletionSerializer
+from .revoke_download import FileserverRevokeDownloadSerializer

@@ -43,3 +43,6 @@ from .api_key_login import APIKeyLoginView
 from .api_key_secret import APIKeySecretView
 from .api_key_access_secret import APIKeyAccessSecretView
 from .shard import ShardView
+from .file_exchange import FileExchangeView
+from .file_exchange_upload import FileExchangeUploadView
+from .file_exchange_download import FileExchangeDownloadView

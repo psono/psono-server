@@ -6,12 +6,13 @@ from rest_framework import serializers, exceptions
 from datetime import timedelta
 
 from ..fields import UUIDField
-from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link
+from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link, File_Exchange
 from ..utils import user_has_rights_on_share, get_datastore, fileserver_access, get_ip
 
 class CreateFileSerializer(serializers.Serializer):
 
-    shard_id = UUIDField(required=True)
+    shard_id = UUIDField(required=False)
+    file_exchange_id = UUIDField(required=False)
     chunk_count = serializers.IntegerField(required=False)
     size = serializers.IntegerField(required=False)
     link_id = UUIDField(required=True)
@@ -20,17 +21,37 @@ class CreateFileSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        shard_id = attrs.get('shard_id')
+        shard_id = attrs.get('shard_id', None)
+        file_exchange_id = attrs.get('file_exchange_id', None)
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
         size = attrs.get('size', None)
 
-        # check if the shard exists
-        try:
-            shard = Fileserver_Shard.objects.only('id').get(pk=shard_id, active=True)
-        except Fileserver_Shard.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+        file_exchange = None
+        shard = None
+        credit = 0
+
+
+        if shard_id is None and file_exchange_id is None:
+            msg = _("SELECT_EITHER_SHARD_OR_EXCHANGE")
             raise exceptions.ValidationError(msg)
+
+
+        if shard_id is not None:
+            # check if the shard exists
+            try:
+                shard = Fileserver_Shard.objects.only('id').get(pk=shard_id, active=True)
+            except Fileserver_Shard.DoesNotExist:
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                raise exceptions.ValidationError(msg)
+
+        if file_exchange_id is not None:
+            # check if the file exchange exists
+            try:
+                file_exchange = File_Exchange.objects.only('id', 'type', 'data').get(pk=file_exchange_id, file_exchange_user__user=self.context['request'].user, active=True)
+            except File_Exchange.DoesNotExist:
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                raise exceptions.ValidationError(msg)
 
         if parent_share_id is None and parent_datastore_id is None:
             msg = _("Either parent share or datastore need to be specified.")
@@ -52,31 +73,32 @@ class CreateFileSerializer(serializers.Serializer):
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
-        cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
-            .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
-                    shard__active=True, write=True, member__write=True, shard=shard)\
-            .only('write', 'ip_write_blacklist', 'ip_write_whitelist', 'member__write')
+        if shard_id:
+            cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
+                .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
+                        shard__active=True, write=True, member__write=True, shard=shard)\
+                .only('write', 'ip_write_blacklist', 'ip_write_whitelist', 'member__write')
 
-        ip_address = get_ip(self.context['request'])
-        cmsl_available = False
-        for cmsl in cluster_member_shard_link_objs:
-            if fileserver_access(cmsl, ip_address, write=True):
-                cmsl_available = True
-                break
+            ip_address = get_ip(self.context['request'])
+            cmsl_available = False
+            for cmsl in cluster_member_shard_link_objs:
+                if fileserver_access(cmsl, ip_address, write=True):
+                    cmsl_available = True
+                    break
 
-        if not cmsl_available:
-            msg = _("NO_FILESERVER_AVAILABLE")
-            raise exceptions.ValidationError(msg)
+            if not cmsl_available:
+                msg = _("NO_FILESERVER_AVAILABLE")
+                raise exceptions.ValidationError(msg)
 
-        credit = 0
-        if settings.CREDIT_COSTS_UPLOAD > 0:
-            credit = settings.CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024
+            if settings.SHARD_CREDIT_COSTS_UPLOAD > 0:
+                credit = settings.SHARD_CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024
 
-        if credit > 0 and self.context['request'].user.credit < credit:
-            msg = _("INSUFFICIENT_FUNDS")
-            raise exceptions.ValidationError(msg)
+            if credit > 0 and self.context['request'].user.credit < credit:
+                msg = _("INSUFFICIENT_FUNDS")
+                raise exceptions.ValidationError(msg)
 
         attrs['shard'] = shard
+        attrs['file_exchange'] = file_exchange
         attrs['parent_share_id'] = parent_share_id
         attrs['parent_datastore_id'] = parent_datastore_id
         attrs['size'] = size

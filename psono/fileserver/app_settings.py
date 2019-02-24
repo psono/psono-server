@@ -5,6 +5,7 @@ from importlib import import_module
 from .serializers import (
     FileserverAuthorizeUploadSerializer as DefaultFileserverAuthorizeUploadSerializer,
     FileserverAuthorizeDownloadSerializer as DefaultFileserverAuthorizeDownloadSerializer,
+    FileserverRevokeDownloadSerializer as DefaultFileserverRevokeDownloadSerializer,
     FileserverAliveSerializer as DefaultFileserverAliveSerializer,
     FileserverConfirmChunkDeletionSerializer as DefaultFileserverConfirmChunkDeletionSerializer,
 )
@@ -24,6 +25,10 @@ FileserverAuthorizeUploadSerializer = import_callable(
 
 FileserverAuthorizeDownloadSerializer = import_callable(
     serializers.get('FILESERVER_AUTHORIZE_DOWNLOAD_SERIALIZER', DefaultFileserverAuthorizeDownloadSerializer)
+)
+
+FileserverRevokeDownloadSerializer = import_callable(
+    serializers.get('FILESERVER_REVOKE_DOWNLOAD_SERIALIZER', DefaultFileserverRevokeDownloadSerializer)
 )
 
 

@@ -55,7 +55,6 @@ from .serializers import (
     MoveSecretLinkSerializer as DefaultMoveSecretLinkSerializer,
     DeleteSecretLinkSerializer as DefaultDeleteSecretLinkSerializer,
     MoveFileLinkSerializer as DefaultMoveFileLinkSerializer,
-    DeleteFileLinkSerializer as DefaultDeleteFileLinkSerializer,
     CreateGroupSerializer as DefaultCreateGroupSerializer,
     ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
     CreateSecretSerializer as DefaultCreateSecretSerializer,
@@ -73,6 +72,11 @@ from .serializers import (
     AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
     RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
     ReadShardSerializer as DefaultReadShardSerializer,
+    CreateFileExchangeSerializer as DefaultCreateFileExchangeSerializer,
+    UpdateFileExchangeSerializer as DefaultUpdateFileExchangeSerializer,
+    DeleteFileExchangeSerializer as DefaultDeleteFileExchangeSerializer,
+    FileExchangeUploadSerializer as DefaultFileExchangeUploadSerializer,
+    FileExchangeDownloadSerializer as DefaultFileExchangeDownloadSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -445,13 +449,6 @@ MoveFileLinkSerializer = import_callable(
     )
 )
 
-DeleteFileLinkSerializer = import_callable(
-    serializers.get(
-        'DELETE_FILE_LINK_SERIALIZER',
-        DefaultDeleteFileLinkSerializer
-    )
-)
-
 CreateGroupSerializer = import_callable(
     serializers.get(
         'CREATE_GROUP_SERIALIZER',
@@ -569,6 +566,41 @@ ReadShardSerializer = import_callable(
     serializers.get(
         'READ_SHARD_SERIALIZER',
         DefaultReadShardSerializer
+    )
+)
+
+CreateFileExchangeSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_EXCHANGE_SERIALIZER',
+        DefaultCreateFileExchangeSerializer
+    )
+)
+
+UpdateFileExchangeSerializer = import_callable(
+    serializers.get(
+        'UPDATE_FILE_EXCHANGE_SERIALIZER',
+        DefaultUpdateFileExchangeSerializer
+    )
+)
+
+DeleteFileExchangeSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_EXCHANGE_SERIALIZER',
+        DefaultDeleteFileExchangeSerializer
+    )
+)
+
+FileExchangeUploadSerializer = import_callable(
+    serializers.get(
+        'FILE_EXCHANGE_UPLOAD_SERIALIZER',
+        DefaultFileExchangeUploadSerializer
+    )
+)
+
+FileExchangeDownloadSerializer = import_callable(
+    serializers.get(
+        'FILE_EXCHANGE_DOWNLOAD_SERIALIZER',
+        DefaultFileExchangeDownloadSerializer
     )
 )
 

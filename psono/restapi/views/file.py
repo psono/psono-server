@@ -1,13 +1,14 @@
 from django.db import transaction
 from django.db.models import F
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from decimal import Decimal
+import json
 
+from ..utils import gcs_delete, decrypt_with_db_secret
 from ..models import (
     File_Transfer,
     File,
@@ -55,6 +56,7 @@ class FileView(GenericAPIView):
             file_transfer = File_Transfer.objects.create(
                 user_id=request.user.id,
                 shard_id=file.shard_id,
+                file_exchange_id=file.file_exchange_id,
                 file=file,
                 size=file.size,
                 size_transferred=0,
@@ -95,6 +97,7 @@ class FileView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         shard = serializer.validated_data['shard']
+        file_exchange = serializer.validated_data['file_exchange']
         chunk_count = serializer.validated_data['chunk_count']
         size = serializer.validated_data['size']
         link_id = serializer.validated_data['link_id']
@@ -102,9 +105,13 @@ class FileView(GenericAPIView):
         parent_share_id = serializer.validated_data['parent_share_id']
         credit = serializer.validated_data['credit']
 
+        size_transferred = 0
+        chunk_count_transferred = 0
+
         with transaction.atomic():
             file = File.objects.create(
                 shard = shard,
+                file_exchange = file_exchange,
                 chunk_count = chunk_count,
                 size = size,
                 user_id = request.user.id,
@@ -113,11 +120,12 @@ class FileView(GenericAPIView):
             file_transfer = File_Transfer.objects.create(
                 user_id=request.user.id,
                 shard=shard,
+                file_exchange=file_exchange,
                 file=file,
                 size=size,
-                size_transferred=0,
+                size_transferred=size_transferred,
                 chunk_count=chunk_count,
-                chunk_count_transferred=0,
+                chunk_count_transferred=chunk_count_transferred,
                 credit=credit,
                 type='upload',
             )
@@ -158,12 +166,17 @@ class FileView(GenericAPIView):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
-        # Not sure if we want to allow direct deletion. Usually delete on file link should trigger the deletion
-        # file = serializer.validated_data.get('file')
-        #
-        #
-        # # mark it for deletion
-        # file.delete_date = timezone.now()
-        # file.save()
+
+        file = serializer.validated_data.get('file')
+
+        if file.file_exchange_id:
+            # Delete file from file exchange
+
+            data = json.loads(decrypt_with_db_secret(file.file_exchange.data))
+
+            for c in file.file_chunk:
+                gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
+
+            file.delete()
 
         return Response(status=status.HTTP_200_OK)

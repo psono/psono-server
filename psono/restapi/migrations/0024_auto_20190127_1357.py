@@ -159,6 +159,35 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
+        migrations.CreateModel(
+            name='File_Exchange',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('write_date', models.DateTimeField(auto_now=True)),
+                ('type', models.CharField(max_length=32)),
+                ('title', models.CharField(max_length=256, verbose_name='title')),
+                ('active', models.BooleanField(default=False, help_text='Specifies if the file storage is active or not', verbose_name='Activated')),
+                ('data', models.BinaryField()),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='File_Exchange_User',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('write_date', models.DateTimeField(auto_now=True)),
+                ('read', models.BooleanField(default=True, help_text='Weather this user can read the configured file exchange details', verbose_name='Read')),
+                ('write', models.BooleanField(default=True, help_text='Weather this user can update the configured file exchange', verbose_name='Write')),
+                ('grant', models.BooleanField(default=True, help_text='Weather this user can change permissions and delete the configured file exchange', verbose_name='Grant')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
         migrations.AddField(
             model_name='user',
             name='credit',
@@ -195,6 +224,11 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_transfer', to='restapi.User'),
         ),
         migrations.AddField(
+            model_name='file_transfer',
+            name='file_exchange',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_transfer', to='restapi.File_Exchange'),
+        ),
+        migrations.AddField(
             model_name='file_chunk',
             name='user',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_chunk', to='restapi.User'),
@@ -202,7 +236,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='file',
             name='shard',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file', to='restapi.Fileserver_Shard'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='file', to='restapi.Fileserver_Shard'),
+        ),
+        migrations.AddField(
+            model_name='file',
+            name='file_exchange',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='file', to='restapi.File_Exchange'),
         ),
         migrations.AddField(
             model_name='file',
@@ -220,5 +259,15 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='file_chunk',
             unique_together={('position', 'file')},
+        ),
+        migrations.AddField(
+            model_name='file_exchange_user',
+            name='file_exchange',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_exchange_user', to='restapi.File_Exchange'),
+        ),
+        migrations.AddField(
+            model_name='file_exchange_user',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_exchange_user', to='restapi.User'),
         ),
     ]

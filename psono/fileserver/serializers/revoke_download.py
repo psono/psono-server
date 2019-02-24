@@ -12,7 +12,7 @@ from restapi.parsers import decrypt
 from datetime import timedelta
 import json
 
-class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
+class FileserverRevokeDownloadSerializer(serializers.Serializer):
 
 
     token = serializers.CharField(required=True)
@@ -64,7 +64,6 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)
 
-
         count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
                  shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
@@ -79,17 +78,7 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             msg = _("You don't have permission to access or it does not exist.")
             raise exceptions.ValidationError(msg)
 
-        if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
-            msg = _('Chunk count exceeded.')
-            raise exceptions.ValidationError(msg)
-
-        if file_transfer.size_transferred + file_chunk.size > file_transfer.size:
-            msg = _('Chunk size exceeded.')
-            raise exceptions.ValidationError(msg)
-
         attrs['file_transfer'] = file_transfer
-        attrs['user_id'] = token.user_id
         attrs['file_chunk'] = file_chunk
-        attrs['hash_checksum'] = hash_checksum
 
         return attrs

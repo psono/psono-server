@@ -669,6 +669,49 @@ class Fileserver_Cluster_Members(models.Model):
         return True
 
 
+class File_Exchange(models.Model):
+    """
+    The actual members of a fileserver cluster, populated automatically with the current fileservers and their session infos
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    title = models.CharField(_('title'), max_length=256)
+    type = models.CharField(max_length=32)
+
+    active = models.BooleanField(_('Activated'), default=False,
+        help_text=_('Specifies if the file storage is active or not'))
+
+    data = models.BinaryField()
+
+    class Meta:
+        abstract = False
+
+
+class File_Exchange_User(models.Model):
+    """
+    The access permissions for File Exchanges
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='file_exchange_user')
+    file_exchange = models.ForeignKey(File_Exchange, on_delete=models.CASCADE, related_name='file_exchange_user')
+
+    read = models.BooleanField(_('Read'), default=True,
+        help_text=_('Weather this user can read the configured file exchange details'))
+    write = models.BooleanField(_('Write'), default=True,
+        help_text=_('Weather this user can update the configured file exchange'))
+    grant = models.BooleanField(_('Grant'), default=True,
+        help_text=_('Weather this user can change permissions and delete the configured file exchange'))
+
+
+    class Meta:
+        abstract = False
+
+
 class Fileserver_Cluster_Member_Shard_Link(models.Model):
     """
     The shards that are announced to be accessible by this Cluster Member
@@ -708,7 +751,8 @@ class File(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file')
-    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='file')
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, null=True, related_name='file')
+    file_exchange = models.ForeignKey(File_Exchange, on_delete=models.CASCADE, null=True, related_name='file')
     chunk_count = models.IntegerField('Chunk Count',
         help_text=_('The amount of chunks'))
     size = models.BigIntegerField('Size',
@@ -771,6 +815,7 @@ class File_Transfer(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    file_exchange = models.ForeignKey(File_Exchange, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     type = models.CharField(max_length=8, default='download')
     credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
