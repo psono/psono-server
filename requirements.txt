@@ -22,5 +22,5 @@ duo_client
 scrypt
 raven
 requests
-pycryptodome
+pycryptodomex
 
