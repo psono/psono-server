@@ -3,9 +3,9 @@ import base64
 import time
 import datetime
 
-import Cryptodome.Hash.SHA256 as SHA256
-from Cryptodome.PublicKey import RSA
-import Cryptodome.Signature.PKCS1_v1_5 as PKCS1_v1_5
+import Cryptodome.Hash.SHA256 as SHA256 #nosec
+from Cryptodome.PublicKey import RSA #nosec
+import Cryptodome.Signature.PKCS1_v1_5 as PKCS1_v1_5 #nosec
 import requests
 
 def gcs_construct_signed_upload_url(bucket, json_key, hash_checksum):
