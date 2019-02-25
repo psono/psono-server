@@ -3,6 +3,8 @@ from django.conf import settings
 
 from rest_framework import serializers, exceptions
 
+from typing import Dict
+
 import json
 
 from ..fields import UUIDField
@@ -20,8 +22,8 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
     def validate(self, attrs: dict) -> dict:
 
         file_repository_id = attrs.get('file_repository_id')
-        title = attrs.get('title').strip()
-        type = attrs.get('type').lower().strip()
+        title = attrs.get('title', '').strip()
+        type = attrs.get('type', '').lower().strip()
         gcp_cloud_storage_bucket = attrs.get('gcp_cloud_storage_bucket', '').strip()
         gcp_cloud_storage_json_key = attrs.get('gcp_cloud_storage_json_key', '').strip()
 
@@ -44,7 +46,7 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
             msg = _("UNKNOWN_TYPE")
             raise exceptions.ValidationError(msg)
 
-        data = {}
+        data = {} # type: Dict
 
         if type == 'gcp_cloud_storage':
 

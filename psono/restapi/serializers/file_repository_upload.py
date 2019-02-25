@@ -13,7 +13,7 @@ class FileRepositoryUploadSerializer(serializers.Serializer):
     def validate(self, attrs: dict) -> dict:
 
         file_transfer_id = attrs.get('file_transfer_id')
-        chunk_size = attrs.get('chunk_size')
+        chunk_size = attrs.get('chunk_size', 0)
         hash_checksum = attrs.get('hash_checksum', '').lower()
 
         chunk_size_limit = 128 * 1024 * 1024 + 40
