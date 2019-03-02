@@ -14,15 +14,16 @@ def create_cluster(title: str, file_size_limit) -> dict:
     private_key_hex = encrypt_with_db_secret(private_key_hex.decode())
     public_key_hex = encrypt_with_db_secret(public_key_hex.decode())
 
-
-    Fileserver_Cluster.objects.create(
+    cluster = Fileserver_Cluster.objects.create(
         title=title,
         auth_public_key=public_key_hex,
         auth_private_key=private_key_hex,
         file_size_limit=file_size_limit,
     )
 
-    return {}
+    return {
+        'cluster': cluster
+    }
 
 class Command(BaseCommand):
     help = 'Creates a cluster'
@@ -50,7 +51,7 @@ class Command(BaseCommand):
             self.stdout.write(result['error'])
             return
 
-        print('Created.')
+        print('Created. Cluster ID: ' + str(result['cluster'].id))
 
 
 

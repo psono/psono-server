@@ -34,7 +34,7 @@ class ReadShardSerializer(serializers.Serializer):
 
             if cmsl.shard.id not in shard_dic:
                 shard_dic[cmsl.shard.id] = {
-                    'shard_id':  cmsl.shard.id,
+                    'id':  cmsl.shard.id,
                     'shard_title':  cmsl.shard.title,
                     'shard_description':  cmsl.shard.description,
                     'fileserver': [],
