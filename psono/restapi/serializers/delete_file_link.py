@@ -33,13 +33,13 @@ class DeleteFileLinkSerializer(serializers.Serializer):
 
 
         if not file_ids and not parent_shares and not parent_datastores:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         # check write permissions on parent_shares
         for parent_share_id in parent_shares:
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # check write permissions on parent_datastores
@@ -47,7 +47,7 @@ class DeleteFileLinkSerializer(serializers.Serializer):
             try:
                 Data_Store.objects.get(pk=datastore_id, user=self.context['request'].user)
             except Data_Store.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         attrs['link_id'] = link_id

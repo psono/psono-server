@@ -15,7 +15,7 @@ class LogoutSerializer(serializers.Serializer):
             try:
                 attrs['token'] = Token.objects.get(id=session_id, user=self.context['request'].user)
             except Token.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
         else:
             attrs['token'] = self.context['request'].auth

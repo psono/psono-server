@@ -14,7 +14,7 @@ class DeleteYubikeySerializer(serializers.Serializer):
         try:
             yubikey_otp = Yubikey_OTP.objects.get(pk=yubikey_otp_id)
         except Yubikey_OTP.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['yubikey_otp'] = yubikey_otp

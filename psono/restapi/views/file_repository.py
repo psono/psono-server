@@ -1,4 +1,5 @@
 from django.db.models import F
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -14,7 +15,7 @@ from ..app_settings import (
 )
 from ..models import (
     File_Repository,
-    File_Repository_User,
+    File_Repository_Right,
 )
 
 from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
@@ -23,7 +24,7 @@ from ..authentication import TokenAuthentication
 
 class FileRepositoryView(GenericAPIView):
     """
-    Check the REST Token and returns a list of all file_repositorys or the specified file_repositorys details
+    Check the REST Token and returns a list of all file_repositories or the specified file_repositories details
     """
 
     authentication_classes = (TokenAuthentication,)
@@ -32,7 +33,7 @@ class FileRepositoryView(GenericAPIView):
 
     def get(self, request, file_repository_id=None, *args, **kwargs):
         """
-        Returns either a list of all file_repositorys with own access privileges or the members specified file_repository
+        Returns either a list of all file_repositories with own access privileges or the members specified file_repository
 
         :param request:
         :type request:
@@ -48,10 +49,10 @@ class FileRepositoryView(GenericAPIView):
 
         if not file_repository_id:
 
-            file_repositorys = []
+            file_repositories = []
 
-            for file_repository in File_Repository.objects.filter(file_repository_user__user=request.user).annotate(read=F('file_repository_user__read'), write=F('file_repository_user__write'), grant=F('file_repository_user__grant')):
-                file_repositorys.append({
+            for file_repository in File_Repository.objects.filter(file_repository_right__user=request.user).annotate(read=F('file_repository_right__read'), write=F('file_repository_right__write'), grant=F('file_repository_right__grant'), accepted=F('file_repository_right__accepted'), file_repository_right_id=F('file_repository_right__id')):
+                file_repositories.append({
                     'id': file_repository.id,
                     'title': file_repository.title,
                     'type': file_repository.type,
@@ -59,29 +60,57 @@ class FileRepositoryView(GenericAPIView):
                     'read': file_repository.read,
                     'write': file_repository.write,
                     'grant': file_repository.grant,
+                    'accepted': file_repository.accepted,
+                    'file_repository_right_id': file_repository.file_repository_right_id,
                 })
 
-            return Response({'file_repositorys': file_repositorys},
+            # if settings.DEFAULT_FILE_REPOSITORY_ENABLED:
+            #     file_repositories.append({
+            #         'id': settings.DEFAULT_FILE_REPOSITORY_UUID,
+            #         'title': settings.DEFAULT_FILE_REPOSITORY_TITLE,
+            #         'type': settings.DEFAULT_FILE_REPOSITORY_TYPE,
+            #         'active': True,
+            #         'read': False,
+            #         'write': False,
+            #         'grant': False,
+            #     })
+
+            return Response({'file_repositories': file_repositories},
                             status=status.HTTP_200_OK)
         else:
             # Returns the specified file_repository if the user has any rights for it
             try:
-                file_repository = File_Repository.objects.select_related('file_repository_user').get(id=file_repository_id, file_repository_user__user=request.user, file_repository_user__read=True)
+                file_repository = File_Repository.objects.annotate(read=F('file_repository_right__read'), write=F('file_repository_right__write'), grant=F('file_repository_right__grant')).get(id=file_repository_id, file_repository_right__user=request.user, file_repository_right__accepted=True)
             except File_Repository.DoesNotExist:
-                return Response({"message": "You don't have permission to access or it does not exist.",
+                return Response({"message": "NO_PERMISSION_OR_NOT_EXIST",
                                  "resource_id": file_repository_id}, status=status.HTTP_400_BAD_REQUEST)
-
-            data = json.loads(decrypt_with_db_secret(file_repository.data))
 
             response = {
                 'id': file_repository.id,
                 'title': file_repository.title,
                 'type': file_repository.type,
                 'active': file_repository.active,
+                'read': file_repository.read,
+                'write': file_repository.write,
+                'grant': file_repository.grant,
+                'file_repository_rights': [],
             }
 
-            for key, value in data.items():
-                response[key] = value
+            if file_repository.read:
+                data = json.loads(decrypt_with_db_secret(file_repository.data))
+                for key, value in data.items():
+                    response[key] = value
+
+            if file_repository.grant:
+                for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository.id).select_related('user').only('id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
+                    response['file_repository_rights'].append({
+                        'id': file_repository_right.id,
+                        'user_username': file_repository_right.user.username,
+                        'read': file_repository_right.read,
+                        'write': file_repository_right.write,
+                        'grant': file_repository_right.grant,
+                        'accepted': file_repository_right.accepted,
+                    })
 
             return Response(response,
                             status=status.HTTP_200_OK)
@@ -114,9 +143,13 @@ class FileRepositoryView(GenericAPIView):
             active=True,
         )
 
-        File_Repository_User.objects.create(
+        File_Repository_Right.objects.create(
             user=request.user,
             file_repository=file_repository,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
         )
 
         return Response({

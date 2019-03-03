@@ -13,7 +13,7 @@ class ReadGroupRightsSerializer(serializers.Serializer):
             try:
                 User_Group_Membership.objects.get(user=self.context['request'].user, group_id=group_id, accepted=True)
             except User_Group_Membership.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
         attrs['group_id'] = group_id
         return attrs

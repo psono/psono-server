@@ -89,7 +89,7 @@ class CreateMembershipSerializer(serializers.Serializer):
             # This line also ensures that the desired group exists and that the user firing the request has admin rights
             User_Group_Membership.objects.get(group_id=value, user=self.context['request'].user, group_admin=True, accepted=True)
         except User_Group_Membership.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         return value

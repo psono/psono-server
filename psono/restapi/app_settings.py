@@ -77,6 +77,11 @@ from .serializers import (
     DeleteFileRepositorySerializer as DefaultDeleteFileRepositorySerializer,
     FileRepositoryUploadSerializer as DefaultFileRepositoryUploadSerializer,
     FileRepositoryDownloadSerializer as DefaultFileRepositoryDownloadSerializer,
+    FileRepositoryRightAcceptSerializer as DefaultFileRepositoryRightAcceptSerializer,
+    FileRepositoryRightDeclineSerializer as DefaultFileRepositoryRightDeclineSerializer,
+    CreateFileRepositoryRightSerializer as DefaultCreateFileRepositoryRightSerializer,
+    UpdateFileRepositoryRightSerializer as DefaultUpdateFileRepositoryRightSerializer,
+    DeleteFileRepositoryRightSerializer as DefaultDeleteFileRepositoryRightSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -600,6 +605,42 @@ FileRepositoryDownloadSerializer = import_callable(
     serializers.get(
         'FILE_REPOSITORY_DOWNLOAD_SERIALIZER',
         DefaultFileRepositoryDownloadSerializer
+    )
+)
+
+FileRepositoryRightAcceptSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_RIGHT_ACCEPT_SERIALIZER',
+        DefaultFileRepositoryRightAcceptSerializer
+    )
+)
+
+FileRepositoryRightDeclineSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_RIGHT_DECLINE_SERIALIZER',
+        DefaultFileRepositoryRightDeclineSerializer
+    )
+)
+
+CreateFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultCreateFileRepositoryRightSerializer
+    )
+)
+
+UpdateFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultUpdateFileRepositoryRightSerializer
+    )
+)
+
+
+DeleteFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultDeleteFileRepositoryRightSerializer
     )
 )
 

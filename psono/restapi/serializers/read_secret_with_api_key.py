@@ -28,7 +28,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             api_key = api_key_secret.api_key
             secret = api_key_secret.secret
         except API_Key_Secret.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         if api_key_secret_key and not api_key.allow_insecure_access:
@@ -36,7 +36,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not user_has_rights_on_secret(api_key.user_id, secret.id, True, None):
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         secret_key = None

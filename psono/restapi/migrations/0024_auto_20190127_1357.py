@@ -175,7 +175,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='File_Repository_User',
+            name='File_Repository_Right',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
@@ -183,6 +183,7 @@ class Migration(migrations.Migration):
                 ('read', models.BooleanField(default=True, help_text='Weather this user can read the configured file repository details', verbose_name='Read')),
                 ('write', models.BooleanField(default=True, help_text='Weather this user can update the configured file repository', verbose_name='Write')),
                 ('grant', models.BooleanField(default=True, help_text='Weather this user can change permissions and delete the configured file repository', verbose_name='Grant')),
+                ('accepted', models.BooleanField(default=False, help_text='Defines if the file repository has been accepted or still waits for approval', verbose_name='Accepted')),
             ],
             options={
                 'abstract': False,
@@ -261,13 +262,13 @@ class Migration(migrations.Migration):
             unique_together={('position', 'file')},
         ),
         migrations.AddField(
-            model_name='file_repository_user',
+            model_name='file_repository_right',
             name='file_repository',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_user', to='restapi.File_Repository'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_right', to='restapi.File_Repository'),
         ),
         migrations.AddField(
-            model_name='file_repository_user',
+            model_name='file_repository_right',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_user', to='restapi.User'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_right', to='restapi.User'),
         ),
     ]

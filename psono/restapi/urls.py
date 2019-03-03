@@ -68,6 +68,9 @@ urlpatterns = [
     url(r'^file/(?P<file_id>[^/]+)/$', views.FileView.as_view(), name='file'),
     url(r'^shard/$', views.ShardView.as_view(), name='shard'),
 
+    url(r'^file-repository/right/accept/$', views.FileRepositoryRightAcceptView.as_view(), name='file_repository_right_accept'),
+    url(r'^file-repository/right/decline/$', views.FileRepositoryRightDeclineView.as_view(), name='file_repository_right_decline'),
+    url(r'^file-repository/right/$', views.FileRepositoryRightView.as_view(), name='file_repository_right'),
     url(r'^file-repository/download/$', views.FileRepositoryDownloadView.as_view(), name='file_repository_download'),
     url(r'^file-repository/upload/$', views.FileRepositoryUploadView.as_view(), name='file_repository_upload'),
     url(r'^file-repository/(?P<file_repository_id>[^/]+)/$', views.FileRepositoryView.as_view(), name='file_repository'),

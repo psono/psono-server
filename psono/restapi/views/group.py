@@ -162,7 +162,7 @@ class GroupView(GenericAPIView):
                 membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
             except User_Group_Membership.DoesNotExist:
 
-                return Response({"message":"You don't have permission to access or it does not exist.",
+                return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
                                  "resource_id": group_id}, status=status.HTTP_400_BAD_REQUEST)
 
 

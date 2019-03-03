@@ -48,7 +48,7 @@ class CreateFileSerializer(serializers.Serializer):
         if file_repository_id is not None:
             # check if the file repository exists
             try:
-                file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, file_repository_user__user=self.context['request'].user, active=True)
+                file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, file_repository_right__user=self.context['request'].user, active=True, file_repository_right__accepted=True)
             except File_Repository.DoesNotExist:
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)

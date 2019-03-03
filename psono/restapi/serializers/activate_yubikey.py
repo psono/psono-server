@@ -30,7 +30,7 @@ class ActivateYubikeySerializer(serializers.Serializer):
         try:
             yubikey_otp = Yubikey_OTP.objects.get(pk=yubikey_id, user=self.context['request'].user)
         except Yubikey_OTP.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         decrypted_yubikey_id = decrypt_with_db_secret(yubikey_otp.yubikey_id).encode()

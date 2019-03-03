@@ -15,7 +15,7 @@ class DeleteFileRepositorySerializer(serializers.Serializer):
 
         # check if file_repository exists
         try:
-            file_repository = File_Repository.objects.get(pk=file_repository_id, file_repository_user__user=self.context['request'].user, file_repository_user__grant=True)
+            file_repository = File_Repository.objects.get(pk=file_repository_id, file_repository_right__user=self.context['request'].user, file_repository_right__accepted=True, file_repository_right__grant=True, file_repository_right__write=True)
         except File_Repository.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)

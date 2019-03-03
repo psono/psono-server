@@ -33,17 +33,17 @@ class CreateShareLinkSerializer(serializers.Serializer):
             try:
                 Data_Store.objects.get(pk=parent_datastore_id, user=self.context['request'].user)
             except Data_Store.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # check permissions on parent share (and if it exists)
         if parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         # check permissions on share (and if it exists)
         if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['link_id'] = link_id

@@ -75,3 +75,8 @@ from .update_file_repository import *
 from .delete_file_repository import *
 from .file_repository_download import *
 from .file_repository_upload import *
+from .file_repository_accept import *
+from .file_repository_decline import *
+from .create_file_repository_right import *
+from .update_file_repository_right import *
+from .delete_file_repository_right import *

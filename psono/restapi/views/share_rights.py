@@ -51,14 +51,14 @@ class ShareRightsView(GenericAPIView):
             share = Share.objects.get(pk=share_id)
         except Share.DoesNotExist:
 
-            return Response({"message":"You don't have permission to access or it does not exist."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message":"NO_PERMISSION_OR_NOT_EXIST"}, status=status.HTTP_403_FORBIDDEN)
 
 
         own_share_rights = calculate_user_rights_on_share(request.user.id, share_id)
 
         if not own_share_rights['grant']:
 
-            raise PermissionDenied({"message":"You don't have permission to access"})
+            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
         user_share_rights = []
         group_share_rights = []

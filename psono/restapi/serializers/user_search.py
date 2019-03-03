@@ -58,7 +58,7 @@ class UserSearchSerializer(serializers.Serializer):
                     user_index[user.id] = True
 
         if len(users) == 0:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['users'] = users

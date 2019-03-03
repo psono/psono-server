@@ -18,14 +18,14 @@ class UpdateMembershipSerializer(serializers.Serializer):
         try:
             membership = User_Group_Membership.objects.get(pk=membership_id)
         except User_Group_Membership.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         # Lets check if the current user can do that
         try:
             User_Group_Membership.objects.get(user=self.context['request'].user, group=membership.group, group_admin=True, accepted=True)
         except User_Group_Membership.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['membership'] = membership
