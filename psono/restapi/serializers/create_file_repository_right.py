@@ -14,10 +14,8 @@ class CreateFileRepositoryRightSerializer(serializers.Serializer):
 
     def validate_file_repository_id(self, value):
 
-        try:
-            # This line also ensures that the desired group exists and that the user firing the request has admin rights
-            File_Repository_Right.objects.get(file_repository_id=value, user=self.context['request'].user, grant=True, accepted=True)
-        except File_Repository_Right.DoesNotExist:
+        # This line also ensures that the desired group exists and that the user firing the request has admin rights
+        if not File_Repository_Right.objects.filter(file_repository_id=value, user=self.context['request'].user, grant=True, accepted=True).exists():
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 

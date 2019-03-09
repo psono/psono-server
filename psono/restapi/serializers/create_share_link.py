@@ -30,9 +30,7 @@ class CreateShareLinkSerializer(serializers.Serializer):
 
         # check if datastore exists
         if parent_datastore_id is not None:
-            try:
-                Data_Store.objects.get(pk=parent_datastore_id, user=self.context['request'].user)
-            except Data_Store.DoesNotExist:
+            if not Data_Store.objects.filter(pk=parent_datastore_id, user=self.context['request'].user).exists():
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 

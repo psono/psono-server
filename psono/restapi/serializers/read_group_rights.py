@@ -10,9 +10,7 @@ class ReadGroupRightsSerializer(serializers.Serializer):
 
         if group_id:
             # Lets check if the current user can do that
-            try:
-                User_Group_Membership.objects.get(user=self.context['request'].user, group_id=group_id, accepted=True)
-            except User_Group_Membership.DoesNotExist:
+            if not User_Group_Membership.objects.filter(user=self.context['request'].user, group_id=group_id, accepted=True).exists():
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
         attrs['group_id'] = group_id

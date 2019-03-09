@@ -44,9 +44,7 @@ class DeleteShareLinkSerializer(serializers.Serializer):
 
         # check write permissions on datastores
         for datastore_id in datastores:
-            try:
-                Data_Store.objects.get(pk=datastore_id, user=self.context['request'].user)
-            except Data_Store.DoesNotExist:
+            if not Data_Store.objects.filter(pk=datastore_id, user=self.context['request'].user).exists():
                 msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
