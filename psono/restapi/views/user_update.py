@@ -1,5 +1,4 @@
-from django.conf import settings
-from ..utils import encrypt_with_db_secret
+from ..utils import encrypt_with_db_secret, get_static_bcrypt_hash_from_email
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
@@ -12,7 +11,6 @@ from ..app_settings import (
 
 
 from ..authentication import TokenAuthentication
-import bcrypt
 
 
 class UserUpdate(GenericAPIView):
@@ -55,7 +53,7 @@ class UserUpdate(GenericAPIView):
             # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
             # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
             # if you have a better solution, please let me know.
-            request.user.email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            request.user.email_bcrypt = get_static_bcrypt_hash_from_email(email)
             request.user.email = encrypt_with_db_secret(email)
 
         # Password Change

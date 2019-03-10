@@ -31,13 +31,13 @@ class CreateSecretSerializer(serializers.Serializer):
         if parent_share_id is not None:
             # check permissions on parent
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         if parent_datastore_id is not None:
             parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
             if not parent_datastore:
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         attrs['parent_share_id'] = parent_share_id

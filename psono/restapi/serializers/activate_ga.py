@@ -22,7 +22,7 @@ class ActivateGASerializer(serializers.Serializer):
         try:
             google_authenticator = Google_Authenticator.objects.get(pk=google_authenticator_id, user=self.context['request'].user, active=False)
         except Google_Authenticator.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         decrypted_ga_secret = decrypt_with_db_secret(google_authenticator.secret)

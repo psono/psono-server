@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 
 from restapi import models
-from restapi.utils import generate_authkey, decrypt_with_db_secret
+from restapi.utils import generate_authkey, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
 try:
     from StringIO import StringIO
@@ -77,7 +77,7 @@ class CommandCreateuserTestCase(TestCase):
 
         user = models.User.objects.get(username=username)
 
-        email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
         self.assertEqual(decrypt_with_db_secret(user.email), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)

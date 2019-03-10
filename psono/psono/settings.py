@@ -19,6 +19,7 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import six
+from decimal import Decimal
 from urllib.parse import urlparse
 from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
@@ -34,7 +35,7 @@ except ImportError:
 HOME = os.path.expanduser('~')
 
 with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
-    config = yaml.load(stream)
+    config = yaml.safe_load(stream)
 
 
 
@@ -101,8 +102,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'restapi',
     'administration',
+    'fileserver',
+    'credit',
 ]
-
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
@@ -119,10 +121,7 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher'
 )
 
 REST_FRAMEWORK = {
@@ -156,6 +155,9 @@ REST_FRAMEWORK = {
         'registration': '20/day',
         'user_delete': '20/day',
         'user_update': '20/day',
+        'fileserver_alive': '61/minute',
+        'fileserver_upload': '10000/minute',
+        'fileserver_download': '10000/minute',
     },
 }
 
@@ -285,7 +287,15 @@ if not config_get('THROTTLING', True):
 DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
 
 MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
+FILESERVER_HANDLER_ENABLED = config_get('FILESERVER_HANDLER_ENABLED', True)
+CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
+FILES_ENABLED = config_get('FILES_ENABLED', False)
 
+FILE_REPOSITORY_TYPES = [
+    'gcp_cloud_storage'
+]
+
+FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)
 AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
 USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
 USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
@@ -302,6 +312,27 @@ RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) #
 REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
 DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20) # in seconds
+
+# Credit costs
+SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
+SHARD_CREDIT_DEFAULT_NEW_USER = Decimal(str(config_get('SHARD_CREDIT_DEFAULT_NEW_USER', 0))) # the default credits in Euro for new users
+SHARD_CREDIT_COSTS_UPLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_UPLOAD', 0))) # costs in Euro for an upload of 1 GB
+SHARD_CREDIT_COSTS_DOWNLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_DOWNLOAD', 0))) # costs in Euro for a download of 1 GB
+SHARD_CREDIT_COSTS_STORAGE = Decimal(str(config_get('SHARD_CREDIT_COSTS_STORAGE', 0))) # costs in Euro for the storage of 1 GB per day
+
+# DEFAULT_FILE_REPOSITORY_ENABLED = config_get('DEFAULT_FILE_REPOSITORY_ENABLED', False)
+# DEFAULT_FILE_REPOSITORY_UUID = config_get('DEFAULT_FILE_REPOSITORY_ENABLED', '00000000-0000-0000-0000-000000000000') # Don't change this as you might lose access to data
+# DEFAULT_FILE_REPOSITORY_TITLE = config_get('DEFAULT_FILE_REPOSITORY_TITLE', 'Default Repository')
+# DEFAULT_FILE_REPOSITORY_BUCKET = config_get('DEFAULT_FILE_REPOSITORY_BUCKET', None)
+# DEFAULT_FILE_REPOSITORY_TYPE = config_get('DEFAULT_FILE_REPOSITORY_TYPE', 'gcp_cloud_storage')
+# DEFAULT_FILE_REPOSITORY_CREDENTIALS = config_get('DEFAULT_FILE_REPOSITORY_CREDENTIALS', None)
+# # Read path to config with defaults for environment specific variables
+# DEFAULT_FILE_REPOSITORY_CREDENTIAL_PATH = None
+#
+# if DEFAULT_FILE_REPOSITORY_TYPE == 'gcp_cloud_storage':
+#     DEFAULT_FILE_REPOSITORY_CREDENTIAL_PATH = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', None)
+#
+# DEFAULT_FILE_REPOSITORY_CREDENTIAL_PATH = config_get('DEFAULT_FILE_REPOSITORY_CREDENTIAL_PATH', DEFAULT_FILE_REPOSITORY_CREDENTIAL_PATH)
 
 DATABASE_ROUTERS = ['restapi.database_router.MainRouter']
 
@@ -361,10 +392,15 @@ def generate_signature():
         'authentication_methods': AUTHENTICATION_METHODS,
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
+        'files': FILES_ENABLED,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'type': 'CE',
+        'credit_buy_address': SHARD_CREDIT_BUY_ADDRESS,
+        'credit_costs_upload': str(SHARD_CREDIT_COSTS_UPLOAD),
+        'credit_costs_download': str(SHARD_CREDIT_COSTS_DOWNLOAD),
+        'credit_costs_storage': str(SHARD_CREDIT_COSTS_STORAGE),
     }
 
     info = json.dumps(info)

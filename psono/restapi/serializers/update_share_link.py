@@ -36,41 +36,37 @@ class UpdateShareLinkSerializer(serializers.Serializer):
         old_datastores = list(unique_everseen(old_datastores))
 
         if not shares and not old_parents and not old_datastores:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         # check grant permissions on share
         for share_id in shares:
             if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # check write permissions on old_parents
         for old_parent_share_id in old_parents:
             if not user_has_rights_on_share(self.context['request'].user.id, old_parent_share_id, write=True):
-                msg = _("You don't have permission to access or it does not exist.")
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # check write permissions on old_datastores
         for old_datastore_id in old_datastores:
-            try:
-                Data_Store.objects.get(pk=old_datastore_id, user=self.context['request'].user)
-            except Data_Store.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+            if not Data_Store.objects.filter(pk=old_datastore_id, user=self.context['request'].user).exists():
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         # check permissions on new_parent_share (and if it exists)
         if new_parent_share_id and not user_has_rights_on_share(self.context['request'].user.id,
                                                                 new_parent_share_id, write=True):
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         # check if new parent datastore exists and belongs to the user
         if new_parent_datastore_id is not None:
-            try:
-                Data_Store.objects.get(pk=new_parent_datastore_id, user=self.context['request'].user)
-            except Data_Store.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+            if not Data_Store.objects.filter(pk=new_parent_datastore_id, user=self.context['request'].user).exists():
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
 

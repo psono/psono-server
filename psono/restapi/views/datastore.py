@@ -53,7 +53,7 @@ class DatastoreView(GenericAPIView):
             datastore = get_datastore(datastore_id, request.user)
             if not datastore:
 
-                raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+                raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
             return Response({
                 'data': readbuffer(datastore.data),

@@ -15,16 +15,9 @@ class RemoveSecretFromAPIKeySerializer(serializers.Serializer):
 
         # check if api_key_secret exists
         try:
-            api_key_secret = API_Key_Secret.objects.get(pk=api_key_secret_id)
+            api_key_secret = API_Key_Secret.objects.get(pk=api_key_secret_id, api_key__user=self.context['request'].user)
         except API_Key_Secret.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
-            raise exceptions.ValidationError(msg)
-
-        # check if user owns the api key
-        try:
-            API_Key.objects.get(pk=api_key_secret.api_key_id, user=self.context['request'].user)
-        except API_Key.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['api_key_secret'] = api_key_secret

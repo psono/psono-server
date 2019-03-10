@@ -1,6 +1,5 @@
 from django.conf import settings
 
-import six
 from importlib import import_module
 
 from .serializers import (
@@ -42,6 +41,8 @@ from .serializers import (
     DeleteShareLinkSerializer as DefaultDeleteShareLinkSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     UpdateShareSerializer as DefaultUpdateShareSerializer,
+    CreateFileSerializer as DefaultCreateFileSerializer,
+    ReadFileSerializer as DefaultReadFileSerializer,
     DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
@@ -52,6 +53,8 @@ from .serializers import (
     ShareRightDeclineSerializer as DefaultShareRightDeclineSerializer,
     MoveSecretLinkSerializer as DefaultMoveSecretLinkSerializer,
     DeleteSecretLinkSerializer as DefaultDeleteSecretLinkSerializer,
+    MoveFileLinkSerializer as DefaultMoveFileLinkSerializer,
+    DeleteFileLinkSerializer as DefaultDeleteFileLinkSerializer,
     CreateGroupSerializer as DefaultCreateGroupSerializer,
     ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
     CreateSecretSerializer as DefaultCreateSecretSerializer,
@@ -68,13 +71,23 @@ from .serializers import (
     DeleteAPIKeySerializer as DefaultDeleteAPIKeySerializer,
     AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
     RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
+    ReadShardSerializer as DefaultReadShardSerializer,
+    CreateFileRepositorySerializer as DefaultCreateFileRepositorySerializer,
+    UpdateFileRepositorySerializer as DefaultUpdateFileRepositorySerializer,
+    DeleteFileRepositorySerializer as DefaultDeleteFileRepositorySerializer,
+    FileRepositoryUploadSerializer as DefaultFileRepositoryUploadSerializer,
+    FileRepositoryDownloadSerializer as DefaultFileRepositoryDownloadSerializer,
+    FileRepositoryRightAcceptSerializer as DefaultFileRepositoryRightAcceptSerializer,
+    FileRepositoryRightDeclineSerializer as DefaultFileRepositoryRightDeclineSerializer,
+    CreateFileRepositoryRightSerializer as DefaultCreateFileRepositoryRightSerializer,
+    UpdateFileRepositoryRightSerializer as DefaultUpdateFileRepositoryRightSerializer,
+    DeleteFileRepositoryRightSerializer as DefaultDeleteFileRepositoryRightSerializer,
 )
 
 def import_callable(path_or_callable):
     if hasattr(path_or_callable, '__call__'):
         return path_or_callable
     else:
-        assert isinstance(path_or_callable, six.string_types)
         package, attr = path_or_callable.rsplit('.', 1)
         return getattr(import_module(package), attr)
 
@@ -339,6 +352,22 @@ UpdateShareSerializer = import_callable(
     )
 )
 
+
+CreateFileSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_SERIALIZER',
+        DefaultCreateFileSerializer
+    )
+)
+
+
+ReadFileSerializer = import_callable(
+    serializers.get(
+        'READ_FILE_SERIALIZER',
+        DefaultReadFileSerializer
+    )
+)
+
 DatastoreOverviewSerializer = import_callable(
     serializers.get(
         'DATASTORE_OVERVIEW_SERIALIZER',
@@ -407,6 +436,20 @@ DeleteSecretLinkSerializer = import_callable(
     serializers.get(
         'DELETE_SECRET_LINK_SERIALIZER',
         DefaultDeleteSecretLinkSerializer
+    )
+)
+
+MoveFileLinkSerializer = import_callable(
+    serializers.get(
+        'MOVE_FILE_LINK_SERIALIZER',
+        DefaultMoveFileLinkSerializer
+    )
+)
+
+DeleteFileLinkSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_LINK_SERIALIZER',
+        DefaultDeleteFileLinkSerializer
     )
 )
 
@@ -519,6 +562,85 @@ RemoveSecretFromAPIKeySerializer = import_callable(
     serializers.get(
         'REMOVE_SECRET_FROM_API_KEY_SERIALIZER',
         DefaultRemoveSecretFromAPIKeySerializer
+    )
+)
+
+
+ReadShardSerializer = import_callable(
+    serializers.get(
+        'READ_SHARD_SERIALIZER',
+        DefaultReadShardSerializer
+    )
+)
+
+CreateFileRepositorySerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_REPOSITORY_SERIALIZER',
+        DefaultCreateFileRepositorySerializer
+    )
+)
+
+UpdateFileRepositorySerializer = import_callable(
+    serializers.get(
+        'UPDATE_FILE_REPOSITORY_SERIALIZER',
+        DefaultUpdateFileRepositorySerializer
+    )
+)
+
+DeleteFileRepositorySerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_REPOSITORY_SERIALIZER',
+        DefaultDeleteFileRepositorySerializer
+    )
+)
+
+FileRepositoryUploadSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_UPLOAD_SERIALIZER',
+        DefaultFileRepositoryUploadSerializer
+    )
+)
+
+FileRepositoryDownloadSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_DOWNLOAD_SERIALIZER',
+        DefaultFileRepositoryDownloadSerializer
+    )
+)
+
+FileRepositoryRightAcceptSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_RIGHT_ACCEPT_SERIALIZER',
+        DefaultFileRepositoryRightAcceptSerializer
+    )
+)
+
+FileRepositoryRightDeclineSerializer = import_callable(
+    serializers.get(
+        'FILE_REPOSITORY_RIGHT_DECLINE_SERIALIZER',
+        DefaultFileRepositoryRightDeclineSerializer
+    )
+)
+
+CreateFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultCreateFileRepositoryRightSerializer
+    )
+)
+
+UpdateFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultUpdateFileRepositoryRightSerializer
+    )
+)
+
+
+DeleteFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultDeleteFileRepositoryRightSerializer
     )
 )
 

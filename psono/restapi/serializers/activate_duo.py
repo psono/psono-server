@@ -18,7 +18,7 @@ class ActivateDuoSerializer(serializers.Serializer):
         try:
             duo = Duo.objects.get(pk=duo_id, user=self.context['request'].user, active=False)
         except Duo.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         enrollment_status = duo_auth_enroll_status(duo.duo_integration_key, decrypt_with_db_secret(duo.duo_secret_key), duo.duo_host, duo.enrollment_user_id, duo.enrollment_activation_code)

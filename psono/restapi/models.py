@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
 
+from decimal import Decimal
 import binascii
 import os
 from hashlib import sha512
@@ -52,6 +53,8 @@ class User(models.Model):
         help_text=_('True once ga 2fa is enabled'))
     yubikey_otp_enabled = models.BooleanField(_('Yubikey OTP 2FA enabled'), default=False,
         help_text=_('True once yubikey 2fa is enabled'))
+
+    credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
     is_cachable = True
 
@@ -405,13 +408,13 @@ class Group(models.Model):
 
 class Secret_Link(models.Model):
     """
-    The link object for secrets, identifying the position of the Secret in a share or datastore
+    The link object for secrets, identifying the position of the secret in a share or datastore
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
     secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='links',
-                              help_text=_('The Secret, that this link links to.'))
+                              help_text=_('The secret, that this link links to.'))
     link_id = models.UUIDField(unique=True)
     parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='parent_links', null=True,
                               help_text=_('The share, where this link ends and gets its permissions from'))
@@ -566,6 +569,282 @@ class Share_Tree(models.Model):
         abstract = False
 
 
+class Fileserver_Cluster(models.Model):
+    """
+    The Fileserver cluster. A group of fileservers belonging to the same security zone. e.g. "internal vs external" or
+    "Core vs DMZ" or "Local vs Cloud" or "HR vs Management vs Rest" or "Document class 1 vs Document class 2"
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    title = models.CharField(_('Title'), max_length=256)
+    file_size_limit = models.BigIntegerField('File size limit',
+        help_text=_('File size limit in bytes'))
+    auth_public_key = models.CharField(_('public key'), max_length=256,
+        help_text=_('Public key given to fileservers of this cluster to authenticate against the server'))
+    auth_private_key = models.CharField(_('private key'), max_length=256,
+        help_text=_('Private key used to validate the request of the '))
+
+    class Meta:
+        abstract = False
+
+
+class Fileserver_Shard(models.Model):
+    """
+    The shards. Container for files.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    title = models.CharField(_('Title'), max_length=256)
+    description = models.TextField(_('Description'))
+
+    active = models.BooleanField(_('Activated'), default=True,
+        help_text=_('Specifies if the shard is offline or online'))
+
+    class Meta:
+        abstract = False
+
+
+class Fileserver_Cluster_Shard_Link(models.Model):
+    """
+    The restrictive rule to allow or block access to shards for members of a cluster
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    cluster = models.ForeignKey(Fileserver_Cluster, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The cluster this shard belongs to'))
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The shard this cluster belongs to'))
+    read = models.BooleanField(_('Read'), default=True,
+        help_text=_('Weather this shard accepts reads'))
+    write = models.BooleanField(_('Write'), default=True,
+        help_text=_('Weather this shard accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this connection accepts deletes'))
+
+    class Meta:
+        abstract = False
+        unique_together = ('cluster', 'shard',)
+
+
+class Fileserver_Cluster_Members(models.Model):
+    """
+    The actual members of a fileserver cluster, populated automatically with the current fileservers and their session infos
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    create_ip = models.GenericIPAddressField()
+
+    key = models.CharField(max_length=128, unique=True)
+
+    fileserver_cluster = models.ForeignKey(Fileserver_Cluster, on_delete=models.CASCADE, related_name='members',
+                              help_text=_('The cluster this member belongs to'))
+    public_key = models.CharField(_('public key'), max_length=256,
+        help_text=_('Public key of the member that is sent to the client'))
+    secret_key = models.CharField(_('Secret Key'), max_length=256,
+        help_text=_('Symmetric Key for the transport encryption'))
+    url = models.CharField(_('Public URL'), max_length=256)
+    read = models.BooleanField(_('Read'), default=True,
+        help_text=_('Weather this server accepts reads'))
+    write = models.BooleanField(_('Write'), default=True,
+        help_text=_('Weather this server accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this server accepts deletes'))
+
+    valid_till = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        abstract = False
+
+    @staticmethod
+    def is_authenticated():
+        """
+        Always return True. This is a way to tell if the fileserver has been
+        authenticated.
+        """
+        return True
+
+
+class File_Repository(models.Model):
+    """
+    The actual members of a fileserver cluster, populated automatically with the current fileservers and their session infos
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    title = models.CharField(_('title'), max_length=256)
+    type = models.CharField(max_length=32)
+
+    active = models.BooleanField(_('Activated'), default=False,
+        help_text=_('Specifies if the file storage is active or not'))
+
+    data = models.BinaryField()
+
+    class Meta:
+        abstract = False
+
+
+class File_Repository_Right(models.Model):
+    """
+    The access permissions for file repository config.
+
+    Read: The user can read the config
+    Write: The user can write / update the config
+    Grant: The user can share the config with other users
+
+    Info: These permissions have nothing to do, if a user can download files from this repository. Download permissions
+    are determined if the user has access to a file object according to datastore permissions.
+
+    Info: The sole existence of this object for a user means, that he can upload to this repository.
+    (even with read = False, write = false, grant = false, as they have nothing to do with the permission to upload)
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='file_repository_right')
+    file_repository = models.ForeignKey(File_Repository, on_delete=models.CASCADE, related_name='file_repository_right')
+
+    read = models.BooleanField(_('Read'), default=True,
+        help_text=_('Weather this user can read the configured file repository details'))
+    write = models.BooleanField(_('Write'), default=True,
+        help_text=_('Weather this user can update the configured file repository'))
+    grant = models.BooleanField(_('Grant'), default=True,
+        help_text=_('Weather this user can change permissions and delete the configured file repository'))
+    accepted = models.BooleanField(_('Accepted'), default=False,
+                                   help_text=_('Defines if the file repository has been accepted or still waits for approval'))
+
+
+    class Meta:
+        abstract = False
+
+
+class Fileserver_Cluster_Member_Shard_Link(models.Model):
+    """
+    The shards that are announced to be accessible by this Cluster Member
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    member = models.ForeignKey(Fileserver_Cluster_Members, on_delete=models.CASCADE, related_name='member_links',
+                              help_text=_('The cluster member this link belongs to'))
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, related_name='member_links',
+                              help_text=_('The shard this link belongs to'))
+    read = models.BooleanField(_('Read'), default=True,
+        help_text=_('Weather this shard accepts reads'))
+    write = models.BooleanField(_('Write'), default=True,
+        help_text=_('Weather this shard accepts writes'))
+    delete = models.BooleanField(_('Delete'), default=True,
+        help_text=_('Weather this shard accepts delete jobs'))
+    ip_read_whitelist = models.CharField(_('IP read whitelist'), max_length=2048,
+        help_text=_('IP Whitelist for read operations'), null=True)
+    ip_write_whitelist = models.CharField(_('IP write whitelist'), max_length=2048,
+        help_text=_('IP Whitelist for write operations'), null=True)
+    ip_read_blacklist = models.CharField(_('IP read blacklist'), max_length=2048,
+        help_text=_('IP Blacklist for read operations'), null=True)
+    ip_write_blacklist = models.CharField(_('IP write blacklist'), max_length=2048,
+        help_text=_('IP Blacklist for write operations'), null=True)
+
+    class Meta:
+        abstract = False
+        unique_together = ('member', 'shard',)
+
+
+class File(models.Model):
+    """
+    The files object.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file')
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, null=True, related_name='file')
+    file_repository = models.ForeignKey(File_Repository, on_delete=models.CASCADE, null=True, related_name='file')
+    chunk_count = models.IntegerField('Chunk Count',
+        help_text=_('The amount of chunks'))
+    size = models.BigIntegerField('Size',
+        help_text=_('The size of the files in bytes (including encryption overhead)'))
+
+    delete_date = models.DateTimeField(null=True)
+
+    class Meta:
+        abstract = False
+
+
+class File_Link(models.Model):
+    """
+    The link object for files, identifying the position of the file in a share or datastore
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='links',
+                              help_text=_('The file, that this link links to.'))
+    link_id = models.UUIDField(unique=True)
+    parent_share = models.ForeignKey(Share, on_delete=models.CASCADE, related_name='files', null=True,
+                              help_text=_('The share, where this link ends and gets its permissions from'))
+
+    parent_datastore = models.ForeignKey(Data_Store, on_delete=models.CASCADE, related_name='files', null=True,
+                                         help_text=_('The datastore, where this link ends'))
+
+    class Meta:
+        abstract = False
+
+
+class File_Chunk(models.Model):
+    """
+    The file chunk object.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_chunk')
+    hash_checksum = models.CharField(max_length=128, unique=True)
+    position = models.IntegerField('Position',
+        help_text=_('The position of the chunk in the file'))
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='file_chunk')
+    size = models.BigIntegerField('Size',
+        help_text=_('The size of the chunk in bytes (including encryption overhead)'))
+
+    class Meta:
+        abstract = False
+        unique_together = ('position', 'file',)
+
+
+
+class File_Transfer(models.Model):
+    """
+    The files transfer object.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    shard = models.ForeignKey(Fileserver_Shard, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    file_repository = models.ForeignKey(File_Repository, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
+    type = models.CharField(max_length=8, default='download')
+    credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
+
+    size = models.BigIntegerField('Size',
+                                  help_text=_('The amount in bytes that will be transferred (including encryption overhead)'))
+
+    size_transferred = models.BigIntegerField('Transferred Size',
+                                              help_text=_('The amount in bytes that have been transferred (including encryption overhead)'))
+    chunk_count = models.IntegerField('Chunk Count',
+        help_text=_('The amount of chunks'))
+    chunk_count_transferred = models.IntegerField('Chunk Count Transfered',
+        help_text=_('The amount of chunks already transfered'))
+
+    class Meta:
+        abstract = False
+
+
 @python_2_unicode_compatible
 class Token(models.Model):
     """
@@ -661,4 +940,3 @@ def api_key_post_delete_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
         pk = str(kwargs['instance'].pk)
         cache.delete('psono_api_key_' + pk)
-

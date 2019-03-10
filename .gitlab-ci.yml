@@ -127,6 +127,8 @@ run-vulnerability-scan:
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety && safety check"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/psono/restapi/tests,/root/psono/administration/tests"
+
 
 #deploy-security-scan-image:
 #  except:
@@ -162,7 +164,7 @@ release-container:
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
-rease-version-bump:
+release-version-bump:
   except:
     - schedules
   stage: release

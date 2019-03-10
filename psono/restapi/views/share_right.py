@@ -108,11 +108,11 @@ class ShareRightView(GenericAPIView):
                 share_right = User_Share_Right.objects.get(pk=user_share_right_id)
                 if share_right.creator_id != request.user.id and share_right.user_id != request.user.id:
 
-                    return Response({"message":"You don't have permission to access or it does not exist.",
+                    return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
                                     "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
             except User_Share_Right.DoesNotExist:
 
-                return Response({"message":"You don't have permission to access or it does not exist.",
+                return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
                                 "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
 
             response = {

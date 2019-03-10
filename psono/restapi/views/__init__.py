@@ -1,5 +1,6 @@
 from .activate_token import ActivateTokenView
 from .datastore import DatastoreView
+from .file import FileView
 from .ga_verify import GAVerifyView
 from .duo_verify import DuoVerifyView
 from .group import GroupView
@@ -18,6 +19,7 @@ from .recoverycode import RecoveryCodeView
 from .register import RegisterView
 from .secret import SecretView
 from .secret_link import SecretLinkView
+from .file_link import FileLinkView
 from .session import SessionView
 from .share import ShareView
 from .share_right import ShareRightView
@@ -40,3 +42,10 @@ from .api_key import APIKeyView
 from .api_key_login import APIKeyLoginView
 from .api_key_secret import APIKeySecretView
 from .api_key_access_secret import APIKeyAccessSecretView
+from .shard import ShardView
+from .file_repository import FileRepositoryView
+from .file_repository_upload import FileRepositoryUploadView
+from .file_repository_download import FileRepositoryDownloadView
+from .file_repository_right_accept import FileRepositoryRightAcceptView
+from .file_repository_right_decline import FileRepositoryRightDeclineView
+from .file_repository_right import FileRepositoryRightView

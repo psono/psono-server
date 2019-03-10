@@ -15,18 +15,15 @@ class DeleteMembershipSerializer(serializers.Serializer):
         try:
             membership = User_Group_Membership.objects.get(pk=membership_id)
         except User_Group_Membership.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         if membership.user != self.context['request'].user:
             # Its not his own membership right (leave group functionality) check if the user has the necessary access
             # privileges for this group
-            try:
-                User_Group_Membership.objects.get(group_id=membership.group_id, user=self.context['request'].user,
-                                                  group_admin=True, accepted=True)
-
-            except User_Group_Membership.DoesNotExist:
-                msg = _("You don't have permission to access or it does not exist.")
+            if not User_Group_Membership.objects.filter(group_id=membership.group_id, user=self.context['request'].user,
+                                                        group_admin=True, accepted=True).exists():
+                msg = _("NO_PERMISSION_OR_NOT_EXIST")
                 raise exceptions.ValidationError(msg)
 
         attrs['membership'] = membership

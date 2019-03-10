@@ -14,7 +14,7 @@ class DeleteGroupSerializer(serializers.Serializer):
         try:
             group = Group.objects.get(id=group_id)
         except Group.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['group'] = group

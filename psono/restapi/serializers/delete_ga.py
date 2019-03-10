@@ -15,7 +15,7 @@ class DeleteGASerializer(serializers.Serializer):
         try:
             google_authenticator = Google_Authenticator.objects.get(pk=google_authenticator_id, user=self.context['request'].user)
         except Google_Authenticator.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         google_authenticator_count = Google_Authenticator.objects.filter(user=self.context['request'].user, active=True).count()

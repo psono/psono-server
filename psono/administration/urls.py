@@ -22,7 +22,7 @@ from typing import List
 urlpatterns = [] # type: List[URLPattern]
 
 if settings.MANAGEMENT_ENABLED:
-    # URLs for development purposes only
+    # URLs for management servers purposes only
     urlpatterns += [
         url(r'^info/$', views.InfoView.as_view(), name='admin_info'),
         url(r'^user/(?P<user_id>[^/]+)/$', views.UserView.as_view(), name='admin_user'),

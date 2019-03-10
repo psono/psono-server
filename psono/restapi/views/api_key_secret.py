@@ -44,7 +44,7 @@ class APIKeySecretView(GenericAPIView):
         try:
             API_Key.objects.get(id=api_key_id, user=request.user)
         except API_Key.DoesNotExist:
-            return Response({"message":"You don't have permission to access or it does not exist.",
+            return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
                              "resource_id": api_key_id}, status=status.HTTP_400_BAD_REQUEST)
 
         api_key_secrets = API_Key_Secret.objects.filter(api_key_id=api_key_id)

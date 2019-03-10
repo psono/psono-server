@@ -42,7 +42,7 @@ class APIKeyLoginSerializer(serializers.Serializer):
         try:
             api_key = API_Key.objects.get(id=api_key_id, active=True)
         except API_Key.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         if not api_key.user.is_active:

@@ -59,11 +59,11 @@ class SecretView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
         except Secret.DoesNotExist:
 
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
         if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
 
-            raise PermissionDenied({"message":"You don't have permission to access or it does not exist."})
+            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
         try:
             callback_pass = decrypt_with_db_secret(secret.callback_pass)
@@ -204,7 +204,7 @@ class SecretView(GenericAPIView):
 
             try:
                 requests.post(secret.callback_url, data=data, headers=headers, auth=auth)
-            except:
+            except: # nosec
                 pass
 
         return Response({"success": "Data updated."},

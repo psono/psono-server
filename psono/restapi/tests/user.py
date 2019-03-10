@@ -6,9 +6,8 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
+from ..utils import encrypt_with_db_secret, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
-import six
 import random
 import string
 import os
@@ -314,7 +313,7 @@ class UserModificationTests(APITestCaseExtended):
         user = models.User.objects.get(pk=self.test_user_obj.pk)
 
 
-        email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
         self.assertEqual(decrypt_with_db_secret(user.email), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)

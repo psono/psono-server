@@ -8,7 +8,7 @@ import os
 
 import bcrypt
 import time
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Data_Store, Share_Tree
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -16,6 +16,9 @@ import nacl.encoding
 import nacl.utils
 import hashlib
 import binascii
+import ipaddress
+
+from uuid import UUID
 
 import scrypt
 from typing import Tuple, List
@@ -47,6 +50,24 @@ def generate_activation_code(email : str) -> str:
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
 
 
+def get_static_bcrypt_hash_from_email(email):
+    """
+    Takes an email address. Removes all leading and trailing whitespaces and casts it to lowercase.
+
+    Returns the case invariant hash without the static salt.
+
+    :param email:
+    :type email:
+    :return:
+    :rtype:
+    """
+    email = email.lower().strip().encode()
+    email_salt = settings.EMAIL_SECRET_SALT.encode()
+    bcrypt_with_salt = bcrypt.hashpw(email, email_salt).decode()
+
+    return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, '', 1)
+
+
 def validate_activation_code(activation_code : str) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
@@ -66,17 +87,16 @@ def validate_activation_code(activation_code : str) -> Optional[User]:
         time_stamp, email = validation_secret.split("#", 1)
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
 
-            email = email.lower().strip()
-            email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
-    except:
+    except: # nosec
         #wrong format or whatever could happen
         pass
 
     return None
 
-def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple:
+def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple: # nosec
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
@@ -268,11 +288,50 @@ def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : b
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
-        secret_links = Secret_Link.objects.filter(secret_id=secret_id).order_by('parent_datastore_id')
+        secret_links = Secret_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(secret_id=secret_id).order_by('parent_datastore_id')
     except Secret_Link.DoesNotExist:
         return False
 
     for link in secret_links:
+
+        if link.parent_datastore_id is not None:
+            if not datastores_loaded:
+                try:
+                    datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
+                except Data_Store.DoesNotExist:
+                    datastores = []
+                datastores_loaded = True
+
+            if link.parent_datastore_id in datastores:
+                return True
+
+        elif link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
+            return True
+
+    return False
+
+
+def user_has_rights_on_file(user_id : str = "", file_id : str = "", read : bool = None, write : bool = None) -> bool:
+    """
+    Checks if the given user has the requested rights for the given file
+
+    :param user_id:
+    :param file_id:
+    :param read:
+    :param write:
+    :return:
+    """
+
+    datastores_loaded = False
+    datastores = [] # type: List[str]
+
+    try:
+        # get all file links. Get the ones with datastores as parents first, as they are less expensive to check later
+        file_links = File_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(file_id=file_id).order_by('parent_datastore_id')
+    except File_Link.DoesNotExist:
+        return False
+
+    for link in file_links:
 
         if link.parent_datastore_id is not None:
             if not datastores_loaded:
@@ -677,7 +736,8 @@ def create_user(username, password, email, gen_authkey=True):
         secret_key_nonce=secret_key_nonce.decode(),
         is_email_active=True,
         is_active=True,
-        user_sauce=user_sauce.decode()
+        user_sauce=user_sauce.decode(),
+        credit=settings.SHARD_CREDIT_DEFAULT_NEW_USER,
     )
 
     return {
@@ -723,3 +783,111 @@ def filter_as_json(data, filter):
         return decrypted_data
     else:
         return json.dumps(decrypted_data)
+
+def get_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', None)
+    cf_connection_ip = request.META.get('HTTP_CF_CONNECTING_IP', None)
+
+    if cf_connection_ip:
+        return cf_connection_ip
+
+    if x_forwarded_for:
+        splitted_ip_record = x_forwarded_for.split(',')
+        ip_address = splitted_ip_record[0].strip()
+    else:
+        ip_address = request.META.get('REMOTE_ADDR')
+
+    return ip_address
+
+def get_country(request):
+    return request.META.get('HTTP_CF_IPCOUNTRY', None)
+
+def in_networks(ip_address, networks):
+    """
+    Takes an ip address and and array of networks, each in String representation.
+    Will return whether the ip address in one of the network ranges
+
+    :param ip_address:
+    :type ip_address:
+    :param networks:
+    :type networks:
+    :return:
+    :rtype:
+    """
+
+    for network in networks:
+        ip_network = ipaddress.ip_network(network)
+        if ip_address in ip_network:
+            return True
+
+    return False
+
+def get_uuid_start_and_end(count, position):
+    """
+    Divides 128 bit into count amount of chunks and returns the borders for the given position (smallest and biggest
+    possible uuid)
+
+    :param count:
+    :type count:
+    :param position:
+    :type position:
+    :return:
+    :rtype:
+    """
+    max = int('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',16)
+
+    start = UUID(int=int(position * float(max) / count))
+    end = UUID(int=int((position + 1) * float(max) / count)-1)
+
+    return start, end
+
+
+def fileserver_access(cmsl, ip_address, read=None, write=None):
+    """
+    Tests weather an ip address has access for a specific cluster member shard link
+
+    :param cmsl:
+    :type cmsl:
+    :param ip_address:
+    :type ip_address:
+    :param read:
+    :type read:
+    :param write:
+    :type write:
+    :return:
+    :rtype:
+    """
+
+    if write:
+        if not cmsl.write or not cmsl.member.write:
+            return False
+
+        ip_write_whitelist = json.loads(cmsl.ip_write_whitelist)
+        ip_write_blacklist = json.loads(cmsl.ip_write_blacklist)
+
+        has_write_whitelist = len(ip_write_whitelist) > 0
+        write_blacklisted = in_networks(ip_address, ip_write_blacklist)
+        write_whitelisted = in_networks(ip_address, ip_write_whitelist)
+        if has_write_whitelist and not write_whitelisted:
+            return False
+
+        if write_blacklisted:
+            return False
+
+    if read:
+        if not cmsl.read or not cmsl.member.read:
+            return False
+
+        ip_read_whitelist = json.loads(cmsl.ip_read_whitelist)
+        ip_read_blacklist = json.loads(cmsl.ip_read_blacklist)
+
+        has_read_whitelist = len(ip_read_whitelist) > 0
+        read_blacklisted = in_networks(ip_address, ip_read_blacklist)
+        read_whitelisted = in_networks(ip_address, ip_read_whitelist)
+        if has_read_whitelist and not read_whitelisted:
+            return False
+
+        if read_blacklisted:
+            return False
+
+    return True

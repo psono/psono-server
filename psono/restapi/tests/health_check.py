@@ -1,10 +1,7 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 from .base import APITestCaseExtended
-
-from restapi import models
 
 
 class HealthCheckTest(APITestCaseExtended):
@@ -12,7 +9,7 @@ class HealthCheckTest(APITestCaseExtended):
     Test for health check
     """
 
-    def test_put_healthcheckn(self):
+    def test_put_healthcheck(self):
         """
         Tests PUT method on healthcheck
         """
@@ -25,7 +22,7 @@ class HealthCheckTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_post_healthcheckn(self):
+    def test_post_healthcheck(self):
         """
         Tests POST method on healthcheck
         """
@@ -38,7 +35,7 @@ class HealthCheckTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_delete_healthcheckn(self):
+    def test_delete_healthcheck(self):
         """
         Tests DELETE method on healthcheck
         """
@@ -51,9 +48,9 @@ class HealthCheckTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_get_healthcheckn(self):
+    def test_get_healthcheck(self):
         """
-        Tests GET method on healthcheck
+        Tests GET method on
         """
 
         url = reverse('healthcheck')

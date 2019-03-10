@@ -22,11 +22,11 @@ class UpdateSecretSerializer(serializers.Serializer):
         try:
             secret = Secret.objects.get(pk=secret_id)
         except Secret.DoesNotExist:
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         if not user_has_rights_on_secret(self.context['request'].user.id, secret.id, None, True):
-            msg = _("You don't have permission to access or it does not exist.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['secret'] = secret
