@@ -15,9 +15,10 @@ class UpdateFileRepositoryRightSerializer(serializers.Serializer):
 
         file_repository_right_id = attrs.get('file_repository_right_id')
 
-        # Lets check if the file_repository_right exists
+        # Lets check if the file_repository_right exists.
+        # In addition prevent that a user edits his own access rights.
         try:
-            file_repository_right = File_Repository_Right.objects.get(pk=file_repository_right_id)
+            file_repository_right = File_Repository_Right.objects.exclude(user=self.context['request'].user).get(pk=file_repository_right_id)
         except File_Repository_Right.DoesNotExist:
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)

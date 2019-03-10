@@ -14,9 +14,9 @@ class FileRepositoryRightDeclineSerializer(serializers.Serializer):
         file_repository_right_id = attrs.get('file_repository_right_id')
 
         try:
-            file_repository_right_obj = File_Repository_Right.objects.get(pk=file_repository_right_id, user=self.context['request'].user, accepted=False)
+            file_repository_right_obj = File_Repository_Right.objects.get(pk=file_repository_right_id, user=self.context['request'].user)
         except File_Repository_Right.DoesNotExist:
-            msg = _("You don't have permission to access it or it does not exist or you already accepted or declined this membership.")
+            msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
         attrs['file_repository_right_obj'] = file_repository_right_obj

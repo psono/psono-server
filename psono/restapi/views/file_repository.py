@@ -103,9 +103,10 @@ class FileRepositoryView(GenericAPIView):
                     response[key] = value
 
             if file_repository_right.grant:
-                for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository_right.file_repository_id).select_related('user').only('id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
+                for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository_right.file_repository_id).select_related('user').only('id', 'user__id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
                     response['file_repository_rights'].append({
                         'id': file_repository_right.id,
+                        'user_id': file_repository_right.user.id,
                         'user_username': file_repository_right.user.username,
                         'read': file_repository_right.read,
                         'write': file_repository_right.write,
