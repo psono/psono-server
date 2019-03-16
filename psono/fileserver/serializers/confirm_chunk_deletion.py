@@ -21,7 +21,7 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
         for c in deleted_chunks:
             if not Fileserver_Cluster_Member_Shard_Link.objects.select_related('member') \
                     .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
-                        shard__active=True, member=self.context['request'].user, shard_id=c['shard_id'], delete=True, member__write=True) \
+                        shard__active=True, member=self.context['request'].user, shard_id=c['shard_id'], delete_capability=True, member__write=True) \
                     .exists():
                 msg = _('Permission denied.')
                 raise exceptions.ValidationError(msg)

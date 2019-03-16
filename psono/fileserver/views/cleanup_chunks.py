@@ -34,11 +34,11 @@ class CleanupChunksView(GenericAPIView):
         """
 
         # Get a list of all shards that are handled by this particular fileserver
-        shard_ids = Fileserver_Cluster_Member_Shard_Link.objects.filter(member=request.user, delete=True).values_list('shard_id', flat=True)
+        shard_ids = Fileserver_Cluster_Member_Shard_Link.objects.filter(member=request.user, delete_capability=True).values_list('shard_id', flat=True)
 
         # get a list of all fileservers, that are responsible for these shards with the capability to delete
         links = Fileserver_Cluster_Member_Shard_Link.objects\
-            .filter(shard_id__in=shard_ids, member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT), delete=True)\
+            .filter(shard_id__in=shard_ids, member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT), delete_capability=True)\
             .values('member_id', 'shard_id', 'member__create_date')\
             .distinct()\
             .order_by('member__create_date')

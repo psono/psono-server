@@ -621,7 +621,7 @@ class Fileserver_Cluster_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
-    delete = models.BooleanField(_('Delete'), default=True,
+    delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this connection accepts deletes'))
 
     class Meta:
@@ -652,7 +652,7 @@ class Fileserver_Cluster_Members(models.Model):
         help_text=_('Weather this server accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this server accepts writes'))
-    delete = models.BooleanField(_('Delete'), default=True,
+    delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this server accepts deletes'))
 
     valid_till = models.DateTimeField(default=timezone.now, db_index=True)
@@ -739,7 +739,7 @@ class Fileserver_Cluster_Member_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
-    delete = models.BooleanField(_('Delete'), default=True,
+    delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this shard accepts delete jobs'))
     ip_read_whitelist = models.CharField(_('IP read whitelist'), max_length=2048,
         help_text=_('IP Whitelist for read operations'), null=True)

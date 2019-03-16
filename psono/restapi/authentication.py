@@ -243,7 +243,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 url=fileserver_info['HOST_URL'],
                 read=fileserver_info['READ'],
                 write=fileserver_info['WRITE'],
-                delete=fileserver_info['DELETE'],
+                delete_capability=fileserver_info['DELETE'],
                 valid_till=timezone.now()+datetime.timedelta(seconds=30),
             )
 
@@ -253,7 +253,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                     member_id=fileserver.id,
                     read=shard['read'],
                     write=shard['write'],
-                    delete=shard['delete'],
+                    delete_capability=shard['delete'],
                     ip_read_whitelist=json.dumps(fileserver_info['IP_READ_WHITELIST']),
                     ip_read_blacklist=json.dumps(fileserver_info['IP_READ_BLACKLIST']),
                     ip_write_whitelist=json.dumps(fileserver_info['IP_WRITE_WHITELIST']),
@@ -269,13 +269,13 @@ class FileserverAliveAuthentication(TokenAuthentication):
     @staticmethod
     def validate_cluster_shard_access(cluster_id, announced_shards):
 
-        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).only('read', 'write', 'delete').all()
+        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).only('read', 'write', 'delete_capability').all()
         shards = {}
         for fcsl in fcsls:
             shards[str(fcsl.shard_id)] = {
                 'read': fcsl.read,
                 'write': fcsl.write,
-                'delete': fcsl.delete,
+                'delete': fcsl.delete_capability,
             }
 
         for shard in announced_shards:

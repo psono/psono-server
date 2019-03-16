@@ -64,7 +64,7 @@ class FileserverAlive(APITestCaseExtended):
             url='https://fs01.example.com/fileserver',
             read=True,
             write=True,
-            delete=True,
+            delete_capability=True,
             valid_till=timezone.now() + datetime.timedelta(seconds=30),
         )
 
