@@ -7,12 +7,18 @@ from rest_framework import status
 from restapi.tests.base import APITestCaseExtended
 from restapi.authentication import TokenAuthentication
 
-from nacl.public import PrivateKey
-from restapi.models import Fileserver_Cluster, Fileserver_Shard, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Members
+from restapi.models import Fileserver_Cluster, Fileserver_Shard, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Members, Fileserver_Cluster_Member_Shard_Link
 from restapi.utils import encrypt_with_db_secret
+
 import nacl.encoding
+import nacl.signing
+import nacl.utils
+import nacl.secret
+from nacl.public import PrivateKey, PublicKey, Box
 
 import os
+import uuid
+import json
 import binascii
 import datetime
 
@@ -23,23 +29,16 @@ class FileserverAlive(APITestCaseExtended):
 
     def setUp(self):
         box = PrivateKey.generate()
-        private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+        self.cluster_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.cluster_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
-        private_key_hex = encrypt_with_db_secret(private_key_hex.decode())
-        public_key_hex = encrypt_with_db_secret(public_key_hex.decode())
-
-        self.cluster1 = Fileserver_Cluster.objects.create(
-            title='Some Fileserver Cluster Title',
-            auth_public_key=public_key_hex,
-            auth_private_key=private_key_hex,
-            file_size_limit=0,
-        )
+        private_key = encrypt_with_db_secret(self.cluster_private_key_hex)
+        public_key = encrypt_with_db_secret(self.cluster_public_key_hex)
 
         self.cluster1 = Fileserver_Cluster.objects.create(
             title='Some Fileserver Cluster Title',
-            auth_public_key=public_key_hex,
-            auth_private_key=private_key_hex,
+            auth_public_key=public_key,
+            auth_private_key=private_key,
             file_size_limit=0,
         )
 
@@ -68,6 +67,69 @@ class FileserverAlive(APITestCaseExtended):
             delete=True,
             valid_till=timezone.now() + datetime.timedelta(seconds=30),
         )
+
+
+    def test_alive_initial(self):
+        """
+        Tests to "ping" the server to announce a fileserver initially
+        """
+
+        # Generate fileserver info
+        cluster_crypto_box = Box(PrivateKey(self.cluster_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                 PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+
+        fileserver_id = str(uuid.uuid4())
+        fileserver_session_key = nacl.encoding.HexEncoder.encode(
+            nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
+
+        box = PrivateKey.generate()
+        fileserver_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        fileserver_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        decrypted_fileserver_info = {
+            'CLUSTER_ID': str(self.cluster1.id),
+            'FILESERVER_ID': fileserver_id,
+            'FILESERVER_PUBLIC_KEY': fileserver_public_key_hex,
+            'FILESERVER_SESSION_KEY': fileserver_session_key,
+            'SHARDS_PUBLIC': [{
+                'shard_id': str(self.shard1.id),
+                'read': True,
+                'write': True,
+                'delete': True
+            }],
+            'READ': True,
+            'WRITE': True,
+            'DELETE': True,
+            'IP_READ_WHITELIST': [],
+            'IP_WRITE_WHITELIST': [],
+            'IP_READ_BLACKLIST': [],
+            'IP_WRITE_BLACKLIST': [],
+            'HOST_URL': 'https://fs01.example.com/fileserver',
+        }
+
+        encrypted = cluster_crypto_box.encrypt(json.dumps(decrypted_fileserver_info).encode("utf-8"), nonce)
+
+        fileserver_info = nacl.encoding.HexEncoder.encode(encrypted).decode()
+
+        url = reverse('fileserver_alive')
+
+        data = {
+        }
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + fileserver_id, HTTP_AUTHORIZATION_VALIDATOR=json.dumps({
+            'fileserver_info': fileserver_info,
+            'cluster_id': str(self.cluster1.id)
+        }))
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        token_hash = TokenAuthentication.user_token_to_token_hash(fileserver_id)
+        self.assertEqual(Fileserver_Cluster_Members.objects.filter(key=token_hash).count(), 1)
+
+        fileserver = Fileserver_Cluster_Members.objects.get(key=token_hash)
+        self.assertEqual(Fileserver_Cluster_Member_Shard_Link.objects.filter(member_id=fileserver.id, shard_id=str(self.shard1.id)).count(), 1)
 
 
     def test_alive_renewal(self):

@@ -120,7 +120,8 @@ class TokenAuthentication(BaseAuthentication):
         auth = get_authorization_header(request).split()
 
         if not auth or auth[0].lower() != b'token':
-            return None
+            msg = _('Invalid token header. No token header present.')
+            raise exceptions.AuthenticationFailed(msg)
 
         if len(auth) == 1:
             msg = _('Invalid token header. No credentials provided.')
@@ -196,11 +197,19 @@ class FileserverAuthentication(TokenAuthentication):
 class FileserverAliveAuthentication(TokenAuthentication):
 
     def authenticate(self, request):
-        token_hash = self.get_token_hash(request)
-
         try:
-            fileserver = Fileserver_Cluster_Members.objects.only('pk').get(key=token_hash)
-        except Fileserver_Cluster_Members.DoesNotExist:
+            token_hash = self.get_token_hash(request)
+        except exceptions.AuthenticationFailed:
+            token_hash = None
+
+        fileserver = None
+        if token_hash is not None:
+            try:
+                fileserver = Fileserver_Cluster_Members.objects.only('pk').get(key=token_hash)
+            except Fileserver_Cluster_Members.DoesNotExist:
+                pass
+
+        if fileserver is None and token_hash is not None:
             cluster_id, fileserver_info_enc = self.get_fileserver_validator(request)
             try:
                 cluster = Fileserver_Cluster.objects.get(pk=cluster_id)
@@ -250,6 +259,10 @@ class FileserverAliveAuthentication(TokenAuthentication):
                     ip_write_whitelist=json.dumps(fileserver_info['IP_WRITE_WHITELIST']),
                     ip_write_blacklist=json.dumps(fileserver_info['IP_WRITE_BLACKLIST']),
                 )
+
+        if fileserver is None:
+            msg = _('Login failed')
+            raise exceptions.AuthenticationFailed(msg)
 
         return fileserver, fileserver
 
