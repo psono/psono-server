@@ -2,6 +2,7 @@
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
+from django.test.utils import override_settings
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
 from ..authentication import TokenAuthentication
@@ -61,7 +62,11 @@ class AuthenticationTests(APITestCaseExtended):
             'HTTP_AUTHORIZATION': b'123'
         }
 
-        self.assertEqual(TokenAuthentication.get_token_hash(request), None)
+        try:
+            TokenAuthentication.get_token_hash(request)
+            self.assertTrue(False, 'get_token_hash should throw an error, so this should not be reached')
+        except:
+            pass
 
     def test_get_token_hash_success_error_no_token_hash(self):
 
@@ -239,6 +244,8 @@ class AuthenticateTests(APITestCaseExtended):
     #     }
 
     #@patch('restapi.authentication.TokenAuthentication.get_token_hash', mock_check)
+    @override_settings(DEVICE_PROTECTION_DISABLED=True)
+    @override_settings(REPLAY_PROTECTION_DISABLED=True)
     def test_authenticate_success(self):
 
         # encrypt authorization validator with session key
