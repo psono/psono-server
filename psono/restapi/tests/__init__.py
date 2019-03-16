@@ -35,3 +35,4 @@ from .api_key_access_secret import *
 from .emergencycode import *
 from .secret_history import *
 from .history import *
+from .file_repository import *

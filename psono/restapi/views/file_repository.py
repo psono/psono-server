@@ -53,7 +53,7 @@ class FileRepositoryView(GenericAPIView):
 
             for file_repository_right in File_Repository.objects.filter(file_repository_right__user=request.user).annotate(read=F('file_repository_right__read'), write=F('file_repository_right__write'), grant=F('file_repository_right__grant'), accepted=F('file_repository_right__accepted'), file_repository_right_id=F('file_repository_right__id')):
                 file_repositories.append({
-                    'id': file_repository_right.id,
+                    'id': str(file_repository_right.id),
                     'title': file_repository_right.title,
                     'type': file_repository_right.type,
                     'active': file_repository_right.active,
@@ -61,7 +61,7 @@ class FileRepositoryView(GenericAPIView):
                     'write': file_repository_right.write,
                     'grant': file_repository_right.grant,
                     'accepted': file_repository_right.accepted,
-                    'file_repository_right_id': file_repository_right.file_repository_right_id,
+                    'file_repository_right_id': str(file_repository_right.file_repository_right_id),
                 })
 
             # if settings.DEFAULT_FILE_REPOSITORY_ENABLED:
@@ -87,7 +87,7 @@ class FileRepositoryView(GenericAPIView):
                                  "resource_id": file_repository_id}, status=status.HTTP_400_BAD_REQUEST)
 
             response = {
-                'id': file_repository_right.file_repository.id,
+                'id': str(file_repository_right.file_repository.id),
                 'title': file_repository_right.file_repository.title,
                 'type': file_repository_right.file_repository.type,
                 'active': file_repository_right.file_repository.active,
@@ -100,13 +100,16 @@ class FileRepositoryView(GenericAPIView):
             if file_repository_right.read:
                 data = json.loads(decrypt_with_db_secret(file_repository_right.file_repository.data))
                 for key, value in data.items():
+                    if key in response:
+                        # protect existing keys
+                        continue
                     response[key] = value
 
             if file_repository_right.grant:
                 for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository_right.file_repository_id).select_related('user').only('id', 'user__id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
                     response['file_repository_rights'].append({
-                        'id': file_repository_right.id,
-                        'user_id': file_repository_right.user.id,
+                        'id': str(file_repository_right.id),
+                        'user_id': str(file_repository_right.user.id),
                         'user_username': file_repository_right.user.username,
                         'read': file_repository_right.read,
                         'write': file_repository_right.write,

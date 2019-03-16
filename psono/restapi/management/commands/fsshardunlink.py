@@ -10,7 +10,7 @@ def unlink_shard(link_id: str) -> dict:
         }
 
     try:
-        link = Fileserver_Cluster_Shard_Link.objects.filter(pk=link_id).get()
+        link = Fileserver_Cluster_Shard_Link.objects.get(pk=link_id)
     except Fileserver_Cluster_Shard_Link.DoesNotExist:
         return {
             'error': 'A link with this id was not found.'
