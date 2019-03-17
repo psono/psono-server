@@ -30,6 +30,7 @@ if settings.MANAGEMENT_ENABLED:
         url(r'^yubikey-otp/$', views.YubikeyOTPView.as_view(), name='admin_yubikey_otp'),
         url(r'^google-authenticator/$', views.GaView.as_view(), name='admin_google_authenticator'),
         url(r'^recovery-code/$', views.RecoveryCodeView.as_view(), name='admin_recovery_code'),
+        url(r'^emergency-code/$', views.EmergencyCodeView.as_view(), name='admin_emergency_code'),
         url(r'^duo/$', views.DuoView.as_view(), name='admin_duo'),
         url(r'^session/(?P<session_id>[^/]+)/$', views.SessionView.as_view(), name='admin_session'),
         url(r'^session/$', views.SessionView.as_view(), name='admin_session'),

@@ -7,3 +7,4 @@ from .delete_yubikey import DeleteYubikeySerializer
 from .delete_group import DeleteGroupSerializer
 from .delete_membership import DeleteMembershipSerializer
 from .delete_recovery_code import DeleteRecoveryCodeSerializer
+from .delete_emergency_code import DeleteEmergencyCodeSerializer
