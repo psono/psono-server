@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import socket
 import os
 import yaml
 import json
@@ -362,6 +363,8 @@ STATIC_URL = '/static/'
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
 
+HOSTNAME = socket.getfqdn()
+
 with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
     SHA = f.readline().rstrip()
 
@@ -386,6 +389,7 @@ def generate_signature():
 
     info = {
         'version': VERSION,
+        'hostname': HOSTNAME,
         'api': 1,
         'log_audit': False,
         'public_key': PUBLIC_KEY,
