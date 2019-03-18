@@ -389,7 +389,6 @@ def generate_signature():
 
     info = {
         'version': VERSION,
-        'hostname': HOSTNAME,
         'api': 1,
         'log_audit': False,
         'public_key': PUBLIC_KEY,
