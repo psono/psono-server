@@ -240,6 +240,8 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 key=token_hash,
                 public_key=fileserver_info['FILESERVER_PUBLIC_KEY'],
                 secret_key=fileserver_info['FILESERVER_SESSION_KEY'],
+                version=fileserver_info['VERSION'],
+                hostname=fileserver_info['HOSTNAME'],
                 url=fileserver_info['HOST_URL'],
                 read=fileserver_info['READ'],
                 write=fileserver_info['WRITE'],
