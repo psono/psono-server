@@ -89,6 +89,8 @@ class FileserverAlive(APITestCaseExtended):
         fileserver_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
 
         decrypted_fileserver_info = {
+            'VERSION': '0.0.0 (abcd)',
+            'HOSTNAME': 'example.com',
             'CLUSTER_ID': str(self.cluster1.id),
             'FILESERVER_ID': fileserver_id,
             'FILESERVER_PUBLIC_KEY': fileserver_public_key_hex,
