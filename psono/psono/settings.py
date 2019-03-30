@@ -293,7 +293,8 @@ CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
 FILES_ENABLED = config_get('FILES_ENABLED', True)
 
 FILE_REPOSITORY_TYPES = [
-    'gcp_cloud_storage'
+    'gcp_cloud_storage',
+    'aws_s3',
 ]
 
 FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)

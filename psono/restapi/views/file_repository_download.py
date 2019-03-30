@@ -13,7 +13,7 @@ from ..app_settings import (
     FileRepositoryDownloadSerializer,
 )
 
-from ..utils import decrypt_with_db_secret, gcs_construct_signed_download_url
+from ..utils import decrypt_with_db_secret, gcs_construct_signed_download_url, aws_construct_signed_download_url
 from ..authentication import TokenAuthentication
 
 
@@ -60,10 +60,13 @@ class FileRepositoryDownloadView(GenericAPIView):
 
         data = json.loads(decrypt_with_db_secret(file_transfer.file_repository.data))
 
-        base_url, query_params = gcs_construct_signed_download_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
-
-        # create an url that contains all the url encoded params
-        url = base_url + "?" + urllib.parse.urlencode(query_params)
+        url = ''
+        if file_transfer.file_repository.type == 'gcp_cloud_storage':
+            base_url, query_params = gcs_construct_signed_download_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
+            # create an url that contains all the url encoded params
+            url = base_url + "?" + urllib.parse.urlencode(query_params)
+        if file_transfer.file_repository.type == 'aws_s3':
+            url = aws_construct_signed_download_url(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], hash_checksum)
 
         return Response({
             'url': url
