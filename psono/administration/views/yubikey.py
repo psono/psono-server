@@ -8,6 +8,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
+from restapi.models import Yubikey_OTP
 
 
 class YubikeyOTPView(GenericAPIView):
@@ -48,5 +49,8 @@ class YubikeyOTPView(GenericAPIView):
 
         # delete it
         yubikey_otp.delete()
+
+        if not Yubikey_OTP.objects.filter(user_id=request.user.id, active=True).exists():
+            request.user.yubikey_otp_enabled = False
 
         return Response(status=status.HTTP_200_OK)

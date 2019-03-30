@@ -9,7 +9,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Token, User_Share_Right
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
 # from restapi.utils import decrypt_with_db_secret
 
 
@@ -71,6 +71,15 @@ class UserView(GenericAPIView):
                 'create_date': r.create_date,
             })
 
+        emergency_codes = []
+        for r in Emergency_Code.objects.filter(user=user).only("id", "create_date", "description"):
+            emergency_codes.append({
+                'id': r.id,
+                'create_date': r.create_date,
+                'description': r.description,
+                'activation_delay': r.activation_delay,
+            })
+
         sessions = []
         for u in Token.objects.filter(user=user).only('id', 'create_date', 'active',
                                                            'valid_till', 'device_description',
@@ -113,6 +122,7 @@ class UserView(GenericAPIView):
             'google_authenticators': google_authenticators,
             'yubikey_otps': yubikey_otps,
             'recovery_codes': recovery_codes,
+            'emergency_codes': emergency_codes,
             'sessions': sessions,
             'share_rights': share_rights,
         }
@@ -141,10 +151,11 @@ class UserView(GenericAPIView):
 
         else:
             recovery_codes = Recovery_Code.objects.filter(user = OuterRef('pk')).only('id')
+            emergency_codes = Emergency_Code.objects.filter(user = OuterRef('pk')).only('id')
 
 
             users = []
-            for u in  User.objects.annotate(recovery_code_exist=Exists(recovery_codes))\
+            for u in  User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
                     .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled').order_by('-create_date'):
                 users.append({
                     'id': u.id,
@@ -156,6 +167,7 @@ class UserView(GenericAPIView):
                     'ga_2fa': u.google_authenticator_enabled,
                     'yubikey_2fa': u.yubikey_otp_enabled,
                     'recovery_code': u.recovery_code_exist,
+                    'emergency_code': u.emergency_code_exist,
                 })
 
             return Response({

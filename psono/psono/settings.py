@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import socket
 import os
 import yaml
 import json
@@ -292,7 +293,8 @@ CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
 FILES_ENABLED = config_get('FILES_ENABLED', True)
 
 FILE_REPOSITORY_TYPES = [
-    'gcp_cloud_storage'
+    'gcp_cloud_storage',
+    'aws_s3',
 ]
 
 FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)
@@ -361,6 +363,8 @@ STATIC_URL = '/static/'
 
 with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
     VERSION = f.readline().rstrip()
+
+HOSTNAME = socket.getfqdn()
 
 with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
     SHA = f.readline().rstrip()

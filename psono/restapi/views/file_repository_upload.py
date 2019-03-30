@@ -15,7 +15,7 @@ from ..app_settings import (
 
 from ..models import File_Chunk
 
-from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url
+from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url, aws_construct_signed_upload_url
 from ..authentication import TokenAuthentication
 
 
@@ -72,13 +72,21 @@ class FileRepositoryUploadView(GenericAPIView):
 
         data = json.loads(decrypt_with_db_secret(file_transfer.file_repository.data))
 
-        base_url, query_params = gcs_construct_signed_upload_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
+        url = ''
+        fields = []
+        if file_transfer.file_repository.type == 'gcp_cloud_storage':
+            base_url, query_params = gcs_construct_signed_upload_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
+            # create an url that contains all the url encoded params
+            url = base_url + "?" + urllib.parse.urlencode(query_params)
+        elif file_transfer.file_repository.type == 'aws_s3':
+            url_and_fields = aws_construct_signed_upload_url(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], hash_checksum)
+            url = url_and_fields['url']
+            fields = url_and_fields['fields']
 
-        # create an url that contains all the url encoded params
-        url = base_url + "?" + urllib.parse.urlencode(query_params)
 
         return Response({
-            'url': url
+            'url': url,
+            'fields': fields,
         }, status=status.HTTP_200_OK)
 
     def post(self, *args, **kwargs):

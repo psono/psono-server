@@ -648,6 +648,8 @@ class Fileserver_Cluster_Members(models.Model):
     secret_key = models.CharField(_('Secret Key'), max_length=256,
         help_text=_('Symmetric Key for the transport encryption'))
     url = models.CharField(_('Public URL'), max_length=256)
+    version = models.CharField(_('Version'), max_length=32)
+    hostname = models.CharField(_('Hostname'), max_length=256)
     read = models.BooleanField(_('Read'), default=True,
         help_text=_('Weather this server accepts reads'))
     write = models.BooleanField(_('Write'), default=True,

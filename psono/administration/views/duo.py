@@ -8,6 +8,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
+from restapi.models import Duo
 
 
 class DuoView(GenericAPIView):
@@ -48,5 +49,8 @@ class DuoView(GenericAPIView):
 
         # delete it
         duo.delete()
+
+        if not Duo.objects.filter(user_id=request.user.id, active=True).exists():
+            request.user.duo_enabled = False
 
         return Response(status=status.HTTP_200_OK)

@@ -8,6 +8,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
+from restapi.models import Google_Authenticator
 
 
 class GaView(GenericAPIView):
@@ -48,5 +49,8 @@ class GaView(GenericAPIView):
 
         # delete it
         google_authenticator.delete()
+
+        if not Google_Authenticator.objects.filter(user_id=request.user.id, active=True).exists():
+            request.user.google_authenticator_enabled = False
 
         return Response(status=status.HTTP_200_OK)

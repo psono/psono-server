@@ -9,7 +9,7 @@ from  more_itertools import unique_everseen
 import json
 
 from ..permissions import IsAuthenticated
-from ..utils import decrypt_with_db_secret, gcs_delete
+from ..utils import decrypt_with_db_secret, gcs_delete, aws_delete
 
 from ..app_settings import (
     MoveFileLinkSerializer,
@@ -137,8 +137,12 @@ class FileLinkView(GenericAPIView):
 
                 data = json.loads(decrypt_with_db_secret(file.file_repository.data))
 
+                file_repository_type = file.file_repository.type
                 for c in file.file_chunk.all():
-                    gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
+                    if file_repository_type == 'gcp_cloud_storage':
+                        gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
+                    if file_repository_type == 'aws_s3':
+                        aws_delete(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], c.hash_checksum)
 
             File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False).delete()
 

@@ -13,6 +13,7 @@ from .serializers import (
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
     DeleteRecoveryCodeSerializer as DefaultDeleteRecoveryCodeSerializer,
+    DeleteEmergencyCodeSerializer as DefaultDeleteEmergencyCodeSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -58,5 +59,9 @@ DeleteMembershipSerializer = import_callable(
 
 DeleteRecoveryCodeSerializer = import_callable(
     serializers.get('DELETE_RECOVERY_CODE_SERIALIZER', DefaultDeleteRecoveryCodeSerializer)
+)
+
+DeleteEmergencyCodeSerializer = import_callable(
+    serializers.get('DELETE_EMERGENCY_CODE_SERIALIZER', DefaultDeleteEmergencyCodeSerializer)
 )
 
