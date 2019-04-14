@@ -663,7 +663,7 @@ class RegistrationTests(APITestCaseExtended):
 
 
     @patch('restapi.views.register.settings', ENFORCE_MATCHING_USERNAME_AND_EMAIL=True)
-    def test_create_account_with_disabled_registration(self, patched_force_matched_username_and_email):
+    def test_create_account_with_enforced_matching_usernanme_and_email(self, patched_force_matched_username_and_email):
         """
         Ensure we cannot create a new account object with mismatching username and email if ENFORCE_MATCHING_USERNAME_AND_EMAIL is set
         """
