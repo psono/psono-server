@@ -662,6 +662,40 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @patch('restapi.views.register.settings', ENFORCE_MATCHING_USERNAME_AND_EMAIL=True)
+    def test_create_account_with_enforced_matching_usernanme_and_email(self, patched_force_matched_username_and_email):
+        """
+        Ensure we cannot create a new account object with mismatching username and email if ENFORCE_MATCHING_USERNAME_AND_EMAIL is set
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     @patch.object(EmailMultiAlternatives, 'send')
     def test_create_account_sends_mail(self, mocked_send):
         """

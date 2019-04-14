@@ -232,9 +232,9 @@ class CreateFileRepositryTest(APITestCaseExtended):
         )
 
 
-    def test_create_success(self):
+    def test_create_success_gcp(self):
         """
-        Tests to create a file repository
+        Tests to create a file repository for gcp
         """
 
         url = reverse('file_repository')
@@ -255,6 +255,119 @@ class CreateFileRepositryTest(APITestCaseExtended):
         self.assertEqual(models.File_Repository_Right.objects.count(), 1)
 
 
+    def test_create_success_aws(self):
+        """
+        Tests to create a file repository for aws
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(models.File_Repository.objects.count(), 1)
+        self.assertEqual(models.File_Repository_Right.objects.count(), 1)
+
+
+    def test_create_failure_aws_no_bucket(self):
+        """
+        Tests to create a file repository for aws without a bucket
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            # 'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_aws_no_region(self):
+        """
+        Tests to create a file repository for aws without a region
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            # 'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_aws_no_access_key_id(self):
+        """
+        Tests to create a file repository for aws without an access key id
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            # 'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_aws_no_secret_access_key(self):
+        """
+        Tests to create a file repository for aws without a secret access key
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            # 'aws_s3_secret_access_key': 'abc',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     def test_create_failure_no_title(self):
         """
         Tests to create a file repository without a title
@@ -264,6 +377,26 @@ class CreateFileRepositryTest(APITestCaseExtended):
 
         data = {
             # 'title': 'Test file repository',
+            'type': 'gcp_cloud_storage',
+            'gcp_cloud_storage_bucket': 'abc',
+            'gcp_cloud_storage_json_key': '{}'
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_create_failure_empty_title(self):
+        """
+        Tests to create a file repository with an empty title
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': '',
             'type': 'gcp_cloud_storage',
             'gcp_cloud_storage_bucket': 'abc',
             'gcp_cloud_storage_json_key': '{}'
@@ -450,9 +583,9 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         )
 
 
-    def test_update_success(self):
+    def test_update_success_gcp(self):
         """
-        Tests to update a file repository successfully
+        Tests to update a file repository successfully for gcp
         """
 
         url = reverse('file_repository')
@@ -470,6 +603,126 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_update_success_aws(self):
+        """
+        Tests to update a file repository successfully for aws
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_update_failure_aws_no_bucket(self):
+        """
+        Tests to update a file repository on aws without bucket
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            # 'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_update_failure_aws_no_region(self):
+        """
+        Tests to update a file repository on aws without region
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            # 'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_update_failure_aws_no_access_key_id(self):
+        """
+        Tests to update a file repository on aws without access key id
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            # 'aws_s3_access_key_id': 'abc',
+            'aws_s3_secret_access_key': 'abc',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_update_failure_aws_no_secret_access_key(self):
+        """
+        Tests to update a file repository on aws without secret access key
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'aws_s3',
+            'aws_s3_bucket': 'abc',
+            'aws_s3_region': 'abc',
+            'aws_s3_access_key_id': 'abc',
+            # 'aws_s3_secret_access_key': 'abc',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_update_failure_without_write_rights(self):

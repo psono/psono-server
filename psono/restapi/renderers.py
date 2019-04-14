@@ -10,12 +10,23 @@ from rest_framework.settings import api_settings
 from rest_framework.utils import encoders
 
 
-def encrypt(session_secret_key, msg):
+def encrypt(secret_key, msg):
+    """
+    Encrypts a message with a secret hex encoded key and an automatically generated random nonce
+
+    :param secret_key: hex encoded secret key
+    :type secret_key: str or bytearray
+    :param msg: The message to encrypt
+    :type msg: bytearray
+
+    :return: The encrypted value
+    :rtype: dict
+    """
     # generate random nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
     # open crypto box with session secret
-    secret_box = nacl.secret.SecretBox(session_secret_key, encoder=nacl.encoding.HexEncoder)
+    secret_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
 
     # encrypt msg with crypto box and nonce
     encrypted = secret_box.encrypt(msg, nonce)

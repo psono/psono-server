@@ -48,7 +48,13 @@ class RegisterView(GenericAPIView):
                 yield w[i:i + n]
 
         if not settings.ALLOW_REGISTRATION:
+            # TODO change this to REGISTRATION_HAS_BEEN_DISABLED
             return Response({"custom": ["Registration has been disabled."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if settings.ENFORCE_MATCHING_USERNAME_AND_EMAIL and self.request.data.get('username', '').lower() != self.request.data.get('email', '').lower():
+            # TODO change this to REGISTRATION_FAILED_USERNAME_AND_EMAIL_HAVE_TO_MATCH
+            return Response({"custom": ["Registration failed. Username and email have to match."]},
                             status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
@@ -63,6 +69,7 @@ class RegisterView(GenericAPIView):
         try:
             user = serializer.save()
         except IntegrityError:
+            # TODO change this to REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS
             return Response({"custom": ["Registration failed. Username already exists."]},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -111,10 +118,11 @@ class RegisterView(GenericAPIView):
             msg.send()
         except:
             user.delete()
+            # TODO change this to REGISTRATION_EMAIL_DELIVERY_FAILED
             return Response({"custom": ["Registration E-Mail delivery failed. Account not created."]},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
+        # TODO change this to REGISTRATION_SUCCESSFUL
         return Response({"success": "Successfully registered."},
                         status=status.HTTP_201_CREATED)
 

@@ -147,6 +147,10 @@ class TokenAuthentication(BaseAuthentication):
             msg = _('Invalid token header. Token string should not contain invalid characters.')
             raise exceptions.AuthenticationFailed(msg)
 
+        if auth == '':
+            msg = _('Invalid token header. Incorrect format in token header.')
+            raise exceptions.AuthenticationFailed(msg)
+
         try:
             auth = json.loads(auth)
         except ValueError:
