@@ -63,7 +63,7 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
         hash_checksum = ticket['hash_checksum'].lower()
 
         try:
-            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id)
+            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id, type='download')
         except File_Transfer.DoesNotExist:
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)
