@@ -233,6 +233,36 @@ class AuthorizeUploadTests(APITestCaseExtended):
         response = self.client.put(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_failure_token_invalid(self):
+        """
+        Tests authorize upload failure with a token that does not exist
+        """
+
+        url = reverse('fileserver_authorize_upload')
+
+        hash_checksum = 'ABC'
+
+        ticket_decrypted = {
+            'file_transfer_id': str(self.file_transfer.id),
+            'chunk_position': 1,
+            'hash_checksum': hash_checksum,
+        }
+
+        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+
+        data = {
+            'token': 'abc',
+            'chunk_size': self.file_size,
+            'hash_checksum': hash_checksum,
+            'ip_address': '127.0.0.1',
+            'ticket': ticket_encrypted['text'].decode(),
+            'ticket_nonce': ticket_encrypted['nonce'].decode(),
+        }
+
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_failure_token_not_active(self):
         """
         Tests authorize upload failure with a token that is not active

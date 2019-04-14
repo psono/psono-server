@@ -230,6 +230,32 @@ class RevokeDownloadTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    def test_failure_token_invalid(self):
+        """
+        Tests revoke download failure with a token that does not exist
+        """
+
+        url = reverse('fileserver_revoke_download')
+
+        ticket_decrypted = {
+            'file_transfer_id': str(self.file_transfer.id),
+            'hash_checksum': self.hash_checksum,
+        }
+
+        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+
+        data = {
+            'token': 'abc',
+            'ip_address': '127.0.0.1',
+            'ticket': ticket_encrypted['text'].decode(),
+            'ticket_nonce': ticket_encrypted['nonce'].decode(),
+        }
+
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     def test_failure_token_not_active(self):
         """
         Tests revoke download failure with token not being active
