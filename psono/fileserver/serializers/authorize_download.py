@@ -43,8 +43,12 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             msg = _('Invalid token or not yet activated.')
             raise exceptions.ValidationError(msg)
 
+        try:
+            ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
+        except:
+            msg = _('Malformed ticket. Decryption failed.')
+            raise exceptions.ValidationError(msg)
 
-        ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
         ticket = json.loads(ticket_json)
 
         if 'file_transfer_id' not in ticket:
@@ -59,7 +63,7 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
         hash_checksum = ticket['hash_checksum'].lower()
 
         try:
-            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id)
+            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id, type='download')
         except File_Transfer.DoesNotExist:
             msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)

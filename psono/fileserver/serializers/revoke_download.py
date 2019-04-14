@@ -43,8 +43,12 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
             msg = _('Invalid token or not yet activated.')
             raise exceptions.ValidationError(msg)
 
+        try:
+            ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
+        except:
+            msg = _('Malformed ticket. Decryption failed.')
+            raise exceptions.ValidationError(msg)
 
-        ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
         ticket = json.loads(ticket_json)
 
         if 'file_transfer_id' not in ticket:
