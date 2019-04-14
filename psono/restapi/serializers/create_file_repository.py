@@ -29,14 +29,6 @@ class CreateFileRepositorySerializer(serializers.Serializer):
         aws_s3_access_key_id = attrs.get('aws_s3_access_key_id', '').strip()
         aws_s3_secret_access_key = attrs.get('aws_s3_secret_access_key', '').strip()
 
-        if not title:
-            msg = _("TITLE_IS_RQUIRED")
-            raise exceptions.ValidationError(msg)
-
-        if not type:
-            msg = _("TYPE_IS_REQUIRED")
-            raise exceptions.ValidationError(msg)
-
         if type not in settings.FILE_REPOSITORY_TYPES:
             msg = _("UNKNOWN_TYPE")
             raise exceptions.ValidationError(msg)

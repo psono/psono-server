@@ -42,14 +42,6 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
-        if not title:
-            msg = _("TITLE_IS_RQUIRED")
-            raise exceptions.ValidationError(msg)
-
-        if not type:
-            msg = _("TYPE_IS_REQUIRED")
-            raise exceptions.ValidationError(msg)
-
         if type not in settings.FILE_REPOSITORY_TYPES:
             msg = _("UNKNOWN_TYPE")
             raise exceptions.ValidationError(msg)
