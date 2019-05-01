@@ -73,6 +73,7 @@ ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
 ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
+ALLOW_LOST_PASSWORD = config_get('ALLOW_LOST_PASSWORD', True)
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)
 ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
 ALLOW_USER_SEARCH_BY_EMAIL = config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)
@@ -221,7 +222,7 @@ CORS_ALLOW_HEADERS = default_headers + (
 
 TEMPLATES = config_get('TEMPLATES')
 
-WSGI_APPLICATION = 'psono.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
