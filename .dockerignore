@@ -1,5 +1,6 @@
 configs/apache
 configs/nginx
+examples
 demo
 .coverage
 .htmlcov
@@ -9,6 +10,7 @@ demo
 .docu
 docu
 .codeclimate.yml
+.mypy_cache
 .csslintrc
 .eslintignore
 .eslintrc.yml
