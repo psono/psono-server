@@ -46,7 +46,7 @@ def show_cluster_config(cluster_id: str) -> dict:
 
     shards = []
     for links in cluster.links.all():
-        shards.append('{shard_id: ' + str(links.shard_id) + ', read: ' + str(links.read) + ', write: ' + str(links.write) + ', delete: ' + str(links.delete) + ', engine: {class: \'local\', kwargs: {location: \'/opt/psono-shard/'+ str(links.shard_id) +'\'}}}')
+        shards.append('{shard_id: ' + str(links.shard_id) + ', read: ' + str(links.read) + ', write: ' + str(links.write) + ', delete: ' + str(links.delete_capability) + ', engine: {class: \'local\', kwargs: {location: \'/opt/psono-shard/'+ str(links.shard_id) +'\'}}}')
 
     print("SHARDS: ["+','.join(shards)+"]")
 
