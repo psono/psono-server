@@ -2,6 +2,7 @@
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
+from django.forms.models import model_to_dict
 from django.test.utils import override_settings
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
@@ -276,6 +277,9 @@ class AuthenticateTests(APITestCaseExtended):
 
 
     def test_authenticate_failure_user_not_active(self):
+        """
+        Tests that even if a token survives the disabling of a user, a valid token with an inactive user leads to a 401
+        """
 
         # encrypt authorization validator with session key
         authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
@@ -284,8 +288,21 @@ class AuthenticateTests(APITestCaseExtended):
         authorization_validator = encrypted[len(authorization_validator_nonce):]
         authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
 
+        self.assertEqual(models.Token.objects.count(), 1)
+
+        token_backup = model_to_dict(models.Token.objects.first())
+        token_backup['user_id'] = str(token_backup['user'])
+        del token_backup['user']
+
         self.user_obj.is_active = False
         self.user_obj.save()
+
+        self.assertEqual(models.Token.objects.count(), 0)
+
+        token_backup = models.Token(**token_backup)
+        token_backup.save()
+
+        self.assertEqual(models.Token.objects.count(), 1)
 
         url = reverse('authentication_activate_token')
 
