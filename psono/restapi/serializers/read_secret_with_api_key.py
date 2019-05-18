@@ -24,7 +24,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
         json_filter = attrs.get('json_filter', '')
 
         try:
-            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True)
+            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
             api_key = api_key_secret.api_key
             secret = api_key_secret.secret
         except API_Key_Secret.DoesNotExist:

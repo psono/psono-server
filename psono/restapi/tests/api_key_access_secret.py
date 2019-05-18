@@ -382,3 +382,22 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_read_secret_failure_user_owning_api_key_has_been_deactivated(self):
+        """
+        Tests to read a secret with an API key where the user was deactivated before
+        """
+
+        self.test_user_obj.is_active = False
+        self.test_user_obj.save()
+
+        url = reverse('api_key_access_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

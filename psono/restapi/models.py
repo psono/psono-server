@@ -89,6 +89,11 @@ class User(models.Model):
                     email=stored_user.email,
                     email_bcrypt=stored_user.email_bcrypt,
                 )
+
+            if self.is_active:
+                for token in self.auth_tokens:
+                    token.delete()
+
         except User.DoesNotExist:
             pass
 
