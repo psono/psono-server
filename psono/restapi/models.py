@@ -90,7 +90,7 @@ class User(models.Model):
                     email_bcrypt=stored_user.email_bcrypt,
                 )
 
-            if self.is_active:
+            if not self.is_active:
                 for token in self.auth_tokens.all():
                     token.delete()
 
