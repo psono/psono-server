@@ -91,7 +91,7 @@ class User(models.Model):
                 )
 
             if self.is_active:
-                for token in self.auth_tokens:
+                for token in self.auth_tokens.all():
                     token.delete()
 
         except User.DoesNotExist:
