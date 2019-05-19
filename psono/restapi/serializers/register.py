@@ -84,8 +84,8 @@ class RegisterSerializer(serializers.Serializer):
             msg = _('Usernames may only contain letters, numbers, periods and dashes.')
             raise exceptions.ValidationError(msg)
 
-        if len(username) < 3:
-            msg = _('Usernames may not be shorter than 3 chars.')
+        if len(username) < 2:
+            msg = _('Usernames may not be shorter than 2 chars.')
             raise exceptions.ValidationError(msg)
 
         if username.startswith('-'):

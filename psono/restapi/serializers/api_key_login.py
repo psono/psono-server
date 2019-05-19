@@ -46,7 +46,7 @@ class APIKeyLoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not api_key.user.is_active:
-            msg = _('User account is disabled.')
+            msg = _('User account has been disabled.')
             raise exceptions.ValidationError(msg)
 
         if not api_key.user.is_email_active:

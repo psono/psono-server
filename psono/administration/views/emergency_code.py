@@ -34,7 +34,7 @@ class EmergencyCodeView(GenericAPIView):
         for g in  Emergency_Code.objects.select_related('user').order_by('-create_date'):
             emergency_codes.append({
                 'id': g.id,
-                'create_date': g.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_date': g.create_date,
                 'user': g.user.username,
                 'description': g.description
             })

@@ -594,14 +594,14 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not end with a dash.'])
 
 
-    def test_create_account_username_with_only_two_chars(self):
+    def test_create_account_username_with_only_one_chars(self):
         """
-        Test to register with a username that only has 2 chars
+        Test to register with a username that only has 1 char
         """
         url = reverse('authentication_register')
 
         email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
-        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(2)) + '@' + settings.ALLOWED_DOMAINS[0]
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(1)) + '@' + settings.ALLOWED_DOMAINS[0]
         authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
         public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
@@ -625,7 +625,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not be shorter than 3 chars.'])
+        self.assertEqual(response.data.get('username'), [u'Usernames may not be shorter than 2 chars.'])
 
 
     @patch('restapi.views.register.settings', ALLOW_REGISTRATION=False)
