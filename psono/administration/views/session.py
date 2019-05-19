@@ -33,10 +33,10 @@ class SessionView(GenericAPIView):
         for u in  Token.objects.select_related('user').only('id', 'create_date', 'user__username', 'active', 'valid_till', 'device_description', 'device_fingerprint').order_by('-create_date'):
             sessions.append({
                 'id': u.id,
-                'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_date': u.create_date,
                 'username': u.user.username,
                 'active': u.active,
-                'valid_till': u.valid_till.strftime('%Y-%m-%d %H:%M:%S'),
+                'valid_till': u.valid_till,
                 'device_description': u.device_description,
                 'device_fingerprint': u.device_fingerprint,
             })

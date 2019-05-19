@@ -86,9 +86,9 @@ class UserView(GenericAPIView):
                                                            'device_fingerprint').order_by('-create_date'):
             sessions.append({
                 'id': u.id,
-                'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_date': u.create_date,
                 'active': u.active,
-                'valid_till': u.valid_till.strftime('%Y-%m-%d %H:%M:%S'),
+                'valid_till': u.valid_till,
                 'device_description': u.device_description,
                 'device_fingerprint': u.device_fingerprint,
             })
@@ -159,7 +159,7 @@ class UserView(GenericAPIView):
                     .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled').order_by('-create_date'):
                 users.append({
                     'id': u.id,
-                    'create_date': u.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    'create_date': u.create_date,
                     'username': u.username,
                     'is_active': u.is_active,
                     'is_email_active': u.is_email_active,

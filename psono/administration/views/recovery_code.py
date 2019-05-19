@@ -34,7 +34,7 @@ class RecoveryCodeView(GenericAPIView):
         for g in  Recovery_Code.objects.select_related('user').order_by('-create_date'):
             recovery_codes.append({
                 'id': g.id,
-                'create_date': g.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_date': g.create_date,
                 'user': g.user.username,
             })
 

@@ -85,7 +85,7 @@ class InfoView(GenericAPIView):
         registrations = []
         for r in past_registrations:
             registrations.append({
-                'date': r.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'date': r.create_date,
                 'username': r.username,
                 'active': r.is_active,
             })

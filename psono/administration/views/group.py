@@ -84,7 +84,7 @@ class GroupView(GenericAPIView):
             for g in  Group.objects.annotate(member_count=Count('members__id')).order_by('-create_date'):
                 groups.append({
                     'id': g.id,
-                    'create_date': g.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    'create_date': g.create_date,
                     'name': g.name,
                     'member_count': g.member_count,
                 })

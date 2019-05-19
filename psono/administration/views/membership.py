@@ -32,7 +32,7 @@ class MembershipView(GenericAPIView):
         for g in  User_Group_Membership.objects.select_related('user', 'group').order_by('-create_date'):
             memberships.append({
                 'id': g.id,
-                'create_date': g.create_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_date': g.create_date,
                 'username': g.user.username,
                 'group': g.group.name,
             })
