@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, Token
+from restapi.models import User, Token, Fileserver_Cluster_Members
 
 class InfoView(GenericAPIView):
 
@@ -35,9 +35,9 @@ class InfoView(GenericAPIView):
 
         info['user_count_active'] = User.objects.filter(is_active=True).count()
         info['user_count_total'] = User.objects.count()
-        info['token_count_total'] = Token.objects.count()
-        info['token_count_device'] = Token.objects.values('device_fingerprint').annotate(num_sessions=Count('device_fingerprint')).count()
-        info['token_count_user'] = Token.objects.values('user_id').annotate(num_sessions=Count('user_id')).count()
+        info['token_count_total'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).count()
+        info['token_count_device'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).values('device_fingerprint').annotate(num_sessions=Count('device_fingerprint')).count()
+        info['token_count_user'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).values('user_id').annotate(num_sessions=Count('user_id')).count()
 
 
         monthly_registrations = User.objects.annotate(month=TruncMonth('create_date')).values('month').annotate(counter=Count('id')).values('month', 'counter').order_by('month')
@@ -80,6 +80,21 @@ class InfoView(GenericAPIView):
         info['registrations_over_day'] = registrations_over_day
 
 
+        fileserver_cluster_members = Fileserver_Cluster_Members.objects.\
+            filter(valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT)).\
+            select_related('fileserver_cluster').\
+            only('create_date', 'fileserver_cluster__title', 'hostname', 'version')
+
+        fileserver = []
+        for r in fileserver_cluster_members:
+            fileserver.append({
+                'create_date': r.create_date,
+                'fileserver_cluster_title': r.fileserver_cluster.title,
+                'hostname': r.hostname,
+                'version': r.version,
+            })
+
+        info['fileserver'] = fileserver
 
         past_registrations = User.objects.order_by('-create_date')[:10]
         registrations = []
