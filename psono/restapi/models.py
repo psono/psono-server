@@ -355,7 +355,6 @@ class API_Key_Secret(models.Model):
         unique_together = ('api_key', 'secret',)
 
 
-
 class Secret_History(models.Model):
     """
     The copy of a secret that is created every time a secret is updated.
@@ -626,6 +625,8 @@ class Fileserver_Cluster_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
+    allow_link_shares = models.BooleanField(_('Allow link shares'), default=True,
+        help_text=_('Allows anonymous access with link shares'))
     delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this connection accepts deletes'))
 
@@ -659,6 +660,8 @@ class Fileserver_Cluster_Members(models.Model):
         help_text=_('Weather this server accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this server accepts writes'))
+    allow_link_shares = models.BooleanField(_('Allow link shares'), default=True,
+        help_text=_('Allows anonymous access with link shares'))
     delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this server accepts deletes'))
 
@@ -746,6 +749,8 @@ class Fileserver_Cluster_Member_Shard_Link(models.Model):
         help_text=_('Weather this shard accepts reads'))
     write = models.BooleanField(_('Write'), default=True,
         help_text=_('Weather this shard accepts writes'))
+    allow_link_shares = models.BooleanField(_('Allow link shares'), default=True,
+        help_text=_('Allows anonymous access with link shares'))
     delete_capability = models.BooleanField(_('Delete'), default=True,
         help_text=_('Weather this shard accepts delete jobs'))
     ip_read_whitelist = models.CharField(_('IP read whitelist'), max_length=2048,
@@ -831,6 +836,7 @@ class File_Transfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
+    secret_key = models.CharField(max_length=64, default='')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.SET_NULL, null=True, related_name='file_transfer')
@@ -847,6 +853,38 @@ class File_Transfer(models.Model):
         help_text=_('The amount of chunks'))
     chunk_count_transferred = models.IntegerField('Chunk Count Transfered',
         help_text=_('The amount of chunks already transfered'))
+
+
+    def save(self, *args, **kwargs):
+        if not self.secret_key:
+            self.secret_key = nacl.encoding.HexEncoder.encode(
+                nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
+            ).decode()
+
+        return super(File_Transfer, self).save(*args, **kwargs)
+
+    class Meta:
+        abstract = False
+
+
+class Link_Share(models.Model):
+    """
+    All the link shares
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='link_shares')
+    secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='link_shares', null=True)
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='link_shares', null=True)
+    public_title = models.CharField(_('Public Title'), max_length=256)
+    allowed_reads = models.IntegerField('File size limit', blank=True, null=True,
+                                        help_text=_('The remaining amount of allowed reads. Null if no restriction applies.'))
+    node = models.BinaryField()
+    node_nonce = models.CharField(_('Node nonce'), max_length=64)
+    passphrase = models.CharField(_('Passphrase'), max_length=128, blank=True, null=True)
+
+    valid_till = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         abstract = False

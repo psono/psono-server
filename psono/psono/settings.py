@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1440/day',
         'login': '48/day',
+        'link_share_secret': '60/hour',
         'password': '24/day',
         'user': '28800/day',
         'health_check': '61/hour',

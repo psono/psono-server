@@ -69,6 +69,7 @@ class FileView(GenericAPIView):
 
         return Response({
             "file_transfer_id": file_transfer.id,
+            "file_transfer_secret_key": file_transfer.secret_key,
         }, status=status.HTTP_201_CREATED)
 
 
@@ -140,7 +141,8 @@ class FileView(GenericAPIView):
 
         return Response({
             "file_id": file.id,
-            "file_transfer_id": file_transfer.id
+            "file_transfer_id": file_transfer.id,
+            "file_transfer_secret_key": file_transfer.secret_key,
         }, status=status.HTTP_201_CREATED)
 
     def post(self, *args, **kwargs):

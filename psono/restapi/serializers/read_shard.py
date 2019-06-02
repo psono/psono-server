@@ -22,7 +22,7 @@ class ReadShardSerializer(serializers.Serializer):
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
                     shard__active=True)\
             .only('read', 'write', 'ip_read_blacklist', 'ip_read_whitelist', 'ip_write_blacklist', 'ip_write_whitelist',
-                  'member__url', 'member__read', 'member__write', 'member__public_key', 'shard__id', 'shard__title', 'shard__description')
+                  'member__url', 'member__read', 'member__write', 'member__public_key', 'member__url', 'shard__id', 'shard__title', 'shard__description')
 
         shards: List[Dict] = []
         shard_dic: Dict[str, Dict] = {}

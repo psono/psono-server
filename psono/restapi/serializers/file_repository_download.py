@@ -8,19 +8,13 @@ from ..fields import UUIDField
 
 class FileRepositoryDownloadSerializer(serializers.Serializer):
 
-    file_transfer_id = UUIDField(required=True)
     hash_checksum = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        file_transfer_id = attrs.get('file_transfer_id')
         hash_checksum = attrs.get('hash_checksum', '').lower()
 
-        try:
-            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_repository__type', 'file_repository__data').get(pk=file_transfer_id, user=self.context['request'].user)
-        except File_Transfer.DoesNotExist:
-            msg = _('Filetransfer does not exist.')
-            raise exceptions.ValidationError(msg)
+        file_transfer = self.context['request'].auth
 
         try:
             file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)

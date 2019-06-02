@@ -54,6 +54,7 @@ class LoginSerializer(serializers.Serializer):
         user, error_code = authenticate(username=username, authkey=authkey, password=password)
 
         if not user:
+            # TODO change this to USERNAME_OR_PASSWORD_WRONG
             msg = _('Username or password wrong.')
             raise exceptions.ValidationError(msg)
 

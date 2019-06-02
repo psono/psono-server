@@ -8,6 +8,7 @@ from restapi.utils import get_cache
 from restapi.authentication import TokenAuthentication
 from restapi.models import Token, File_Transfer, File_Chunk, Fileserver_Cluster_Member_Shard_Link
 from restapi.parsers import decrypt
+from restapi.fields import UUIDField
 
 from datetime import timedelta
 import json
@@ -15,58 +16,43 @@ import json
 class FileserverRevokeDownloadSerializer(serializers.Serializer):
 
 
-    token = serializers.CharField(required=True)
+    file_transfer_id = UUIDField(required=True)
     ticket = serializers.CharField(required=True)
     ticket_nonce = serializers.CharField(required=True)
     ip_address = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        token = attrs.get('token')
+        file_transfer_id = attrs.get('file_transfer_id')
         ticket_encrypted = attrs.get('ticket')
         ticket_nonce = attrs.get('ticket_nonce')
         ip_address = attrs.get('ip_address')
 
-        token_hash = TokenAuthentication.user_token_to_token_hash(token)
-
-        token = get_cache(Token, token_hash)
-
-        if token is None:
-            msg = _('Invalid token or not yet activated.')
+        try:
+            file_transfer = File_Transfer.objects.select_related('user').\
+                only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
+                get(pk=file_transfer_id, type='download')
+        except File_Transfer.DoesNotExist:
+            msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)
 
-        if not token.active:
-            msg = _('Invalid token or not yet activated.')
-            raise exceptions.ValidationError(msg)
-
-        if token.valid_till < timezone.now():
-            msg = _('Invalid token or not yet activated.')
+        if not file_transfer.user.is_active:
+            msg = _('User inactive.')
             raise exceptions.ValidationError(msg)
 
         try:
-            ticket_json = decrypt(token.secret_key, ticket_encrypted, ticket_nonce)
+            ticket_json = decrypt(file_transfer.secret_key, ticket_encrypted, ticket_nonce)
         except:
             msg = _('Malformed ticket. Decryption failed.')
             raise exceptions.ValidationError(msg)
 
         ticket = json.loads(ticket_json)
 
-        if 'file_transfer_id' not in ticket:
-            msg = _('Malformed ticket. File transfer ID missing.')
-            raise exceptions.ValidationError(msg)
-
         if 'hash_checksum' not in ticket:
             msg = _('Malformed ticket. Blake2b hash missing.')
             raise exceptions.ValidationError(msg)
 
-        file_transfer_id = ticket['file_transfer_id']
         hash_checksum = ticket['hash_checksum'].lower()
-
-        try:
-            file_transfer = File_Transfer.objects.only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id').get(pk=file_transfer_id, user=token.user_id, type='download')
-        except File_Transfer.DoesNotExist:
-            msg = _('Filetransfer does not exist.')
-            raise exceptions.ValidationError(msg)
 
         count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),

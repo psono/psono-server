@@ -842,7 +842,7 @@ def get_uuid_start_and_end(count, position):
     return start, end
 
 
-def fileserver_access(cmsl, ip_address, read=None, write=None):
+def fileserver_access(cmsl, ip_address, read=None, write=None, allow_link_shares=None):
     """
     Tests weather an ip address has access for a specific cluster member shard link
 

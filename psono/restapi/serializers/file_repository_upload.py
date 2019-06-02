@@ -5,16 +5,16 @@ from ..fields import UUIDField
 from ..models import File_Transfer
 
 class FileRepositoryUploadSerializer(serializers.Serializer):
-    file_transfer_id = UUIDField(required=True)
     chunk_size = serializers.IntegerField(required=True)
     chunk_position = serializers.IntegerField(required=True)
     hash_checksum = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        file_transfer_id = attrs.get('file_transfer_id')
         chunk_size = attrs.get('chunk_size', 0)
         hash_checksum = attrs.get('hash_checksum', '').lower()
+
+        file_transfer = self.context['request'].auth
 
         chunk_size_limit = 128 * 1024 * 1024 + 40
         if chunk_size > chunk_size_limit:
@@ -22,12 +22,6 @@ class FileRepositoryUploadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
         if chunk_size < 40:
             msg = _("Chunk size too small.")
-            raise exceptions.ValidationError(msg)
-
-        try:
-            file_transfer = File_Transfer.objects.select_related('file_repository').only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'file_repository__type', 'file_repository__data').get(pk=file_transfer_id, user=self.context['request'].user)
-        except File_Transfer.DoesNotExist:
-            msg = _('Filetransfer does not exist.')
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
