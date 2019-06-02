@@ -16,12 +16,12 @@ from ..app_settings import (
 from ..models import File_Chunk
 
 from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url, aws_construct_signed_upload_url
-from ..authentication import TokenAuthentication
+from ..authentication import FileTransferAuthentication
 
 
 class FileRepositoryUploadView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (FileTransferAuthentication,)
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
 

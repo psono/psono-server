@@ -14,12 +14,12 @@ from ..app_settings import (
 )
 
 from ..utils import decrypt_with_db_secret, gcs_construct_signed_download_url, aws_construct_signed_download_url
-from ..authentication import TokenAuthentication
+from ..authentication import FileTransferAuthentication
 
 
 class FileRepositoryDownloadView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (FileTransferAuthentication,)
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
 
@@ -69,6 +69,7 @@ class FileRepositoryDownloadView(GenericAPIView):
             url = aws_construct_signed_download_url(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], hash_checksum)
 
         return Response({
+            'type': file_transfer.file_repository.type,
             'url': url
         }, status=status.HTTP_200_OK)
 

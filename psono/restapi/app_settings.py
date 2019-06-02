@@ -82,6 +82,10 @@ from .serializers import (
     CreateFileRepositoryRightSerializer as DefaultCreateFileRepositoryRightSerializer,
     UpdateFileRepositoryRightSerializer as DefaultUpdateFileRepositoryRightSerializer,
     DeleteFileRepositoryRightSerializer as DefaultDeleteFileRepositoryRightSerializer,
+    CreateLinkShareSerializer as DefaultCreateLinkShareSerializer,
+    UpdateLinkShareSerializer as DefaultUpdateLinkShareSerializer,
+    DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
+    LinkShareAccessSerializer as DefaultLinkShareAccessSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -641,6 +645,34 @@ DeleteFileRepositoryRightSerializer = import_callable(
     serializers.get(
         'DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER',
         DefaultDeleteFileRepositoryRightSerializer
+    )
+)
+
+CreateLinkShareSerializer = import_callable(
+    serializers.get(
+        'CREATE_LINK_SHARE_SERIALIZER',
+        DefaultCreateLinkShareSerializer
+    )
+)
+
+UpdateLinkShareSerializer = import_callable(
+    serializers.get(
+        'UPDATE_LINK_SHARE_SERIALIZER',
+        DefaultUpdateLinkShareSerializer
+    )
+)
+
+DeleteLinkShareSerializer = import_callable(
+    serializers.get(
+        'DELETE_LINK_SHARE_SERIALIZER',
+        DefaultDeleteLinkShareSerializer
+    )
+)
+
+LinkShareAccessSerializer = import_callable(
+    serializers.get(
+        'LINK_SHARE_ACCESS_SERIALIZER',
+        DefaultLinkShareAccessSerializer
     )
 )
 

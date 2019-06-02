@@ -59,6 +59,10 @@ urlpatterns = [
     url(r'^api-key/(?P<api_key_id>[^/]+)/$', views.APIKeyView.as_view(), name='api_key'),
     url(r'^api-key/$', views.APIKeyView.as_view(), name='api_key'),
 
+    url(r'^link-share-access/$', views.LinkShareAccessView.as_view(), name='link_share_access'),
+    url(r'^link-share/(?P<link_share_id>[^/]+)/$', views.LinkShareView.as_view(), name='link_share'),
+    url(r'^link-share/$', views.LinkShareView.as_view(), name='link_share'),
+
     url(r'^datastore/$', views.DatastoreView.as_view(), name='datastore'),
     url(r'^datastore/(?P<datastore_id>[^/]+)/$', views.DatastoreView.as_view(), name='datastore'),
 

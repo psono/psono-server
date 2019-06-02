@@ -13,7 +13,7 @@ import dateutil.parser
 import datetime
 
 from .parsers import decrypt
-from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link
+from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link, File_Transfer
 from .utils import get_cache, decrypt_with_db_secret, get_ip
 
 import nacl.encoding
@@ -185,6 +185,78 @@ class TokenAuthentication(BaseAuthentication):
     def authenticate_header(self, request):
         return 'Token'
 
+
+class FileTransferAuthentication(BaseAuthentication):
+    """
+    File transfer based authentication.
+
+    Clients should authenticate by passing the token key in the "Authorization"
+    HTTP header, prepended with the string "Token ".  For example:
+
+        Authorization: Filetransfer 71a1878c-d5a0-49d8-ab17-eba0046e4018
+
+    """
+
+    model = Token
+    allow_inactive = False
+    """
+    A custom token model may be used, but must have the following properties.
+
+    * key -- The string identifying the token
+    * user -- The user to which the token belongs
+    """
+
+    def authenticate(self, request):
+        file_transfer_id = self.get_file_transfer_id(request)
+
+        try:
+            file_transfer = File_Transfer.objects.select_related('user').get(pk=file_transfer_id)
+        except File_Transfer.DoesNotExist:
+            raise exceptions.AuthenticationFailed(_('FILE_TRANSFER_INVALID'))
+
+        if not file_transfer.user.is_active:
+            raise exceptions.AuthenticationFailed(_('USER_INACTIVE_OR_DELETED'))
+
+        if not file_transfer.user.is_email_active:
+            raise exceptions.AuthenticationFailed(_('ACCOUNT_NOT_VERIFIED'))
+
+        request.user = file_transfer.user
+        file_transfer.session_secret_key = file_transfer.secret_key
+        file_transfer.write = True
+
+        client.context.merge({'user': {
+            'username': request.user.username
+        }})
+
+        return file_transfer.user, file_transfer
+
+
+    @staticmethod
+    def get_file_transfer_id(request):
+        auth = get_authorization_header(request).split()
+
+        if not auth or auth[0].lower() != b'filetransfer':
+            msg = _('Invalid filetransfer header. No token header present.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        if len(auth) == 1:
+            msg = _('Invalid filetransfer header. No credentials provided.')
+            raise exceptions.AuthenticationFailed(msg)
+        elif len(auth) > 2:
+            msg = _('Invalid filetransfer header. File transfer id string should not contain spaces.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        try:
+            file_transfer_id = auth[1].decode()
+        except UnicodeError:
+            msg = _('Invalid filetransfer header. File transfer id string should not contain invalid characters.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        return file_transfer_id
+
+    def authenticate_header(self, request):
+        return 'Filetransfer'
+
 class FileserverAuthentication(TokenAuthentication):
 
     def authenticate(self, request):
@@ -249,6 +321,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 url=fileserver_info['HOST_URL'],
                 read=fileserver_info['READ'],
                 write=fileserver_info['WRITE'],
+                allow_link_shares=fileserver_info.get('ALLOW_LINK_SHARES', True),
                 delete_capability=fileserver_info['DELETE'],
                 valid_till=timezone.now()+datetime.timedelta(seconds=30),
             )
@@ -259,6 +332,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                     member_id=fileserver.id,
                     read=shard['read'],
                     write=shard['write'],
+                    allow_link_shares=shard.get('allow_link_shares', True),
                     delete_capability=shard['delete'],
                     ip_read_whitelist=json.dumps(fileserver_info['IP_READ_WHITELIST']),
                     ip_read_blacklist=json.dumps(fileserver_info['IP_READ_BLACKLIST']),
@@ -275,13 +349,14 @@ class FileserverAliveAuthentication(TokenAuthentication):
     @staticmethod
     def validate_cluster_shard_access(cluster_id, announced_shards):
 
-        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).only('read', 'write', 'delete_capability').all()
+        fcsls = Fileserver_Cluster_Shard_Link.objects.filter(cluster_id=cluster_id).only('read', 'write', 'delete_capability', 'allow_link_shares').all()
         shards = {}
         for fcsl in fcsls:
             shards[str(fcsl.shard_id)] = {
                 'read': fcsl.read,
                 'write': fcsl.write,
                 'delete': fcsl.delete_capability,
+                'allow_link_shares': fcsl.allow_link_shares,
             }
 
         for shard in announced_shards:
