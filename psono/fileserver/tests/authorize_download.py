@@ -179,16 +179,15 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         chunk_size = self.file_size
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -208,22 +207,21 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         self.assertEqual(self.file_transfer.chunk_count_transferred + 1, refreshed_file_transfer.chunk_count_transferred)
 
 
-    def test_failure_missing_token(self):
+    def test_failure_missing_file_transfer_id(self):
         """
-        Tests failing authorize download when the token parameter is not set
+        Tests failing authorize download when the file_transfer_id parameter is not set
         """
 
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            # 'token': self.user_token,
+            # 'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -234,80 +232,21 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_failure_invalid_token(self):
+    def test_failure_invalid_file_transfer_id(self):
         """
-        Tests failing authorize download when a token that does not exist
+        Tests failing authorize download with a file_transfer_id that does not exist
         """
 
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': 'abc',
-            'ip_address': '127.0.0.1',
-            'ticket': ticket_encrypted['text'].decode(),
-            'ticket_nonce': ticket_encrypted['nonce'].decode(),
-        }
-
-        self.client.force_authenticate(user=self.fileserver1)
-        response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-    def test_failure_token_not_active(self):
-        """
-        Tests failing authorize download when the token is not active
-        """
-
-        self.user_db_token.active = False
-        self.user_db_token.save()
-
-        url = reverse('fileserver_authorize_download')
-
-        ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
-            'hash_checksum': self.hash_checksum,
-        }
-
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
-
-        data = {
-            'token': self.user_token,
-            'ip_address': '127.0.0.1',
-            'ticket': ticket_encrypted['text'].decode(),
-            'ticket_nonce': ticket_encrypted['nonce'].decode(),
-        }
-
-        self.client.force_authenticate(user=self.fileserver1)
-        response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-    def test_failure_token_expired(self):
-        """
-        Tests failing authorize download when the token has expired
-        """
-
-        self.user_db_token.valid_till = timezone.now() - timedelta(days=1)
-        self.user_db_token.save()
-
-        url = reverse('fileserver_authorize_download')
-
-        ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
-            'hash_checksum': self.hash_checksum,
-        }
-
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
-
-        data = {
-            'token': self.user_token,
+            'file_transfer_id': 'abc',
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -320,50 +259,23 @@ class AuthorizeDownloadTests(APITestCaseExtended):
 
     def test_failure_token_decryption_failing(self):
         """
-        Tests failing authorize download when the token has expired
+        Tests failing authorize download because of a failing decryption
         """
 
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
 
-        self.user_db_token.secret_key = binascii.hexlify(os.urandom(32)).decode()
-        self.user_db_token.save()
-
-        data = {
-            'token': self.user_token,
-            'ip_address': '127.0.0.1',
-            'ticket': ticket_encrypted['text'].decode(),
-            'ticket_nonce': ticket_encrypted['nonce'].decode(),
-        }
-
-        self.client.force_authenticate(user=self.fileserver1)
-        response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-    def test_failure_file_transfer_id_not_in_ticket(self):
-        """
-        Tests failing authorize download when the file transfer id is not part of the ticket
-        """
-
-        url = reverse('fileserver_authorize_download')
-
-        ticket_decrypted = {
-            # 'file_transfer_id': str(self.file_transfer.id),
-            'hash_checksum': self.hash_checksum,
-        }
-
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        self.file_transfer.secret_key = binascii.hexlify(os.urandom(32)).decode()
+        self.file_transfer.save()
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -382,14 +294,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             # 'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -408,43 +319,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
+            'hash_checksum': self.hash_checksum,
+        }
+
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+
+        data = {
             'file_transfer_id': '8beab082-c802-4622-b9c1-2dcbef4f188b',
-            'hash_checksum': self.hash_checksum,
-        }
-
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
-
-        data = {
-            'token': self.user_token,
-            'ip_address': '127.0.0.1',
-            'ticket': ticket_encrypted['text'].decode(),
-            'ticket_nonce': ticket_encrypted['nonce'].decode(),
-        }
-
-        self.client.force_authenticate(user=self.fileserver1)
-        response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-    def test_failure_file_transfer_belongs_to_another_user(self):
-        """
-        Tests failing authorize download when the file transfer belongs to another user
-        """
-
-        self.file_transfer.user = self.test_user_obj2
-        self.file_transfer.save()
-
-        url = reverse('fileserver_authorize_download')
-
-        ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
-            'hash_checksum': self.hash_checksum,
-        }
-
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
-
-        data = {
-            'token': self.user_token,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -466,14 +347,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -494,14 +374,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -520,14 +399,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': 'abcdef',
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -549,14 +427,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),
@@ -578,14 +455,13 @@ class AuthorizeDownloadTests(APITestCaseExtended):
         url = reverse('fileserver_authorize_download')
 
         ticket_decrypted = {
-            'file_transfer_id': str(self.file_transfer.id),
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.user_db_token.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
-            'token': self.user_token,
+            'file_transfer_id': self.file_transfer.id,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
             'ticket_nonce': ticket_encrypted['nonce'].decode(),

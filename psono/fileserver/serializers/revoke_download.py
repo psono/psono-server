@@ -48,10 +48,6 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
 
         ticket = json.loads(ticket_json)
 
-        if 'file_transfer_id' not in ticket:
-            msg = _('Malformed ticket. File transfer ID missing.')
-            raise exceptions.ValidationError(msg)
-
         if 'hash_checksum' not in ticket:
             msg = _('Malformed ticket. Blake2b hash missing.')
             raise exceptions.ValidationError(msg)
