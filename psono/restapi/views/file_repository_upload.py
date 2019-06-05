@@ -15,7 +15,7 @@ from ..app_settings import (
 
 from ..models import File_Chunk
 
-from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url, aws_construct_signed_upload_url
+from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url, aws_construct_signed_upload_url, do_construct_signed_upload_url
 from ..authentication import FileTransferAuthentication
 
 
@@ -80,6 +80,10 @@ class FileRepositoryUploadView(GenericAPIView):
             url = base_url + "?" + urllib.parse.urlencode(query_params)
         elif file_transfer.file_repository.type == 'aws_s3':
             url_and_fields = aws_construct_signed_upload_url(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], hash_checksum)
+            url = url_and_fields['url']
+            fields = url_and_fields['fields']
+        elif file_transfer.file_repository.type == 'do_spaces':
+            url_and_fields = do_construct_signed_upload_url(data['do_space'], data['do_region'], data['do_key'], data['do_secret'], hash_checksum)
             url = url_and_fields['url']
             fields = url_and_fields['fields']
 

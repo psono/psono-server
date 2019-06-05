@@ -298,6 +298,7 @@ FILES_ENABLED = config_get('FILES_ENABLED', True)
 FILE_REPOSITORY_TYPES = [
     'gcp_cloud_storage',
     'aws_s3',
+    'do_spaces',
 ]
 
 FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)
