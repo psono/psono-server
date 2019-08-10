@@ -934,7 +934,7 @@ class LoginTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'Username or password wrong.'])
+        self.assertEqual(response.data.get('non_field_errors'), [u'USERNAME_OR_PASSWORD_WRONG'])
 
         self.assertEqual(models.Token.objects.count(), 0)
 
