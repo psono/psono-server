@@ -50,12 +50,18 @@ class LoginSerializer(serializers.Serializer):
         username = request_data.get('username').lower().strip()
         authkey = request_data.get('authkey')
         password = request_data.get('password', False)
+        source = request_data.get('client_type', 'webclient')
+
+        if source == 'app':
+            session_duration = min(session_duration, settings.MAX_APP_TOKEN_TIME_VALID)
+        else:
+            # e.g. webclient
+            session_duration = min(session_duration, settings.MAX_WEBCLIENT_TOKEN_TIME_VALID)
 
         user, error_code = authenticate(username=username, authkey=authkey, password=password)
 
         if not user:
-            # TODO change this to USERNAME_OR_PASSWORD_WRONG
-            msg = _('Username or password wrong.')
+            msg = _('USERNAME_OR_PASSWORD_WRONG')
             raise exceptions.ValidationError(msg)
 
         if not user.is_active:
