@@ -9,6 +9,7 @@ from restapi import models
 
 from .base import APITestCaseExtended
 
+from datetime import timedelta
 from ..utils import readbuffer
 import random
 import string
@@ -44,8 +45,35 @@ class RecoveryCodeTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
+            duo_enabled=True,
+            google_authenticator_enabled=True,
+            yubikey_otp_enabled=True,
             user_sauce=self.test_user_sauce,
             is_email_active=True
+        )
+
+        models.Google_Authenticator.objects.create(
+                user=self.test_user_obj,
+                title= 'My TItle',
+                secret = '1234'
+        )
+
+        models.Duo.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            duo_integration_key = 'duo_integration_key',
+            duo_secret_key = 'duo_secret_key',
+            duo_host = 'duo_secret_key',
+            enrollment_user_id = 'enrollment_user_id',
+            enrollment_activation_code = 'enrollment_activation_code',
+            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            active = False,
+        )
+
+        models.Yubikey_OTP.objects.create(
+            user=self.test_user_obj,
+            title= 'My Sweet Title',
+            yubikey_id = '1234'
         )
 
     def test_put_recoverycode(self):
@@ -920,7 +948,14 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(db_user.private_key_nonce, new_private_key_nonce)
         self.assertEqual(db_user.secret_key, new_secret_key)
         self.assertEqual(db_user.secret_key_nonce, new_secret_key_nonce)
+        self.assertEqual(db_user.duo_enabled, False)
+        self.assertEqual(db_user.google_authenticator_enabled, False)
+        self.assertEqual(db_user.yubikey_otp_enabled, False)
         self.assertTrue(check_password(new_authkey, db_user.authkey))
+
+        self.assertFalse(models.Google_Authenticator.objects.filter(user=self.test_user_obj).exists())
+        self.assertFalse(models.Yubikey_OTP.objects.filter(user=self.test_user_obj).exists())
+        self.assertFalse(models.Duo.objects.filter(user=self.test_user_obj).exists())
 
         db_recovery_code = models.Recovery_Code.objects.get(pk=self.test_recovery_code_obj.id)
 
