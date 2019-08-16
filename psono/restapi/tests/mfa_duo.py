@@ -717,7 +717,7 @@ class DuoTests(APITestCaseExtended):
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_undefined_error)
-    def test_activate_duo_failure_error(self):
+    def test_activate_duo_failure_error_unknown(self):
         """
         Tests POST method on user_duo to activate a duo and auth returns an undefined error
         """
