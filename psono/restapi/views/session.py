@@ -38,7 +38,7 @@ class SessionView(GenericAPIView):
         for session in self.token_model.objects.filter(user=request.user, valid_till__gt=timezone.now(), active=True):
             sessions.append({
                 "id": str(session.id),
-                "create_date": session.create_date.strftime("%Y-%m-%d %H:%M:%S"),
+                "create_date": session.create_date,
                 "device_description": session.device_description,
                 "current_session": session.id == request.auth.id,
             })
