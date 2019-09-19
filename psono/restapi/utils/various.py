@@ -656,6 +656,19 @@ def disable_user(username: str) -> dict:
 
     return {}
 
+def verify_user_email(username: str) -> dict:
+    try:
+        user = User.objects.get(username=username.lower())
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.is_email_active = True
+    user.save()
+
+    return {}
+
 def encrypt_with_db_secret(plain_text: str) -> str:
     """
     Encrypts plain text with the db secret
