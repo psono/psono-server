@@ -275,7 +275,7 @@ if config_get('CACHE_REDIS', False):
        "default": { # type: ignore
            "BACKEND": "django_redis.cache.RedisCache",
            "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
-           "OPTIONS": {
+           "OPTIONS": { # type: ignore
                "CLIENT_CLASS": "django_redis.client.DefaultClient",
            }
        }
