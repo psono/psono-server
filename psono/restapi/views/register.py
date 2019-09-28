@@ -118,12 +118,10 @@ class RegisterView(GenericAPIView):
             msg.send()
         except:
             user.delete()
-            # TODO change this to REGISTRATION_EMAIL_DELIVERY_FAILED
-            return Response({"custom": ["Registration E-Mail delivery failed. Account not created."]},
+            return Response({"non_field_errors": ["REGISTRATION_EMAIL_DELIVERY_FAILED"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # TODO change this to REGISTRATION_SUCCESSFUL
-        return Response({"success": "Successfully registered."},
+        return Response({"success": "REGISTRATION_SUCCESSFUL"},
                         status=status.HTTP_201_CREATED)
 
     def delete(self, *args, **kwargs):
