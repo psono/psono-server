@@ -45,7 +45,7 @@ class LinkShareView(GenericAPIView):
 
             link_shares = []
 
-            for link_share in Link_Share.objects.filter(user=request.user, valid_till__gte=timezone.now(), allowed_reads__gt=0):
+            for link_share in Link_Share.objects.filter(user=request.user).exclude(valid_till__lt=timezone.now()).exclude(allowed_reads__lte=0):
                 link_shares.append({
                     'id': link_share.id,
                     'public_title': link_share.public_title,
