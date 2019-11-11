@@ -58,7 +58,7 @@ class UserDuo(GenericAPIView):
         :rtype:
         """
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = NewDuoSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 

@@ -75,7 +75,18 @@ def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: 
             skey=secret_key,
             host=host,
         )
-        enrollment = auth_api.enroll(username=username)
+
+        pre_auth = auth_api.preauth(username=username)
+
+        if pre_auth['result'] == 'deny':
+            return {
+                'error': 'User denied by DUO'
+            }
+
+        enrollment = {}
+        if pre_auth['result'] == 'enroll':
+            enrollment = auth_api.enroll(username=username)
+
     except gaierror:
         return {
             'error': 'Host incorrect: Could not be found'
@@ -134,6 +145,8 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
             skey=secret_key,
             host=host,
         )
+
+
         enrollment_status = auth_api.enroll_status(user_id=user_id, activation_code=activation_code)
     except gaierror:
         return {
@@ -167,7 +180,7 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
 
 
 
-def duo_auth_auth(integration_key: str, secret_key: str, host: str, user_id: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async: bool = False) -> dict:
+def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async: bool = False) -> dict:
     """
     Auth call with the user id
 
@@ -177,8 +190,8 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, user_id: str
     :type secret_key: str
     :param host: The Duo host
     :type host: str
-    :param user_id: The Duo user id
-    :type user_id: str
+    :param username: The Duo username
+    :type username: str
     :param factor: The Duo factor
     :type factor: str
     :param device: The Duo device
@@ -199,7 +212,7 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, user_id: str
             skey=secret_key,
             host=host,
         )
-        auth = auth_api.auth(user_id=user_id, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async=async)
+        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async=async)
     except gaierror:
         return {
             'error': 'Host incorrect: Could not be found'

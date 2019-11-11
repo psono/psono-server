@@ -127,20 +127,20 @@ class DuoVerifyTests(APITestCaseExtended):
         return 'waiting'
 
 
-    def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'allow'
         }
-    def mock_auth_invalid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_invalid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'deny'
         }
-    def mock_auth_status_msg(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'deny',
             'status_msg': 'Deny it!'
         }
-    def mock_auth_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'deny',
             'error': 'Funny error'
@@ -425,8 +425,14 @@ class DuoTests(APITestCaseExtended):
             'error': 'Some Error'
         }
 
+    def mock_preauth_enroll(self, username=None):
+        return {
+            'result': 'enroll'
+        }
+
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll)
+    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
     def test_put_user_duo(self):
         """
         Tests PUT method on user_duo to create a new duo
@@ -450,6 +456,7 @@ class DuoTests(APITestCaseExtended):
 
     @patch('duo_client.Auth.check', mock_check_error)
     @patch('duo_client.Auth.enroll', mock_enroll)
+    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
     def test_put_user_duo_error_in_check(self):
         """
         Tests PUT method on user_duo to create a new duo with an error in duo check call
@@ -471,6 +478,7 @@ class DuoTests(APITestCaseExtended):
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll_error)
+    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
     def test_put_user_duo_error_in_enroll(self):
         """
         Tests PUT method on user_duo to create a new duo with an error in duo enroll call
@@ -492,6 +500,7 @@ class DuoTests(APITestCaseExtended):
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll)
+    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
     def test_put_user_duo_error_already_exists(self):
         """
         Tests PUT method on user_duo to create a new (second) duo
@@ -527,6 +536,7 @@ class DuoTests(APITestCaseExtended):
 
     @patch('duo_client.Auth.check', mock_check)
     @patch('duo_client.Auth.enroll', mock_enroll)
+    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
     def test_put_user_duo_no_title(self):
         """
         Tests PUT method on user_duo with no title
@@ -565,22 +575,22 @@ class DuoTests(APITestCaseExtended):
     def mock_enroll_status_waiting(self, user_id=None, activation_code=None):
         return 'waiting'
 
-    def mock_auth_valid(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'result': 'allow'
         }
 
-    def mock_auth_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'error': 'Some Error Message'
         }
 
-    def mock_auth_status_msg(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return {
             'status_msg': 'Some Status Error Message'
         }
 
-    def mock_auth_undefined_error(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_undefined_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
         return 'Undefined problem'
 
     @patch('duo_client.Auth.check', mock_check)
