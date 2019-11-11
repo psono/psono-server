@@ -85,6 +85,11 @@ class TestDuoAuthEnrollUtils(TestCase):
             'time': int(time.time())
         }
 
+    def mock_preauth(self, username):
+        return {
+            'result': 'enroll'
+        }
+
     def mock_invalid_host(self, username):
         raise gaierror
 
@@ -108,18 +113,21 @@ class TestDuoAuthEnrollUtils(TestCase):
         raise Exception
 
     @patch('duo_client.Auth.enroll', mock_enroll)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_check_success(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
 
         self.assertTrue('time' in result)
 
     @patch('duo_client.Auth.enroll', mock_invalid_host)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_host(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Host incorrect: Could not be found')
 
     @patch('duo_client.Auth.enroll', mock_invalid_cert)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_cert(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
@@ -127,6 +135,7 @@ class TestDuoAuthEnrollUtils(TestCase):
 
 
     @patch('duo_client.Auth.enroll', mock_invalid_integration_key)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_integration_key(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
@@ -134,24 +143,28 @@ class TestDuoAuthEnrollUtils(TestCase):
 
 
     @patch('duo_client.Auth.enroll', mock_invalid_secret_key)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_secret_key(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Invalid secret key')
 
     @patch('duo_client.Auth.enroll', mock_username_already_exists)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_username_already_exists(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Username already exists in Duo.')
 
     @patch('duo_client.Auth.enroll', mock_other_api_error)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_other_api_error(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Other API Error')
 
     @patch('duo_client.Auth.enroll', mock_duo_offline)
+    @patch('duo_client.Auth.preauth', mock_preauth)
     def test_duo_auth_enroll_invalid_duo_offline(self):
         result = duo_auth_enroll('integration_key', 'secret_key', 'host', 'username')
         self.assertTrue('error' in result)
@@ -229,72 +242,72 @@ class TestDuoAuthEnrollStatusUtils(TestCase):
 
 class TestDuoAuthAuthUtils(TestCase):
 
-    def mock_auth(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_auth(self, username, factor, device, pushinfo, passcode, async):
         return {
             # Something
         }
 
-    def mock_invalid_host(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_invalid_host(self, username, factor, device, pushinfo, passcode, async):
         raise gaierror
 
-    def mock_invalid_cert(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_invalid_cert(self, username, factor, device, pushinfo, passcode, async):
         raise SSLError
 
-    def mock_invalid_integration_key(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_invalid_integration_key(self, username, factor, device, pushinfo, passcode, async):
         raise RuntimeError('Invalid integration key')
 
-    def mock_invalid_secret_key(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_invalid_secret_key(self, username, factor, device, pushinfo, passcode, async):
         raise RuntimeError('Invalid signature')
 
-    def mock_other_api_error(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_other_api_error(self, username, factor, device, pushinfo, passcode, async):
         raise RuntimeError('Other API Error')
 
-    def mock_duo_offline(self, user_id, factor, device, pushinfo, passcode, async):
+    def mock_duo_offline(self, username, factor, device, pushinfo, passcode, async):
         # raise any irregular exception
         raise Exception
 
     @patch('duo_client.Auth.auth', mock_auth)
     def test_duo_auth_check_success(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue(isinstance(result, dict) and 'error' not in result)
 
     @patch('duo_client.Auth.auth', mock_invalid_host)
     def test_duo_auth_auth_invalid_host(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Host incorrect: Could not be found')
 
     @patch('duo_client.Auth.auth', mock_invalid_cert)
     def test_duo_auth_auth_invalid_cert(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Host incorrect: SSL Certificate Error')
 
 
     @patch('duo_client.Auth.auth', mock_invalid_integration_key)
     def test_duo_auth_auth_invalid_integration_key(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Invalid integration key')
 
 
     @patch('duo_client.Auth.auth', mock_invalid_secret_key)
     def test_duo_auth_auth_invalid_secret_key(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Invalid secret key')
 
 
     @patch('duo_client.Auth.auth', mock_other_api_error)
     def test_duo_auth_auth_other_api_error(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Other API Error')
 
 
     @patch('duo_client.Auth.auth', mock_duo_offline)
     def test_duo_auth_auth_duo_offline(self):
-        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'user_id', 'factor', 'device')
+        result = duo_auth_auth('integration_key', 'secret_key', 'host', 'username', 'factor', 'device')
         self.assertTrue('error' in result)
         self.assertEqual(result['error'], 'Duo offline. Try again later.')
 

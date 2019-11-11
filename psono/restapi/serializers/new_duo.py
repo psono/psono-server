@@ -42,14 +42,16 @@ class NewDuoSerializer(serializers.Serializer):
             msg = _(enrollment['error'])
             raise exceptions.ValidationError(msg)
 
-        validity_in_seconds = enrollment['expiration'] - check['time']
+        validity_in_seconds = 0
+        if enrollment.get('enrollment'):
+            validity_in_seconds = enrollment['expiration'] - check['time']
 
         attrs['title'] = title
         attrs['integration_key'] = integration_key
         attrs['secret_key'] = secret_key
         attrs['host'] = host
-        attrs['enrollment_user_id'] = enrollment['user_id']
-        attrs['enrollment_activation_code'] = enrollment['activation_code']
+        attrs['enrollment_user_id'] = enrollment.get('user_id', '')
+        attrs['enrollment_activation_code'] = enrollment.get('activation_code', '')
         attrs['validity_in_seconds'] = validity_in_seconds
 
         return attrs

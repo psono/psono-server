@@ -46,7 +46,7 @@ class ActivateDuoSerializer(serializers.Serializer):
             integration_key=duo.duo_integration_key,
             secret_key=decrypt_with_db_secret(duo.duo_secret_key),
             host=duo.duo_host,
-            user_id=duo.enrollment_user_id,
+            username=username,
             factor=factor,
             device=device,
             pushinfo=urlencode({'Host': domain}),
