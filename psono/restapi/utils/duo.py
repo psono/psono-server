@@ -1,6 +1,7 @@
 import duo_client
 from socket import gaierror
 from ssl import SSLError
+from typing import Dict
 
 def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
     """
@@ -83,7 +84,7 @@ def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: 
                 'error': 'User denied by DUO'
             }
 
-        enrollment = {}
+        enrollment = {} # type: Dict
         if pre_auth['result'] == 'enroll':
             enrollment = auth_api.enroll(username=username)
 
