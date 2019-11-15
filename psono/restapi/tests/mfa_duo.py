@@ -533,25 +533,6 @@ class DuoTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-
-    @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll', mock_enroll)
-    @patch('duo_client.Auth.preauth', mock_preauth_enroll)
-    def test_put_user_duo_no_title(self):
-        """
-        Tests PUT method on user_duo with no title
-        """
-
-        url = reverse('user_duo')
-
-        data = {
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_post_user_duo_no_parameters(self):
         """
         Tests POST method on user_duo
