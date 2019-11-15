@@ -1,4 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from urllib.parse import urlencode
@@ -21,7 +22,19 @@ class ActivateDuoSerializer(serializers.Serializer):
             msg = _("NO_PERMISSION_OR_NOT_EXIST")
             raise exceptions.ValidationError(msg)
 
-        enrollment_status = duo_auth_enroll_status(duo.duo_integration_key, decrypt_with_db_secret(duo.duo_secret_key), duo.duo_host, duo.enrollment_user_id, duo.enrollment_activation_code)
+        if settings.DUO_SECRET_KEY and duo.duo_host == '':
+            duo_integration_key = settings.DUO_INTEGRATION_KEY
+            duo_secret_key = settings.DUO_SECRET_KEY
+            duo_host = settings.DUO_API_HOSTNAME
+
+        else:
+            duo_integration_key = duo.duo_integration_key
+            duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
+            duo_host = duo.duo_host
+
+        enrollment_status = duo_auth_enroll_status(duo_integration_key,
+                                                   duo_secret_key, duo_host,
+                                                   duo.enrollment_user_id, duo.enrollment_activation_code)
 
         if enrollment_status == 'invalid':
             duo.delete()
@@ -43,9 +56,9 @@ class ActivateDuoSerializer(serializers.Serializer):
         username, domain = self.context['request'].user.username.split("@")
 
         duo_auth_return = duo_auth_auth(
-            integration_key=duo.duo_integration_key,
-            secret_key=decrypt_with_db_secret(duo.duo_secret_key),
-            host=duo.duo_host,
+            integration_key=duo_integration_key,
+            secret_key=duo_secret_key,
+            host=duo_host,
             username=username,
             factor=factor,
             device=device,

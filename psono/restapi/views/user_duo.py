@@ -65,6 +65,7 @@ class UserDuo(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         title = serializer.validated_data.get('title')
+        use_system_wide_duo = serializer.validated_data.get('use_system_wide_duo')
         duo_integration_key = serializer.validated_data.get('integration_key')
         duo_secret_key = serializer.validated_data.get('secret_key')
         duo_host = serializer.validated_data.get('host')
@@ -72,18 +73,30 @@ class UserDuo(GenericAPIView):
         enrollment_activation_code = serializer.validated_data.get('enrollment_activation_code')
         validity_in_seconds = serializer.validated_data.get('validity_in_seconds')
 
-
-        new_duo = Duo.objects.create(
-            user = request.user,
-            title = title,
-            duo_integration_key = duo_integration_key,
-            duo_secret_key = encrypt_with_db_secret(duo_secret_key),
-            duo_host = duo_host,
-            enrollment_user_id = enrollment_user_id,
-            enrollment_activation_code = enrollment_activation_code,
-            enrollment_expiration_date = timezone.now() + timedelta(seconds=validity_in_seconds),
-            active=False
-        )
+        if use_system_wide_duo:
+            new_duo = Duo.objects.create(
+                user = request.user,
+                title = 'System wide',
+                duo_integration_key = '',
+                duo_secret_key = encrypt_with_db_secret(''),
+                duo_host = '',
+                enrollment_user_id = enrollment_user_id,
+                enrollment_activation_code = enrollment_activation_code,
+                enrollment_expiration_date = timezone.now() + timedelta(seconds=validity_in_seconds),
+                active=False
+            )
+        else:
+            new_duo = Duo.objects.create(
+                user = request.user,
+                title = title,
+                duo_integration_key = duo_integration_key,
+                duo_secret_key = encrypt_with_db_secret(duo_secret_key),
+                duo_host = duo_host,
+                enrollment_user_id = enrollment_user_id,
+                enrollment_activation_code = enrollment_activation_code,
+                enrollment_expiration_date = timezone.now() + timedelta(seconds=validity_in_seconds),
+                active=False
+            )
 
         return Response({
             "id": new_duo.id,
