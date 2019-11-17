@@ -28,20 +28,25 @@ class Command(BaseCommand):
 
             auth_api.check()
         except gaierror:
-            self.stdout.write('Host incorrect: Could not be found')
+            error = 'Host incorrect: Could not be found'
+            self.stdout.write(error)
             return
         except SSLError:
-            self.stdout.write('Host incorrect: SSL Certificate Error')
+            error = 'Host incorrect: SSL Certificate Error'
+            self.stdout.write(error)
             return
         except RuntimeError as e:
             if 'Invalid integration key' in str(e):
-                self.stdout.write('Invalid integration key')
+                error = 'Invalid integration key'
+                self.stdout.write(error)
                 return
             if 'Invalid signature' in str(e):
-                self.stdout.write('Invalid secret key')
+                error = 'Invalid secret key'
+                self.stdout.write(error)
                 return
 
-            self.stdout.write(str(e))
+            error = str(e)
+            self.stdout.write(error)
             return
 
         # Any other error will have be thrown up to now, so reaching this code position means that everything was successful
