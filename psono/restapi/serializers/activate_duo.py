@@ -39,6 +39,9 @@ class ActivateDuoSerializer(serializers.Serializer):
 
             if enrollment_status == 'invalid':
                 duo.delete()
+                if not Duo.objects.filter(active=True).exists():
+                    self.context['request'].user.duo_enabled = False
+                    self.context['request'].user.save()
                 msg = _("Duo enrollment expired")
                 raise exceptions.ValidationError(msg)
 

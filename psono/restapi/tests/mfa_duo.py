@@ -147,7 +147,6 @@ class DuoVerifyTests(APITestCaseExtended):
         }
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_valid)
     def test_post_authentication_duo_verify_success_with_passcode(self):
         """
@@ -167,7 +166,6 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_valid)
     def test_post_authentication_duo_verify_success_without_passcode(self):
         """
@@ -186,70 +184,6 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status_invalid)
-    @patch('duo_client.Auth.auth', mock_auth_valid)
-    def test_post_authentication_duo_verify_invalid(self):
-        """
-        Tests POST method on authentication_duo_verify where the enrollment was never completed and therefore should be ignored
-        """
-
-        url = reverse('authentication_duo_verify')
-
-        data = {
-            'token': self.token,
-            'duo_token': '123456'
-        }
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status_waiting)
-    @patch('duo_client.Auth.auth', mock_auth_valid)
-    def test_post_authentication_duo_verify_waiting(self):
-        """
-        Tests POST method on authentication_duo_verify where the enrollment is pending
-        """
-
-        url = reverse('authentication_duo_verify')
-
-        data = {
-            'token': self.token,
-            'duo_token': '123456'
-        }
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
-    @patch('duo_client.Auth.auth', mock_auth_valid)
-    def test_post_authentication_duo_verify_already_active_token(self):
-        """
-        Tests POST method on authentication_duo_verify with a token that is already active
-        """
-
-        self.token_obj.active = True
-        self.token_obj.save()
-
-        url = reverse('authentication_duo_verify')
-
-        data = {
-            'token': self.token,
-            'duo_token': '123456'
-        }
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token, HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_valid)
     def test_post_authentication_duo_verify_invalid_token(self):
         """
@@ -269,7 +203,6 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_invalid)
     def test_post_authentication_duo_verify_invalid_duo_token(self):
         """
@@ -290,7 +223,6 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertNotEqual(response.data.get('non_field_errors', False), False)
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_status_msg)
     def test_post_authentication_duo_verify_error_with_status_message(self):
         """
@@ -310,7 +242,6 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch('duo_client.Auth.check', mock_check)
-    @patch('duo_client.Auth.enroll_status', mock_enroll_status)
     @patch('duo_client.Auth.auth', mock_auth_error)
     def test_post_authentication_duo_verify_error_with_error_message(self):
         """

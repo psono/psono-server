@@ -36,18 +36,6 @@ class DuoVerifySerializer(serializers.Serializer):
                 duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
                 duo_host = duo.duo_host
 
-            if duo.enrollment_activation_code:
-                enrollment_status = duo_auth_enroll_status(duo_integration_key, duo_secret_key, duo_host, duo.enrollment_user_id, duo.enrollment_activation_code)
-
-                if enrollment_status == 'invalid':
-                    # Never activated
-                    duo.delete()
-                    continue
-
-                if enrollment_status == 'waiting':
-                    # Pending activation, so it does not count
-                    continue
-
             if duo_token is not None:
                 factor = 'passcode'
                 device = None

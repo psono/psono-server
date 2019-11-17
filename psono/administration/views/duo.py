@@ -52,5 +52,6 @@ class DuoView(GenericAPIView):
 
         if not Duo.objects.filter(user_id=request.user.id, active=True).exists():
             request.user.duo_enabled = False
+            request.user.save()
 
         return Response(status=status.HTTP_200_OK)
