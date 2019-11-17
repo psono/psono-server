@@ -32,19 +32,20 @@ class ActivateDuoSerializer(serializers.Serializer):
             duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
             duo_host = duo.duo_host
 
-        enrollment_status = duo_auth_enroll_status(duo_integration_key,
-                                                   duo_secret_key, duo_host,
-                                                   duo.enrollment_user_id, duo.enrollment_activation_code)
+        if duo.enrollment_activation_code:
+            enrollment_status = duo_auth_enroll_status(duo_integration_key,
+                                                       duo_secret_key, duo_host,
+                                                       duo.enrollment_user_id, duo.enrollment_activation_code)
 
-        if enrollment_status == 'invalid':
-            duo.delete()
-            msg = _("Duo enrollment expired")
-            raise exceptions.ValidationError(msg)
+            if enrollment_status == 'invalid':
+                duo.delete()
+                msg = _("Duo enrollment expired")
+                raise exceptions.ValidationError(msg)
 
-        if enrollment_status == 'waiting':
-            # Pending activation
-            msg = _("Scan the barcode first")
-            raise exceptions.ValidationError(msg)
+            if enrollment_status == 'waiting':
+                # Pending activation
+                msg = _("Scan the barcode first")
+                raise exceptions.ValidationError(msg)
 
         if duo_token is not None:
             factor = 'passcode'

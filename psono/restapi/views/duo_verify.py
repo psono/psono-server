@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -50,6 +51,15 @@ class DuoVerifyView(GenericAPIView):
         # Duo challenge has been solved, so lets update the token
         token = serializer.validated_data['token']
         token.duo_2fa = False
+
+        if settings.MULTIFACTOR_ENABLED:
+            # only mark duo challenge as solved and the others potentially open
+            token.duo_2fa = False
+        else:
+            token.google_authenticator_2fa = False
+            token.yubikey_otp_2fa = False
+            token.duo_2fa = False
+
         token.save()
 
         return Response(status=status.HTTP_200_OK)
