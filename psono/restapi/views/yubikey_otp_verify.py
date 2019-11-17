@@ -52,7 +52,15 @@ class YubikeyOTPVerifyView(GenericAPIView):
 
         # Yubikey OTP challenge has been solved, so lets update the token
         token = serializer.validated_data['token']
-        token.yubikey_otp_2fa = False
+
+        if settings.MULTIFACTOR_ENABLED:
+            # only mark yubikey challenge as solved and the others potentially open
+            token.yubikey_otp_2fa = False
+        else:
+            token.google_authenticator_2fa = False
+            token.yubikey_otp_2fa = False
+            token.duo_2fa = False
+
         token.save()
 
         return Response(status=status.HTTP_200_OK)

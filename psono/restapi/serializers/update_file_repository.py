@@ -7,7 +7,7 @@ from typing import Dict
 
 import json
 
-from ..fields import UUIDField
+from ..fields import UUIDField, BooleanField
 from ..models import File_Repository
 
 class UpdateFileRepositorySerializer(serializers.Serializer):
@@ -17,7 +17,7 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
     type = serializers.CharField(max_length=32, required=True)
     gcp_cloud_storage_bucket = serializers.CharField(required=False)
     gcp_cloud_storage_json_key = serializers.CharField(required=False)
-    active = serializers.BooleanField(required=True)
+    active = BooleanField(required=True)
     aws_s3_bucket = serializers.CharField(required=False)
     aws_s3_region = serializers.CharField(required=False)
     aws_s3_access_key_id = serializers.CharField(required=False)

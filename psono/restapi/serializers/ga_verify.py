@@ -19,10 +19,6 @@ class GAVerifySerializer(serializers.Serializer):
 
         token = self.context['request'].auth
 
-        if token.active:
-            msg = _('Token incorrect.')
-            raise exceptions.ValidationError(msg)
-
         gas = Google_Authenticator.objects.filter(user_id=token.user_id).all()
         if len(gas) < 1:
             msg = _('No Google Authenticator found.')

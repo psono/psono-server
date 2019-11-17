@@ -51,7 +51,15 @@ class GAVerifyView(GenericAPIView):
 
         # Google Authenticator challenge has been solved, so lets update the token
         token = serializer.validated_data['token']
-        token.google_authenticator_2fa = False
+
+        if settings.MULTIFACTOR_ENABLED:
+            # only mark google authenticator challenge as solved and the others potentially open
+            token.google_authenticator_2fa = False
+        else:
+            token.google_authenticator_2fa = False
+            token.yubikey_otp_2fa = False
+            token.duo_2fa = False
+
         token.save()
 
         return Response(status=status.HTTP_200_OK)

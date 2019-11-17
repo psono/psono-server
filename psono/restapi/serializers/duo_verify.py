@@ -17,26 +17,24 @@ class DuoVerifySerializer(serializers.Serializer):
 
         token = self.context['request'].auth
 
-        if token.active:
-            msg = _('Token incorrect.')
-            raise exceptions.ValidationError(msg)
-
         duos = Duo.objects.filter(user_id=token.user_id).all()
         if len(duos) < 1:
             msg = _('No duo found.')
             raise exceptions.ValidationError(msg)
 
+        duo_solved = False
+
         for duo in duos:
-            enrollment_status = duo_auth_enroll_status(duo.duo_integration_key, decrypt_with_db_secret(duo.duo_secret_key), duo.duo_host, duo.enrollment_user_id, duo.enrollment_activation_code)
 
-            if enrollment_status == 'invalid':
-                # Never activated
-                duo.delete()
-                continue
+            if settings.DUO_SECRET_KEY and duo.duo_host == '':
+                duo_integration_key = settings.DUO_INTEGRATION_KEY
+                duo_secret_key = settings.DUO_SECRET_KEY
+                duo_host = settings.DUO_API_HOSTNAME
 
-            if enrollment_status == 'waiting':
-                # Pending activation, so it does not count
-                continue
+            else:
+                duo_integration_key = duo.duo_integration_key
+                duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
+                duo_host = duo.duo_host
 
             if duo_token is not None:
                 factor = 'passcode'
@@ -48,9 +46,9 @@ class DuoVerifySerializer(serializers.Serializer):
             username, domain = self.context['request'].user.username.split("@")
 
             duo_auth_return = duo_auth_auth(
-                integration_key=duo.duo_integration_key,
-                secret_key=decrypt_with_db_secret(duo.duo_secret_key),
-                host=duo.duo_host,
+                integration_key=duo_integration_key,
+                secret_key=duo_secret_key,
+                host=duo_host,
                 username=username,
                 factor=factor,
                 device=device,
@@ -68,7 +66,12 @@ class DuoVerifySerializer(serializers.Serializer):
                     msg = _('Validation failed.')
                 raise exceptions.ValidationError(msg)
             else:
+                duo_solved = True
                 break
+
+        if not duo_solved:
+            msg = _('Validation failed.')
+            raise exceptions.ValidationError(msg)
 
         attrs['token'] = token
         return attrs

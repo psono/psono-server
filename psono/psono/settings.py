@@ -79,6 +79,12 @@ ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'g
 ALLOW_USER_SEARCH_BY_EMAIL = config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)
 ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)
 
+DUO_INTEGRATION_KEY = config_get('DUO_INTEGRATION_KEY', '')
+DUO_SECRET_KEY = config_get('DUO_SECRET_KEY', '')
+DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
+
+MULTIFACTOR_ENABLED = config_get('MULTIFACTOR_ENABLED', False)
+
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
@@ -406,6 +412,8 @@ def generate_signature():
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
+        'system_wide_duo_exists': DUO_SECRET_KEY != '',
+        'multifactor_enabled': MULTIFACTOR_ENABLED,
         'type': 'CE',
         'credit_buy_address': SHARD_CREDIT_BUY_ADDRESS,
         'credit_costs_upload': str(SHARD_CREDIT_COSTS_UPLOAD),

@@ -24,10 +24,6 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
         token = self.context['request'].auth
 
-        if token.active:
-            msg = _('Token incorrect.')
-            raise exceptions.ValidationError(msg)
-
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
 
         yks = Yubikey_OTP.objects.filter(user_id=token.user_id).all()
