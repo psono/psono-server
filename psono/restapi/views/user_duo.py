@@ -36,6 +36,7 @@ class UserDuo(GenericAPIView):
         for duo in Duo.objects.filter(user=request.user).all():
             duos.append({
                 'id': duo.id,
+                'active': duo.active,
                 'title': duo.title,
             })
 
