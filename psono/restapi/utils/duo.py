@@ -3,6 +3,10 @@ from socket import gaierror
 from ssl import SSLError
 from typing import Dict
 
+# import the logging
+import logging
+logger = logging.getLogger(__name__)
+
 def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
     """
     Calls the Duo auth check api
@@ -46,7 +50,8 @@ def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
             'error': str(e)
         }
 
-    except:
+    except Exception as e:
+        logger.error(e)
         return {
             'error': 'Duo offline. Try again later.'
         }
@@ -114,7 +119,8 @@ def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: 
             'error': str(e)
         }
 
-    except:
+    except Exception as e:
+        logger.error(e)
         return {
             'error': 'Duo offline. Try again later.'
         }
@@ -171,7 +177,8 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
             'error': str(e)
         }
 
-    except:
+    except Exception as e:
+        logger.error(e)
         return {
             'error': 'Duo offline. Try again later.'
         }
@@ -236,7 +243,8 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
             'error': str(e)
         }
 
-    except:
+    except Exception as e:
+        logger.error(e)
         return {
             'error': 'Duo offline. Try again later.'
         }
