@@ -87,6 +87,7 @@ class GroupView(GenericAPIView):
                     'create_date': g.create_date,
                     'name': g.name,
                     'member_count': g.member_count,
+                    'is_managed': False,
                 })
 
             return Response({
