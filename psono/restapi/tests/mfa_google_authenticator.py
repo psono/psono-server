@@ -264,6 +264,7 @@ class GoogleAuthenticatorTests(APITestCaseExtended):
         self.assertEqual(response.data, {
             "google_authenticators":[{
                 "id":ga.id,
+                "active":ga.active,
                 "title":"My Sweet Title"
             }]
         })

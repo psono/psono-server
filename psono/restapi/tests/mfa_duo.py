@@ -328,6 +328,7 @@ class DuoTests(APITestCaseExtended):
         self.assertEqual(response.data, {
             "duos":[{
                 "id":duo.id,
+                "active":duo.active,
                 "title":"My Sweet Title"
             }]
         })

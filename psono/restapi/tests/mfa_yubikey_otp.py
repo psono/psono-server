@@ -284,6 +284,7 @@ class YubikeyOTPTests(APITestCaseExtended):
         self.assertEqual(response.data, {
             "yubikey_otps":[{
                 "id":yubikey.id,
+                "active":yubikey.active,
                 "title":"My Sweet Title"
             }]
         })
