@@ -25,12 +25,13 @@ class GroupView(GenericAPIView):
             return None
 
         memberships = []
-        for m in User_Group_Membership.objects.filter(group=group).select_related('user').only("id", "accepted", "group_admin", "create_date", "user__id", "user__username", "user__public_key"):
+        for m in User_Group_Membership.objects.filter(group=group).select_related('user').only("id", "accepted", "group_admin", "share_admin", "create_date", "user__id", "user__username", "user__public_key"):
             memberships.append({
                 'id': m.id,
                 'create_date': m.create_date,
                 'accepted': m.accepted,
                 'admin': m.group_admin,
+                'share_admin': m.share_admin,
                 'user_id': m.user.id,
                 'username': m.user.username,
             })
