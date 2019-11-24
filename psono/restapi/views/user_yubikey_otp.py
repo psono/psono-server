@@ -32,10 +32,11 @@ class UserYubikeyOTP(GenericAPIView):
 
         yubikey_otps = []
 
-        for ga in Yubikey_OTP.objects.filter(user=request.user).all():
+        for yk in Yubikey_OTP.objects.filter(user=request.user).all():
             yubikey_otps.append({
-                'id': ga.id,
-                'title': ga.title,
+                'id': yk.id,
+                'active': yk.active,
+                'title': yk.title,
             })
 
         return Response({

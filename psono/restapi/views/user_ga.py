@@ -35,6 +35,7 @@ class UserGA(GenericAPIView):
         for ga in Google_Authenticator.objects.filter(user=request.user).all():
             google_authenticators.append({
                 'id': ga.id,
+                'active': ga.active,
                 'title': ga.title,
             })
 
