@@ -127,20 +127,20 @@ class DuoVerifyTests(APITestCaseExtended):
         return 'waiting'
 
 
-    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'result': 'allow'
         }
-    def mock_auth_invalid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_invalid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'result': 'deny'
         }
-    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'result': 'deny',
             'status_msg': 'Deny it!'
         }
-    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'result': 'deny',
             'error': 'Funny error'
@@ -488,22 +488,22 @@ class DuoTests(APITestCaseExtended):
     def mock_enroll_status_waiting(self, user_id=None, activation_code=None):
         return 'waiting'
 
-    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_valid(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'result': 'allow'
         }
 
-    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'error': 'Some Error Message'
         }
 
-    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_status_msg(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return {
             'status_msg': 'Some Status Error Message'
         }
 
-    def mock_auth_undefined_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    def mock_auth_undefined_error(self, username=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
         return 'Undefined problem'
 
     @patch('duo_client.Auth.check', mock_check)

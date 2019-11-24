@@ -220,7 +220,7 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
             skey=secret_key,
             host=host,
         )
-        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async=async)
+        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async_txn=async)
     except gaierror:
         return {
             'error': 'Host incorrect: Could not be found'
