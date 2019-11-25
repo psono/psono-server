@@ -242,27 +242,27 @@ class TestDuoAuthEnrollStatusUtils(TestCase):
 
 class TestDuoAuthAuthUtils(TestCase):
 
-    def mock_auth(self, username, factor, device, pushinfo, passcode, async):
+    def mock_auth(self, username, factor, device, pushinfo, passcode, async_txn):
         return {
             # Something
         }
 
-    def mock_invalid_host(self, username, factor, device, pushinfo, passcode, async):
+    def mock_invalid_host(self, username, factor, device, pushinfo, passcode, async_txn):
         raise gaierror
 
-    def mock_invalid_cert(self, username, factor, device, pushinfo, passcode, async):
+    def mock_invalid_cert(self, username, factor, device, pushinfo, passcode, async_txn):
         raise SSLError
 
-    def mock_invalid_integration_key(self, username, factor, device, pushinfo, passcode, async):
+    def mock_invalid_integration_key(self, username, factor, device, pushinfo, passcode, async_txn):
         raise RuntimeError('Invalid integration key')
 
-    def mock_invalid_secret_key(self, username, factor, device, pushinfo, passcode, async):
+    def mock_invalid_secret_key(self, username, factor, device, pushinfo, passcode, async_txn):
         raise RuntimeError('Invalid signature')
 
-    def mock_other_api_error(self, username, factor, device, pushinfo, passcode, async):
+    def mock_other_api_error(self, username, factor, device, pushinfo, passcode, async_txn):
         raise RuntimeError('Other API Error')
 
-    def mock_duo_offline(self, username, factor, device, pushinfo, passcode, async):
+    def mock_duo_offline(self, username, factor, device, pushinfo, passcode, async_txn):
         # raise any irregular exception
         raise Exception
 
