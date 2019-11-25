@@ -85,7 +85,7 @@ class Command(BaseCommand):
                     host=host,
                 )
                 auth_api.auth(username=username, factor='push', device='auto', pushinfo=urlencode({'Host': domain}),
-                                     passcode=None, async=False)
+                                     passcode=None, async_txn=False)
             except gaierror:
                 error = '  - Error: Host incorrect: Could not be found'
                 self.stdout.write(error)

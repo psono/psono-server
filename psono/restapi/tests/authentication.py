@@ -238,7 +238,7 @@ class AuthenticateTests(APITestCaseExtended):
         self.verification_hex = nacl.encoding.HexEncoder.encode(verification)
 
 
-    # def mock_check(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async=False):
+    # def mock_check(self, user_id=None, factor=None, device=None, pushinfo=None, passcode=None, async_txn=False):
     #     return {
     #         'result': 'deny',
     #         'error': 'Funny error'
