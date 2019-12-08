@@ -10,6 +10,13 @@ class Command(BaseCommand):
         parser.add_argument('password', nargs='+')
         parser.add_argument('email', nargs='+')
 
+        parser.add_argument(
+            '--show-password',
+            action='store_true',
+            dest='show_password',
+            help='Shows the password in the completion success message in plain text',
+        )
+
 
     def handle(self, *args, **options):
 
@@ -22,5 +29,8 @@ class Command(BaseCommand):
         if 'error' in result:
             self.stdout.write(result['error'])
             return
+
+        if not options['show_password']:
+            password = '******'
 
         self.stdout.write('Created user "' + username + '" with password "' + password + '" and email "' + email + '"' )
