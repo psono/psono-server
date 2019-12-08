@@ -31,6 +31,6 @@ class Command(BaseCommand):
             return
 
         if not options['show_password']:
-            password = '******'
+            password = '******'  #nosec
 
         self.stdout.write('Created user "' + username + '" with password "' + password + '" and email "' + email + '"' )
