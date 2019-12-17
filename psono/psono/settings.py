@@ -262,7 +262,26 @@ EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.Emai
 ANYMAIL = {
     "MAILGUN_API_URL": config_get('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),  # For EU: https://api.eu.mailgun.net/v3
     "MAILGUN_API_KEY": config_get('MAILGUN_ACCESS_KEY', ''),
-    "MAILGUN_SENDER_DOMAIN": config_get('MAILGUN_SERVER_NAME', '')
+    "MAILGUN_SENDER_DOMAIN": config_get('MAILGUN_SERVER_NAME', ''),
+
+    "MAILJET_API_KEY": config_get('MAILJET_API_KEY', ''),
+    "MAILJET_SECRET_KEY": config_get('MAILJET_SECRET_KEY', ''),
+    "MAILJET_API_URL": config_get('MAILJET_API_URL', 'https://api.mailjet.com/v3'),
+
+    "MANDRILL_API_KEY": config_get('MANDRILL_API_KEY', ''),
+    "MANDRILL_API_URL": config_get('MANDRILL_API_URL', 'https://mandrillapp.com/api/1.0'),
+
+    "POSTMARK_SERVER_TOKEN": config_get('POSTMARK_SERVER_TOKEN', ''),
+    "POSTMARK_API_URL": config_get('POSTMARK_API_URL', 'https://api.postmarkapp.com/'),
+
+    "SENDGRID_API_KEY": config_get('SENDGRID_API_KEY', ''),
+    "SENDGRID_API_URL": config_get('SENDGRID_API_URL', 'https://api.sendgrid.com/v3/'),
+
+    "SENDINBLUE_API_KEY": config_get('SENDINBLUE_API_KEY', ''),
+    "SENDINBLUE_API_URL": config_get('SENDINBLUE_API_URL', 'https://api.sendinblue.com/v3/'),
+
+    "SPARKPOST_API_KEY": config_get('SPARKPOST_API_KEY', ''),
+    "SPARKPOST_API_URL": config_get('SPARKPOST_API_URL', 'https://api.sparkpost.com/api/v1'),  # For EU: https://api.eu.sparkpost.com/api/v1
 }
 
 DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
