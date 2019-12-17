@@ -260,6 +260,7 @@ YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 
 ANYMAIL = {
+    "MAILGUN_API_URL": config_get('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),  # For EU: https://api.eu.mailgun.net/v3
     "MAILGUN_API_KEY": config_get('MAILGUN_ACCESS_KEY', ''),
     "MAILGUN_SENDER_DOMAIN": config_get('MAILGUN_SERVER_NAME', '')
 }

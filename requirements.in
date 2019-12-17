@@ -1,6 +1,6 @@
 six==1.11.0
 cffi==1.13.2
-Django==2.2.7
+Django==2.2.8
 djangorestframework==3.10.3
 django-rest-auth==0.9.3
 django-allauth==0.38.0
