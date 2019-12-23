@@ -890,6 +890,54 @@ class Link_Share(models.Model):
         abstract = False
 
 
+class SecurityReport(models.Model):
+    """
+    All the security reports send to the server
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security_reports')
+    recovery_code_exists = models.BooleanField(_('Recovery Code exists'), default=False, help_text=_('Did a recovery code exist'))
+    two_factor_exists = models.BooleanField(_('Two factor exists'), default=False, help_text=_('Did the user configure two factor exist'))
+    website_password_count = models.PositiveIntegerField(_('Count of passwords'), default=0)
+    breached_password_count = models.PositiveIntegerField(_('Count of breached passwords'), default=0)
+    duplicate_password_count = models.PositiveIntegerField(_('Count of password duplicates'), default=0)
+    check_haveibeenpwned = models.BooleanField(_('Checked HaveIBeenPwned'), default=False, help_text=_('Did the user check his passwords against have i been pwened'))
+
+    master_password_tested = models.BooleanField(_('Master password tested'), default=False, help_text=_('Did the user test his masterpassword'))
+    master_password_breached = models.BooleanField(_('Master password breached'), default=False, help_text=_('Has the master password been breached'), null=True)
+    master_password_duplicate = models.BooleanField(_('Master password duplicate'), default=False, help_text=_('Has the master password been used somewhere else'), null=True)
+    master_password_length = models.PositiveIntegerField(_('Master password length'), null=True)
+    master_password_variation_count = models.PositiveIntegerField(_('Master password variation count'), null=True, help_text=_('The count of variations (uppercase, lowercase, numbers, special chars'))
+
+    class Meta:
+        abstract = False
+
+
+class SecurityReportEntry(models.Model):
+    """
+    All the entries belonging to the security report
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    security_report = models.ForeignKey(SecurityReport, on_delete=models.CASCADE, related_name='security_report_entries')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security_report_entries')
+    name = models.TextField(null=True)
+    type = models.TextField(null=True)
+    create_age = models.DurationField(_('Create Age'), help_text=_('The time in days since its last update'), null=True)
+    write_age = models.DurationField(_('Write Age'), help_text=_('The time in days since its creation'), null=True)
+    master_password = models.BooleanField(_('Masterpassword'), default=False, null=True)
+    breached = models.BooleanField(_('Breached'), default=False, null=True)
+    duplicate = models.BooleanField(_('Duplicate'), default=False, null=True)
+    password_length = models.PositiveIntegerField(_('Password length'), null=True)
+    variation_count = models.PositiveIntegerField(_('Variation count'), null=True, help_text=_('The count of variations (uppercase, lowercase, numbers, special chars'))
+
+    class Meta:
+        abstract = False
+
+
 @python_2_unicode_compatible
 class Token(models.Model):
     """

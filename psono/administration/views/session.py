@@ -15,7 +15,7 @@ class SessionView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):
         """

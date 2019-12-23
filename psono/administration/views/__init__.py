@@ -1,5 +1,6 @@
 from .user import UserView
 from .info import InfoView
+from .security_report import SecurityReportView
 from .session import SessionView
 from .duo import DuoView
 from .ga import GaView

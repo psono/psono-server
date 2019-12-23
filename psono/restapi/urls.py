@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^user/yubikey-otp/$', views.UserYubikeyOTP.as_view(), name='user_yubikey_otp'),
     url(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
     url(r'^user/delete/$', views.UserDelete.as_view(), name='user_delete'),
+    url(r'^user/security-report/$', views.SecurityReportView.as_view(), name='user_security_report'),
 
     url(r'^user/status/$', views.StatusView.as_view(), name='user_status'),
 
