@@ -188,7 +188,7 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
 
 
 
-def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async: bool = False) -> dict:
+def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async_txn: bool = False) -> dict:
     """
     Auth call with the user id
 
@@ -208,8 +208,8 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
     :type pushinfo: str
     :param passcode: The passcode
     :type passcode: str
-    :param async: The Duo async flag
-    :type async: bool
+    :param async_txn: The Duo async flag
+    :type async_txn: bool
     :return: The check with the error details or the time
     :rtype: dict
     """
@@ -220,7 +220,7 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
             skey=secret_key,
             host=host,
         )
-        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async_txn=async)
+        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async_txn=async_txn)
     except gaierror:
         return {
             'error': 'Host incorrect: Could not be found'
