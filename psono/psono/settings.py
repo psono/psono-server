@@ -19,6 +19,7 @@ import hashlib
 import nacl.encoding
 import nacl.signing
 import binascii
+import base64
 import six
 from decimal import Decimal
 from urllib.parse import urlparse
@@ -35,8 +36,12 @@ except ImportError:
 
 HOME = os.path.expanduser('~')
 
-with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
-    config = yaml.safe_load(stream)
+
+if os.environ.get('PSONO_SERVER_SETTING_BASE64', None):
+    config = yaml.safe_load(base64.b64decode(os.environ.get('PSONO_SERVER_SETTING_BASE64', None)))
+else:
+    with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
+        config = yaml.safe_load(stream)
 
 
 
@@ -67,23 +72,23 @@ PRIVATE_KEY  = config_get('PRIVATE_KEY', '')
 PUBLIC_KEY  = config_get('PUBLIC_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config_get('DEBUG', False)
+DEBUG = str(config_get('DEBUG', False)).lower() == 'true'
 
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
 
-ALLOW_REGISTRATION = config_get('ALLOW_REGISTRATION', True)
-ALLOW_LOST_PASSWORD = config_get('ALLOW_LOST_PASSWORD', True)
-ENFORCE_MATCHING_USERNAME_AND_EMAIL = config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)
+ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'true'
+ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
+ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
-ALLOW_USER_SEARCH_BY_EMAIL = config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)
-ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)
+ALLOW_USER_SEARCH_BY_EMAIL = str(config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)).lower() == 'true'
+ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = str(config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)).lower() == 'true'
 
 DUO_INTEGRATION_KEY = config_get('DUO_INTEGRATION_KEY', '')
 DUO_SECRET_KEY = config_get('DUO_SECRET_KEY', '')
 DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
 
-MULTIFACTOR_ENABLED = config_get('MULTIFACTOR_ENABLED', False)
+MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == 'true'
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
 
@@ -245,13 +250,13 @@ EMAIL_FROM = config_get('EMAIL_FROM')
 EMAIL_HOST = config_get('EMAIL_HOST', 'localhost')
 EMAIL_HOST_USER = config_get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = config_get('EMAIL_HOST_PASSWORD', '')
-EMAIL_PORT = config_get('EMAIL_PORT', 25)
+EMAIL_PORT = int(config_get('EMAIL_PORT', 25))
 EMAIL_SUBJECT_PREFIX = config_get('EMAIL_SUBJECT_PREFIX', '')
-EMAIL_USE_TLS = config_get('EMAIL_USE_TLS', False)
-EMAIL_USE_SSL = config_get('EMAIL_USE_SSL', False)
+EMAIL_USE_TLS = str(config_get('EMAIL_USE_TLS', False)).lower() == 'true'
+EMAIL_USE_SSL = str(config_get('EMAIL_USE_SSL', False)).lower() == 'true'
 EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
-EMAIL_TIMEOUT = config_get('EMAIL_TIMEOUT', None)
+EMAIL_TIMEOUT = int(config_get('EMAIL_TIMEOUT', 0)) if config_get('EMAIL_TIMEOUT', 0) else None
 
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
 YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
@@ -286,9 +291,9 @@ ANYMAIL = {
 
 DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
-CACHE_ENABLE = config_get('CACHE_ENABLE', False)
+CACHE_ENABLE = str(config_get('CACHE_ENABLE', False)).lower() == 'true'
 
-if config_get('CACHE_DB', False):
+if str(config_get('CACHE_DB', False)).lower() == 'true':
     CACHES = {
         "default": {
             "BACKEND": 'django.core.cache.backends.db.DatabaseCache',
@@ -296,7 +301,7 @@ if config_get('CACHE_DB', False):
         }
     }
 
-if config_get('CACHE_REDIS', False):
+if str(config_get('CACHE_REDIS', False)).lower() == 'true':
     CACHES = {
        "default": { # type: ignore
            "BACKEND": "django_redis.cache.RedisCache",
@@ -307,19 +312,19 @@ if config_get('CACHE_REDIS', False):
        }
     }
 
-if not config_get('THROTTLING', True):
+if not str(config_get('THROTTLING', True)).lower() == 'true':
     CACHES = {
         "default": {
             "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
         }
     }
 
-DISABLE_LAST_PASSWORDS = config_get('DISABLE_LAST_PASSWORDS', 0)
+DISABLE_LAST_PASSWORDS = int(config_get('DISABLE_LAST_PASSWORDS', 0))
 
-MANAGEMENT_ENABLED = config_get('MANAGEMENT_ENABLED', False)
-FILESERVER_HANDLER_ENABLED = config_get('FILESERVER_HANDLER_ENABLED', True)
-CREDIT_HANDLER_ENABLED = config_get('CREDIT_HANDLER_ENABLED', True)
-FILES_ENABLED = config_get('FILES_ENABLED', True)
+MANAGEMENT_ENABLED = str(config_get('MANAGEMENT_ENABLED', False)).lower() == 'true'
+FILESERVER_HANDLER_ENABLED = str(config_get('FILESERVER_HANDLER_ENABLED', True)).lower() == 'true'
+CREDIT_HANDLER_ENABLED = str(config_get('CREDIT_HANDLER_ENABLED', True)).lower() == 'true'
+FILES_ENABLED = str(config_get('FILES_ENABLED', True)).lower() == 'true'
 
 FILE_REPOSITORY_TYPES = [
     'gcp_cloud_storage',
@@ -327,25 +332,25 @@ FILE_REPOSITORY_TYPES = [
     'do_spaces',
 ]
 
-FILESERVER_ALIVE_TIMEOUT = config_get('FILESERVER_ALIVE_TIMEOUT', 30)
-AUTH_KEY_LENGTH_BYTES = config_get('AUTH_KEY_LENGTH_BYTES', 64)
-USER_PRIVATE_KEY_LENGTH_BYTES = config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80)
-USER_PUBLIC_KEY_LENGTH_BYTES = config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32)
-USER_SECRET_KEY_LENGTH_BYTES = config_get('USER_SECRET_KEY_LENGTH_BYTES', 80)
-NONCE_LENGTH_BYTES = config_get('NONCE_LENGTH_BYTES', 24)
+FILESERVER_ALIVE_TIMEOUT = int(config_get('FILESERVER_ALIVE_TIMEOUT', 30))
+AUTH_KEY_LENGTH_BYTES = int(config_get('AUTH_KEY_LENGTH_BYTES', 64))
+USER_PRIVATE_KEY_LENGTH_BYTES = int(config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80))
+USER_PUBLIC_KEY_LENGTH_BYTES = int(config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32))
+USER_SECRET_KEY_LENGTH_BYTES = int(config_get('USER_SECRET_KEY_LENGTH_BYTES', 80))
+NONCE_LENGTH_BYTES = int(config_get('NONCE_LENGTH_BYTES', 24))
 ACTIVATION_LINK_SECRET = config_get('ACTIVATION_LINK_SECRET')
 WEB_CLIENT_URL  = config_get('WEB_CLIENT_URL', '')
 DB_SECRET = config_get('DB_SECRET')
 EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 
-ACTIVATION_LINK_TIME_VALID = config_get('ACTIVATION_LINK_TIME_VALID', 2592000) # in seconds
-DEFAULT_TOKEN_TIME_VALID = config_get('DEFAULT_TOKEN_TIME_VALID', 86400) # 24h in seconds
-MAX_WEBCLIENT_TOKEN_TIME_VALID = config_get('MAX_WEB_TOKEN_TIME_VALID', 2592000) # 30d in seconds
-MAX_APP_TOKEN_TIME_VALID = config_get('MAX_MOBILE_TOKEN_TIME_VALID', 30758400) # 356d in seconds
-RECOVERY_VERIFIER_TIME_VALID = config_get('RECOVERY_VERIFIER_TIME_VALID', 600) # in seconds
-REPLAY_PROTECTION_DISABLED = config_get('REPLAY_PROTECTION_DISABLED', False) # disables the replay protection
-DEVICE_PROTECTION_DISABLED = config_get('DEVICE_PROTECTION_DISABLED', False) # disables the device fingerprint protection
-REPLAY_PROTECTION_TIME_DFFERENCE = config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20) # in seconds
+ACTIVATION_LINK_TIME_VALID = int(config_get('ACTIVATION_LINK_TIME_VALID', 2592000)) # in seconds
+DEFAULT_TOKEN_TIME_VALID = int(config_get('DEFAULT_TOKEN_TIME_VALID', 86400)) # 24h in seconds
+MAX_WEBCLIENT_TOKEN_TIME_VALID = int(config_get('MAX_WEB_TOKEN_TIME_VALID', 2592000)) # 30d in seconds
+MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_MOBILE_TOKEN_TIME_VALID', 30758400)) # 356d in seconds
+RECOVERY_VERIFIER_TIME_VALID = int(config_get('RECOVERY_VERIFIER_TIME_VALID', 600)) # in seconds
+REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)).lower() == 'true' # disables the replay protection
+DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)).lower() == 'true' # disables the device fingerprint protection
+REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20)) # in seconds
 
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
@@ -354,7 +359,7 @@ SHARD_CREDIT_COSTS_UPLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_UPLOAD', 
 SHARD_CREDIT_COSTS_DOWNLOAD = Decimal(str(config_get('SHARD_CREDIT_COSTS_DOWNLOAD', 0))) # costs in Euro for a download of 1 GB
 SHARD_CREDIT_COSTS_STORAGE = Decimal(str(config_get('SHARD_CREDIT_COSTS_STORAGE', 0))) # costs in Euro for the storage of 1 GB per day
 
-# DEFAULT_FILE_REPOSITORY_ENABLED = config_get('DEFAULT_FILE_REPOSITORY_ENABLED', False)
+# DEFAULT_FILE_REPOSITORY_ENABLED = str(config_get('DEFAULT_FILE_REPOSITORY_ENABLED', False)).lower() == 'true'
 # DEFAULT_FILE_REPOSITORY_UUID = config_get('DEFAULT_FILE_REPOSITORY_ENABLED', '00000000-0000-0000-0000-000000000000') # Don't change this as you might lose access to data
 # DEFAULT_FILE_REPOSITORY_TITLE = config_get('DEFAULT_FILE_REPOSITORY_TITLE', 'Default Repository')
 # DEFAULT_FILE_REPOSITORY_BUCKET = config_get('DEFAULT_FILE_REPOSITORY_BUCKET', None)
@@ -402,7 +407,7 @@ with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
     SHA = f.readline().rstrip()
 
 # Add Sentry logging
-SENTRY_DSN = config_get('SENTRY_DSN', False)
+SENTRY_DSN = config_get('SENTRY_DSN', '')
 if SENTRY_DSN:
     RAVEN_CONFIG = {
         'dsn': SENTRY_DSN,
