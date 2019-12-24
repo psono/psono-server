@@ -1,7 +1,9 @@
+from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
-from ..models import Data_Store
+
 from ..utils import authenticate
-from ..fields import BooleanField, UUIDField
+from ..fields import BooleanField
 
 class CreateSecurityReportSerializer(serializers.Serializer):
 
@@ -11,6 +13,10 @@ class CreateSecurityReportSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         authkey = attrs.get('authkey', '')
+
+        if settings.DISABLE_CENTRAL_SECURITY_REPORTS:
+            msg = _("CENTRAL_SECURITY_REPORTS_DISABLED")
+            raise exceptions.ValidationError(msg)
 
         master_password_validated = False
         if authkey:

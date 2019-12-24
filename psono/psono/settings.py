@@ -351,6 +351,7 @@ RECOVERY_VERIFIER_TIME_VALID = int(config_get('RECOVERY_VERIFIER_TIME_VALID', 60
 REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)).lower() == 'true' # disables the replay protection
 DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)).lower() == 'true' # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20)) # in seconds
+DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPORTS', False)).lower() == 'true' # disables central security reports
 
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
@@ -435,6 +436,7 @@ def generate_signature():
         'management': MANAGEMENT_ENABLED,
         'files': FILES_ENABLED,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
+        'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'system_wide_duo_exists': DUO_SECRET_KEY != '',
