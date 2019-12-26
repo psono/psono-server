@@ -37,8 +37,8 @@ except ImportError:
 HOME = os.path.expanduser('~')
 
 
-if os.environ.get('PSONO_SERVER_SETTING_BASE64', None):
-    config = yaml.safe_load(base64.b64decode(os.environ.get('PSONO_SERVER_SETTING_BASE64', None)))
+if os.environ.get('PSONO_SERVER_SETTING_BASE64', ''):
+    config = yaml.safe_load(base64.b64decode(os.environ.get('PSONO_SERVER_SETTING_BASE64', '')))
 else:
     with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
         config = yaml.safe_load(stream)
