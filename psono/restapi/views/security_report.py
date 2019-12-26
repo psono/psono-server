@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -111,6 +113,10 @@ class SecurityReportView(GenericAPIView):
                 variation_count=entry['variation_count'] if 'variation_count' in entry else None,
             ) for entry in filtered_entries]
         )
+
+        if settings.CACHE_ENABLE:
+            cache_key = 'psono_user_status_' + str(request.user.id)
+            cache.delete(cache_key)
 
         return Response(status=status.HTTP_201_CREATED)
 

@@ -9,6 +9,7 @@ from django.conf import settings
 from ..models import (
     User_Share_Right,
     User_Group_Membership,
+    SecurityReport,
 )
 
 class StatusView(GenericAPIView):
@@ -43,9 +44,19 @@ class StatusView(GenericAPIView):
             unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).count()
             unaccepted_groups_count = User_Group_Membership.objects.filter(user=request.user, accepted__isnull=True).count()
 
+            try:
+                latest_security_report = SecurityReport.objects.filter(user=request.user).latest('create_date')
+            except SecurityReport.DoesNotExist:
+                latest_security_report = None
+
+            last_security_report_created = None
+            if latest_security_report:
+                last_security_report_created = latest_security_report.create_date
+
             user_status = {
                 'unaccepted_shares_count': unaccepted_shares_count,
-                'unaccepted_groups_count': unaccepted_groups_count
+                'unaccepted_groups_count': unaccepted_groups_count,
+                'last_security_report_created': last_security_report_created,
             }
 
             if settings.CACHE_ENABLE:
