@@ -81,6 +81,8 @@ ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'tru
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
+if isinstance(ALLOWED_SECOND_FACTORS, str):
+    ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
 ALLOW_USER_SEARCH_BY_EMAIL = str(config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)).lower() == 'true'
 ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = str(config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)).lower() == 'true'
 
@@ -92,7 +94,7 @@ MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == '
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
 if isinstance(REGISTRATION_EMAIL_FILTER, str):
-    YUBICO_API_URLS = [single_registration_email_filter.strip() for single_registration_email_filter in REGISTRATION_EMAIL_FILTER.split(',')]
+    REGISTRATION_EMAIL_FILTER = [single_registration_email_filter.strip() for single_registration_email_filter in REGISTRATION_EMAIL_FILTER.split(',')]
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
     REGISTRATION_EMAIL_FILTER[index] = REGISTRATION_EMAIL_FILTER[index].lower().strip()
@@ -396,7 +398,8 @@ USE_L10N = True
 USE_TZ = True
 
 AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
-
+if isinstance(AUTHENTICATION_METHODS, str):
+    AUTHENTICATION_METHODS = [authentication_method.strip() for authentication_method in AUTHENTICATION_METHODS.split(',')]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
