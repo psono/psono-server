@@ -91,6 +91,8 @@ DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
 MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == 'true'
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
+if isinstance(REGISTRATION_EMAIL_FILTER, str):
+    YUBICO_API_URLS = [single_registration_email_filter.strip() for single_registration_email_filter in REGISTRATION_EMAIL_FILTER.split(',')]
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
     REGISTRATION_EMAIL_FILTER[index] = REGISTRATION_EMAIL_FILTER[index].lower().strip()
@@ -261,6 +263,8 @@ EMAIL_TIMEOUT = int(config_get('EMAIL_TIMEOUT', 0)) if config_get('EMAIL_TIMEOUT
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
 YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
+if isinstance(YUBICO_API_URLS, str):
+    YUBICO_API_URLS = [yubico_api_url.strip() for yubico_api_url in YUBICO_API_URLS.split(',')]
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 
