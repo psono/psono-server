@@ -49,9 +49,10 @@ class StatusView(GenericAPIView):
             except SecurityReport.DoesNotExist:
                 latest_security_report = None
 
-            last_security_report_created = None
             if latest_security_report:
                 last_security_report_created = latest_security_report.create_date
+            else:
+                last_security_report_created = request.user.create_date
 
             user_status = {
                 'unaccepted_shares_count': unaccepted_shares_count,
