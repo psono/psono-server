@@ -67,12 +67,12 @@ class SecurityReportView(GenericAPIView):
         if security_report_id:
 
 
-            user_info = self.get_security_report_info(security_report_id)
+            security_report_info = self.get_security_report_info(security_report_id)
 
-            if not user_info:
+            if not security_report_info:
                 return Response({"error": "SECURITY_REPORT_NOT_FOUND."}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response(user_info,
+            return Response(security_report_info,
                 status=status.HTTP_200_OK)
 
         else:
