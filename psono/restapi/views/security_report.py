@@ -45,12 +45,10 @@ class SecurityReportView(GenericAPIView):
 
         entries = serializer.validated_data['entries']
         check_haveibeenpwned = serializer.validated_data['check_haveibeenpwned']
-        master_password_validated = serializer.validated_data['master_password_validated']
 
         website_password_count = 0
         breached_password_count = 0
         duplicate_password_count = 0
-        master_password_tested = False
         master_password_breached = False
         master_password_duplicate = False
         master_password_length = 0
@@ -58,12 +56,8 @@ class SecurityReportView(GenericAPIView):
 
         filtered_entries = []
         for entry in entries:
-            if not master_password_validated and 'master_password' in entry and entry['master_password']:
-                # skip an entry that is presented as the masterpassword but is not actually the masterpassword
-                continue
 
-            if master_password_validated and 'master_password' in entry and entry['master_password']:
-                master_password_tested = True
+            if 'master_password' in entry and entry['master_password']:
                 master_password_duplicate = entry['duplicate'] if 'duplicate' in entry else None
                 master_password_breached = entry['breached'] if 'breached' in entry else None
                 master_password_length = entry['password_length'] if 'password_length' in entry else None
@@ -91,7 +85,6 @@ class SecurityReportView(GenericAPIView):
             breached_password_count=breached_password_count,
             duplicate_password_count=duplicate_password_count,
             check_haveibeenpwned=check_haveibeenpwned,
-            master_password_tested=master_password_tested,
             master_password_breached=master_password_breached,
             master_password_duplicate=master_password_duplicate,
             master_password_length=master_password_length,

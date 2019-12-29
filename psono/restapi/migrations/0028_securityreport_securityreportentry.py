@@ -24,7 +24,6 @@ class Migration(migrations.Migration):
                 ('breached_password_count', models.PositiveIntegerField(default=0, verbose_name='Count of breached passwords')),
                 ('duplicate_password_count', models.PositiveIntegerField(default=0, verbose_name='Count of password duplicates')),
                 ('check_haveibeenpwned', models.BooleanField(default=False, help_text='Did the user check his passwords against have i been pwened', verbose_name='Checked HaveIBeenPwned')),
-                ('master_password_tested', models.BooleanField(default=False, help_text='Did the user test his masterpassword', verbose_name='Master password tested')),
                 ('master_password_breached', models.BooleanField(default=False, help_text='Has the master password been breached', null=True, verbose_name='Master password breached')),
                 ('master_password_duplicate', models.BooleanField(default=False, help_text='Has the master password been used somewhere else', null=True, verbose_name='Master password duplicate')),
                 ('master_password_length', models.PositiveIntegerField(null=True, verbose_name='Master password length')),

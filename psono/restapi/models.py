@@ -905,7 +905,6 @@ class SecurityReport(models.Model):
     duplicate_password_count = models.PositiveIntegerField(_('Count of password duplicates'), default=0)
     check_haveibeenpwned = models.BooleanField(_('Checked HaveIBeenPwned'), default=False, help_text=_('Did the user check his passwords against have i been pwened'))
 
-    master_password_tested = models.BooleanField(_('Master password tested'), default=False, help_text=_('Did the user test his masterpassword'))
     master_password_breached = models.BooleanField(_('Master password breached'), default=False, help_text=_('Has the master password been breached'), null=True)
     master_password_duplicate = models.BooleanField(_('Master password duplicate'), default=False, help_text=_('Has the master password been used somewhere else'), null=True)
     master_password_length = models.PositiveIntegerField(_('Master password length'), null=True)
