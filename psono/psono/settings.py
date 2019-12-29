@@ -20,7 +20,6 @@ import nacl.encoding
 import nacl.signing
 import binascii
 import base64
-import six
 from decimal import Decimal
 from urllib.parse import urlparse
 from corsheaders.defaults import default_headers
@@ -245,8 +244,8 @@ WSGI_APPLICATION = 'wsgi.application'
 
 DATABASES = config_get('DATABASES')
 
-for (db_name, db_values) in six.iteritems(DATABASES):
-    for (db_configname, db_value) in six.iteritems(db_values):
+for db_name, db_values in DATABASES.items():
+    for db_configname, db_value in db_values.items():
         DATABASES[db_name][db_configname] = config_get('DATABASES_' + db_name.upper() + '_' + db_configname.upper(), DATABASES[db_name][db_configname])
 
 
@@ -460,7 +459,7 @@ def generate_signature():
     signing_box = nacl.signing.SigningKey(PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
     verify_key = signing_box.verify_key.encode(encoder=nacl.encoding.HexEncoder)
     # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
-    signature = binascii.hexlify(signing_box.sign(six.b(info)))[:128]
+    signature = binascii.hexlify(signing_box.sign(info.encode()))[:128]
 
     return {
         'info': info,

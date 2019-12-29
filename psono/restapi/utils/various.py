@@ -23,8 +23,6 @@ from uuid import UUID
 import scrypt
 from typing import Tuple, List
 
-
-import six
 import json
 
 
@@ -427,14 +425,14 @@ def get_datastore(datastore_id=None, user=None):
 
 def readbuffer(data):
     """
-    Reads an arbitary data objects and returns the byte representation (in python 3) or str (in python2)
+    Reads an arbitary data objects and returns the byte representation
     :param data:
     :type data:
     :return:
     :rtype:
     """
     if not data:
-        return six.b('')
+        return b''
     if str(type(data)) == "<type 'buffer'>":
         return str(data)
     elif str(type(data)) == "<class 'memoryview'>":
