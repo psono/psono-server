@@ -1,5 +1,4 @@
 from django.utils.translation import ugettext_lazy as _
-from django.utils.six import text_type
 from django.conf import settings
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
@@ -29,7 +28,7 @@ def get_authorization_validator_header(request):
     Hide some test client ickyness where the header can be unicode.
     """
     auth = request.META.get('HTTP_AUTHORIZATION_VALIDATOR', b'')
-    if isinstance(auth, text_type):
+    if isinstance(auth, str):
         # Work around django test client oddness
         auth = auth.encode(HTTP_HEADER_ENCODING)
     return auth

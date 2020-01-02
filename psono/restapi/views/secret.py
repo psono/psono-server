@@ -21,8 +21,6 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-import six
-
 class SecretView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -170,7 +168,7 @@ class SecretView(GenericAPIView):
         )
 
         if serializer.validated_data['data']:
-            secret.data = six.b(str(serializer.validated_data['data']))
+            secret.data = serializer.validated_data['data'].encode()
         if serializer.validated_data['data_nonce']:
             secret.data_nonce = str(serializer.validated_data['data_nonce'])
 

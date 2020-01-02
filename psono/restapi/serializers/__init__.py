@@ -3,6 +3,7 @@ from .activate_emergency_login import *
 from .create_datastore import *
 from .create_file import *
 from .create_recoverycode import *
+from .create_security_report import *
 from .create_share import *
 from .create_share_right import *
 from .create_emergencycode import *

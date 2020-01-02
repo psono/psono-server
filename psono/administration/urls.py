@@ -34,6 +34,8 @@ if settings.MANAGEMENT_ENABLED:
         url(r'^duo/$', views.DuoView.as_view(), name='admin_duo'),
         url(r'^session/(?P<session_id>[^/]+)/$', views.SessionView.as_view(), name='admin_session'),
         url(r'^session/$', views.SessionView.as_view(), name='admin_session'),
+        url(r'^security-report/(?P<security_report_id>[^/]+)/', views.SecurityReportView.as_view(), name='admin_security_report'),
+        url(r'^security-report/$', views.SecurityReportView.as_view(), name='admin_security_report'),
         url(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='admin_group'),
         url(r'^group/$', views.GroupView.as_view(), name='admin_group'),
         url(r'^membership/$', views.MembershipView.as_view(), name='admin_membership'),

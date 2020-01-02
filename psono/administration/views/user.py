@@ -10,7 +10,7 @@ from ..app_settings import (
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
-# from restapi.utils import decrypt_with_db_secret
+from restapi.utils import decrypt_with_db_secret
 
 
 class UserView(GenericAPIView):
@@ -108,7 +108,7 @@ class UserView(GenericAPIView):
         return {
             'id': user.id,
             'username': user.username,
-            # 'email': decrypt_with_db_secret(user.email),
+            'email': decrypt_with_db_secret(user.email),
             'create_date': user.create_date,
             'public_key': user.public_key,
             'is_active': user.is_active,
@@ -195,6 +195,7 @@ class UserView(GenericAPIView):
         user = serializer.validated_data.get('user')
         is_active = serializer.validated_data.get('is_active')
         is_email_active = serializer.validated_data.get('is_email_active')
+        is_superuser = serializer.validated_data.get('is_superuser')
         email = serializer.validated_data.get('email')
 
         if is_active is not None:
@@ -202,6 +203,9 @@ class UserView(GenericAPIView):
 
         if is_email_active is not None:
             user.is_email_active = is_email_active
+
+        if is_superuser is not None:
+            user.is_superuser = is_superuser
 
         if email is not None:
             user.email = email

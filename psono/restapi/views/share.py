@@ -18,8 +18,6 @@ from django.core.exceptions import ValidationError
 from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
-import six
-
 class ShareView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
@@ -180,7 +178,7 @@ class ShareView(GenericAPIView):
 
         share = serializer.validated_data['share']
         if serializer.validated_data['data']:
-            share.data = six.b(str(serializer.validated_data['data']))
+            share.data = serializer.validated_data['data'].encode()
         if 'data_nonce' in request.data:
             share.data_nonce = str(serializer.validated_data['data_nonce'])
 
@@ -216,7 +214,7 @@ class ShareView(GenericAPIView):
             )
 
         share = Share.objects.create(
-            data = six.b(str(request.data['data'])),
+            data = request.data['data'].encode(),
             data_nonce = str(request.data['data_nonce']),
             user = request.user
         )

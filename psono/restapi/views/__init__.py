@@ -51,3 +51,4 @@ from .file_repository_download import FileRepositoryDownloadView
 from .file_repository_right_accept import FileRepositoryRightAcceptView
 from .file_repository_right_decline import FileRepositoryRightDeclineView
 from .file_repository_right import FileRepositoryRightView
+from .security_report import SecurityReportView

@@ -1,6 +1,5 @@
 from django.conf import settings
 
-import six
 from importlib import import_module
 
 from .serializers import (

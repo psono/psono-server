@@ -8,7 +8,7 @@ from ..models import User, Emergency_Code
 
 class EmergencyLoginSerializer(serializers.Serializer):
 
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
     emergency_authkey = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:

@@ -9,7 +9,7 @@ from ..models import User, Recovery_Code
 
 class EnableNewPasswordSerializer(serializers.Serializer):
 
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
     recovery_authkey = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:

@@ -12,7 +12,6 @@ from nacl.public import PrivateKey, PublicKey, Box
 
 from datetime import timedelta
 import json
-import six
 
 from ..models import (
     Token
@@ -138,7 +137,7 @@ class LoginView(GenericAPIView):
 
         login_info_nonce = nacl.utils.random(Box.NONCE_SIZE)
         login_info_nonce_hex = nacl.encoding.HexEncoder.encode(login_info_nonce)
-        encrypted = server_crypto_box.encrypt(six.b(json.dumps(response)), login_info_nonce)
+        encrypted = server_crypto_box.encrypt(json.dumps(response).encode(), login_info_nonce)
         encrypted_login_info = encrypted[len(login_info_nonce):]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
 

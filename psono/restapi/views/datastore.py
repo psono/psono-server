@@ -19,8 +19,6 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
 
-import six
-
 
 class DatastoreView(GenericAPIView):
 
@@ -134,7 +132,7 @@ class DatastoreView(GenericAPIView):
         datastore = serializer.validated_data.get('datastore')
 
         if 'data' in request.data:
-            datastore.data = six.b(str(request.data['data']))
+            datastore.data = request.data['data'].encode()
         if 'data_nonce' in request.data:
             datastore.data_nonce = str(request.data['data_nonce'])
         if 'secret_key' in request.data:

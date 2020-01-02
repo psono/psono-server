@@ -9,14 +9,15 @@ import binascii
 import os
 from mock import patch
 
+from restapi.utils import encrypt_with_db_secret
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
 
 class ReadUserTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
+        self.test_email = encrypt_with_db_secret(''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com')
+        self.test_email2 = encrypt_with_db_secret(''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com')
         self.test_email_bcrypt = 'a'
         self.test_email_bcrypt2 = 'b'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'

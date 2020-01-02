@@ -1,6 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
-import six
 
 from ..models import Yubikey_OTP
 from ..utils import yubikey_authenticate, yubikey_get_yubikey_id, decrypt_with_db_secret
@@ -35,7 +34,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
         for yk in yks:
             decrypted_yubikey_id = decrypt_with_db_secret(yk.yubikey_id).encode()
 
-            if six.b(yubikey_id) == decrypted_yubikey_id:
+            if yubikey_id.encode() == decrypted_yubikey_id:
                 otp_token_correct = True
                 attrs['yubikey_otp'] = yk
                 break
