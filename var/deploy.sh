@@ -37,3 +37,6 @@ chmod 600 /root/.ssh/known_hosts
 echo "Push to github.com/psono/psono-server.git"
 git remote set-url origin git@github.com:psono/psono-server.git
 git push --all origin
+
+echo "Trigger psono combo rebuild"
+curl -X POST -F token=$PSONO_COMBO_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/16086547/trigger/pipeline
