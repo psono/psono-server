@@ -709,10 +709,10 @@ def create_user(username, password, email, gen_authkey=True):
         settings.EMAIL_SECRET_SALT, '', 1)
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-        return { 'error': 'Email already exists.' }
+        return { 'error': 'USER_WITH_EMAIL_ALREADY_EXISTS' }
 
     if User.objects.filter(username=username).exists():
-        return { 'error': 'Username already exists.' }
+        return { 'error': 'USER_WITH_USERNAME_ALREADY_EXISTS' }
 
     user_sauce = binascii.hexlify(os.urandom(32))
 

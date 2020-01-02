@@ -108,7 +108,7 @@ class CommandCreateuserTestCase(TestCase):
             found = False
 
         self.assertFalse(found)
-        self.assertEqual(out.getvalue(), 'Email already exists.\n')
+        self.assertEqual(out.getvalue(), 'USER_WITH_EMAIL_ALREADY_EXISTS\n')
 
     def test_createuser_username_already_exist(self):
         """
@@ -132,7 +132,7 @@ class CommandCreateuserTestCase(TestCase):
             found = False
 
         self.assertTrue(found) # Must be true as we already created it before
-        self.assertEqual(out.getvalue(), 'Username already exists.\n')
+        self.assertEqual(out.getvalue(), 'USER_WITH_USERNAME_ALREADY_EXISTS\n')
 
 
 
