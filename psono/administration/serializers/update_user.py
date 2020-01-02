@@ -11,7 +11,8 @@ class UpdateUserSerializer(serializers.Serializer):
     user_id = UUIDField(required=True)
     is_active = BooleanField(required=False)
     is_email_active = BooleanField(required=False)
-    email = serializers.EmailField(required=False)
+    is_superuser = BooleanField(required=False)
+    email = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
 
 
     def validate(self, attrs: dict) -> dict:
@@ -19,6 +20,7 @@ class UpdateUserSerializer(serializers.Serializer):
         user_id = attrs.get('user_id')
         is_active = attrs.get('is_active', None)
         is_email_active = attrs.get('is_email_active', None)
+        is_superuser = attrs.get('is_superuser', None)
         email = attrs.get('email')
 
         try:
@@ -45,7 +47,7 @@ class UpdateUserSerializer(serializers.Serializer):
             email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
             email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
-            if User.objects.filter(email_bcrypt=email_bcrypt).exists():
+            if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=user_id).exists():
                 msg = _('E-Mail already exists.')
                 raise exceptions.ValidationError(msg)
 
@@ -59,5 +61,6 @@ class UpdateUserSerializer(serializers.Serializer):
         attrs['email'] = email
         attrs['is_active'] = is_active
         attrs['is_email_active'] = is_email_active
+        attrs['is_superuser'] = is_superuser
 
         return attrs

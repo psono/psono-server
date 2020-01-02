@@ -10,8 +10,8 @@ from ..models import User
 from ..utils import encrypt_with_db_secret
 
 class RegisterSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
-    email = serializers.EmailField(required=True)
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
+    email = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
     authkey = serializers.CharField(style={'input_type': 'password'}, required=True,
                                     min_length=settings.AUTH_KEY_LENGTH_BYTES*2,
                                     max_length=settings.AUTH_KEY_LENGTH_BYTES*2)

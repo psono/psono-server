@@ -11,7 +11,7 @@ from ..models import User, Old_Credential
 
 
 class UserUpdateSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False, allow_null=True)
+    email = serializers.EmailField(required=False, allow_null=True, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
     authkey = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True,
                                     max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
                                     min_length=settings.AUTH_KEY_LENGTH_BYTES*2)

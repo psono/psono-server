@@ -17,7 +17,7 @@ from nacl.public import PrivateKey, PublicKey, Box
 
 class ActivateEmergencyLoginSerializer(serializers.Serializer):
 
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'Enter a valid username' })
+    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
     emergency_authkey = serializers.CharField(required=True)
     update_data = serializers.CharField(required=True)
     update_data_nonce = serializers.CharField(max_length=64, required=True)
