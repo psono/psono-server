@@ -215,7 +215,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('email'), [u'Enter a valid email address.'])
+        self.assertEqual(response.data.get('email'), [u'INVALID_EMAIL_FORMAT'])
 
 
     def test_create_account_username_no_email_syntax(self):
@@ -249,7 +249,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
     def test_create_account_username_not_in_allowed_domains(self):
@@ -352,7 +352,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
     def test_create_account_username_start_with_a_dash(self):
@@ -421,7 +421,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
     def test_create_account_username_not_contain_consecutive_periods(self):
@@ -455,7 +455,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Enter a valid username'])
+        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
     def test_create_account_username_not_contain_consecutive_dashes(self):
