@@ -33,7 +33,15 @@ try:
 except ImportError:
     import psycopg2
 
-HOME = os.path.expanduser('~')
+
+if os.environ.get('PSONO_HOME', '') and os.path.exists(os.path.join(os.environ.get('PSONO_HOME', ''), '.psono_server', 'settings.yaml')):
+    HOME = os.environ.get('PSONO_HOME', '')
+elif os.path.exists(os.path.join(os.path.expanduser('~'), '.psono_server', 'settings.yaml')):
+    HOME = os.path.expanduser('~')
+elif os.path.exists(os.path.join('/root', '.psono_server', 'settings.yaml')):
+    HOME = '/root'
+else:
+    raise Exception("Setting missing", "Could not detect HOME, you can specify it with PSONO_HOME and check that it contains .psono_server/settings.yaml")
 
 
 if os.environ.get('PSONO_SERVER_SETTING_BASE64', ''):
@@ -41,8 +49,6 @@ if os.environ.get('PSONO_SERVER_SETTING_BASE64', ''):
 else:
     with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
         config = yaml.safe_load(stream)
-
-
 
 
 def config_get(key, *args):
@@ -67,14 +73,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config_get('SECRET_KEY')
-PRIVATE_KEY  = config_get('PRIVATE_KEY', '')
-PUBLIC_KEY  = config_get('PUBLIC_KEY', '')
+PRIVATE_KEY  = config_get('PRIVATE_KEY')
+PUBLIC_KEY  = config_get('PUBLIC_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(config_get('DEBUG', False)).lower() == 'true'
 
-ALLOWED_HOSTS = config_get('ALLOWED_HOSTS')
-ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS')
+ALLOWED_HOSTS = config_get('ALLOWED_HOSTS', ['*'])
+if isinstance(ALLOWED_HOSTS, str):
+    ALLOWED_HOSTS = [allowed_host_single.strip() for allowed_host_single in ALLOWED_HOSTS.split(',')]
+
+ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS', [])
+if isinstance(ALLOWED_DOMAINS, str):
+    ALLOWED_DOMAINS = [allowed_domains_single.strip() for allowed_domains_single in ALLOWED_DOMAINS.split(',')]
 
 ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'true'
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
@@ -235,14 +246,37 @@ CORS_ALLOW_HEADERS = default_headers + (
     'cache-control',
 )
 
-TEMPLATES = config_get('TEMPLATES')
+TEMPLATES = config_get('TEMPLATES', [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [HOME + '/psono/templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+])
 
 WSGI_APPLICATION = 'wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = config_get('DATABASES')
+DATABASES = config_get('DATABASES', {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'YourPostgresDatabase',
+        'USER': 'YourPostgresUser',
+        'PASSWORD': 'YourPostgresPassword',
+        'HOST': 'YourPostgresHost',
+        'PORT': 'YourPostgresPort',
+    }
+})
 
 for db_name, db_values in DATABASES.items():
     for db_configname, db_value in db_values.items():
