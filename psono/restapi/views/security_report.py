@@ -74,9 +74,6 @@ class SecurityReportView(GenericAPIView):
 
             filtered_entries.append(entry)
 
-        if check_haveibeenpwned:
-            breached_password_count = None
-
         security_report = SecurityReport.objects.create(
             user=request.user,
             recovery_code_exists=Recovery_Code.objects.filter(user=request.user).exists(),
