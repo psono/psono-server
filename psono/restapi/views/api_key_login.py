@@ -62,6 +62,9 @@ class APIKeyLoginView(GenericAPIView):
 
         api_key = serializer.validated_data['api_key']
 
+        if not settings.ALLOW_MULTIPLE_SESSIONS:
+            Token.objects.filter(user=api_key.user).delete()
+
         token = Token.objects.create(
             user=api_key.user,
             google_authenticator_2fa=False,
