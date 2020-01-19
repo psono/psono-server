@@ -391,12 +391,20 @@ EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 ACTIVATION_LINK_TIME_VALID = int(config_get('ACTIVATION_LINK_TIME_VALID', 2592000)) # in seconds
 DEFAULT_TOKEN_TIME_VALID = int(config_get('DEFAULT_TOKEN_TIME_VALID', 86400)) # 24h in seconds
 MAX_WEBCLIENT_TOKEN_TIME_VALID = int(config_get('MAX_WEB_TOKEN_TIME_VALID', 2592000)) # 30d in seconds
-MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_MOBILE_TOKEN_TIME_VALID', 30758400)) # 356d in seconds
+MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_APP_TOKEN_TIME_VALID', 31536000)) # 365d in seconds
+MAX_API_KEY_TOKEN_TIME_VALID = int(config_get('MAX_API_KEY_TOKEN_TIME_VALID', 600)) # 10 min in seconds
 RECOVERY_VERIFIER_TIME_VALID = int(config_get('RECOVERY_VERIFIER_TIME_VALID', 600)) # in seconds
 REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)).lower() == 'true' # disables the replay protection
 DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)).lower() == 'true' # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20)) # in seconds
 DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPORTS', False)).lower() == 'true' # disables central security reports
+
+ALLOW_MULTIPLE_SESSIONS = str(config_get('ALLOW_MULTIPLE_SESSIONS', True)).lower() == 'true' # Allows multiple sessions for each user
+AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIME_VALID', 0)) #  in seconds, 900 = 15 mins, 0 disables it
+
+AUTO_PROLONGATION_URL_EXCEPTIONS = [
+    '/user/status/',
+]
 
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')

@@ -72,6 +72,9 @@ class EmergencyLoginView(GenericAPIView):
         emergency_code.verifier_issue_date  = None
         emergency_code.save()
 
+        if not settings.ALLOW_MULTIPLE_SESSIONS:
+            Token.objects.filter(user=user).delete()
+
         token = Token.objects.create(
             user=user,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),

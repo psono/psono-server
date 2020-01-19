@@ -51,7 +51,7 @@ class UserUpdate(GenericAPIView):
             # generate bcrypt with static salt.
             # I know its bad to use static salts, but its the best solution I could come up with,
             # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
-            # Im aware that this allows attackers with this fix salt to "mass" attack all passwords.
+            # Im aware that this allows attackers with this fix salt to "mass" attack all emails.
             # if you have a better solution, please let me know.
             request.user.email_bcrypt = get_static_bcrypt_hash_from_email(email)
             request.user.email = encrypt_with_db_secret(email)

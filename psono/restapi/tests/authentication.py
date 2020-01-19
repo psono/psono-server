@@ -450,7 +450,7 @@ class AuthenticateTests(APITestCaseExtended):
         self.assertEqual(response.data, {'detail': 'Device Fingerprint Protection: device_fingerprint mismatch'})
 
 
-    @patch('restapi.authentication.settings', DEVICE_PROTECTION_DISABLED=False)
+    @patch('restapi.authentication.settings', DEVICE_PROTECTION_DISABLED=False, AUTO_PROLONGATION_TOKEN_TIME_VALID=0)
     def test_authenticate_device_protection_success(self, settings_fct):
 
         models.Token.objects.all().update(device_fingerprint="123456")
@@ -549,7 +549,7 @@ class AuthenticateTests(APITestCaseExtended):
         self.assertEqual(response.data, {'detail': 'Replay Protection: Time difference too big'})
 
 
-    @patch('restapi.authentication.settings', REPLAY_PROTECTION_DISABLED=False, REPLAY_PROTECTION_TIME_DFFERENCE=20)
+    @patch('restapi.authentication.settings', REPLAY_PROTECTION_DISABLED=False, REPLAY_PROTECTION_TIME_DFFERENCE=20, AUTO_PROLONGATION_TOKEN_TIME_VALID=0)
     def test_authenticate_replay_protection_success(self, settings_fct):
 
         models.Token.objects.all().update(

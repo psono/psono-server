@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.utils import timezone
@@ -107,6 +108,10 @@ class TokenAuthentication(BaseAuthentication):
         client.context.merge({'user': {
             'username': request.user.username
         }})
+
+        if settings.AUTO_PROLONGATION_TOKEN_TIME_VALID and request.path.lower() not in settings.AUTO_PROLONGATION_URL_EXCEPTIONS:
+            token.valid_till = timezone.now() + timedelta(seconds=settings.AUTO_PROLONGATION_TOKEN_TIME_VALID)
+            token.save()
 
         return user, token
 
