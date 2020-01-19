@@ -400,6 +400,11 @@ REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERE
 DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPORTS', False)).lower() == 'true' # disables central security reports
 
 ALLOW_MULTIPLE_SESSIONS = str(config_get('ALLOW_MULTIPLE_SESSIONS', True)).lower() == 'true' # Allows multiple sessions for each user
+AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIME_VALID', 0)) #  in seconds, 900 = 15 mins, 0 disables it
+
+AUTO_PROLONGATION_URL_EXCEPTIONS = [
+    '/user/status/',
+]
 
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
