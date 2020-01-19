@@ -391,7 +391,7 @@ EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 ACTIVATION_LINK_TIME_VALID = int(config_get('ACTIVATION_LINK_TIME_VALID', 2592000)) # in seconds
 DEFAULT_TOKEN_TIME_VALID = int(config_get('DEFAULT_TOKEN_TIME_VALID', 86400)) # 24h in seconds
 MAX_WEBCLIENT_TOKEN_TIME_VALID = int(config_get('MAX_WEB_TOKEN_TIME_VALID', 2592000)) # 30d in seconds
-MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_MOBILE_TOKEN_TIME_VALID', 31536000)) # 356d in seconds
+MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_APP_TOKEN_TIME_VALID', 31536000)) # 356d in seconds
 MAX_API_KEY_TOKEN_TIME_VALID = int(config_get('MAX_API_KEY_TOKEN_TIME_VALID', 600)) # 10 min in seconds
 RECOVERY_VERIFIER_TIME_VALID = int(config_get('RECOVERY_VERIFIER_TIME_VALID', 600)) # in seconds
 REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)).lower() == 'true' # disables the replay protection
