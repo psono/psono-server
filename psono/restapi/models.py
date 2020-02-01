@@ -905,7 +905,7 @@ class SecurityReport(models.Model):
     duplicate_password_count = models.PositiveIntegerField(_('Count of password duplicates'), default=0)
     check_haveibeenpwned = models.BooleanField(_('Checked HaveIBeenPwned'), default=False, help_text=_('Did the user check his passwords against have i been pwened'))
 
-    master_password_breached = models.BooleanField(_('Master password breached'), default=False, help_text=_('Has the master password been breached'), null=True)
+    master_password_breached = models.PositiveIntegerField(_('Master password breached'), default=None, help_text=_('Has the master password been breached'), null=True)
     master_password_duplicate = models.BooleanField(_('Master password duplicate'), default=False, help_text=_('Has the master password been used somewhere else'), null=True)
     master_password_length = models.PositiveIntegerField(_('Master password length'), null=True)
     master_password_variation_count = models.PositiveIntegerField(_('Master password variation count'), null=True, help_text=_('The count of variations (uppercase, lowercase, numbers, special chars'))
@@ -928,7 +928,7 @@ class SecurityReportEntry(models.Model):
     create_age = models.DurationField(_('Create Age'), help_text=_('The time in days since its last update'), null=True)
     write_age = models.DurationField(_('Write Age'), help_text=_('The time in days since its creation'), null=True)
     master_password = models.BooleanField(_('Masterpassword'), default=False, null=True)
-    breached = models.BooleanField(_('Breached'), default=False, null=True)
+    breached = models.PositiveIntegerField(_('Breached'), default=None, null=True)
     duplicate = models.BooleanField(_('Duplicate'), default=False, null=True)
     password_length = models.PositiveIntegerField(_('Password length'), null=True)
     variation_count = models.PositiveIntegerField(_('Variation count'), null=True, help_text=_('The count of variations (uppercase, lowercase, numbers, special chars'))
