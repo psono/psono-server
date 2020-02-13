@@ -1110,6 +1110,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             'secret_key_nonce': self.test_secret_key_nonce,
             'secret_key': self.test_secret_key,
             'id': self.test_user_obj.id,
+            'authentication': 'AUTHKEY',
             'email': self.test_email})
 
     def test_post_authentication_activate_token_token_not_already_active(self):
