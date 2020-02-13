@@ -8,7 +8,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import Duo
+from restapi.models import Duo, User
 
 
 class DuoView(GenericAPIView):
@@ -47,11 +47,14 @@ class DuoView(GenericAPIView):
 
         duo = serializer.validated_data.get('duo')
 
+        user_id = duo.user_id
+
         # delete it
         duo.delete()
 
-        if not Duo.objects.filter(user_id=request.user.id, active=True).exists():
-            request.user.duo_enabled = False
-            request.user.save()
+        if not Duo.objects.filter(user_id=user_id, active=True).exists():
+            user = User.objects.get(pk=user_id)
+            user.duo_enabled = False
+            user.save()
 
         return Response(status=status.HTTP_200_OK)

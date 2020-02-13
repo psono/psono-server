@@ -8,7 +8,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import Google_Authenticator
+from restapi.models import Google_Authenticator, User
 
 
 class GaView(GenericAPIView):
@@ -47,10 +47,14 @@ class GaView(GenericAPIView):
 
         google_authenticator = serializer.validated_data.get('google_authenticator')
 
+        user_id = google_authenticator.user_id
+
         # delete it
         google_authenticator.delete()
 
-        if not Google_Authenticator.objects.filter(user_id=request.user.id, active=True).exists():
-            request.user.google_authenticator_enabled = False
+        if not Google_Authenticator.objects.filter(user_id=user_id, active=True).exists():
+            user = User.objects.get(pk=user_id)
+            user.google_authenticator_enabled = False
+            user.save()
 
         return Response(status=status.HTTP_200_OK)
