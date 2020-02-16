@@ -16,7 +16,6 @@ The documentation for the psono server can be found here:
 
 Some things that have not yet found their place in the documentation:
 
-
 ## Backup & Restore
 
 For a full backup, you have to backup two things. First thing obviously is the database, and the second thing is your
