@@ -23,3 +23,4 @@ raven==6.10.0
 requests==2.22.0
 pycryptodomex==3.9.4
 boto3==1.10.27
+django-postgrespool2==1.0.0

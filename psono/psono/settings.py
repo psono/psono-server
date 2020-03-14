@@ -269,7 +269,7 @@ WSGI_APPLICATION = 'wsgi.application'
 
 DATABASES = config_get('DATABASES', {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', # django_postgrespool2
         'NAME': 'YourPostgresDatabase',
         'USER': 'YourPostgresUser',
         'PASSWORD': 'YourPostgresPassword',
@@ -278,9 +278,16 @@ DATABASES = config_get('DATABASES', {
     }
 })
 
+
 for db_name, db_values in DATABASES.items():
     for db_configname, db_value in db_values.items():
         DATABASES[db_name][db_configname] = config_get('DATABASES_' + db_name.upper() + '_' + db_configname.upper(), DATABASES[db_name][db_configname])
+
+DATABASE_POOL_ARGS = {
+    'max_overflow': int(config_get('DATABASE_POOL_ARGS_MAX_OVERFLOW', 15)),
+    'pool_size': int(config_get('DATABASE_POOL_ARGS_POOL_SIZE', 5)),
+    'recycle': int(config_get('DATABASE_POOL_ARGS_RECYLCE', 300))
+}
 
 
 EMAIL_FROM = config_get('EMAIL_FROM')
