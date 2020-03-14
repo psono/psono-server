@@ -23,4 +23,5 @@ raven==6.10.0
 requests==2.22.0
 pycryptodomex==3.9.4
 boto3==1.10.27
-django-postgrespool2==1.0.0
+# Fixed version of django-postgrespool2==1.0.0
+-e git+https://github.com/chickahoona/django-postgrespool2.git@a64b32acc3a18a2634ea2e0ca605705c6cf34820#egg=django-postgrespool2
