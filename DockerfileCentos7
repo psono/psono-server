@@ -13,6 +13,7 @@ RUN mkdir -p /root/.pip && \
     yum -y install https://centos7.iuscommunity.org/ius-release.rpm && \
     yum -y update && \
     yum -y install \
+        git \
         gcc \
         haveged \
         libffi-devel \

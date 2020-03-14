@@ -12,6 +12,7 @@ RUN apk upgrade --no-cache && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add --no-cache \
         curl \
+        git \
         build-base \
         libffi-dev \
         linux-headers \
