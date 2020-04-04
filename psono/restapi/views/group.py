@@ -196,7 +196,7 @@ class GroupView(GenericAPIView):
             public_key = str(request.data['public_key']),
         )
 
-        User_Group_Membership.objects.create(
+        User_Group_Membership.objects.create(  #nosec -- not [B105:hardcoded_password_string]
             user = request.user,
             group = group,
             creator = request.user,

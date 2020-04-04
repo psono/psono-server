@@ -500,7 +500,7 @@ def generate_signature():
         'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
-        'system_wide_duo_exists': DUO_SECRET_KEY != '',
+        'system_wide_duo_exists': DUO_SECRET_KEY != '',  #nosec -- not [B105:hardcoded_password_string]
         'multifactor_enabled': MULTIFACTOR_ENABLED,
         'type': 'CE',
         'credit_buy_address': SHARD_CREDIT_BUY_ADDRESS,

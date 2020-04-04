@@ -49,7 +49,7 @@ class HistoryView(GenericAPIView):
         try:
             callback_pass = decrypt_with_db_secret(secret_history.callback_pass)
         except:
-            callback_pass = ''
+            callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
 
         return Response({
             'create_date': secret_history.create_date,
