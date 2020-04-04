@@ -11,11 +11,13 @@ RUN apk upgrade --no-cache && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add --no-cache \
+        ca-certificates \
         curl \
         build-base \
         libffi-dev \
         linux-headers \
         postgresql-dev && \
+    ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \

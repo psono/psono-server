@@ -16,6 +16,7 @@ from .parsers import decrypt
 from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link, File_Transfer
 from .utils import get_cache, decrypt_with_db_secret, get_ip
 
+import nacl.exceptions
 import nacl.encoding
 import nacl.utils
 import nacl.secret
@@ -302,7 +303,11 @@ class FileserverAliveAuthentication(TokenAuthentication):
             cluster_crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
                                      PublicKey(cluster_public_key, encoder=nacl.encoding.HexEncoder))
 
-            fileserver_info = json.loads(cluster_crypto_box.decrypt(nacl.encoding.HexEncoder.decode(fileserver_info_enc)).decode())
+            try:
+                fileserver_info = json.loads(cluster_crypto_box.decrypt(nacl.encoding.HexEncoder.decode(fileserver_info_enc)).decode())
+            except nacl.exceptions.CryptoError:
+                msg = _('Invalid fileserver info.')
+                raise exceptions.AuthenticationFailed(msg)
 
             if fileserver_info['CLUSTER_ID'] != cluster_id:
                 msg = _('Invalid fileserver info.')

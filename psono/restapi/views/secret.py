@@ -66,7 +66,7 @@ class SecretView(GenericAPIView):
         try:
             callback_pass = decrypt_with_db_secret(secret.callback_pass)
         except:
-            callback_pass = ''
+            callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
 
         return Response({
             'create_date': secret.create_date,
@@ -188,7 +188,7 @@ class SecretView(GenericAPIView):
                 'secret_id': str(secret.id),
             }
 
-            callback_pass = ''
+            callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
             if secret.callback_user and secret.callback_pass:
                 try:
                     callback_pass = decrypt_with_db_secret(secret.callback_pass)

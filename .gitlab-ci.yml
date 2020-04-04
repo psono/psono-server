@@ -125,7 +125,7 @@ run-vulnerability-scan:
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety && safety check"
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit==1.5.1 && bandit -r /root -x /root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
   only:
     - branches@psono/psono-server
     - tags@psono/psono-server

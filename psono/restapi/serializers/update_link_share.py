@@ -42,7 +42,7 @@ class UpdateLinkShareSerializer(serializers.Serializer):
             msg = _("VALID_TILL_CANNOT_BE_IN_THE_PAST")
             raise exceptions.ValidationError(msg)
 
-        if passphrase == '':
+        if passphrase == '':  #nosec -- not [B105:hardcoded_password_string]
             passphrase = None
         elif passphrase is None:
             passphrase = link_share.passphrase
