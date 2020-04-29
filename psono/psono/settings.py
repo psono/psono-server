@@ -24,6 +24,7 @@ from decimal import Decimal
 from urllib.parse import urlparse
 from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
+import dj_database_url
 
 
 try:
@@ -265,19 +266,25 @@ TEMPLATES = config_get('TEMPLATES', [
 WSGI_APPLICATION = 'wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-DATABASES = config_get('DATABASES', {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2', # django_postgrespool2
-        'NAME': 'YourPostgresDatabase',
-        'USER': 'YourPostgresUser',
-        'PASSWORD': 'YourPostgresPassword',
-        'HOST': 'YourPostgresHost',
-        'PORT': 'YourPostgresPort',
+DATABASE_URL = config_get('DATABASE_URL', None)
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(env='PSONO_DATABASE_URL'),
     }
-})
-
+    DATABASE_SLAVE_URL = config_get('DATABASE_SLAVE_URL', None)
+    if DATABASE_SLAVE_URL:
+        DATABASES['slave'] = dj_database_url.config(env='PSONO_DATABASE_SLAVE_URL')
+else:
+    DATABASES = config_get('DATABASES', {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2', # django_postgrespool2
+            'NAME': 'YourPostgresDatabase',
+            'USER': 'YourPostgresUser',
+            'PASSWORD': 'YourPostgresPassword',
+            'HOST': 'YourPostgresHost',
+            'PORT': 'YourPostgresPort',
+        }
+    })
 
 for db_name, db_values in DATABASES.items():
     for db_configname, db_value in db_values.items():

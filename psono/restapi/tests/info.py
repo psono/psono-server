@@ -12,7 +12,7 @@ class ReadInfoTest(APITestCaseExtended):
 
     def test_read_info_success(self):
         """
-        Tests to read all groups
+        Tests to read the public server info
         """
 
         url = reverse('info')
