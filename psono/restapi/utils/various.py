@@ -8,7 +8,7 @@ import os
 
 import bcrypt
 import time
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -607,6 +607,34 @@ def promote_user(username: str, role: str) -> dict:
         return {
             'error': 'Role does not exist'
         }
+
+    return {}
+
+def reset_2fa(username: str) -> dict:
+    """
+    Resets all second factors for a given user
+
+    :param username:
+    :type username: str
+
+    :return:
+    :rtype: dict
+    """
+    try:
+        user = User.objects.get(username=username.lower())
+    except User.DoesNotExist:
+        return {
+            'error': 'User does not exist'
+        }
+
+    user.duo_enabled = False
+    user.google_authenticator_enabled = False
+    user.yubikey_otp_enabled = False
+    user.save()
+
+    Duo.objects.filter(user_id=user.id).delete()
+    Google_Authenticator.objects.filter(user_id=user.id).delete()
+    Yubikey_OTP.objects.filter(user_id=user.id).delete()
 
     return {}
 
