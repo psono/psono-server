@@ -389,6 +389,8 @@ FILE_REPOSITORY_TYPES = [
     'gcp_cloud_storage',
     'aws_s3',
     'do_spaces',
+    'backblaze',
+    'other_s3',
 ]
 
 FILESERVER_ALIVE_TIMEOUT = int(config_get('FILESERVER_ALIVE_TIMEOUT', 30))

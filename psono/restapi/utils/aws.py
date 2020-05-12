@@ -1,4 +1,4 @@
-import boto3
+from .s3 import s3_construct_signed_download_url, s3_construct_signed_upload_url, s3_delete, create_key as _create_key
 
 def aws_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
     """
@@ -19,18 +19,7 @@ def aws_construct_signed_upload_url(bucket, region, access_key_id, secret_access
     :rtype:
     """
 
-    client = boto3.client(
-        's3',
-        region_name=region,
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
-    )
-
-    key = create_key(hash_checksum)
-
-    url = client.generate_presigned_post(Bucket=bucket, Key=key, ExpiresIn=3600)
-
-    return url
+    return s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum)
 
 
 def aws_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
@@ -52,18 +41,7 @@ def aws_construct_signed_download_url(bucket, region, access_key_id, secret_acce
     :rtype:
     """
 
-    client = boto3.client(
-        's3',
-        region_name=region,
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
-    )
-
-    key = create_key(hash_checksum)
-
-    url = client.generate_presigned_url(ClientMethod='get_object', Params={'Bucket': bucket, 'Key': key}, ExpiresIn=3600)
-
-    return url
+    return s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum)
 
 
 def aws_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
@@ -85,16 +63,7 @@ def aws_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
     :rtype:
     """
 
-    client = boto3.client(
-        's3',
-        region_name=region,
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
-    )
-
-    key = create_key(hash_checksum)
-
-    return client.delete_object(Bucket=bucket, Key=key)
+    return s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum)
 
 
 def create_key(hash_checksum):
@@ -108,4 +77,4 @@ def create_key(hash_checksum):
     :rtype:
     """
 
-    return hash_checksum[0:2] + '/' + hash_checksum[2:4] + '/' + hash_checksum[4:6] + '/' + hash_checksum[6:8] + '/' + hash_checksum
+    return _create_key(hash_checksum=hash_checksum)

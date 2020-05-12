@@ -1,6 +1,6 @@
 from .s3 import s3_construct_signed_download_url, s3_construct_signed_upload_url, s3_delete, create_key as _create_key
 
-def do_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+def backblaze_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
     """
     Constructs the signed upload url
 
@@ -19,10 +19,10 @@ def do_construct_signed_upload_url(bucket, region, access_key_id, secret_access_
     :rtype:
     """
 
-    return s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://' + region + '.digitaloceanspaces.com')
+    return s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
 
 
-def do_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+def backblaze_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
     """
     Constructs the signed upload url
 
@@ -41,10 +41,10 @@ def do_construct_signed_download_url(bucket, region, access_key_id, secret_acces
     :rtype:
     """
 
-    return s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://' + region + '.digitaloceanspaces.com')
+    return s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
 
 
-def do_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
+def backblaze_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
     """
     Deletes an object from s3
 
@@ -62,7 +62,7 @@ def do_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
     :return:
     :rtype:
     """
-    return s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://' + region + '.digitaloceanspaces.com')
+    return s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
 
 
 def create_key(hash_checksum):
