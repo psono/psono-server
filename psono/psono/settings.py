@@ -350,6 +350,8 @@ ANYMAIL = {
 
 DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
+HEALTHCHECK_TIME_SYNC_ENABLED = str(config_get('HEALTHCHECK_TIME_SYNC_ENABLED', True)).lower() == 'true'
+
 CACHE_ENABLE = str(config_get('CACHE_ENABLE', False)).lower() == 'true'
 
 if str(config_get('CACHE_DB', False)).lower() == 'true':
