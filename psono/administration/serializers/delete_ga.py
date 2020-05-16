@@ -14,7 +14,7 @@ class DeleteGASerializer(serializers.Serializer):
         try:
             google_authenticator = Google_Authenticator.objects.get(pk=google_authenticator_id)
         except Google_Authenticator.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['google_authenticator'] = google_authenticator

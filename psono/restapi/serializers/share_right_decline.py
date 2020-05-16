@@ -16,7 +16,7 @@ class ShareRightDeclineSerializer(serializers.Serializer):
         try:
             user_share_right_obj = User_Share_Right.objects.get(pk=share_right_id, user=self.context['request'].user, accepted=None)
         except User_Share_Right.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['user_share_right_obj'] = user_share_right_obj

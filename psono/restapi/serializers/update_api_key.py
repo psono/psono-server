@@ -27,7 +27,7 @@ class UpdateAPIKeySerializer(serializers.Serializer):
         try:
             api_key = API_Key.objects.get(id=api_key_id, user=self.context['request'].user)
         except API_Key.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if title is None and read is None and write is None and restrict_to_secrets is None and allow_insecure_access is None:

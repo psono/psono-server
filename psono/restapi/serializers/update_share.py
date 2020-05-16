@@ -19,12 +19,12 @@ class UpdateShareSerializer(serializers.Serializer):
         try:
             share = Share.objects.get(pk=share_id)
         except Share.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check permissions on share
         if not user_has_rights_on_share(self.context['request'].user.id, share_id, write=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
 

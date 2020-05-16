@@ -19,17 +19,17 @@ class ReadFileSerializer(serializers.Serializer):
         try:
             file = File.objects.only('id', 'delete_date', 'delete_date', 'shard_id', 'file_repository_id', 'size', 'chunk_count').get(pk=file_id)
         except File.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check if it has been marked for deletion
         if file.delete_date and file.delete_date < timezone.now():
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check if the user has the necessary rights
         if not user_has_rights_on_file(self.context['request'].user.id, file_id, read=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if file.shard_id:

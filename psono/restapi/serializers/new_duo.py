@@ -29,10 +29,12 @@ class NewDuoSerializer(serializers.Serializer):
             host = settings.DUO_API_HOSTNAME
 
         if Duo.objects.filter(user=self.context['request'].user).count() > 0:
+            # TODO replace with ONLY_ONE_DUO_DEVICE_ALLOWED
             msg = _('Only one Duo device allowed.')
             raise exceptions.ValidationError(msg)
 
         if settings.ALLOWED_SECOND_FACTORS and 'duo' not in settings.ALLOWED_SECOND_FACTORS:
+            # TODO replace with SERVER_NOT_SUPPORT_DUO
             msg = _('The server does not allow Duo 2FA.')
             raise exceptions.ValidationError(msg)
 

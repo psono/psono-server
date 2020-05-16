@@ -350,6 +350,8 @@ ANYMAIL = {
 
 DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
+HEALTHCHECK_TIME_SYNC_ENABLED = str(config_get('HEALTHCHECK_TIME_SYNC_ENABLED', True)).lower() == 'true'
+
 CACHE_ENABLE = str(config_get('CACHE_ENABLE', False)).lower() == 'true'
 
 if str(config_get('CACHE_DB', False)).lower() == 'true':
@@ -389,6 +391,8 @@ FILE_REPOSITORY_TYPES = [
     'gcp_cloud_storage',
     'aws_s3',
     'do_spaces',
+    'backblaze',
+    'other_s3',
 ]
 
 FILESERVER_ALIVE_TIMEOUT = int(config_get('FILESERVER_ALIVE_TIMEOUT', 30))

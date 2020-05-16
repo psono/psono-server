@@ -54,21 +54,18 @@ class SetNewPasswordSerializer(serializers.Serializer):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            # TODO REPLACE WITH USERNAME_OR_RECOVERY_CODE_INCORRECT
-            msg = _("Username or recovery code incorrect.")
+            msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         try:
             recovery_code = Recovery_Code.objects.get(user_id=user.id)
 
             if not check_password(recovery_authkey, recovery_code.recovery_authkey):
-            # TODO REPLACE WITH USERNAME_OR_RECOVERY_CODE_INCORRECT
-                msg = _("Username or recovery code incorrect.")
+                msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
                 raise exceptions.ValidationError(msg)
 
         except Recovery_Code.DoesNotExist:
-            # TODO REPLACE WITH USERNAME_OR_RECOVERY_CODE_INCORRECT
-            msg = _("Username or recovery code incorrect.")
+            msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
 

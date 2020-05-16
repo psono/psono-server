@@ -14,7 +14,7 @@ class DeleteEmergencyCodeSerializer(serializers.Serializer):
         try:
             emergency_code = Emergency_Code.objects.get(pk=emergency_code_id)
         except Emergency_Code.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['emergency_code'] = emergency_code

@@ -20,12 +20,12 @@ class UpdateFileRepositoryRightSerializer(serializers.Serializer):
         try:
             file_repository_right = File_Repository_Right.objects.exclude(user=self.context['request'].user).get(pk=file_repository_right_id)
         except File_Repository_Right.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # Lets check if the current user can do that
         if not File_Repository_Right.objects.filter(user=self.context['request'].user, file_repository_id=file_repository_right.file_repository_id, grant=True, accepted=True).exists():
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['file_repository_right'] = file_repository_right

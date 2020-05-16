@@ -42,7 +42,7 @@ class CreateFileSerializer(serializers.Serializer):
             try:
                 shard = Fileserver_Shard.objects.only('id').get(pk=shard_id, active=True)
             except Fileserver_Shard.DoesNotExist:
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         if file_repository_id is not None:
@@ -50,7 +50,7 @@ class CreateFileSerializer(serializers.Serializer):
             try:
                 file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, file_repository_right__user=self.context['request'].user, active=True, file_repository_right__accepted=True)
             except File_Repository.DoesNotExist:
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         if parent_share_id is None and parent_datastore_id is None:
@@ -64,13 +64,13 @@ class CreateFileSerializer(serializers.Serializer):
         if parent_share_id is not None:
             # check permissions on parent
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         if parent_datastore_id is not None:
             parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
             if not parent_datastore:
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         if shard_id:

@@ -33,19 +33,19 @@ class DeleteSecretLinkSerializer(serializers.Serializer):
 
 
         if not secrets and not parent_shares and not parent_datastores:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check write permissions on parent_shares
         for parent_share_id in parent_shares:
             if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         # check write permissions on parent_datastores
         for datastore_id in parent_datastores:
             if not Data_Store.objects.filter(pk=datastore_id, user=self.context['request'].user).exists():
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         attrs['link_id'] = link_id

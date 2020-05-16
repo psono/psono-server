@@ -36,6 +36,7 @@ class RegisterSerializer(serializers.Serializer):
         if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
             email_prefix, domain = value.split("@")
             if domain not in settings.REGISTRATION_EMAIL_FILTER:
+                # TODO Replace with EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER
                 msg = _('E-Mail not allowed to register.')
                 raise exceptions.ValidationError(msg)
 
@@ -113,6 +114,7 @@ class RegisterSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=value).exists():
+            # TODO Replace with USERNAME_ALREADY_EXISTS
             msg = _('Username already exists.')
             raise exceptions.ValidationError(msg)
 

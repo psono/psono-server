@@ -14,7 +14,7 @@ class DeleteMembershipSerializer(serializers.Serializer):
         try:
             membership = User_Group_Membership.objects.get(id=membership_id)
         except User_Group_Membership.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['membership'] = membership

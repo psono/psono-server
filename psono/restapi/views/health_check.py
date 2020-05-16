@@ -71,7 +71,7 @@ class HealthCheckView(GenericAPIView):
             unhealthy = True
             db_sync = False
 
-        if time_sync_unhealthy():
+        if settings.HEALTHCHECK_TIME_SYNC_ENABLED and time_sync_unhealthy():
             unhealthy = True
             time_sync = False
 

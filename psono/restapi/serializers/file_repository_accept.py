@@ -16,7 +16,7 @@ class FileRepositoryRightAcceptSerializer(serializers.Serializer):
         try:
             file_repository_right_obj = File_Repository_Right.objects.get(pk=file_repository_right_id, user=self.context['request'].user)
         except File_Repository_Right.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['file_repository_right_obj'] = file_repository_right_obj
