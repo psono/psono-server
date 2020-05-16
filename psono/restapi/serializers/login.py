@@ -36,14 +36,16 @@ class LoginSerializer(serializers.Serializer):
                 nacl.encoding.HexEncoder.decode(login_info_nonce)
             ).decode())
         except:
-            msg = _('Login info cannot be decrypted')
+            msg = 'LOGIN_INFO_CANNOT_BE_DECRYPTED'
             raise exceptions.ValidationError(msg)
 
         if not request_data.get('username', False):
+            # TODO Replace with USERNAME_REQUIRED
             msg = _('No username specified.')
             raise exceptions.ValidationError(msg)
 
         if not request_data.get('authkey', False):
+            # TODO Replace with AUTHKEY_REQUIRED
             msg = _('No authkey specified.')
             raise exceptions.ValidationError(msg)
 
@@ -61,15 +63,15 @@ class LoginSerializer(serializers.Serializer):
         user, error_code = authenticate(username=username, authkey=authkey, password=password)
 
         if not user:
-            msg = _('USERNAME_OR_PASSWORD_WRONG')
+            msg = 'USERNAME_OR_PASSWORD_WRONG'
             raise exceptions.ValidationError(msg)
 
         if not user.is_active:
-            msg = _('User account is disabled.')
+            msg = 'USER_DISABLED_ASK_ADMIN_TO_ENABLE'
             raise exceptions.ValidationError(msg)
 
         if not user.is_email_active:
-            msg = _('E-mail is not yet verified.')
+            msg = 'ACCOUNT_NOT_VERIFIED'
             raise exceptions.ValidationError(msg)
 
         attrs['user'] = user

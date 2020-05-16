@@ -19,7 +19,7 @@ class ActivateDuoSerializer(serializers.Serializer):
         try:
             duo = Duo.objects.get(pk=duo_id, user=self.context['request'].user, active=False)
         except Duo.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if settings.DUO_SECRET_KEY and duo.duo_host == '':

@@ -16,6 +16,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
         user = validate_activation_code(activation_code)
 
         if not user:
+            # TODO Replace with ACTIVATION_CODE_INCORRECT
             msg = _('Activation code incorrect or already activated.')
             raise exceptions.ValidationError(msg)
         attrs['user'] = user

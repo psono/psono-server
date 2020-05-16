@@ -14,7 +14,7 @@ class DeleteUserSerializer(serializers.Serializer):
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['user'] = user

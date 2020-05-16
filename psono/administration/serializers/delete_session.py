@@ -14,7 +14,7 @@ class DeleteSessionSerializer(serializers.Serializer):
         try:
             token = Token.objects.get(id=session_id)
         except Token.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

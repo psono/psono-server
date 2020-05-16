@@ -66,18 +66,18 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         try:
             api_key = API_Key.objects.get(pk=api_key_id, user=self.context['request'].user)
         except API_Key.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         try:
             secret = Secret.objects.get(pk=secret_id)
         except Secret.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
 
         if not user_has_rights_on_secret(self.context['request'].user.id, secret.id):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
 

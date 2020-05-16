@@ -63,7 +63,7 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
         try:
             file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
         except File_Chunk.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:

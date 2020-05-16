@@ -65,11 +65,11 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         try:
             file_repository = File_Repository.objects.get(id=file_repository_id, file_repository_right__user=self.context['request'].user, file_repository_right__write=True, file_repository_right__accepted=True)
         except File_Repository.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if type not in settings.FILE_REPOSITORY_TYPES:
-            msg = _("UNKNOWN_TYPE")
+            msg = "UNKNOWN_TYPE"
             raise exceptions.ValidationError(msg)
 
         data = {} # type: Dict
@@ -77,17 +77,17 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'gcp_cloud_storage':
 
             if not gcp_cloud_storage_bucket:
-                msg = _("BUCKET_IS_REQUIRED")
+                msg = "BUCKET_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not gcp_cloud_storage_json_key:
-                msg = _("JSON_KEY_IS_REQUIRED")
+                msg = "JSON_KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             try:
                 json.loads(gcp_cloud_storage_json_key)
             except:
-                msg = _("JSON_KEY_IS_INVALID")
+                msg = "JSON_KEY_IS_INVALID"
                 raise exceptions.ValidationError(msg)
 
             data = {
@@ -98,19 +98,19 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'aws_s3':
 
             if not aws_s3_bucket:
-                msg = _("BUCKET_IS_REQUIRED")
+                msg = "BUCKET_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not aws_s3_region:
-                msg = _("REGION_IS_REQUIRED")
+                msg = "REGION_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not aws_s3_access_key_id:
-                msg = _("ACCESS_KEY_ID_IS_REQUIRED")
+                msg = "ACCESS_KEY_ID_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not aws_s3_secret_access_key:
-                msg = _("SECRET_ACCESS_KEY_IS_REQUIRED")
+                msg = "SECRET_ACCESS_KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             data = {
@@ -123,23 +123,23 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'other_s3':
 
             if not other_s3_bucket:
-                msg = _("BUCKET_IS_REQUIRED")
+                msg = "BUCKET_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not other_s3_region:
-                msg = _("REGION_IS_REQUIRED")
+                msg = "REGION_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not other_s3_access_key_id:
-                msg = _("ACCESS_KEY_ID_IS_REQUIRED")
+                msg = "ACCESS_KEY_ID_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not other_s3_secret_access_key:
-                msg = _("SECRET_ACCESS_KEY_IS_REQUIRED")
+                msg = "SECRET_ACCESS_KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not other_s3_endpoint_url:
-                msg = _("URL_IS_REQUIRED")
+                msg = "URL_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             data = {
@@ -153,19 +153,19 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'backblaze':
 
             if not backblaze_bucket:
-                msg = _("BUCKET_IS_REQUIRED")
+                msg = "BUCKET_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not backblaze_region:
-                msg = _("REGION_IS_REQUIRED")
+                msg = "REGION_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not backblaze_access_key_id:
-                msg = _("ACCESS_KEY_ID_IS_REQUIRED")
+                msg = "ACCESS_KEY_ID_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not backblaze_secret_access_key:
-                msg = _("SECRET_ACCESS_KEY_IS_REQUIRED")
+                msg = "SECRET_ACCESS_KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             data = {
@@ -178,19 +178,19 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'do_spaces':
 
             if not do_space:
-                msg = _("SPACE_IS_REQUIRED")
+                msg = "SPACE_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not do_region:
-                msg = _("REGION_IS_REQUIRED")
+                msg = "REGION_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not do_key:
-                msg = _("KEY_IS_REQUIRED")
+                msg = "KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not do_secret:
-                msg = _("SECRET_IS_REQUIRED")
+                msg = "SECRET_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             data = {

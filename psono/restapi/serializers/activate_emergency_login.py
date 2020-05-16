@@ -56,8 +56,7 @@ class ActivateEmergencyLoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            # TODO REPLACE WITH USERNAME_OR_RECOVERY_CODE_INCORRECT
-            msg = _("Username or recovery code incorrect.")
+            msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
 

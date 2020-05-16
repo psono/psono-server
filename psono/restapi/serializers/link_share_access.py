@@ -29,15 +29,15 @@ class LinkShareAccessSerializer(serializers.Serializer):
         try:
             link_share = Link_Share.objects.select_related('secret', 'file', 'user').get(id=link_share_id)
         except Link_Share.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if link_share.valid_till is not None and link_share.valid_till<timezone.now():
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if link_share.allowed_reads is not None and link_share.allowed_reads<=0:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if link_share.passphrase is not None and not passphrase:
@@ -45,7 +45,7 @@ class LinkShareAccessSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if link_share.passphrase is not None and not check_password(passphrase, link_share.passphrase):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if not link_share.secret_id and not link_share.file_id:
@@ -54,18 +54,18 @@ class LinkShareAccessSerializer(serializers.Serializer):
 
 
         if link_share.secret_id and not user_has_rights_on_secret(link_share.user_id, link_share.secret_id, read=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if link_share.file_id:
 
             if not user_has_rights_on_file(link_share.user_id, link_share.file_id, read=True):
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
             # check if it has been marked for deletion
             if link_share.file.delete_date and link_share.file.delete_date < timezone.now():
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
             if link_share.file.shard_id:

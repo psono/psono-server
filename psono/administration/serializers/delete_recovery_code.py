@@ -14,7 +14,7 @@ class DeleteRecoveryCodeSerializer(serializers.Serializer):
         try:
             recovery_code = Recovery_Code.objects.get(pk=recovery_code_id)
         except Recovery_Code.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['recovery_code'] = recovery_code

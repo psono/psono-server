@@ -21,11 +21,11 @@ class ReadSecretHistorySerializer(serializers.Serializer):
             msg = _('Secret ID is badly formed and no secret_id')
             raise exceptions.ValidationError(msg)
         except Secret.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if not user_has_rights_on_secret(self.context['request'].user.id, secret.id, True, None):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
 

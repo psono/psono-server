@@ -21,18 +21,22 @@ class ActivateTokenSerializer(serializers.Serializer):
         token = self.context['request'].auth
 
         if token.active:
+            # TODO Replace with TOKEN_INCORRECT
             msg = _('Token incorrect.')
             raise exceptions.ValidationError(msg)
 
         if token.google_authenticator_2fa:
+            # TODO Replace with GA_CHALLENGE_UNSOLVED
             msg = _('GA challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
         if token.duo_2fa:
+            # TODO Replace with DUO_CHALLENGE_UNSOLVED
             msg = _('Duo challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
         if token.yubikey_otp_2fa:
+            # TODO Replace with YUBIKEY_CHALLENGE_UNSOLVED
             msg = _('YubiKey challenge unsolved.')
             raise exceptions.ValidationError(msg)
 
@@ -41,11 +45,13 @@ class ActivateTokenSerializer(serializers.Serializer):
         try:
             decrypted = crypto_box.decrypt(verification, verification_nonce).decode()
         except CryptoError:
+            # TODO Replace with VERIFICATION_CODE_INCORRECT
             msg = _('Verification code incorrect.')
             raise exceptions.ValidationError(msg)
 
 
         if token.user_validator != decrypted:
+            # TODO Replace with VERIFICATION_CODE_INCORRECT
             msg = _('Verification code incorrect.')
             raise exceptions.ValidationError(msg)
 

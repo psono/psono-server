@@ -29,19 +29,19 @@ class DeleteShareRightSerializer(serializers.Serializer):
             try:
                 share_right = User_Share_Right.objects.get(pk=user_share_right_id)
             except User_Share_Right.DoesNotExist:
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
             # check if the user has grant rights on this share
             if not user_has_rights_on_share(self.context['request'].user.id, share_right.share_id, grant=True):
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
         else:
             # check if share_right exists
             try:
                 share_right = Group_Share_Right.objects.get(pk=group_share_right_id)
             except Group_Share_Right.DoesNotExist:
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
             #check Permissions on group

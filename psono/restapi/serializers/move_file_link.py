@@ -40,30 +40,30 @@ class MoveFileLinkSerializer(serializers.Serializer):
         old_datastores = list(unique_everseen(old_datastores))
 
         if not files and not old_parents and not old_datastores:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check write permissions on old_parents
         for old_parent_share_id in old_parents:
             if not user_has_rights_on_share(self.context['request'].user.id, old_parent_share_id, write=True):
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         # check write permissions on old_datastores
         for old_datastore_id in old_datastores:
             if not Data_Store.objects.filter(pk=old_datastore_id, user=self.context['request'].user).exists():
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         # check if new parent share exists and permissions
         if new_parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id,
                                                                             new_parent_share_id, write=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check if new_datastore exists
         if new_parent_datastore_id and not Data_Store.objects.filter(pk=new_parent_datastore_id, user=self.context['request'].user).exists():
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['link_id'] = link_id

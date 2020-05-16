@@ -46,12 +46,12 @@ class CreateLinkShareSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if secret_id and not user_has_rights_on_secret(self.context['request'].user.id, secret_id):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check if the user has the necessary rights
         if file_id and not user_has_rights_on_file(self.context['request'].user.id, file_id, read=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if valid_till is not None and valid_till < timezone.now():

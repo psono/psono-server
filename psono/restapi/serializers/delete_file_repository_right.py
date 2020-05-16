@@ -15,7 +15,7 @@ class DeleteFileRepositoryRightSerializer(serializers.Serializer):
         try:
             file_repository_right = File_Repository_Right.objects.only('id', 'user_id', 'file_repository_id').get(pk=file_repository_right_id)
         except File_Repository_Right.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if file_repository_right.user_id != self.context['request'].user.id:
@@ -24,7 +24,7 @@ class DeleteFileRepositoryRightSerializer(serializers.Serializer):
             if not File_Repository_Right.objects.\
                     filter(file_repository_id=file_repository_right.file_repository_id, user=self.context['request'].user, grant=True, accepted=True).\
                     exists():
-                msg = _("NO_PERMISSION_OR_NOT_EXIST")
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         attrs['file_repository_right'] = file_repository_right

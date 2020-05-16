@@ -14,7 +14,7 @@ class DeleteDuoSerializer(serializers.Serializer):
         try:
             duo = Duo.objects.get(pk=duo_id)
         except Duo.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['duo'] = duo

@@ -17,7 +17,7 @@ class DeleteLinkShareSerializer(serializers.Serializer):
         try:
             link_share = Link_Share.objects.get(pk=link_share_id, user=self.context['request'].user)
         except Link_Share.DoesNotExist:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['link_share'] = link_share

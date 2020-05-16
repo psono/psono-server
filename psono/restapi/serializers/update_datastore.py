@@ -21,7 +21,7 @@ class UpdateDatastoreSerializer(serializers.Serializer):
 
         datastore = get_datastore(datastore_id, self.context['request'].user)
         if not datastore:
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         attrs['datastore'] = datastore

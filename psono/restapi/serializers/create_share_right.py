@@ -37,7 +37,7 @@ class CreateShareRightSerializer(serializers.Serializer):
 
         # check permissions on share
         if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
-            msg = _("NO_PERMISSION_OR_NOT_EXIST")
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if user_id:
