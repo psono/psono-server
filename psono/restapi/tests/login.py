@@ -245,7 +245,7 @@ class LoginTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'], ['Login info cannot be decrypted'])
+        self.assertEqual(response.data['non_field_errors'], ['LOGIN_INFO_CANNOT_BE_DECRYPTED'])
 
     def test_login_with_disabled_user(self):
         """
