@@ -87,6 +87,7 @@ from .serializers import (
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
     LinkShareAccessSerializer as DefaultLinkShareAccessSerializer,
     CreateSecurityReportSerializer as DefaultCreateSecurityReportSerializer,
+    ManagementCommandSerializer as DefaultManagementCommandSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -681,6 +682,13 @@ CreateSecurityReportSerializer = import_callable(
     serializers.get(
         'CREATE_SECURITY_REPORT_SERIALIZER',
         DefaultCreateSecurityReportSerializer
+    )
+)
+
+ManagementCommandSerializer = import_callable(
+    serializers.get(
+        'MANAGEMENT_COMMAND_SERIALIZER',
+        DefaultManagementCommandSerializer
     )
 )
 

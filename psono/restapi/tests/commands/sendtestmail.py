@@ -4,10 +4,7 @@ from django.conf import settings
 
 from mock import patch, call
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 def fake_send_mail(subject, content, email_from, target_email_list, html_message):

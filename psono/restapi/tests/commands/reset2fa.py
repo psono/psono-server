@@ -6,10 +6,7 @@ from django.utils import timezone
 from restapi import models
 from restapi.utils import encrypt_with_db_secret
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 class CommandReset2FaTestCase(TestCase):

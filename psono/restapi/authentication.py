@@ -413,4 +413,43 @@ class FileserverAliveAuthentication(TokenAuthentication):
 class TokenAuthenticationAllowInactive(TokenAuthentication):
     allow_inactive = True
 
+class ManagementCommandUser:
+    def __init__(self, pk):
+        self.pk = pk
+    is_authenticated = True
+    secret_key = None
 
+class ManagementCommandAuthentication(BaseAuthentication):
+
+    def authenticate(self, request):
+        management_command_access_key = self.get_management_command_access_key(request)
+
+        if not management_command_access_key or management_command_access_key != settings.MANAGEMENT_COMMAND_ACCESS_KEY:
+            msg = _('Invalid access key')
+            raise exceptions.AuthenticationFailed(msg)
+
+        management_command_user = ManagementCommandUser(management_command_access_key)
+        return management_command_user, management_command_user
+
+    @staticmethod
+    def get_management_command_access_key(request):
+        auth = get_authorization_header(request).split()
+
+        if not auth or auth[0].lower() != b'token':
+            msg = _('Invalid token header. No token header present.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        if len(auth) == 1:
+            msg = _('Invalid token header. No credentials provided.')
+            raise exceptions.AuthenticationFailed(msg)
+        elif len(auth) > 2:
+            msg = _('Invalid token header. Token string should not contain spaces.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        try:
+            token = auth[1].decode()
+        except UnicodeError:
+            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            raise exceptions.AuthenticationFailed(msg)
+
+        return token
