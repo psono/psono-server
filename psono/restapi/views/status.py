@@ -41,7 +41,7 @@ class StatusView(GenericAPIView):
             user_status = cache.get(cache_key)
 
         if user_status is None:
-            unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).count()
+            unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).exclude(creator__isnull=True).count()
             unaccepted_groups_count = User_Group_Membership.objects.filter(user=request.user, accepted__isnull=True).count()
 
             try:
