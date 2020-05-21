@@ -14,7 +14,7 @@ build-container-alpine:
   stage: build
   image: psono-docker.jfrog.io/ubuntu:18.04
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   variables:
     DOCKER_HOST: 'tcp://docker:2375'
   script:
@@ -40,7 +40,7 @@ run-unittests-ubuntu1804:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   variables:
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
@@ -50,7 +50,7 @@ run-unittests-ubuntu1804:
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - sh ./var/update_version.sh
@@ -64,7 +64,7 @@ run-unittests-alpine:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   variables:
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
@@ -74,7 +74,7 @@ run-unittests-alpine:
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -92,7 +92,7 @@ run-unittests-centos7:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   variables:
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
@@ -102,7 +102,7 @@ run-unittests-centos7:
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - sh ./var/update_version.sh
@@ -115,9 +115,9 @@ run-vulnerability-scan:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -134,9 +134,9 @@ run-vulnerability-scan:
 #  except:
 #    - schedules
 #  stage: deploy
-#  image: psono-docker.jfrog.io/docker:git
+#  image: psono-docker.jfrog.io/docker:19.03.8-git
 #  services:
-#    - docker:18.09.7-dind
+#    - docker:18-dind
 #  script:
 #    - docker info
 #    - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -150,9 +150,9 @@ release-container:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -168,7 +168,7 @@ release-version-bump:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   script:
     - mkdir -p /root/.ssh
     - echo "$github_deploy_key" > /root/.ssh/id_rsa
@@ -192,9 +192,9 @@ deploy:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/docker:git
+  image: psono-docker.jfrog.io/docker:19.03.8-git
   services:
-    - docker:18.09.7-dind
+    - docker:18-dind
   script:
     - docker info
     - echo $CI_BUILD_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
