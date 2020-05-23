@@ -64,7 +64,7 @@ class ShareRightsView(GenericAPIView):
         group_share_rights = []
 
 
-        for u in share.user_share_rights.all():
+        for u in share.user_share_rights.exclude(creator__isnull=True, accepted__isnull=True).exclude(creator__isnull=True, accepted=False).all():
 
             right = {
                 'id': u.id,

@@ -6,10 +6,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from restapi import models
 from restapi.utils import generate_authkey, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 import bcrypt
 

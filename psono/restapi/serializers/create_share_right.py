@@ -50,9 +50,13 @@ class CreateShareRightSerializer(serializers.Serializer):
 
             # Lets see if it the share right already exists
             try:
-                User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
-                msg = _("User Share Right already exists.")
-                raise exceptions.ValidationError(msg)
+                user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
+                if user_share_right.creator_id is None and not user_share_right.accepted:
+                    # the user had an "unaccepted" share right yet the user who created it does not exist anymore
+                    user_share_right.delete()
+                else:
+                    msg = _("User Share Right already exists.")
+                    raise exceptions.ValidationError(msg)
             except User_Share_Right.DoesNotExist:
                 pass # Good it doesn't exist yet
 

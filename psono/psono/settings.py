@@ -113,6 +113,7 @@ for index in range(len(REGISTRATION_EMAIL_FILTER)):
 for index in range(len(ALLOWED_SECOND_FACTORS)):
     ALLOWED_SECOND_FACTORS[index] = ALLOWED_SECOND_FACTORS[index].lower().strip()
 
+MANAGEMENT_COMMAND_ACCESS_KEY = config_get('MANAGEMENT_COMMAND_ACCESS_KEY', '')
 
 HOST_URL = config_get('HOST_URL')
 

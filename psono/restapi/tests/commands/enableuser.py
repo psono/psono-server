@@ -4,10 +4,7 @@ from django.contrib.auth.hashers import make_password
 
 from restapi import models
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 class CommandEnableuserTestCase(TestCase):

@@ -111,6 +111,7 @@ urlpatterns = [
     url(r'^membership/decline/$', views.MembershipDeclineView.as_view(), name='membership_decline'),
     url(r'^membership/$', views.MembershipView.as_view(), name='membership'),
 
+    url(r'^management-command/$', views.ManagementCommandView.as_view(), name='management_command'),
     # url(r'^$', views.api_root),
 
     url(r'^healthcheck/$', views.HealthCheckView.as_view(), name='healthcheck'),

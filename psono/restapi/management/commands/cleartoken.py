@@ -9,4 +9,4 @@ class Command(BaseCommand):
 
         deleted_token = Token.objects.filter(valid_till__lt=timezone.now()).delete()
 
-        self.stdout.write('Cleared token: ' + str(deleted_token[0]) )
+        self.stdout.write('Cleared token: ' + str(deleted_token[0]))

@@ -3,10 +3,7 @@ from django.test import TestCase
 
 from restapi import models
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 class CommandFSShardDeleteTestCase(TestCase):

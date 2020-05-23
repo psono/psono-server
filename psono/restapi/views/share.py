@@ -34,6 +34,8 @@ class ShareView(GenericAPIView):
             user_share_rights = User_Share_Right.objects\
                 .select_related('creator')\
                 .filter(user=user)\
+                .exclude(creator__isnull=True, accepted__isnull=True)\
+                .exclude(creator__isnull=True, accepted=False)\
                 .only("id","share_id", "user_id", "title", "title_nonce", "key", "key_nonce",
                                         "read", "write", "grant", "accepted", "creator__id", "creator__username",
                                         "creator__public_key")

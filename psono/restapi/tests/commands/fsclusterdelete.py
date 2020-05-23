@@ -6,10 +6,7 @@ from restapi.utils import encrypt_with_db_secret
 
 from restapi import models
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 class CommandFSClusterDeleteTestCase(TestCase):
