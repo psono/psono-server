@@ -192,6 +192,7 @@ REST_FRAMEWORK = {
     },
 }
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -225,6 +226,13 @@ LOGGING = {
 
 for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
     REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value # type: ignore
+
+TRUSTED_COUNTRY_HEADER = config_get('TRUSTED_COUNTRY_HEADER', None)  # e.g. HTTP_CF_IPCOUNTRY
+TRUSTED_IP_HEADER = config_get('TRUSTED_IP_HEADER', None)  # e.g. HTTP_CF_CONNECTING_IP
+
+NUM_PROXIES = config_get('NUM_PROXIES', None)
+if NUM_PROXIES is not None:
+    NUM_PROXIES = int(NUM_PROXIES)
 
 
 ROOT_URLCONF = 'psono.urls'

@@ -825,21 +825,22 @@ def filter_as_json(data, filter):
 
 def get_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', None)
-    cf_connection_ip = request.META.get('HTTP_CF_CONNECTING_IP', None)
-
-    if cf_connection_ip:
-        return cf_connection_ip
-
-    if x_forwarded_for:
-        splitted_ip_record = x_forwarded_for.split(',')
-        ip_address = splitted_ip_record[0].strip()
+    num_proxies = settings.NUM_PROXIES
+    if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+        ip_address = request.META.get(settings.TRUSTED_IP_HEADER, None)
+    elif num_proxies is not None and x_forwarded_for is not None:
+        addrs = x_forwarded_for.split(',')
+        client_addr = addrs[-min(num_proxies, len(addrs))]
+        ip_address = client_addr.strip()
     else:
         ip_address = request.META.get('REMOTE_ADDR')
 
     return ip_address
 
 def get_country(request):
-    return request.META.get('HTTP_CF_IPCOUNTRY', None)
+    if settings.TRUSTED_COUNTRY_HEADER:
+        return request.META.get(settings.TRUSTED_COUNTRY_HEADER, None)
+    return None
 
 def in_networks(ip_address, networks):
     """
