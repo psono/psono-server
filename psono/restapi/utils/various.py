@@ -727,11 +727,10 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     return plaintext.decode()
 
 
-
 def create_user(username, password, email, gen_authkey=True):
 
-    username = username.lower()
-    email = email.encode().strip().lower()
+    username = username.strip().lower()
+    email = email.strip().lower().encode()
 
     email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT.encode()).decode().replace(
         settings.EMAIL_SECRET_SALT, '', 1)
