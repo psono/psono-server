@@ -12,9 +12,9 @@ class CreateUserSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        email = attrs.get('email')
-        username = attrs.get('username')
-        password = attrs.get('password', None)
+        email = attrs.get('email', '')
+        username = attrs.get('username', '')
+        password = attrs.get('password', '')
 
         username = username.strip().lower()
         email = email.strip().lower()
