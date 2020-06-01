@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import nacl.encoding
 from nacl.public import PrivateKey
 import string
-import random
+import secrets
 import bcrypt
 
 class Command(BaseCommand):
@@ -22,9 +22,9 @@ class Command(BaseCommand):
         print('# Changing those variables afterwards will break the program e.g.:')
         print('# Activation links will not work, Server will not be able to read user emails, ...')
         print('')
-        print('SECRET_KEY: ' + repr((''.join([random.SystemRandom().choice(uni) for i in range(64)])).replace('\'', '"')))
-        print('ACTIVATION_LINK_SECRET: ' + repr((''.join([random.SystemRandom().choice(uni) for i in range(64)])).replace('\'', '"')))
-        print('DB_SECRET: ' + repr((''.join([random.SystemRandom().choice(uni) for i in range(64)])).replace('\'', '"')))
+        print('SECRET_KEY: ' + repr((''.join([secrets.choice(uni) for i in range(64)])).replace('\'', '"')))
+        print('ACTIVATION_LINK_SECRET: ' + repr((''.join([secrets.choice(uni) for i in range(64)])).replace('\'', '"')))
+        print('DB_SECRET: ' + repr((''.join([secrets.choice(uni) for i in range(64)])).replace('\'', '"')))
         print('EMAIL_SECRET_SALT: ' + repr(str(bcrypt.gensalt().decode())))
         print('PRIVATE_KEY: ' + repr(str(private_key_hex.decode())))
         print('PUBLIC_KEY: ' + repr(str(public_key_hex.decode())))
