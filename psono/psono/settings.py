@@ -154,6 +154,13 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher'
 )
 
+TRUSTED_COUNTRY_HEADER = config_get('TRUSTED_COUNTRY_HEADER', None)  # e.g. HTTP_CF_IPCOUNTRY
+TRUSTED_IP_HEADER = config_get('TRUSTED_IP_HEADER', None)  # e.g. HTTP_CF_CONNECTING_IP
+
+NUM_PROXIES = config_get('NUM_PROXIES', None)
+if NUM_PROXIES is not None:
+    NUM_PROXIES = int(NUM_PROXIES)
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAdminUser',
@@ -190,6 +197,7 @@ REST_FRAMEWORK = {
         'fileserver_upload': '10000/minute',
         'fileserver_download': '10000/minute',
     },
+    'NUM_PROXIES': NUM_PROXIES
 }
 
 
@@ -226,14 +234,6 @@ LOGGING = {
 
 for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
     REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][key] = value # type: ignore
-
-TRUSTED_COUNTRY_HEADER = config_get('TRUSTED_COUNTRY_HEADER', None)  # e.g. HTTP_CF_IPCOUNTRY
-TRUSTED_IP_HEADER = config_get('TRUSTED_IP_HEADER', None)  # e.g. HTTP_CF_CONNECTING_IP
-
-NUM_PROXIES = config_get('NUM_PROXIES', None)
-if NUM_PROXIES is not None:
-    NUM_PROXIES = int(NUM_PROXIES)
-
 
 ROOT_URLCONF = 'psono.urls'
 SITE_ID = 1
