@@ -253,7 +253,7 @@ class UserView(GenericAPIView):
         )
 
         if 'error' in user_details:
-            return Response({"non_field_errors": [user_details['non_field_errors']]},
+            return Response({"non_field_errors": [user_details['error']]},
                             status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
