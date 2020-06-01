@@ -12,7 +12,7 @@ from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
 from restapi.utils import decrypt_with_db_secret, create_user
 
-import random
+import secrets
 import string
 
 
@@ -244,7 +244,7 @@ class UserView(GenericAPIView):
         password = serializer.validated_data.get('password')
 
         if not password:
-            password = ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase) for _ in range(12))
+            password = ''.join(secrets.choice(string.ascii_lowercase + string.ascii_uppercase) for _ in range(12))
 
         user_details = create_user(
             username=username,
