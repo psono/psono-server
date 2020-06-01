@@ -68,6 +68,9 @@ def config_get(key, *args):
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
+    VERSION = f.readline().rstrip()
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -368,24 +371,27 @@ if str(config_get('CACHE_DB', False)).lower() == 'true':
         "default": {
             "BACKEND": 'django.core.cache.backends.db.DatabaseCache',
             "LOCATION": 'restapi_cache',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
         }
     }
 
 if str(config_get('CACHE_REDIS', False)).lower() == 'true':
     CACHES = {
-       "default": { # type: ignore
-           "BACKEND": "django_redis.cache.RedisCache",
-           "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
-           "OPTIONS": { # type: ignore
-               "CLIENT_CLASS": "django_redis.client.DefaultClient",
-           }
-       }
+        "default": { # type: ignore
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "OPTIONS": { # type: ignore
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
     }
 
 if not str(config_get('THROTTLING', True)).lower() == 'true':
     CACHES = {
         "default": {
             "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
         }
     }
 
@@ -479,9 +485,6 @@ if isinstance(AUTHENTICATION_METHODS, str):
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 STATIC_URL = '/static/'
-
-with open(os.path.join(BASE_DIR, 'VERSION.txt')) as f:
-    VERSION = f.readline().rstrip()
 
 HOSTNAME = socket.getfqdn()
 
