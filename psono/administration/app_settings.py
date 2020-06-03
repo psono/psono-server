@@ -6,6 +6,7 @@ from .serializers import (
     DeleteSessionSerializer as DefaultDeleteSessionSerializer,
     DeleteUserSerializer as DefaultDeleteUserSerializer,
     UpdateUserSerializer as DefaultUpdateUserSerializer,
+    CreateUserSerializer as DefaultCreateUserSerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
@@ -34,6 +35,10 @@ DeleteUserSerializer = import_callable(
 
 UpdateUserSerializer = import_callable(
     serializers.get('UPDATE_USER_SERIALIZER', DefaultUpdateUserSerializer)
+)
+
+CreateUserSerializer = import_callable(
+    serializers.get('CREATE_USER_SERIALIZER', DefaultCreateUserSerializer)
 )
 
 DeleteYubikeySerializer = import_callable(

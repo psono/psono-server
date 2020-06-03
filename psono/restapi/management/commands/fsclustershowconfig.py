@@ -3,7 +3,7 @@ from django.conf import settings
 import nacl.encoding
 from nacl.public import PrivateKey
 import string
-import random
+import secrets
 
 from restapi.models import Fileserver_Cluster
 from restapi.utils import decrypt_with_db_secret
@@ -35,7 +35,7 @@ def show_cluster_config(cluster_id: str) -> dict:
 
     uni = string.ascii_letters + string.digits + string.punctuation
 
-    print('SECRET_KEY: ' + repr((''.join([random.SystemRandom().choice(uni) for i in range(50)])).replace('\'', '"')))
+    print('SECRET_KEY: ' + repr((''.join([secrets.choice(uni) for i in range(50)])).replace('\'', '"')))
     print('PRIVATE_KEY: ' + repr(str(private_key_hex.decode())))
     print('PUBLIC_KEY: ' + repr(str(public_key_hex.decode())))
     print('SERVER_URL: ' + repr(settings.HOST_URL))

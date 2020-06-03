@@ -4,20 +4,23 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    DeleteUserSerializer, UpdateUserSerializer
+    DeleteUserSerializer, UpdateUserSerializer, CreateUserSerializer
 )
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
-from restapi.utils import decrypt_with_db_secret
+from restapi.utils import decrypt_with_db_secret, create_user
+
+import secrets
+import string
 
 
 class UserView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get_user_info(self, user_id):
 
@@ -217,43 +220,46 @@ class UserView(GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        # """
-        # Check the REST Token and returns the user's public key. To identify the user either the email or the user_id needs
-        # to be provided
-        #
-        # Return the user's public key
-        #
-        # :param request:
-        # :type request:
-        # :param args:
-        # :type args:
-        # :param kwargs:
-        # :type kwargs:
-        # :return: 200 / 400
-        # :rtype:
-        # """
-        #
-        # serializer = self.get_serializer(data=request.data)
-        #
-        # if not serializer.is_valid():
-        #
-        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #
-        # user = serializer.validated_data.get('user')
-        #
-        # user_details = {
-        #     'id': user.id,
-        #     'public_key': user.public_key,
-        #     'username': user.username
-        # }
-        #
-        # if user.id == request.user.id:
-        #     user_details['multifactor_auth_enabled'] = Google_Authenticator.objects.filter(user=user).exists() or Yubikey_OTP.objects.filter(user=user).exists()
-        #     user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
-        #
-        #
-        # return Response(user_details, status=status.HTTP_200_OK)
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        """
+        Creates a user
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return: 201 / 400
+        :rtype:
+        """
+
+        serializer = CreateUserSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        username = serializer.validated_data.get('username')
+        email = serializer.validated_data.get('email')
+        password = serializer.validated_data.get('password')
+
+        if not password:
+            password = ''.join(secrets.choice(string.ascii_lowercase + string.ascii_uppercase) for _ in range(12))
+
+        user_details = create_user(
+            username=username,
+            password=password,
+            email=email,
+        )
+
+        if 'error' in user_details:
+            return Response({"non_field_errors": [user_details['error']]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'id': user_details['user'].id,
+            'password': password,
+        }, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
         """

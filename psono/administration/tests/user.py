@@ -190,20 +190,24 @@ class CreateUserTests(APITestCaseExtended):
 
 
 
-    def test_create_user(self):
+    def test_successful(self):
         """
-        Tests POST method on user
+        Tests to create a user
         """
 
         url = reverse('admin_user')
 
         data = {
+            'username': ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw',
+            'email': ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com',
+            'password': '123456',
         }
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(models.User.objects.filter(username=data['username']).exists())
 
 class UpdateUserTests(APITestCaseExtended):
     def setUp(self):
