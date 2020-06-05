@@ -371,7 +371,7 @@ if str(config_get('CACHE_DB', False)).lower() == 'true':
         "default": {
             "BACKEND": 'django.core.cache.backends.db.DatabaseCache',
             "LOCATION": 'restapi_cache',
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
         }
     }
 
@@ -380,7 +380,7 @@ if str(config_get('CACHE_REDIS', False)).lower() == 'true':
         "default": { # type: ignore
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
             "OPTIONS": { # type: ignore
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
             }
@@ -391,7 +391,7 @@ if not str(config_get('THROTTLING', True)).lower() == 'true':
     CACHES = {
         "default": {
             "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
         }
     }
 
