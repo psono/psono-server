@@ -1,5 +1,5 @@
 # PSONO Dockerfile for Alpine
-FROM psono-docker.jfrog.io/python:alpine3.6
+FROM psono-docker.jfrog.io/python:3.6-alpine
 
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -17,7 +17,6 @@ RUN apk upgrade --no-cache && \
         libffi-dev \
         linux-headers \
         postgresql-dev && \
-    ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
