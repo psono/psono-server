@@ -60,7 +60,10 @@ class HealthCheckView(GenericAPIView):
 
         def time_sync_unhealthy():
             c = ntplib.NTPClient()
-            response = c.request(settings.TIME_SERVER, version=3)
+            try:
+                response = c.request(settings.TIME_SERVER, version=3)
+            except:
+                return True
             return abs(response.offset) > 1
 
         if db_read_unhealthy():

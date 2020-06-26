@@ -83,6 +83,9 @@ PUBLIC_KEY  = config_get('PUBLIC_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(config_get('DEBUG', False)).lower() == 'true'
 
+DISABLED = str(config_get('DISABLED', False)).lower() == 'true'
+MAINTENANCE_ACTIVE = str(config_get('MAINTENANCE_ACTIVE', False)).lower() == 'true'
+
 ALLOWED_HOSTS = config_get('ALLOWED_HOSTS', ['*'])
 if isinstance(ALLOWED_HOSTS, str):
     ALLOWED_HOSTS = [allowed_host_single.strip() for allowed_host_single in ALLOWED_HOSTS.split(',')]
@@ -141,6 +144,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
+    'restapi.middleware.DisableMiddleware',
+    'restapi.middleware.MaintenanceMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -371,7 +376,7 @@ if str(config_get('CACHE_DB', False)).lower() == 'true':
         "default": {
             "BACKEND": 'django.core.cache.backends.db.DatabaseCache',
             "LOCATION": 'restapi_cache',
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
         }
     }
 
@@ -380,7 +385,7 @@ if str(config_get('CACHE_REDIS', False)).lower() == 'true':
         "default": { # type: ignore
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": config_get('CACHE_REDIS_LOCATION', 'redis://localhost:6379/0'),
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
             "OPTIONS": { # type: ignore
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
             }
@@ -391,7 +396,7 @@ if not str(config_get('THROTTLING', True)).lower() == 'true':
     CACHES = {
         "default": {
             "BACKEND": 'django.core.cache.backends.dummy.DummyCache',
-            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}',
+            "KEY_PREFIX": f'{PUBLIC_KEY}:{VERSION}'.replace(" ", "_"),
         }
     }
 

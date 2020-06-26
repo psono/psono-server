@@ -19,9 +19,9 @@ RUN mkdir -p /root/.pip && \
         openssl-devel \
         postgresql \
         postgresql-devel \
-        python36u \
-        python36u-devel \
-        python36u-pip && \
+        python3-3.6.8 \
+        python3-devel-3.6.8 \
+        python3-pip-9.0.3 && \
     pip3.6 install -r requirements.txt && \
     pip3.6 install uwsgi && \
     pip3.6 install typing && \
@@ -33,7 +33,7 @@ RUN mkdir -p /root/.pip && \
     sed -i s/YourPostgresPort/5432/g /root/.psono_server/settings.yaml && \
     sed -i s,path/to/psono-server,root,g /root/.psono_server/settings.yaml && \
     yum remove -y \
-        python36u-pip && \
+        python3-pip-9.0.3 && \
     yum clean all && \
     rm -Rf \
         /root/requirements.txt \
