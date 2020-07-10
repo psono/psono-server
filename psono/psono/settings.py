@@ -91,15 +91,19 @@ if isinstance(ALLOWED_HOSTS, str):
     ALLOWED_HOSTS = [allowed_host_single.strip() for allowed_host_single in ALLOWED_HOSTS.split(',')]
 
 ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS', [])
-if isinstance(ALLOWED_DOMAINS, str):
+if isinstance(ALLOWED_DOMAINS, str) and ALLOWED_DOMAINS:
     ALLOWED_DOMAINS = [allowed_domains_single.strip() for allowed_domains_single in ALLOWED_DOMAINS.split(',')]
 
 ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'true'
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
+
 ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
-if isinstance(ALLOWED_SECOND_FACTORS, str):
+if isinstance(ALLOWED_SECOND_FACTORS, str) and ALLOWED_SECOND_FACTORS:
     ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
+elif isinstance(ALLOWED_SECOND_FACTORS, str):
+    ALLOWED_SECOND_FACTORS = []
+
 ALLOW_USER_SEARCH_BY_EMAIL = str(config_get('ALLOW_USER_SEARCH_BY_EMAIL', False)).lower() == 'true'
 ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = str(config_get('ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL', False)).lower() == 'true'
 
@@ -110,7 +114,7 @@ DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
 MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == 'true'
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
-if isinstance(REGISTRATION_EMAIL_FILTER, str):
+if isinstance(REGISTRATION_EMAIL_FILTER, str) and REGISTRATION_EMAIL_FILTER:
     REGISTRATION_EMAIL_FILTER = [single_registration_email_filter.strip() for single_registration_email_filter in REGISTRATION_EMAIL_FILTER.split(',')]
 
 for index in range(len(REGISTRATION_EMAIL_FILTER)):
@@ -192,7 +196,7 @@ REST_FRAMEWORK = {
         'login': '48/day',
         'link_share_secret': '60/hour',
         'password': '24/day',
-        'user': '28800/day',
+        'user': '86400/day',
         'health_check': '61/hour',
         'status_check': '6/minute',
         'ga_verify': '6/minute',
@@ -329,7 +333,7 @@ EMAIL_TIMEOUT = int(config_get('EMAIL_TIMEOUT', 0)) if config_get('EMAIL_TIMEOUT
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
 YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
-if isinstance(YUBICO_API_URLS, str):
+if isinstance(YUBICO_API_URLS, str) and YUBICO_API_URLS:
     YUBICO_API_URLS = [yubico_api_url.strip() for yubico_api_url in YUBICO_API_URLS.split(',')]
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
@@ -422,7 +426,7 @@ USER_PUBLIC_KEY_LENGTH_BYTES = int(config_get('USER_PUBLIC_KEY_LENGTH_BYTES', 32
 USER_SECRET_KEY_LENGTH_BYTES = int(config_get('USER_SECRET_KEY_LENGTH_BYTES', 80))
 NONCE_LENGTH_BYTES = int(config_get('NONCE_LENGTH_BYTES', 24))
 ACTIVATION_LINK_SECRET = config_get('ACTIVATION_LINK_SECRET')
-WEB_CLIENT_URL  = config_get('WEB_CLIENT_URL', '')
+WEB_CLIENT_URL = config_get('WEB_CLIENT_URL', '')
 DB_SECRET = config_get('DB_SECRET')
 EMAIL_SECRET_SALT = config_get('EMAIL_SECRET_SALT')
 
@@ -483,8 +487,10 @@ USE_L10N = True
 USE_TZ = True
 
 AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
-if isinstance(AUTHENTICATION_METHODS, str):
+if isinstance(AUTHENTICATION_METHODS, str) and AUTHENTICATION_METHODS:
     AUTHENTICATION_METHODS = [authentication_method.strip() for authentication_method in AUTHENTICATION_METHODS.split(',')]
+elif isinstance(AUTHENTICATION_METHODS, str):
+    AUTHENTICATION_METHODS = []
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
