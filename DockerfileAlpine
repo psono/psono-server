@@ -1,5 +1,5 @@
 # PSONO Dockerfile for Alpine
-FROM psono-docker.jfrog.io/python:3.6-alpine
+FROM psono-docker.jfrog.io/python:3.6-alpine3.9
 
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
