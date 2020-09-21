@@ -1,3 +1,4 @@
+from anymail.exceptions import AnymailUnsupportedFeature
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
@@ -100,22 +101,32 @@ class RegisterView(GenericAPIView):
             'host_url': settings.HOST_URL,
         })
 
+
+        if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+            # SenndInBlue does not support inline attachments
+            msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
+
         msg = EmailMultiAlternatives('Registration successful', msg_plain, settings.EMAIL_FROM,
                                      [self.request.data.get('email', '')])
 
         msg.attach_alternative(msg_html, "text/html")
         msg.mixed_subtype = 'related'
 
-        for f in ['logo.png']:
-            fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+        if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+            # SenndInBlue does not support inline attachments
+            for f in ['logo.png']:
+                fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
 
-            msg_img = MIMEImage(fp.read())
-            fp.close()
-            msg_img.add_header('Content-ID', '<{}>'.format(f))
-            msg.attach(msg_img)
+                msg_img = MIMEImage(fp.read())
+                fp.close()
+                msg_img.add_header('Content-ID', '<{}>'.format(f))
+                msg.attach(msg_img)
 
         try:
             msg.send()
+        except AnymailUnsupportedFeature:
+            user.delete()
+            raise
         except:
             user.delete()
             return Response({"non_field_errors": ["REGISTRATION_EMAIL_DELIVERY_FAILED"]},

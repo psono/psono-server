@@ -362,6 +362,8 @@ ANYMAIL = {
     "SPARKPOST_API_KEY": config_get('SPARKPOST_API_KEY', ''),
     "SPARKPOST_API_URL": config_get('SPARKPOST_API_URL', 'https://api.sparkpost.com/api/v1'),  # For EU: https://api.eu.sparkpost.com/api/v1
 
+    "IGNORE_UNSUPPORTED_FEATURES": str(config_get('IGNORE_UNSUPPORTED_FEATURES', False)).lower() == 'true',
+
     "AMAZON_SES_CLIENT_PARAMS": {
         "aws_access_key_id": config_get('AMAZON_SES_CLIENT_PARAMS_ACCESS_KEY_ID', ''),
         "aws_secret_access_key": config_get('AMAZON_SES_CLIENT_PARAMS_SECRET_ACCESS_KEY', ''),
