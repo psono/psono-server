@@ -111,6 +111,11 @@ DUO_INTEGRATION_KEY = config_get('DUO_INTEGRATION_KEY', '')
 DUO_SECRET_KEY = config_get('DUO_SECRET_KEY', '')
 DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
 
+DUO_PROXY_HOST = config_get('DUO_PROXY_HOST', None)
+DUO_PROXY_PORT = config_get('DUO_PROXY_PORT', None)
+DUO_PROXY_HEADERS = config_get('DUO_PROXY_HEADERS', None)
+DUO_PROXY_TYPE = config_get('DUO_PROXY_TYPE', None)  # CONNECT
+
 MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == 'true'
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
@@ -361,6 +366,8 @@ ANYMAIL = {
 
     "SPARKPOST_API_KEY": config_get('SPARKPOST_API_KEY', ''),
     "SPARKPOST_API_URL": config_get('SPARKPOST_API_URL', 'https://api.sparkpost.com/api/v1'),  # For EU: https://api.eu.sparkpost.com/api/v1
+
+    "IGNORE_UNSUPPORTED_FEATURES": str(config_get('IGNORE_UNSUPPORTED_FEATURES', False)).lower() == 'true',
 
     "AMAZON_SES_CLIENT_PARAMS": {
         "aws_access_key_id": config_get('AMAZON_SES_CLIENT_PARAMS_ACCESS_KEY_ID', ''),
