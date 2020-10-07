@@ -1,3 +1,5 @@
+from django.conf import settings
+
 import duo_client
 from socket import gaierror
 from ssl import SSLError
@@ -27,6 +29,13 @@ def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
             skey=secret_key,
             host=host,
         )
+        if settings.DUO_PROXY_TYPE:
+            auth_api.set_proxy(
+                host=settings.DUO_PROXY_HOST,
+                port=settings.DUO_PROXY_PORT,
+                headers=settings.DUO_PROXY_HEADERS,
+                proxy_type=settings.DUO_PROXY_TYPE
+            )
         check = auth_api.check()
     except gaierror:
         return {
@@ -81,6 +90,13 @@ def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: 
             skey=secret_key,
             host=host,
         )
+        if settings.DUO_PROXY_TYPE:
+            auth_api.set_proxy(
+                host=settings.DUO_PROXY_HOST,
+                port=settings.DUO_PROXY_PORT,
+                headers=settings.DUO_PROXY_HEADERS,
+                proxy_type=settings.DUO_PROXY_TYPE
+            )
 
         pre_auth = auth_api.preauth(username=username)
 
@@ -153,6 +169,13 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
             host=host,
         )
 
+        if settings.DUO_PROXY_TYPE:
+            auth_api.set_proxy(
+                host=settings.DUO_PROXY_HOST,
+                port=settings.DUO_PROXY_PORT,
+                headers=settings.DUO_PROXY_HEADERS,
+                proxy_type=settings.DUO_PROXY_TYPE
+            )
 
         enrollment_status = auth_api.enroll_status(user_id=user_id, activation_code=activation_code)
     except gaierror:
@@ -220,6 +243,15 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
             skey=secret_key,
             host=host,
         )
+
+        if settings.DUO_PROXY_TYPE:
+            auth_api.set_proxy(
+                host=settings.DUO_PROXY_HOST,
+                port=settings.DUO_PROXY_PORT,
+                headers=settings.DUO_PROXY_HEADERS,
+                proxy_type=settings.DUO_PROXY_TYPE
+            )
+
         auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async_txn=async_txn)
     except gaierror:
         return {

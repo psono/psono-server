@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 import duo_client
 from socket import gaierror
@@ -42,6 +43,13 @@ class Command(BaseCommand):
                 skey=secret_key,
                 host=host,
             )
+            if settings.DUO_PROXY_TYPE:
+                auth_api.set_proxy(
+                    host=settings.DUO_PROXY_HOST,
+                    port=settings.DUO_PROXY_PORT,
+                    headers=settings.DUO_PROXY_HEADERS,
+                    proxy_type=settings.DUO_PROXY_TYPE
+                )
 
             auth_api.check()
         except gaierror:
@@ -84,6 +92,13 @@ class Command(BaseCommand):
                     skey=secret_key,
                     host=host,
                 )
+                if settings.DUO_PROXY_TYPE:
+                    auth_api.set_proxy(
+                        host=settings.DUO_PROXY_HOST,
+                        port=settings.DUO_PROXY_PORT,
+                        headers=settings.DUO_PROXY_HEADERS,
+                        proxy_type=settings.DUO_PROXY_TYPE
+                    )
                 auth_api.auth(username=username, factor='push', device='auto', pushinfo=urlencode({'Host': domain}),
                                      passcode=None, async_txn=False)
             except gaierror:

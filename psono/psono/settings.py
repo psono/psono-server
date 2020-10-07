@@ -111,6 +111,11 @@ DUO_INTEGRATION_KEY = config_get('DUO_INTEGRATION_KEY', '')
 DUO_SECRET_KEY = config_get('DUO_SECRET_KEY', '')
 DUO_API_HOSTNAME = config_get('DUO_API_HOSTNAME', '')
 
+DUO_PROXY_HOST = config_get('DUO_PROXY_HOST', None)
+DUO_PROXY_PORT = config_get('DUO_PROXY_PORT', None)
+DUO_PROXY_HEADERS = config_get('DUO_PROXY_HEADERS', None)
+DUO_PROXY_TYPE = config_get('DUO_PROXY_TYPE', None)  # CONNECT
+
 MULTIFACTOR_ENABLED = str(config_get('MULTIFACTOR_ENABLED', False)).lower() == 'true'
 
 REGISTRATION_EMAIL_FILTER = config_get('REGISTRATION_EMAIL_FILTER', [])
