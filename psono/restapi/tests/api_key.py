@@ -1107,21 +1107,21 @@ class UpdateApiKeyTest(APITestCaseExtended):
         self.assertEqual(token.write, data.get('write'))
 
 
-    def test_update_api_keys_failure_with_no_actual_data(self):
-        """
-        Tests to update an api key that results in a failure as no actual data is provided
-        """
-
-        url = reverse('api_key')
-
-        data = {
-            'api_key_id': self.test_api_key_obj.id,
-        }
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # def test_update_api_keys_failure_with_no_actual_data(self):
+    #     """
+    #     Tests to update an api key that results in a failure as no actual data is provided
+    #     """
+    #
+    #     url = reverse('api_key')
+    #
+    #     data = {
+    #         'api_key_id': self.test_api_key_obj.id,
+    #     }
+    #
+    #     self.client.force_authenticate(user=self.test_user_obj)
+    #     response = self.client.post(url, data)
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_update_api_keys_failure_no_permission(self):

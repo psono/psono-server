@@ -22,7 +22,7 @@ django-postgrespool2==1.0.1
 django-redis==4.10.0
 django-rest-auth==0.9.5
 django==2.2.13
-djangorestframework==3.11.0
+djangorestframework==3.12.1
 docutils==0.15.2          # via botocore
 duo-client==4.2.3
 idna==2.9                 # via requests
