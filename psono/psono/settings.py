@@ -455,6 +455,9 @@ AUTO_PROLONGATION_URL_EXCEPTIONS = [
     '/user/status/',
 ]
 
+SECURE_PROXY_SSL_HEADER = config_get('SECURE_PROXY_SSL_HEADER', None)
+
+
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')
 SHARD_CREDIT_DEFAULT_NEW_USER = Decimal(str(config_get('SHARD_CREDIT_DEFAULT_NEW_USER', 0))) # the default credits in Euro for new users
