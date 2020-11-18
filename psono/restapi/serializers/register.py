@@ -77,7 +77,7 @@ class RegisterSerializer(serializers.Serializer):
 
         username, domain = value.split('@', 1)
 
-        if domain not in settings.ALLOWED_DOMAINS:
+        if domain not in settings.ALLOWED_DOMAINS and '*' not in settings.ALLOWED_DOMAINS:
             msg = _('The provided domain in your username is not allowed for the registration on this server.')
             raise exceptions.ValidationError(msg)
 
