@@ -19,6 +19,8 @@ build-container-alpine:
     DOCKER_HOST: 'tcp://docker:2375'
   script:
     - sh ./var/update_version.sh
+    - apt-get update || true
+    - apt install -y ca-certificates
     - apt-get update && apt-get install -y curl
     - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-17.12.0-ce.tgz" -o docker.tgz && echo "692e1c72937f6214b1038def84463018d8e320c8eaf8530546c84c2f8f9c767d *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
     - docker info
@@ -214,6 +216,8 @@ deploy-changelog:
   stage: deploy
   image: psono-docker.jfrog.io/ubuntu:18.04
   script:
+    - apt-get update || true
+    - apt install -y ca-certificates
     - sh ./var/deploy_changelog.sh
   environment:
     name: static.psono.com
