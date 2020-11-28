@@ -79,7 +79,7 @@ class TokenAuthentication(BaseAuthentication):
             token_validator = json.loads(token_validator_json.decode())
 
             if not settings.DEVICE_PROTECTION_DISABLED:
-                request_device_fingerprint = token_validator.get('request_device_fingerprint', False)
+                request_device_fingerprint = token_validator.get('request_device_session', token_validator.get('request_device_fingerprint', False))
                 if not request_device_fingerprint:
                     token.delete()
                     raise exceptions.AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
