@@ -744,7 +744,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         target_headers = {'content-type': 'application/json'}
         target_auth = None
 
-        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
     @patch('requests.post', side_effect=mock_request_post)
@@ -779,7 +779,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         target_headers = {'content-type': 'application/json'}
         target_auth = (data.get('callback_user'), data.get('callback_pass'))
 
-        mock_request_post.assert_any_call(data.get('callback_url'), data=target_data, headers=target_headers, auth=target_auth)
+        mock_request_post.assert_any_call(data.get('callback_url'), data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
     @patch('requests.post', side_effect=mock_request_post)
@@ -845,7 +845,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         target_headers = {'content-type': 'application/json'}
         target_auth = (secret.callback_user, callback_pass)
 
-        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
     @patch('requests.post', side_effect=mock_request_post)
@@ -883,4 +883,4 @@ class UserUpdateSecretTest(APITestCaseExtended):
         target_headers = {'content-type': 'application/json'}
         target_auth = (secret.callback_user, secret.callback_pass)
 
-        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth)
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
