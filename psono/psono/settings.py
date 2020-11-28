@@ -267,6 +267,7 @@ CORS_ALLOW_METHODS = (
     )
 
 CORS_ALLOW_HEADERS = default_headers + (
+    'audit-log',
     'authorization-validator',
     'pragma',
     'if-modified-since',
