@@ -201,7 +201,7 @@ class SecretView(GenericAPIView):
                 auth = None
 
             try:
-                requests.post(secret.callback_url, data=data, headers=headers, auth=auth)
+                requests.post(secret.callback_url, data=data, headers=headers, auth=auth, timeout=5.0)
             except: # nosec
                 pass
 
