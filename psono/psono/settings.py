@@ -267,6 +267,7 @@ CORS_ALLOW_METHODS = (
     )
 
 CORS_ALLOW_HEADERS = default_headers + (
+    'audit-log',
     'authorization-validator',
     'pragma',
     'if-modified-since',
@@ -454,6 +455,9 @@ AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIM
 AUTO_PROLONGATION_URL_EXCEPTIONS = [
     '/user/status/',
 ]
+
+SECURE_PROXY_SSL_HEADER = config_get('SECURE_PROXY_SSL_HEADER', None)
+
 
 # Credit costs
 SHARD_CREDIT_BUY_ADDRESS = config_get('SHARD_CREDIT_BUY_ADDRESS', 'https://example.com')

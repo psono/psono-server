@@ -451,6 +451,40 @@ class AuthenticateTests(APITestCaseExtended):
 
 
     @patch('restapi.authentication.settings', DEVICE_PROTECTION_DISABLED=False, AUTO_PROLONGATION_TOKEN_TIME_VALID=0)
+    def test_authenticate_device_protection_success_legacy_variable(self, settings_fct):
+        """
+        Tests that the legacy "request_device_fingerprint" still works
+        """
+        models.Token.objects.all().update(device_fingerprint="123456")
+
+        # encrypt authorization validator with session key
+        authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
+        encrypted = self.secret_box.encrypt(json.dumps({'request_device_fingerprint': '123456'}).encode("utf-8"), authorization_validator_nonce)
+        authorization_validator = encrypted[len(authorization_validator_nonce):]
+        authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
+
+        url = reverse('authentication_activate_token')
+
+        data = {
+            'token': self.token_key,
+            'verification': self.verification_hex.decode(),
+            'verification_nonce': self.verification_nonce_hex.decode(),
+        }
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + self.token_key,
+            HTTP_AUTHORIZATION_VALIDATOR=json.dumps({
+                'text': authorization_validator_hex.decode(),
+                'nonce': authorization_validator_nonce_hex.decode(),
+            })
+        )
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    @patch('restapi.authentication.settings', DEVICE_PROTECTION_DISABLED=False, AUTO_PROLONGATION_TOKEN_TIME_VALID=0)
     def test_authenticate_device_protection_success(self, settings_fct):
 
         models.Token.objects.all().update(device_fingerprint="123456")
@@ -458,7 +492,7 @@ class AuthenticateTests(APITestCaseExtended):
         # encrypt authorization validator with session key
         authorization_validator_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
         authorization_validator_nonce_hex = nacl.encoding.HexEncoder.encode(authorization_validator_nonce)
-        encrypted = self.secret_box.encrypt(json.dumps({'request_device_fingerprint': '123456'}).encode("utf-8"), authorization_validator_nonce)
+        encrypted = self.secret_box.encrypt(json.dumps({'request_device_session': '123456'}).encode("utf-8"), authorization_validator_nonce)
         authorization_validator = encrypted[len(authorization_validator_nonce):]
         authorization_validator_hex = nacl.encoding.HexEncoder.encode(authorization_validator)
 
