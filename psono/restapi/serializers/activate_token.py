@@ -1,4 +1,4 @@
-from django.utils.http import urlsafe_base64_decode as uid_decoder
+from django.utils.crypto import constant_time_compare
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -50,7 +50,7 @@ class ActivateTokenSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
 
-        if token.user_validator != decrypted:
+        if not constant_time_compare(token.user_validator, decrypted):
             # TODO Replace with VERIFICATION_CODE_INCORRECT
             msg = _('Verification code incorrect.')
             raise exceptions.ValidationError(msg)

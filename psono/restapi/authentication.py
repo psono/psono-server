@@ -2,6 +2,7 @@ from datetime import timedelta
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework import HTTP_HEADER_ENCODING, exceptions
 from raven.contrib.django.raven_compat.models import client
@@ -83,7 +84,7 @@ class TokenAuthentication(BaseAuthentication):
                 if not request_device_fingerprint:
                     token.delete()
                     raise exceptions.AuthenticationFailed('Device Fingerprint Protection: request_device_fingerprint missing')
-                if str(request_device_fingerprint) != str(token.device_fingerprint):
+                if not constant_time_compare(str(request_device_fingerprint), str(token.device_fingerprint)):
                     token.delete()
                     raise exceptions.AuthenticationFailed('Device Fingerprint Protection: device_fingerprint mismatch')
 
@@ -309,11 +310,11 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 msg = _('Invalid fileserver info.')
                 raise exceptions.AuthenticationFailed(msg)
 
-            if fileserver_info['CLUSTER_ID'] != cluster_id:
+            if not constant_time_compare(fileserver_info['CLUSTER_ID'], cluster_id):
                 msg = _('Invalid fileserver info.')
                 raise exceptions.AuthenticationFailed(msg)
 
-            if FileserverAliveAuthentication.user_token_to_token_hash(fileserver_info['FILESERVER_ID']) != token_hash:
+            if not constant_time_compare(FileserverAliveAuthentication.user_token_to_token_hash(fileserver_info['FILESERVER_ID']), token_hash):
                 msg = _('Invalid fileserver info.')
                 raise exceptions.AuthenticationFailed(msg)
 
@@ -424,7 +425,7 @@ class ManagementCommandAuthentication(BaseAuthentication):
     def authenticate(self, request):
         management_command_access_key = self.get_management_command_access_key(request)
 
-        if not management_command_access_key or management_command_access_key != settings.MANAGEMENT_COMMAND_ACCESS_KEY:
+        if not management_command_access_key or not constant_time_compare(management_command_access_key, settings.MANAGEMENT_COMMAND_ACCESS_KEY):
             msg = _('Invalid access key')
             raise exceptions.AuthenticationFailed(msg)
 
