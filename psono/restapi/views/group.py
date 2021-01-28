@@ -36,6 +36,7 @@ class GroupView(GenericAPIView):
         for membership in memberships:
 
             details = {
+                'membership_create_date': membership.create_date,
                 'group_id': membership.group_id,
                 'membership_id': membership.id,
                 'name': membership.group.name,
