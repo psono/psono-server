@@ -102,7 +102,7 @@ class RegisterView(GenericAPIView):
         })
 
 
-        if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+        if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
             # SenndInBlue does not support inline attachments
             msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
@@ -121,7 +121,7 @@ class RegisterView(GenericAPIView):
                 fp.close()
                 msg_img.add_header('Content-ID', '<{}>'.format(f))
                 msg.attach(msg_img)
-
+        
         try:
             msg.send()
         except AnymailUnsupportedFeature:

@@ -156,19 +156,25 @@ class EmergencyLoginView(GenericAPIView):
                 'host_url': settings.HOST_URL,
             })
 
+
+            if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
+                # SenndInBlue does not support inline attachments
+                msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
+
             msg = EmailMultiAlternatives('Emergency code armed', msg_plain, settings.EMAIL_FROM,
                                          [decrypt_with_db_secret(emergency_code.user.email)])
 
             msg.attach_alternative(msg_html, "text/html")
             msg.mixed_subtype = 'related'
 
-            for f in ['logo.png']:
-                fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+            if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+                for f in ['logo.png']:
+                    fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
 
-                msg_img = MIMEImage(fp.read())
-                fp.close()
-                msg_img.add_header('Content-ID', '<{}>'.format(f))
-                msg.attach(msg_img)
+                    msg_img = MIMEImage(fp.read())
+                    fp.close()
+                    msg_img.add_header('Content-ID', '<{}>'.format(f))
+                    msg.attach(msg_img)
 
             msg.send()
 
