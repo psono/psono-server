@@ -9,6 +9,11 @@ class IsAuthenticated(BasePermission):
     """
 
     def has_permission(self, request, view):
+        path = request.get_full_path()
+
+        # Allow logout
+        if path == '/authentication/logout/' and request.method == 'POST':
+            return request.user and request.user.is_authenticated
 
         if request.method == 'GET' and request.auth and not request.auth.read:
             return False
