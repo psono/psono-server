@@ -4,10 +4,10 @@ import nacl.encoding
 import nacl.signing
 import nacl.secret
 
-api_key_id = '747b0fb0-1f25-4c45-af94-50d487af15f1'
-api_key_private_key = 'e6e71d12eaade92994a915fa5ecfd54223e53d72e02cfc73bc2b968a061eea7e'
-api_key_secret_key = '1a74783f7429b95b64483f910019d3559f7f1da429fcc1a2e187880e938d611c'
-server_url = 'https://browserplugins.chickahoona.com/server'
+api_key_id = '6a38b651-412d-4d66-a4b3-730b016f8635'
+api_key_private_key = 'fc1a9cc5e6ff6efd2abe7b8a9625264ac504a348de16e11086821f9ba48204b9'
+api_key_secret_key = '103115fbb712ce89940a2028cc50a3646e9a680ba6b70068a8a424c2bfaadc15'
+server_url = 'http://browserplugins.chickahoona.com/server'
 server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
 
@@ -47,13 +47,36 @@ def api_read_secret(secret_id):
 
     return json.loads(decrypted_secret)
 
+def api_inspect():
+    """
+    Inspects the API key. Will return a list of allowed secrets if its a restricted API key.
+
+    :return:
+    :rtype:
+    """
+
+    method = 'POST'
+    endpoint = '/api-key-access/inspect/'
+
+    data = json.dumps({
+        'api_key_id': api_key_id,
+    })
+
+    api_inspect_result = api_request(method, endpoint, data)
+
+    return api_inspect_result
+
 def main():
 
-    secret_id = 'c81d0cff-65f9-4f81-9815-dbe2850331c9'
+    secret_id = '4620cff5-f22b-4466-afb7-7fec94411243'
+
+    # api_inspect_result = api_inspect()
+    # print(api_inspect_result)
+    # {'api_key_secrets': [{'secret_id': '4620cff5-f22b-4466-afb7-7fec94411243'}, {'secret_id': '345d8909-fae3-446a-8b97-9b6a9dbf0851'}]}
 
     decrypted_secret = api_read_secret(secret_id)
-
     print(decrypted_secret)
+    # {'totp_code': 'JBSWY3DPEHPK3PXP', 'totp_title': 'demo'}
 
 
 if __name__ == '__main__':

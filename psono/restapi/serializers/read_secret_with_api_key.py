@@ -1,5 +1,4 @@
 from rest_framework import serializers, exceptions
-from django.utils.translation import ugettext_lazy as _
 
 import nacl.secret
 import nacl.encoding
@@ -32,7 +31,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if api_key_secret_key and not api_key.allow_insecure_access:
-            msg = _("Insecure access is not allowed for this api key.")
+            msg = "INSECURE_ACCESS_NOT_ALLOWED"
             raise exceptions.ValidationError(msg)
 
         if not user_has_rights_on_secret(api_key.user_id, secret.id, True, None):
@@ -45,7 +44,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
                 crypto_box = nacl.secret.SecretBox(api_key_secret_key, encoder=nacl.encoding.HexEncoder)
                 secret_key = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(api_key_secret.secret_key), nacl.encoding.HexEncoder.decode(api_key_secret.secret_key_nonce))
             except:
-                msg = _("api_key_secret_key invalid")
+                msg = "API_KEY_SECRET_KEY_INVALID"
                 raise exceptions.ValidationError(msg)
 
         json_filter = json_filter.strip()
