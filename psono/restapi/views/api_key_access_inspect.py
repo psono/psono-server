@@ -43,6 +43,7 @@ class APIKeyAccessInspectView(GenericAPIView):
             )
 
         api_key_secrets = serializer.validated_data.get('api_key_secrets')
+        api_key = serializer.validated_data.get('api_key')
         api_key_secrets_list = []
 
         for api_key_secret in api_key_secrets:
@@ -51,6 +52,10 @@ class APIKeyAccessInspectView(GenericAPIView):
             })
 
         return Response(json.dumps({
+            'allow_insecure_access': api_key.allow_insecure_access,
+            'restrict_to_secrets': api_key.restrict_to_secrets,
+            'read': api_key.read,
+            'write': api_key.write,
             'api_key_secrets': api_key_secrets_list
         }), status=status.HTTP_200_OK)
 

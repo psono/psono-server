@@ -101,7 +101,7 @@ class APIKeyAccessSecretView(GenericAPIView):
             except: # nosec
                 pass
 
-        return Response({}, status=status.HTTP_200_OK)
+        return Response(json.dumps({}), status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """
