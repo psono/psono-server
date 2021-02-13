@@ -52,6 +52,7 @@ urlpatterns = [
     url(r'^emergencycode/$', views.EmergencyCodeView.as_view(), name='emergencycode'),
     url(r'^emergency-login/$', views.EmergencyLoginView.as_view(), name='emergency_login'),
 
+    url(r'^api-key-access/inspect/$', views.APIKeyAccessInspectView.as_view(), name='api_key_access_inspect'),
     url(r'^api-key-access/secret/$', views.APIKeyAccessSecretView.as_view(), name='api_key_access_secret'),
 
     url(r'^api-key/secret/(?P<api_key_id>[^/]+)/$', views.APIKeySecretView.as_view(), name='api_key_secret'),

@@ -1,5 +1,4 @@
 from rest_framework import serializers, exceptions
-from django.utils.translation import ugettext_lazy as _
 
 import nacl.secret
 import nacl.encoding
@@ -24,15 +23,16 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
         json_filter = attrs.get('json_filter', '')
 
         try:
-            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
+            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key', 'api_key__user').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
             api_key = api_key_secret.api_key
+            user = api_key.user
             secret = api_key_secret.secret
         except API_Key_Secret.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if api_key_secret_key and not api_key.allow_insecure_access:
-            msg = _("Insecure access is not allowed for this api key.")
+            msg = "INSECURE_ACCESS_NOT_ALLOWED"
             raise exceptions.ValidationError(msg)
 
         if not user_has_rights_on_secret(api_key.user_id, secret.id, True, None):
@@ -45,7 +45,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
                 crypto_box = nacl.secret.SecretBox(api_key_secret_key, encoder=nacl.encoding.HexEncoder)
                 secret_key = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(api_key_secret.secret_key), nacl.encoding.HexEncoder.decode(api_key_secret.secret_key_nonce))
             except:
-                msg = _("api_key_secret_key invalid")
+                msg = "API_KEY_SECRET_KEY_INVALID"
                 raise exceptions.ValidationError(msg)
 
         json_filter = json_filter.strip()
@@ -55,6 +55,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             json_filter = []
 
         attrs['secret'] = secret
+        attrs['user'] = user
         attrs['api_key_secret'] = api_key_secret
         attrs['secret_key'] = secret_key
         attrs['json_filter'] = json_filter

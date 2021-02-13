@@ -89,7 +89,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
 
         secret_key = nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
         secret_key_hex = nacl.encoding.HexEncoder.encode(secret_key)
-        box = nacl.secret.SecretBox(secret_key)
+        self.box = nacl.secret.SecretBox(secret_key)
         nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
         self.secret_data = json.dumps({
@@ -101,7 +101,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
                 'sub_secret_content_nested': 'some_variable_2'
             })
         })
-        encrypted = box.encrypt(self.secret_data.encode(), nonce)
+        encrypted = self.box.encrypt(self.secret_data.encode(), nonce)
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
@@ -167,19 +167,134 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_put(self):
+    def test_put_success(self):
         """
-        Tests GET on api_key_access_secret
+        Tests PUT on api_key_access_secret
         """
+        self.assertFalse(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
+        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
 
         url = reverse('api_key_access_secret')
 
         data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'data': 'abc',
+            'data_nonce': 'def',
         }
 
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
+        self.assertTrue(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
+
+    def test_put_no_write_permission(self):
+        """
+        Tests PUT on api_key_access_secret with no write permission
+        """
+        self.test_api_key_obj.write = False
+        self.test_api_key_obj.save()
+
+        url = reverse('api_key_access_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'data': 'abc',
+            'data_nonce': 'def',
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_with_no_permission_for_secret(self):
+        """
+        Tests PUT on api_key_access_secret with an api key where the corresponding user has no permission
+        """
+        self.test_api_key_obj.user = self.test_user_obj2
+        self.test_api_key_obj.save()
+
+        url = reverse('api_key_access_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'data': 'abc',
+            'data_nonce': 'def',
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_insecure_success(self):
+        """
+        Tests PUT on api_key_access_secret with api_key_secret_key being sent to the server
+        """
+        self.assertFalse(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
+        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
+
+        url = reverse('api_key_access_secret')
+        insecure_data = '{}'
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'api_key_secret_key': self.api_key_secret_key_hex.decode(),
+            'insecure_data': insecure_data,
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
+
+        db_secret = models.Secret.objects.get(id=self.test_secret_obj.id)
+        decrypted_db_secret_data = self.box.decrypt(nacl.encoding.HexEncoder.decode(db_secret.data), nacl.encoding.HexEncoder.decode(db_secret.data_nonce))
+        self.assertEqual(decrypted_db_secret_data.decode(), insecure_data)
+
+    def test_put_insecure_with_not_insecure_allowed_api_key(self):
+        """
+        Tests PUT on api_key_access_secret with api_key_secret_key that was not allowed insecure usage
+        """
+        self.test_api_key_obj.allow_insecure_access = False
+        self.test_api_key_obj.save()
+
+        url = reverse('api_key_access_secret')
+        insecure_data = '{}'
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'api_key_secret_key': self.api_key_secret_key_hex.decode(),
+            'insecure_data': insecure_data,
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_with_inactive_api_key(self):
+        """
+        Tests PUT on api_key_access_secret with inactive api key
+        """
+        self.test_api_key_obj.active = False
+        self.test_api_key_obj.save()
+
+        url = reverse('api_key_access_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'data': 'abc',
+            'data_nonce': 'def',
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
     def test_delete(self):
         """

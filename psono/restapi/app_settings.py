@@ -68,6 +68,8 @@ from .serializers import (
     CreateAPIKeySerializer as DefaultCreateAPIKeySerializer,
     UpdateAPIKeySerializer as DefaultUpdateAPIKeySerializer,
     ReadSecretWithAPIKeySerializer as DefaultReadSecretWithAPIKeySerializer,
+    UpdateSecretWithAPIKeySerializer as DefaultUpdateSecretWithAPIKeySerializer,
+    ReadAPIKeyInspectSerializer as DefaultReadAPIKeyInspectSerializer,
     DeleteAPIKeySerializer as DefaultDeleteAPIKeySerializer,
     AddSecretToAPIKeySerializer as DefaultAddSecretToAPIKeySerializer,
     RemoveSecretFromAPIKeySerializer as DefaultRemoveSecretFromAPIKeySerializer,
@@ -547,6 +549,20 @@ ReadSecretWithAPIKeySerializer = import_callable(
     serializers.get(
         'READ_SECRET_WITH_API_KEY_SERIALIZER',
         DefaultReadSecretWithAPIKeySerializer
+    )
+)
+
+UpdateSecretWithAPIKeySerializer = import_callable(
+    serializers.get(
+        'UPDATE_SECRET_WITH_API_KEY_SERIALIZER',
+        DefaultUpdateSecretWithAPIKeySerializer
+    )
+)
+
+ReadAPIKeyInspectSerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_LIST_WITH_API_KEY_SERIALIZER',
+        DefaultReadAPIKeyInspectSerializer
     )
 )
 
