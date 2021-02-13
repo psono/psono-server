@@ -68,6 +68,7 @@ from .add_secret_to_api_key import *
 from .remove_secret_from_api_key import *
 from .read_api_key_inspect import *
 from .read_secret_with_api_key import *
+from .update_secret_with_api_key import *
 from .api_key_login import *
 from .read_shard import *
 from .read_file import *

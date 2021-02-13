@@ -23,8 +23,9 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
         json_filter = attrs.get('json_filter', '')
 
         try:
-            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
+            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key', 'api_key__user').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
             api_key = api_key_secret.api_key
+            user = api_key.user
             secret = api_key_secret.secret
         except API_Key_Secret.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
@@ -54,6 +55,7 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
             json_filter = []
 
         attrs['secret'] = secret
+        attrs['user'] = user
         attrs['api_key_secret'] = api_key_secret
         attrs['secret_key'] = secret_key
         attrs['json_filter'] = json_filter
