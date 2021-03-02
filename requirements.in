@@ -1,12 +1,12 @@
 cffi==1.13.2
-Django==2.2.13
+Django==2.2.19
 djangorestframework==3.12.1
 django-rest-auth==0.9.5
 django-allauth==0.41.0
 django-cors-headers==3.2.0
 Markdown==3.1.1
 django-filter==2.4.0
-PyYAML==5.3.1
+PyYAML==5.4.1
 bcrypt==3.1.7
 psycopg2cffi==2.8.1
 more-itertools==7.2.0
