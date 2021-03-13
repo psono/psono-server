@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 import bcrypt
 
 from restapi.models import User
@@ -23,12 +23,14 @@ class CreateUserSerializer(serializers.Serializer):
             settings.EMAIL_SECRET_SALT, '', 1)
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-            return {'error': 'USER_WITH_EMAIL_ALREADY_EXISTS'}
+            msg = 'USER_WITH_EMAIL_ALREADY_EXISTS'
+            raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=username).exists():
-            return {'error': 'USER_WITH_USERNAME_ALREADY_EXISTS'}
+            msg = 'USER_WITH_USERNAME_ALREADY_EXISTS'
+            raise exceptions.ValidationError(msg)
 
-        attrs['user'] = username
+        attrs['username'] = username
         attrs['email'] = email
         attrs['password'] = password
 
