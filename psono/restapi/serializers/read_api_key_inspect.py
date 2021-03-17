@@ -16,7 +16,7 @@ class ReadAPIKeyInspectSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        api_key_secrets = API_Key_Secret.objects.filter(api_key_id=api_key_id).only('secret_id').all()
+        api_key_secrets = API_Key_Secret.objects.filter(api_key_id=api_key_id).only('secret_id', 'secret__write_date').all()
 
         attrs['api_key_secrets'] = api_key_secrets
         attrs['api_key'] = api_key
