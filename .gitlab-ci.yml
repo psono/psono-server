@@ -38,7 +38,7 @@ build-container-alpine:
     - tags@psono/psono-server
 
 
-run-unittests-ubuntu1804:
+run-unittests-ubuntu:
   except:
     - schedules
   stage: test
@@ -56,10 +56,10 @@ run-unittests-ubuntu1804:
   script:
     - docker info
     - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu1804 -t ubu1804-testimage --pull .
+    - docker build -f DockerfileUbuntu2004 -t ubu2004-testimage --pull .
     - docker run -d --name db postgres:9.6.16
     - sleep 20
-    - docker run --link db:postgres ubu1804-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
+    - docker run --link db:postgres ubu2004-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
 
 run-unittests-alpine:
