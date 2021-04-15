@@ -49,7 +49,7 @@ class APIKeyAccessInspectView(GenericAPIView):
         for api_key_secret in api_key_secrets:
             api_key_secrets_list.append({
                 'secret_id': str(api_key_secret.secret_id),
-                'write_date': str(api_key_secret.secret.write_date),
+                'write_date': api_key_secret.secret.write_date.isoformat(),
             })
 
         return Response(json.dumps({
