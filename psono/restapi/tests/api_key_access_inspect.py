@@ -222,4 +222,4 @@ class CreateApiKeyAccessInspectTest(APITestCaseExtended):
         self.assertEqual(data.get('write', not self.test_api_key_obj.write), self.test_api_key_obj.write)
         self.assertEqual(len(data.get('api_key_secrets', [])), 1)
         self.assertEqual(data['api_key_secrets'][0]['secret_id'], str(self.test_secret_obj.id))
-        self.assertEqual(data['api_key_secrets'][0]['write_date'], str(self.test_secret_obj.write_date))
+        self.assertEqual(data['api_key_secrets'][0]['write_date'], self.test_secret_obj.write_date.isoformat())
