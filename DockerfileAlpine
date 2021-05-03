@@ -4,6 +4,7 @@ FROM psono-docker.jfrog.io/python:3.8-alpine3.13
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
+ENV PYTHONUNBUFFERED True
 WORKDIR /root
 
 RUN apk upgrade && \
