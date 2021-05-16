@@ -1,4 +1,5 @@
 from .duo import *
+from .emergency_code import *
 from .ga import *
 from .yubikey import *
 from .user import *
