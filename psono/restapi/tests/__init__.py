@@ -8,6 +8,7 @@ from .group_rights import *
 from .health_check import *
 from .inherited_share_rights import *
 from .link_share import *
+from .link_share_access import *
 from .login import *
 from .logout import *
 from .membership import *
