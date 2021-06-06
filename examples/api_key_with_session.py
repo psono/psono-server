@@ -7,9 +7,9 @@ from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
 
-api_key_id = 'f8b999aa-8c35-4503-9d49-b7bbcf12698f'
-api_key_private_key = '66cf51a44244a88e60a0fbc1bc32dae6172872c3626726f1ebb1e601a3f8ca3b'
-api_key_secret_key = '0a3e384c061045fcd4f4b32f8f40958b8fd39240fc446a9d387997872ead0352'
+api_key_id = 'f480e825-18cf-42d1-a042-e03e78a6ac09'
+api_key_private_key = '20adf6cbeb38c97e968b17911e7d68fd042b2ee12d8038ec7f944ad21e204795'
+api_key_secret_key = 'b8de71ff33d88277a2c0a8cc9bd67f3d0250aa584ac8f9349ee7765e5f4fbd59'
 server_url = 'https://browserplugins.chickahoona.com/server'
 server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
@@ -196,6 +196,24 @@ def api_read_datastores(token, session_secret_key):
     return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
 
 
+def api_logout(token, session_secret_key):
+    """
+    Destroys the session again.
+
+    :param token:
+    :type token:
+    :param session_secret_key:
+    :type session_secret_key:
+    :return:
+    :rtype:
+    """
+
+    method = 'POST'
+    endpoint = '/authentication/logout/'
+
+    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+
+
 def api_read_datastore(token, session_secret_key, datastore_id):
     """
     Reads the content of a specific datastore
@@ -258,6 +276,9 @@ def main():
     # 7. Read content of all shares
 
     # 8. Read a secret
+
+    # 9. Logout
+    api_logout(token, session_secret_key)
 
 if __name__ == '__main__':
     main()
