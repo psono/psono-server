@@ -6,3 +6,4 @@ master = true
 processes = {{ UWSGI_PROCESSES }}
 
 die-on-term = true
+buffer-size = {{ UWSGI_BUFFER_SIZE }}

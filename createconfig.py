@@ -7,6 +7,7 @@ def get_config_vars():
     config_vars = {
         'UWSGI_PORT': os.environ.get('UWSGI_PORT', '80'),
         'UWSGI_PROCESSES': os.environ.get('UWSGI_PROCESSES', '10'),
+        'UWSGI_BUFFER_SIZE': os.environ.get('UWSGI_BUFFER_SIZE', '8192'),
         'NGINX_STRICT_TRANSPORT_SECURITY': os.environ.get('NGINX_STRICT_TRANSPORT_SECURITY', ''),
         'NGINX_HEADER_REFERRER_POLICY': os.environ.get('NGINX_HEADER_REFERRER_POLICY', 'same-origin'),
         'NGINX_HEADER_X_FRAME_OPTIONS': os.environ.get('NGINX_HEADER_X_FRAME_OPTIONS', 'DENY'),
