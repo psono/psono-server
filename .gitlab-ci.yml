@@ -59,7 +59,7 @@ run-unittests-ubuntu:
     - docker build -f DockerfileUbuntu2004 -t ubu2004-testimage --pull .
     - docker run -d --name db postgres:9.6.16
     - sleep 20
-    - docker run --link db:postgres ubu2004-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
+    - docker run --link db:postgres ubu2004-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy==0.812 && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
 
 run-unittests-alpine:
@@ -111,7 +111,7 @@ run-unittests-centos7:
     - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
     - docker run -d --name db postgres:9.6.16
     - sleep 20
-    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy && python3.6 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
+    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy==0.812 && python3.6 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
 
 run-vulnerability-scan:
   except:
