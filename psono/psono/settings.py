@@ -13,7 +13,9 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import socket
 import os
+import sys
 import yaml
+import toml
 import json
 import hashlib
 import nacl.encoding
@@ -34,23 +36,91 @@ try:
 except ImportError:
     import psycopg2
 
-
-if os.environ.get('PSONO_HOME', '') and os.path.exists(os.path.join(os.environ.get('PSONO_HOME', ''), '.psono_server', 'settings.yaml')):
-    HOME = os.environ.get('PSONO_HOME', '')
-elif os.path.exists(os.path.join(os.path.expanduser('~'), '.psono_server', 'settings.yaml')):
-    HOME = os.path.expanduser('~')
-elif os.path.exists(os.path.join('/root', '.psono_server', 'settings.yaml')):
-    HOME = '/root'
-else:
-    raise Exception("Setting missing", "Could not detect HOME, you can specify it with PSONO_HOME and check that it contains .psono_server/settings.yaml")
+def eprint_and_exit_gunicorn(error_message):
+    print(f"ERROR: {error_message}", file=sys.stderr)
+    sys.exit(4)
 
 
-if os.environ.get('PSONO_SERVER_SETTING_BASE64', ''):
-    config = yaml.safe_load(base64.b64decode(os.environ.get('PSONO_SERVER_SETTING_BASE64', '')))
-else:
-    with open(os.path.join(HOME, '.psono_server', 'settings.yaml'), 'r') as stream:
-        config = yaml.safe_load(stream)
+ENV_VAR_HOME = "PSONO_HOME"
 
+CONFIG_FORMATS = ["yaml", "toml"]
+
+def get_home_path():
+    home_override = os.environ.get(ENV_VAR_HOME, '')
+    home_path = os.path.expanduser('~')
+    root_home = '/root'
+
+    for p in [home_override, home_path, root_home]:
+        for cf in CONFIG_FORMATS:
+            config_path = os.path.join(p, '.psono_server', f'settings.{cf}')
+
+            if os.path.exists(config_path):
+                return p, config_path
+
+    return eprint_and_exit_gunicorn(f"Could not detect HOME, you can specify it with {ENV_VAR_HOME} and check that it contains .psono_server/settings.yaml")
+
+ENV_VAR_SERVER_SETTING_BASE64 = 'PSONO_SERVER_SETTING_BASE64'
+ENV_VAR_SERVER_SETTING_TOML_BASE64 = 'PSONO_SERVER_SETTING_TOML_BASE64'
+
+def deserialize_config(raw, format):
+    if format == "yaml":
+        config = yaml.safe_load(raw)
+    elif format == "toml":
+        config = toml.loads(raw)
+    else:
+        raise Exception("unknown config format")
+
+    return config
+
+def load_config(config_path: str):
+    settings_override = os.environ.get(ENV_VAR_SERVER_SETTING_BASE64, '')
+    settings_override_toml = os.environ.get(ENV_VAR_SERVER_SETTING_TOML_BASE64, '')
+
+    if settings_override:
+        try:
+            config_raw = base64.b64decode(settings_override)
+        except Exception as e:
+            return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_BASE64} base64 decoding failed: {e}")
+
+        config_source = ENV_VAR_SERVER_SETTING_BASE64
+        config_format = "yaml"
+    elif settings_override_toml:
+        try:
+            config_raw = base64.b64decode(settings_override_toml)
+        except Exception as e:
+            return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_TOML_BASE64} base64 decoding failed: {e}")
+
+        config_source = ENV_VAR_SERVER_SETTING_TOML_BASE64
+        config_format = "toml"
+    else:
+        try:
+            with open(config_path, 'r') as stream:
+                config_raw = stream.read()
+        except Exception as e:
+            return eprint_and_exit_gunicorn(f"loading config from '{config_path}' failed: {e}")
+
+        config_source = config_path
+        _, config_ext = os.path.splitext(config_path)
+        if config_ext == ".yaml":
+            config_format = "yaml"
+        elif config_ext == ".toml":
+            config_format = "toml"
+        else:
+            return eprint_and_exit_gunicorn("unknown config format")
+
+    try:
+        config = deserialize_config(config_raw, config_format)
+    except Exception as e:
+        return eprint_and_exit_gunicorn(f"deserializing {config_format} config from '{config_source}' failed: {e}")
+
+    if not isinstance(config, dict):
+        return eprint_and_exit_gunicorn(f"config from '{config_source}' is empty or not a dict")
+
+    return config
+
+
+HOME, CONFIG_PATH = get_home_path()
+CONFIG = load_config(CONFIG_PATH)
 
 def config_get(key, *args):
     if 'PSONO_' + key in os.environ:
@@ -60,8 +130,8 @@ def config_get(key, *args):
         except ValueError:
             return val
         return json_object
-    if key in config:
-        return config.get(key)
+    if key in CONFIG:
+        return CONFIG.get(key)
     if len(args) > 0:
         return args[0]
     raise Exception("Setting missing", "Couldn't find the setting for %s (maybe you forgot the 'PSONO_' prefix in the environment variable" % (key,))
