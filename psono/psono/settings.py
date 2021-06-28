@@ -57,7 +57,7 @@ def get_home_path():
             if os.path.exists(config_path):
                 return p, config_path
 
-    eprint_and_exit_gunicorn(f"Could not detect HOME, you can specify it with {ENV_VAR_HOME} and check that it contains .psono_server/settings.yaml")
+    return eprint_and_exit_gunicorn(f"Could not detect HOME, you can specify it with {ENV_VAR_HOME} and check that it contains .psono_server/settings.yaml")
 
 ENV_VAR_SERVER_SETTING_BASE64 = 'PSONO_SERVER_SETTING_BASE64'
 ENV_VAR_SERVER_SETTING_TOML_BASE64 = 'PSONO_SERVER_SETTING_TOML_BASE64'
@@ -80,7 +80,7 @@ def load_config(config_path: str):
         try:
             config_raw = base64.b64decode(settings_override)
         except Exception as e:
-            eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_BASE64} base64 decoding failed: {e}")
+            return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_BASE64} base64 decoding failed: {e}")
 
         config_source = ENV_VAR_SERVER_SETTING_BASE64
         config_format = "yaml"
@@ -88,7 +88,7 @@ def load_config(config_path: str):
         try:
             config_raw = base64.b64decode(settings_override_toml)
         except Exception as e:
-            eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_TOML_BASE64} base64 decoding failed: {e}")
+            return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_TOML_BASE64} base64 decoding failed: {e}")
 
         config_source = ENV_VAR_SERVER_SETTING_TOML_BASE64
         config_format = "toml"
@@ -97,7 +97,7 @@ def load_config(config_path: str):
             with open(config_path, 'r') as stream:
                 config_raw = stream.read()
         except Exception as e:
-            eprint_and_exit_gunicorn(f"loading config from '{config_path}' failed: {e}")
+            return eprint_and_exit_gunicorn(f"loading config from '{config_path}' failed: {e}")
 
         config_source = config_path
         _, config_ext = os.path.splitext(config_path)
@@ -106,15 +106,15 @@ def load_config(config_path: str):
         elif config_ext == ".toml":
             config_format = "toml"
         else:
-            raise Exception("unknown config format")
+            return eprint_and_exit_gunicorn("unknown config format")
 
     try:
         config = deserialize_config(config_raw, config_format)
     except Exception as e:
-        eprint_and_exit_gunicorn(f"deserializing {config_format} config from '{config_source}' failed: {e}")
+        return eprint_and_exit_gunicorn(f"deserializing {config_format} config from '{config_source}' failed: {e}")
 
     if not isinstance(config, dict):
-        eprint_and_exit_gunicorn(f"config from '{config_source}' is empty or not a dict")
+        return eprint_and_exit_gunicorn(f"config from '{config_source}' is empty or not a dict")
 
     return config
 
