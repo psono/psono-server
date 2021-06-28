@@ -62,10 +62,10 @@ def get_home_path():
 ENV_VAR_SERVER_SETTING_BASE64 = 'PSONO_SERVER_SETTING_BASE64'
 ENV_VAR_SERVER_SETTING_TOML_BASE64 = 'PSONO_SERVER_SETTING_TOML_BASE64'
 
-def deserialize_config(raw, format):
-    if format == "yaml":
+def deserialize_config(raw: str, config_format: str) -> dict:
+    if config_format == "yaml":
         config = yaml.safe_load(raw)
-    elif format == "toml":
+    elif config_format == "toml":
         config = toml.loads(raw)
     else:
         raise Exception("unknown config format")
@@ -78,7 +78,7 @@ def load_config(config_path: str):
 
     if settings_override:
         try:
-            config_raw = base64.b64decode(settings_override)
+            config_raw = base64.b64decode(settings_override).decode()
         except Exception as e:
             return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_BASE64} base64 decoding failed: {e}")
 
@@ -86,7 +86,7 @@ def load_config(config_path: str):
         config_format = "yaml"
     elif settings_override_toml:
         try:
-            config_raw = base64.b64decode(settings_override_toml)
+            config_raw = base64.b64decode(settings_override_toml).decode()
         except Exception as e:
             return eprint_and_exit_gunicorn(f"{ENV_VAR_SERVER_SETTING_TOML_BASE64} base64 decoding failed: {e}")
 
