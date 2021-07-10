@@ -9,7 +9,7 @@ from  more_itertools import unique_everseen
 import json
 
 from ..permissions import IsAuthenticated
-from ..utils import decrypt_with_db_secret, gcs_delete, aws_delete, do_delete, backblaze_delete, s3_delete
+from ..utils import decrypt_with_db_secret, gcs_delete, aws_delete, azure_blob_delete, do_delete, backblaze_delete, s3_delete
 
 from ..app_settings import (
     MoveFileLinkSerializer,
@@ -143,6 +143,8 @@ class FileLinkView(GenericAPIView):
                         gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], c.hash_checksum)
                     if file_repository_type == 'aws_s3':
                         aws_delete(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], c.hash_checksum)
+                    if file_repository_type == 'azure_blob':
+                        azure_blob_delete(data['azure_blob_storage_account_name'], data['azure_blob_storage_account_primary_key'], data['azure_blob_storage_account_container_name'], c.hash_checksum)
                     if file_repository_type == 'do_spaces':
                         do_delete(data['do_space'], data['do_region'], data['do_key'], data['do_secret'], c.hash_checksum)
                     if file_repository_type == 'backblaze':

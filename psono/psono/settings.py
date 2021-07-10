@@ -490,6 +490,7 @@ CREDIT_HANDLER_ENABLED = str(config_get('CREDIT_HANDLER_ENABLED', True)).lower()
 FILES_ENABLED = str(config_get('FILES_ENABLED', True)).lower() == 'true'
 
 FILE_REPOSITORY_TYPES = [
+    'azure_blob',
     'gcp_cloud_storage',
     'aws_s3',
     'do_spaces',

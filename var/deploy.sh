@@ -8,7 +8,7 @@ docker tag psono-docker.jfrog.io/psono/psono-server:latest psono/psono-server:la
 docker push psono/psono-server:latest
 
 # Inform production stage about new image
-curl -X POST https://hooks.microbadger.com/images/psono/psono-server/8BDLpDMSMHR-Ias4JAPRhy0f-cg=
+curl -X POST https://hooks.microbadger.com/images/psono/psono-server/8BDLpDMSMHR-Ias4JAPRhy0f-cg= || true
 
 # Deploy to GitHub
 echo "Cloning gitlab.com/psono/psono-server.git"

@@ -3,6 +3,7 @@ from .yubikey import *
 from .duo import *
 from .gcp import *
 from .aws import *
+from .azure_blob import *
 from .do import *
 from .backblaze import *
 from .s3 import *
