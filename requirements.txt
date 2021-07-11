@@ -330,7 +330,7 @@ cffi==1.13.2
     #   pynacl
 chardet==3.0.4
     # via requests
-cryptography==3.4.7
+cryptography==3.3.2
     # via
     #   adal
     #   azure-cosmosdb-table
@@ -536,6 +536,7 @@ scrypt==0.8.13
 six==1.14.0
     # via
     #   bcrypt
+    #   cryptography
     #   django-anymail
     #   django-rest-auth
     #   duo-client
