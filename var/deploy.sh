@@ -7,6 +7,10 @@ docker pull psono-docker.jfrog.io/psono/psono-server:latest
 docker tag psono-docker.jfrog.io/psono/psono-server:latest psono/psono-server:latest
 docker push psono/psono-server:latest
 
+export docker_version_tag=$(echo $CI_COMMIT_TAG | awk  '{ string=substr($0, 2, 100); print string; }' )
+docker tag psono-docker.jfrog.io/psono/psono-server:latest psono/psono-server:$docker_version_tag
+docker push psono/psono-server:$docker_version_tag
+
 # Deploy to GitHub
 echo "Cloning gitlab.com/psono/psono-server.git"
 git clone https://gitlab.com/psono/psono-server.git
