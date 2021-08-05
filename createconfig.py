@@ -13,7 +13,7 @@ def get_config_vars():
         'NGINX_HEADER_X_FRAME_OPTIONS': os.environ.get('NGINX_HEADER_X_FRAME_OPTIONS', 'DENY'),
         'NGINX_HEADER_X_CONTENT_TYPE_OPTIONS': os.environ.get('NGINX_HEADER_X_CONTENT_TYPE_OPTIONS', 'nosniff'),
         'NGINX_HEADER_X_XSS_PROTECTION': os.environ.get('NGINX_HEADER_X_XSS_PROTECTION', '"1; mode=block"'),
-        'NGINX_HEADER_CONTENT_SECURITY_POLICY': os.environ.get('NGINX_HEADER_CONTENT_SECURITY_POLICY', '''"default-src 'none'; manifest-src 'self'; connect-src 'self' https://keyserver.ubuntu.com https://storage.googleapis.com https://*.s3.amazonaws.com https://*.digitaloceanspaces.com https://api.pwnedpasswords.com https://sentry.io; font-src 'self'; img-src 'self' www.google-analytics.com data:; script-src 'self' www.google-analytics.com; style-src 'self' 'unsafe-inline'; object-src 'self'; form-action 'self'"'''),
+        'NGINX_HEADER_CONTENT_SECURITY_POLICY': os.environ.get('NGINX_HEADER_CONTENT_SECURITY_POLICY', '''"default-src 'none'; manifest-src 'self'; connect-src 'self' https://keyserver.ubuntu.com https://storage.googleapis.com https://*.blob.core.windows.net https://*.s3.amazonaws.com https://*.digitaloceanspaces.com https://api.pwnedpasswords.com https://sentry.io; font-src 'self'; img-src 'self' www.google-analytics.com data:; script-src 'self' www.google-analytics.com; style-src 'self' 'unsafe-inline'; object-src 'self'; form-action 'self'"'''),
     }
 
     return config_vars

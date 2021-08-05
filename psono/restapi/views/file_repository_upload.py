@@ -15,7 +15,15 @@ from ..app_settings import (
 
 from ..models import File_Chunk
 
-from ..utils import decrypt_with_db_secret, gcs_construct_signed_upload_url, aws_construct_signed_upload_url, do_construct_signed_upload_url, backblaze_construct_signed_upload_url, s3_construct_signed_upload_url
+from ..utils import (
+    decrypt_with_db_secret,
+    gcs_construct_signed_upload_url,
+    aws_construct_signed_upload_url,
+    azure_blob_construct_signed_upload_url,
+    do_construct_signed_upload_url,
+    backblaze_construct_signed_upload_url,
+    s3_construct_signed_upload_url,
+)
 from ..authentication import FileTransferAuthentication
 
 
@@ -78,6 +86,8 @@ class FileRepositoryUploadView(GenericAPIView):
             base_url, query_params = gcs_construct_signed_upload_url(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], hash_checksum)
             # create an url that contains all the url encoded params
             url = base_url + "?" + urllib.parse.urlencode(query_params)
+        elif file_transfer.file_repository.type == 'azure_blob':
+            url = azure_blob_construct_signed_upload_url(data['azure_blob_storage_account_name'], data['azure_blob_storage_account_primary_key'], data['azure_blob_storage_account_container_name'], hash_checksum)
         elif file_transfer.file_repository.type == 'aws_s3':
             url_and_fields = aws_construct_signed_upload_url(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], hash_checksum)
             url = url_and_fields['url']

@@ -22,6 +22,11 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
     aws_s3_region = serializers.CharField(required=False)
     aws_s3_access_key_id = serializers.CharField(required=False)
     aws_s3_secret_access_key = serializers.CharField(required=False)
+
+    azure_blob_storage_account_name = serializers.CharField(required=False)
+    azure_blob_storage_account_primary_key = serializers.CharField(required=False)
+    azure_blob_storage_account_container_name = serializers.CharField(required=False)
+
     other_s3_bucket = serializers.CharField(required=False)
     other_s3_region = serializers.CharField(required=False)
     other_s3_access_key_id = serializers.CharField(required=False)
@@ -47,6 +52,9 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         aws_s3_region = attrs.get('aws_s3_region', '').strip()
         aws_s3_access_key_id = attrs.get('aws_s3_access_key_id', '').strip()
         aws_s3_secret_access_key = attrs.get('aws_s3_secret_access_key', '').strip()
+        azure_blob_storage_account_name = attrs.get('azure_blob_storage_account_name', '').strip()
+        azure_blob_storage_account_primary_key = attrs.get('azure_blob_storage_account_primary_key', '').strip()
+        azure_blob_storage_account_container_name = attrs.get('azure_blob_storage_account_container_name', '').strip()
         other_s3_bucket = attrs.get('other_s3_bucket', '').strip()
         other_s3_region = attrs.get('other_s3_region', '').strip()
         other_s3_access_key_id = attrs.get('other_s3_access_key_id', '').strip()
@@ -118,6 +126,26 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
                 'aws_s3_region': aws_s3_region,
                 'aws_s3_access_key_id': aws_s3_access_key_id,
                 'aws_s3_secret_access_key': aws_s3_secret_access_key,
+            }
+
+        if type == 'azure_blob':
+
+            if not azure_blob_storage_account_name:
+                msg = _("ACCOUNT_NAME_IS_REQUIRED")
+                raise exceptions.ValidationError(msg)
+
+            if not azure_blob_storage_account_primary_key:
+                msg = _("PRIMARY_KEY_IS_REQUIRED")
+                raise exceptions.ValidationError(msg)
+
+            if not azure_blob_storage_account_container_name:
+                msg = _("CONTAINER_NAME_IS_REQUIRED")
+                raise exceptions.ValidationError(msg)
+
+            data = {
+                'azure_blob_storage_account_name': azure_blob_storage_account_name,
+                'azure_blob_storage_account_primary_key': azure_blob_storage_account_primary_key,
+                'azure_blob_storage_account_container_name': azure_blob_storage_account_container_name,
             }
 
         if type == 'other_s3':

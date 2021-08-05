@@ -16,12 +16,9 @@ class FileRepositoryUploadSerializer(serializers.Serializer):
 
         file_transfer = self.context['request'].auth
 
-        chunk_size_limit = 128 * 1024 * 1024 + 40
+        chunk_size_limit = 128 * 1024 * 1024
         if chunk_size > chunk_size_limit:
             msg = _("Chunk size exceeds limit.")
-            raise exceptions.ValidationError(msg)
-        if chunk_size < 40:
-            msg = _("Chunk size too small.")
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
