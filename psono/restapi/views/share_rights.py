@@ -56,7 +56,7 @@ class ShareRightsView(GenericAPIView):
 
         own_share_rights = calculate_user_rights_on_share(request.user.id, share_id)
 
-        if not own_share_rights['grant']:
+        if not any([own_share_rights['read'], own_share_rights['write'], own_share_rights['grant']]):
 
             raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
