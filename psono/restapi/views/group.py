@@ -69,62 +69,61 @@ class GroupView(GenericAPIView):
 
     def get_group_details(self, request, membership):
 
-            members = []
-            if membership.accepted:
-                for m in membership.group.members.all():
-                    members.append({
-                        'id': m.user.id,
-                        'membership_id': m.id,
-                        'name': m.user.username,
-                        'public_key': m.user.public_key,
-                        'group_admin': m.group_admin,
-                        'share_admin': m.share_admin,
-                        'accepted': m.accepted,
-                    })
+        members = []
+        if membership.accepted:
+            for m in membership.group.members.all():
+                members.append({
+                    'id': m.user.id,
+                    'membership_id': m.id,
+                    'name': m.user.username,
+                    'public_key': m.user.public_key,
+                    'group_admin': m.group_admin,
+                    'share_admin': m.share_admin,
+                    'accepted': m.accepted,
+                })
 
-            group_share_rights = []
+        group_share_rights = []
 
-            if membership.accepted:
-                for s in membership.group.group_share_rights.all():
-                    group_share_rights.append({
-                        'id': s.id,
-                        'share_id': s.share_id,
-                        'title': s.title,
-                        'title_nonce': s.title_nonce,
-                        'type': s.type,
-                        'type_nonce': s.type_nonce,
-                        'key': s.key,
-                        'key_nonce': s.key_nonce,
-                        'read': s.read,
-                        'write': s.write,
-                        'grant': s.grant,
-                    })
+        if membership.accepted:
+            for s in membership.group.group_share_rights.all():
+                group_share_rights.append({
+                    'id': s.id,
+                    'share_id': s.share_id,
+                    'title': s.title,
+                    'title_nonce': s.title_nonce,
+                    'type': s.type,
+                    'type_nonce': s.type_nonce,
+                    'key': s.key,
+                    'key_nonce': s.key_nonce,
+                    'read': s.read,
+                    'write': s.write,
+                    'grant': s.grant,
+                })
 
-            response = {
-                'group_id': membership.group_id,
-                'name': membership.group.name,
-                'public_key': membership.group.public_key,
-                'group_admin': membership.group_admin,
-                'share_admin': membership.share_admin,
-                'accepted': membership.accepted,
-            }
+        response = {
+            'group_id': membership.group_id,
+            'name': membership.group.name,
+            'public_key': membership.group.public_key,
+            'group_admin': membership.group_admin,
+            'share_admin': membership.share_admin,
+            'accepted': membership.accepted,
+        }
 
-            if membership.accepted:
-                response['secret_key'] = membership.secret_key
-                response['secret_key_nonce'] = membership.secret_key_nonce
-                response['secret_key_type'] = membership.secret_key_type
-                response['private_key'] = membership.private_key
-                response['private_key_nonce'] = membership.private_key_nonce
-                response['private_key_type'] = membership.private_key_type
-                response['members'] = members
-                response['group_share_rights'] = group_share_rights
+        if membership.accepted:
+            response['secret_key'] = membership.secret_key
+            response['secret_key_nonce'] = membership.secret_key_nonce
+            response['secret_key_type'] = membership.secret_key_type
+            response['private_key'] = membership.private_key
+            response['private_key_nonce'] = membership.private_key_nonce
+            response['private_key_type'] = membership.private_key_type
+            response['members'] = members
+            response['group_share_rights'] = group_share_rights
 
-            if membership.accepted is None:
-                response['user_id'] = membership.creator.id if membership.creator is not None else ''
-                response['user_username'] = membership.creator.username if membership.creator is not None else ''
+        if membership.accepted is None:
+            response['user_id'] = membership.creator.id if membership.creator is not None else ''
+            response['user_username'] = membership.creator.username if membership.creator is not None else ''
 
-            return response
-
+        return response
 
 
     def get(self, request, group_id = None, *args, **kwargs):
