@@ -70,7 +70,7 @@ class GroupView(GenericAPIView):
     def get_group_details(self, request, membership):
 
             members = []
-            if membership.group_admin and membership.accepted:
+            if membership.accepted:
                 for m in membership.group.members.all():
                     members.append({
                         'id': m.user.id,
@@ -81,16 +81,6 @@ class GroupView(GenericAPIView):
                         'share_admin': m.share_admin,
                         'accepted': m.accepted,
                     })
-            else:
-                members.append({
-                    'id': request.user.id,
-                    'membership_id': membership.id,
-                    'name': request.user.username,
-                    'public_key': request.user.public_key,
-                    'group_admin': membership.group_admin,
-                    'share_admin': membership.share_admin,
-                    'accepted': membership.accepted,
-                })
 
             group_share_rights = []
 
