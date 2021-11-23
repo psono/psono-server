@@ -66,40 +66,44 @@ class UserUpdateSerializer(serializers.Serializer):
 
     def validate_private_key(self, value):
 
-        value = value.strip()
+        if value is not None:
+            value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('private_key must be in hex representation')
-            raise exceptions.ValidationError(msg)
+            if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+                msg = _('private_key must be in hex representation')
+                raise exceptions.ValidationError(msg)
 
         return value
 
     def validate_secret_key_nonce(self, value):
 
-        value = value.strip()
+        if value is not None:
+            value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('secret_key_nonce must be in hex representation')
-            raise exceptions.ValidationError(msg)
+            if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+                msg = _('secret_key_nonce must be in hex representation')
+                raise exceptions.ValidationError(msg)
 
         return value
 
     def validate_secret_key(self, value):
 
-        value = value.strip()
+        if value is not None:
+            value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('secret_key must be in hex representation')
-            raise exceptions.ValidationError(msg)
+            if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+                msg = _('secret_key must be in hex representation')
+                raise exceptions.ValidationError(msg)
 
         return value
 
     def validate_private_key_nonce(self, value):
 
-        value = value.strip()
+        if value is not None:
+            value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('private_key_nonce must be in hex representation')
-            raise exceptions.ValidationError(msg)
+            if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
+                msg = _('private_key_nonce must be in hex representation')
+                raise exceptions.ValidationError(msg)
 
         return value
