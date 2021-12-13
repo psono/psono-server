@@ -354,7 +354,7 @@ django-redis==4.10.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
-django==2.2.24
+django==2.2.25
     # via
     #   -r requirements.in
     #   django-allauth
