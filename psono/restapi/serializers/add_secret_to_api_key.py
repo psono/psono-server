@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, exceptions
 
 from ..fields import UUIDField
-from ..models import API_Key, Secret
+from ..models import API_Key, Secret, API_Key_Secret
 from ..utils import user_has_rights_on_secret
 
 class AddSecretToAPIKeySerializer(serializers.Serializer):
@@ -73,6 +73,10 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
             secret = Secret.objects.get(pk=secret_id)
         except Secret.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
+        if API_Key_Secret.objects.filter(api_key_id=api_key_id, secret_id=secret_id).exists():
+            msg = "API_KEY_SECRET_ALREADY_EXIST"
             raise exceptions.ValidationError(msg)
 
 
