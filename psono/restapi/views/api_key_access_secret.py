@@ -10,6 +10,7 @@ import nacl.utils
 import json
 import requests
 
+from ..renderers import PlainJSONRenderer
 from ..models import (
     Secret_History,
 )
@@ -21,7 +22,7 @@ from ..app_settings import (
 
 class APIKeyAccessSecretView(GenericAPIView):
 
-    renderer_classes = (StaticHTMLRenderer,)
+    renderer_classes = (PlainJSONRenderer,)
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 

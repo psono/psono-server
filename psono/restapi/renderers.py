@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import nacl.encoding
 import nacl.utils
 import nacl.secret
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 
 from rest_framework.settings import api_settings
 from rest_framework.utils import encoders
@@ -38,6 +38,12 @@ def encrypt(secret_key, msg):
     text_hex = nacl.encoding.HexEncoder.encode(text)
 
     return {'text': text_hex, 'nonce': nonce_hex}
+
+
+class PlainJSONRenderer(StaticHTMLRenderer):
+    media_type = 'application/json'
+    format = 'json'
+    charset = 'utf-8'
 
 
 class EncryptJSONRenderer(JSONRenderer):
