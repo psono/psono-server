@@ -39,4 +39,8 @@ if settings.MANAGEMENT_ENABLED:
         url(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='admin_group'),
         url(r'^group/$', views.GroupView.as_view(), name='admin_group'),
         url(r'^membership/$', views.MembershipView.as_view(), name='admin_membership'),
+        url(r'^stats/browser/$', views.StatsBrowserView.as_view(), name='stats_browser'),
+        url(r'^stats/device/$', views.StatsDeviceView.as_view(), name='stats_device'),
+        url(r'^stats/os/$', views.StatsOsView.as_view(), name='stats_os'),
+        url(r'^stats/two-factor/$', views.StatsTwoFactorView.as_view(), name='stats_two_factor'),
     ]

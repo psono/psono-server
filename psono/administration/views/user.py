@@ -1,16 +1,18 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from django.core.paginator import Paginator
 
 from ..app_settings import (
+    ReadUserSerializer,
     DeleteUserSerializer, UpdateUserSerializer, CreateUserSerializer
 )
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
-from restapi.utils import decrypt_with_db_secret, create_user
+from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
 
 import secrets
 import string
@@ -141,8 +143,16 @@ class UserView(GenericAPIView):
         :return:
         :rtype:
         """
-        if user_id:
 
+        serializer = ReadUserSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_id:
 
             user_info = self.get_user_info(user_id)
 
@@ -156,24 +166,43 @@ class UserView(GenericAPIView):
             recovery_codes = Recovery_Code.objects.filter(user = OuterRef('pk')).only('id')
             emergency_codes = Emergency_Code.objects.filter(user = OuterRef('pk')).only('id')
 
+            page = serializer.validated_data.get('page')
+            page_size = serializer.validated_data.get('page_size')
+            ordering = serializer.validated_data.get('ordering')
+            search = serializer.validated_data.get('search')
+
+            user_qs = User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
+                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled')
+
+            if search:
+                user_qs = user_qs.filter(Q(username__icontains=search) | Q(email_bcrypt=get_static_bcrypt_hash_from_email(search)))
+            if ordering:
+                user_qs = user_qs.order_by(ordering)
+
+            count = None
+            if page_size:
+                paginator = Paginator(user_qs, page_size)
+                count = paginator.count
+                chosen_page = paginator.page(page)
+                user_qs = chosen_page.object_list
 
             users = []
-            for u in  User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
-                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled').order_by('-create_date'):
+            for u in  user_qs:
                 users.append({
                     'id': u.id,
                     'create_date': u.create_date,
                     'username': u.username,
                     'is_active': u.is_active,
                     'is_email_active': u.is_email_active,
-                    'duo_2fa': u.duo_enabled,
-                    'ga_2fa': u.google_authenticator_enabled,
-                    'yubikey_2fa': u.yubikey_otp_enabled,
-                    'recovery_code': u.recovery_code_exist,
-                    'emergency_code': u.emergency_code_exist,
+                    'duo_enabled': u.duo_enabled,
+                    'google_authenticator_enabled': u.google_authenticator_enabled,
+                    'yubikey_otp_enabled': u.yubikey_otp_enabled,
+                    'recovery_code_exist': u.recovery_code_exist,
+                    'emergency_code_exist': u.emergency_code_exist,
                 })
 
             return Response({
+                'count': count,
                 'users': users
             }, status=status.HTTP_200_OK)
 

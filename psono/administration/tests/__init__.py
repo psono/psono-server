@@ -4,6 +4,10 @@ from .ga import *
 from .yubikey import *
 from .user import *
 from .session import *
+from .stats_browser import *
+from .stats_device import *
+from .stats_os import *
+from .stats_two_factor import *
 from .info import *
 from .group import *
 from .membership import *
