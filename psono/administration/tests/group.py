@@ -99,7 +99,7 @@ class ReadGroupTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_read_specific_group_failure_no_admin_rights(self):
