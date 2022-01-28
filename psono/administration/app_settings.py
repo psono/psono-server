@@ -3,7 +3,9 @@ from django.conf import settings
 from importlib import import_module
 
 from .serializers import (
+    ReadSessionSerializer as DefaultReadSessionSerializer,
     DeleteSessionSerializer as DefaultDeleteSessionSerializer,
+    ReadUserSerializer as DefaultReadUserSerializer,
     DeleteUserSerializer as DefaultDeleteUserSerializer,
     UpdateUserSerializer as DefaultUpdateUserSerializer,
     CreateUserSerializer as DefaultCreateUserSerializer,
@@ -11,6 +13,7 @@ from .serializers import (
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
+    ReadGroupSerializer as DefaultReadGroupSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
     DeleteRecoveryCodeSerializer as DefaultDeleteRecoveryCodeSerializer,
     DeleteEmergencyCodeSerializer as DefaultDeleteEmergencyCodeSerializer,
@@ -25,8 +28,16 @@ def import_callable(path_or_callable):
 
 serializers = getattr(settings, 'ADMIN_SERIALIZERS', {})
 
+ReadSessionSerializer = import_callable(
+    serializers.get('READ_SESSION_SERIALIZER', DefaultReadSessionSerializer)
+)
+
 DeleteSessionSerializer = import_callable(
     serializers.get('DELETE_SESSION_SERIALIZER', DefaultDeleteSessionSerializer)
+)
+
+ReadUserSerializer = import_callable(
+    serializers.get('READ_USER_SERIALIZER', DefaultReadUserSerializer)
 )
 
 DeleteUserSerializer = import_callable(
@@ -55,6 +66,10 @@ DeleteGASerializer = import_callable(
 
 DeleteGroupSerializer = import_callable(
     serializers.get('DELETE_GROUP_SERIALIZER', DefaultDeleteGroupSerializer)
+)
+
+ReadGroupSerializer = import_callable(
+    serializers.get('READ_GROUP_SERIALIZER', DefaultReadGroupSerializer)
 )
 
 DeleteMembershipSerializer = import_callable(

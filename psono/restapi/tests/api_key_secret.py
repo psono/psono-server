@@ -136,6 +136,35 @@ class CreateApiKeySecretTest(APITestCaseExtended):
 
         self.assertEqual(models.API_Key_Secret.objects.count(), 1)
 
+    def test_create_failure_duplicate(self):
+        """
+        Tests to create an api key secret twice, producing a duplicate
+        """
+
+        url = reverse('api_key_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id,
+            'secret_key': 'a123',
+            'secret_key_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+            'title': 'a123',
+            'title_nonce': 'B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(models.API_Key_Secret.objects.count(), 1)
+
+
+        # and now the duplicate
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.API_Key_Secret.objects.count(), 1)
+
 
     def test_create_failure_no_title(self):
         """

@@ -2,6 +2,10 @@ from .user import UserView
 from .info import InfoView
 from .security_report import SecurityReportView
 from .session import SessionView
+from .stats_browser import StatsBrowserView
+from .stats_device import StatsDeviceView
+from .stats_os import StatsOsView
+from .stats_two_factor import StatsTwoFactorView
 from .duo import DuoView
 from .ga import GaView
 from .yubikey import YubikeyOTPView

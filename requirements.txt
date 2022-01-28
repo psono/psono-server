@@ -336,11 +336,12 @@ cryptography==3.3.2
     #   azure-cosmosdb-table
     #   azure-keyvault
     #   azure-storage-common
+    #   pyjwt
 defusedxml==0.6.0
     # via python3-openid
 dj-database-url==0.5.0
     # via -r requirements.in
-django-allauth==0.41.0
+django-allauth==0.47.0
     # via -r requirements.in
 django-anymail==7.0.0
     # via -r requirements.in
@@ -354,7 +355,7 @@ django-redis==4.10.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
-django==2.2.24
+django==2.2.26
     # via
     #   -r requirements.in
     #   django-allauth
@@ -487,8 +488,10 @@ pycparser==2.20
     # via cffi
 pycryptodomex==3.9.7
     # via -r requirements.in
-pyjwt==2.1.0
-    # via adal
+pyjwt[crypto]==2.1.0
+    # via
+    #   adal
+    #   django-allauth
 pynacl==1.3.0
     # via -r requirements.in
 pyotp==2.3.0

@@ -1,8 +1,12 @@
+from django.db.models import F, Q
+from django.core.paginator import Paginator
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
+    ReadSessionSerializer,
     DeleteSessionSerializer
 )
 
@@ -17,7 +21,7 @@ class SessionView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
         Returns a list of all sessions
 
@@ -29,8 +33,37 @@ class SessionView(GenericAPIView):
         :rtype:
         """
 
+        serializer = ReadSessionSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        page = serializer.validated_data.get('page')
+        page_size = serializer.validated_data.get('page_size')
+        ordering = serializer.validated_data.get('ordering')
+        search = serializer.validated_data.get('search')
+
+        session_qs = Token.objects.select_related('user').annotate(username=F('user__username'))\
+            .filter(valid_till__gt=timezone.now())\
+            .only('id', 'create_date', 'user__username', 'active', 'valid_till', 'device_description', 'device_fingerprint')
+
+        if search:
+            session_qs = session_qs.filter(Q(user__username__icontains=search) | Q(device_description__icontains=search))
+        if ordering:
+            session_qs = session_qs.order_by(ordering)
+
+        count = None
+        if page_size:
+            paginator = Paginator(session_qs, page_size)
+            count = paginator.count
+            chosen_page = paginator.page(page)
+            session_qs = chosen_page.object_list
+
         sessions = []
-        for u in  Token.objects.select_related('user').only('id', 'create_date', 'user__username', 'active', 'valid_till', 'device_description', 'device_fingerprint').order_by('-create_date'):
+        for u in  session_qs:
             sessions.append({
                 'id': u.id,
                 'create_date': u.create_date,
@@ -42,6 +75,7 @@ class SessionView(GenericAPIView):
             })
 
         return Response({
+            'count': count,
             'sessions': sessions
         }, status=status.HTTP_200_OK)
 
