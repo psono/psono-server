@@ -22,7 +22,7 @@ scrypt==0.8.13
 raven==6.10.0
 requests==2.27.1
 pycryptodomex==3.9.7
-boto3==1.12.36
+boto3==1.20.46
 django-postgrespool2==1.0.1
 dj-database-url==0.5.0
 toml==0.10.2
