@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from restapi.models import Fileserver_Shard
 import sys
+from typing import List
 
 
 def create_shard(title: str, description: str, fix_shard_id=None) -> dict:
@@ -20,7 +21,7 @@ def create_shard(title: str, description: str, fix_shard_id=None) -> dict:
 
 class Command(BaseCommand):
     help = 'Creates a shard'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def add_arguments(self, parser):
         parser.add_argument('title', nargs='+')

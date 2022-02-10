@@ -1,5 +1,5 @@
 from rest_framework import serializers, exceptions
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from ..utils import user_has_rights_on_secret

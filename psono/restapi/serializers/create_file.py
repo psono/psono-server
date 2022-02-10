@@ -1,4 +1,3 @@
-from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers, exceptions
@@ -33,7 +32,7 @@ class CreateFileSerializer(serializers.Serializer):
 
 
         if shard_id is None and file_repository_id is None:
-            msg = _("SELECT_EITHER_SHARD_OR_REPOSITORY")
+            msg = "SELECT_EITHER_SHARD_OR_REPOSITORY"
             raise exceptions.ValidationError(msg)
 
 
@@ -54,11 +53,11 @@ class CreateFileSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
         if parent_share_id is None and parent_datastore_id is None:
-            msg = _("Either parent share or datastore need to be specified.")
+            msg = "Either parent share or datastore need to be specified."
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None and parent_datastore_id is not None:
-            msg = _("Either parent share or datastore need to be specified, not both.")
+            msg = "Either parent share or datastore need to be specified, not both."
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:
@@ -87,14 +86,14 @@ class CreateFileSerializer(serializers.Serializer):
                     break
 
             if not cmsl_available:
-                msg = _("NO_FILESERVER_AVAILABLE")
+                msg = "NO_FILESERVER_AVAILABLE"
                 raise exceptions.ValidationError(msg)
 
             if settings.SHARD_CREDIT_COSTS_UPLOAD > 0:
                 credit = settings.SHARD_CREDIT_COSTS_UPLOAD * size / 1024 / 1024 / 1024
 
             if credit > 0 and self.context['request'].user.credit < credit:
-                msg = _("INSUFFICIENT_FUNDS")
+                msg = "INSUFFICIENT_FUNDS"
                 raise exceptions.ValidationError(msg)
 
         attrs['shard'] = shard

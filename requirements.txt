@@ -10,6 +10,8 @@ adal==1.2.7
     # via
     #   azure-datalake-store
     #   msrestazure
+asgiref==3.4.1
+    # via django
 azure-applicationinsights==0.1.0
     # via azure
 azure-batch==4.1.3
@@ -310,9 +312,9 @@ azure==4.0.0
     # via -r requirements.in
 bcrypt==3.1.7
     # via -r requirements.in
-boto3==1.20.46
+boto3==1.20.52
     # via -r requirements.in
-botocore==1.23.46
+botocore==1.23.52
     # via
     #   boto3
     #   s3transfer
@@ -345,7 +347,7 @@ django-allauth==0.47.0
     # via -r requirements.in
 django-anymail==7.0.0
     # via -r requirements.in
-django-cors-headers==3.2.0
+django-cors-headers==3.10.1
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
@@ -355,7 +357,7 @@ django-redis==4.10.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
-django==2.2.26
+django==3.2.12
     # via
     #   -r requirements.in
     #   django-allauth
@@ -366,7 +368,7 @@ django==2.2.26
     #   django-redis
     #   django-rest-auth
     #   djangorestframework
-djangorestframework==3.12.1
+djangorestframework==3.13.1
     # via
     #   -r requirements.in
     #   django-rest-auth
@@ -504,7 +506,9 @@ python-dateutil==2.8.0
 python3-openid==3.1.0
     # via django-allauth
 pytz==2019.3
-    # via django
+    # via
+    #   django
+    #   djangorestframework
 pyyaml==5.4.1
     # via -r requirements.in
 raven==6.10.0
@@ -552,6 +556,8 @@ sqlparse==0.3.1
     # via django
 toml==0.10.2
     # via -r requirements.in
+typing-extensions==4.0.1
+    # via asgiref
 urllib3==1.26.8
     # via
     #   botocore

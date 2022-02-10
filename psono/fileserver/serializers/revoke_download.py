@@ -1,12 +1,9 @@
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
 from rest_framework import serializers, exceptions
 
-from restapi.utils import get_cache
-from restapi.authentication import TokenAuthentication
-from restapi.models import Token, File_Transfer, File_Chunk, Fileserver_Cluster_Member_Shard_Link
+from restapi.models import File_Transfer, File_Chunk, Fileserver_Cluster_Member_Shard_Link
 from restapi.parsers import decrypt
 from restapi.fields import UUIDField
 
@@ -33,23 +30,23 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
                 only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
                 get(pk=file_transfer_id, type='download')
         except File_Transfer.DoesNotExist:
-            msg = _('Filetransfer does not exist.')
+            msg = 'Filetransfer does not exist.'
             raise exceptions.ValidationError(msg)
 
         if not file_transfer.user.is_active:
-            msg = _('User inactive.')
+            msg = 'User inactive.'
             raise exceptions.ValidationError(msg)
 
         try:
             ticket_json = decrypt(file_transfer.secret_key, ticket_encrypted, ticket_nonce)
         except:
-            msg = _('Malformed ticket. Decryption failed.')
+            msg = 'Malformed ticket. Decryption failed.'
             raise exceptions.ValidationError(msg)
 
         ticket = json.loads(ticket_json)
 
         if 'hash_checksum' not in ticket:
-            msg = _('Malformed ticket. Blake2b hash missing.')
+            msg = 'Malformed ticket. Blake2b hash missing.'
             raise exceptions.ValidationError(msg)
 
         hash_checksum = ticket['hash_checksum'].lower()
@@ -59,7 +56,7 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
                  shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
 
         if count_cmsl != 1:
-            msg = _('Permission denied.')
+            msg = 'Permission denied.'
             raise exceptions.ValidationError(msg)
 
         try:

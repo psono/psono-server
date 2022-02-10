@@ -1,11 +1,16 @@
-from ..utils import get_all_inherited_rights
+import os
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from ..permissions import IsAuthenticated
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.conf import settings
 
+from ..utils import get_all_inherited_rights, decrypt_with_db_secret
+from ..permissions import IsAuthenticated
+from email.mime.image import MIMEImage
 from ..models import (
     User_Share_Right,
     Group_Share_Right
@@ -176,6 +181,47 @@ class ShareRightView(GenericAPIView):
             if settings.CACHE_ENABLE:
                 cache_key = 'psono_user_status_' + str(serializer.validated_data['user'].id)
                 cache.delete(cache_key)
+
+
+            if not settings.DISABLE_EMAIL_NEW_SHARE_CREATED:
+                # send email
+                if settings.WEB_CLIENT_URL:
+                    pending_share_link = settings.WEB_CLIENT_URL + '/index.html#!/share/pendingshares'
+                else:
+                    pending_share_link = None
+
+                msg_plain = render_to_string('email/new_share_created.txt', {
+                    'pending_share_link': pending_share_link
+                })
+                msg_html = render_to_string('email/new_share_created.html', {
+                    'pending_share_link': pending_share_link
+                })
+
+
+                if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
+                    # SenndInBlue does not support inline attachments
+                    msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
+
+                msg = EmailMultiAlternatives('New entry shared', msg_plain, settings.EMAIL_FROM,
+                                             [decrypt_with_db_secret(serializer.validated_data['user'].email)])
+
+                msg.attach_alternative(msg_html, "text/html")
+                msg.mixed_subtype = 'related'
+
+                if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+                    for f in ['logo.png']:
+                        fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+
+                        msg_img = MIMEImage(fp.read())
+                        fp.close()
+                        msg_img.add_header('Content-ID', '<{}>'.format(f))
+                        msg.attach(msg_img)
+
+                try:
+                    msg.send()
+                except:  # nosec
+                    # Lets not fail share creation for failing emails e.g. due to a completely missing email config
+                    pass
 
         else:
             share_right = Group_Share_Right.objects.create(

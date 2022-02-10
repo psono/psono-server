@@ -6,6 +6,7 @@ from rest_framework import status
 from restapi import models
 from ..utils import readbuffer
 from .base import APITestCaseExtended
+from ..utils import encrypt_with_db_secret
 
 import random
 import string
@@ -346,7 +347,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
         self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
 
         self.test_user_obj = models.User.objects.create(
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
@@ -360,6 +361,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
         )
 
         self.test_user2_obj = models.User.objects.create(
+            email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
             authkey=make_password(self.test_authkey),
@@ -459,7 +461,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
         self.assertIsInstance(response.data.get('shares', False), list,
                               'Shares do not exist in list shares response')
         # Expect the share in response (even so it wasn't accepted yet)
-        self.assertEquals(len(response.data.get('shares', False)), 1,
+        self.assertEqual(len(response.data.get('shares', False)), 1,
                           'The should only be one share')
 
         # Then lets try to get it in the overview

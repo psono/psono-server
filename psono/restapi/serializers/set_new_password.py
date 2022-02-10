@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 
 from rest_framework import serializers, exceptions

@@ -1,10 +1,11 @@
 from django.core.management.base import BaseCommand
 from restapi.models import Fileserver_Shard
+from typing import List
 
 
 class Command(BaseCommand):
     help = 'Lists all shards'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def handle(self, *args, **options):
 

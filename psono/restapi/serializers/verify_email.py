@@ -1,9 +1,5 @@
 from ..utils import validate_activation_code
 
-from django.utils.http import urlsafe_base64_decode as uid_decoder
-
-from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers, exceptions
 
 
@@ -16,8 +12,7 @@ class VerifyEmailSerializeras(serializers.Serializer):
         user = validate_activation_code(activation_code)
 
         if not user:
-            # TODO Replace with ACTIVATION_CODE_INCORRECT
-            msg = _('Activation code incorrect or already activated.')
+            msg = 'ACTIVATION_CODE_INCORRECT'
             raise exceptions.ValidationError(msg)
         attrs['user'] = user
         attrs['activation_code'] = activation_code

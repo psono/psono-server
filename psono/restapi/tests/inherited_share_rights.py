@@ -3,12 +3,11 @@ from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
+from ..utils import readbuffer, encrypt_with_db_secret
 from restapi import models
 
 import random
 import string
-import os
 
 
 class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
@@ -45,7 +44,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         self.test_private_key_nonce3 = "4398a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
 
         self.test_user1_obj = models.User.objects.create(
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
             authkey=make_password(self.test_authkey),
@@ -59,7 +58,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         )
 
         self.test_user2_obj = models.User.objects.create(
-            email=self.test_email2,
+            email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
             authkey=make_password(self.test_authkey),
@@ -73,7 +72,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
         )
 
         self.test_user3_obj = models.User.objects.create(
-            email=self.test_email3,
+            email=encrypt_with_db_secret(self.test_email3),
             email_bcrypt=self.test_email_bcrypt3,
             username=self.test_username3,
             authkey=make_password(self.test_authkey),

@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('private_key_nonce', models.CharField(max_length=64, verbose_name='Private Key nonce')),
                 ('private_key_type', models.CharField(default=b'asymmetric', help_text='Key type of the private key, either "symmetric", or "asymmetric"', max_length=16, verbose_name='Private Key type')),
                 ('group_admin', models.BooleanField(default=False, help_text='Designates whether this user can invite other users to this group, and adjust other user rights', verbose_name='Group admin')),
-                ('accepted', models.NullBooleanField(default=None, help_text='Defines if the share has been accepted, declined, or still waits for approval', verbose_name='Accepted')),
+                ('accepted', models.BooleanField(default=None, null=True, help_text='Defines if the share has been accepted, declined, or still waits for approval', verbose_name='Accepted')),
                 ('creator', models.ForeignKey(help_text='The user who created this share right', null=True, on_delete=django.db.models.deletion.SET_NULL, to='restapi.User')),
             ],
             options={

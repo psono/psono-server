@@ -1,5 +1,5 @@
 Hello,
-One of your emergency codes has been armed. Description of the code::
+One of your emergency codes has been armed. Description of the code:
 {{ emergency_code_description }}
 
 The code will grant access to your account in:

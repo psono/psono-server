@@ -1,9 +1,9 @@
 cffi==1.13.2
-Django==2.2.26
-djangorestframework==3.12.1
+Django==3.2.12
+djangorestframework==3.13.1
 django-rest-auth==0.9.5
 django-allauth==0.47.0
-django-cors-headers==3.2.0
+django-cors-headers==3.10.1
 Markdown==3.1.1
 django-filter==2.4.0
 PyYAML==5.4.1
@@ -22,7 +22,7 @@ scrypt==0.8.13
 raven==6.10.0
 requests==2.27.1
 pycryptodomex==3.9.7
-boto3==1.20.46
+boto3==1.20.52
 django-postgrespool2==1.0.1
 dj-database-url==0.5.0
 toml==0.10.2

@@ -1,7 +1,5 @@
 import re
 
-from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers, exceptions
 
 from ..fields import UUIDField
@@ -22,7 +20,7 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Secret key must be in hex representation')
+            msg = 'Secret key must be in hex representation'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -32,7 +30,7 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Secret key nonce must be in hex representation')
+            msg = 'Secret key nonce must be in hex representation'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -42,7 +40,7 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Secret key must be in hex representation')
+            msg = 'Secret key must be in hex representation'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -52,7 +50,7 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Secret key nonce must be in hex representation')
+            msg = 'Secret key nonce must be in hex representation'
             raise exceptions.ValidationError(msg)
 
         return value

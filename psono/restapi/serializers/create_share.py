@@ -1,5 +1,3 @@
-from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 
@@ -26,7 +24,7 @@ class CreateShareSerializer(serializers.Serializer):
         parent_datastore = None
 
         if key_type not in ['asymmetric', 'symmetric']:
-            msg = _("Invalid Key Type")
+            msg = "Invalid Key Type"
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:
@@ -44,7 +42,7 @@ class CreateShareSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
         if parent_share is None and parent_datastore is None:
-            msg = _("Either parent share or datastore need to be specified.")
+            msg = "Either parent share or datastore need to be specified."
             raise exceptions.ValidationError(msg)
 
         attrs['parent_share_id'] = parent_share_id
