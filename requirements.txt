@@ -345,7 +345,7 @@ dj-database-url==0.5.0
     # via -r requirements.in
 django-allauth==0.47.0
     # via -r requirements.in
-django-anymail==7.0.0
+django-anymail==8.5
     # via -r requirements.in
 django-cors-headers==3.10.1
     # via -r requirements.in
@@ -536,13 +536,12 @@ requests==2.27.1
     #   yubico-client
 s3transfer==0.5.0
     # via boto3
-scrypt==0.8.13
+scrypt==0.8.19
     # via -r requirements.in
 six==1.14.0
     # via
     #   bcrypt
     #   cryptography
-    #   django-anymail
     #   django-rest-auth
     #   duo-client
     #   isodate
