@@ -393,6 +393,8 @@ DATABASE_POOL_ARGS = {
     'recycle': int(config_get('DATABASE_POOL_ARGS_RECYLCE', 300))
 }
 
+DISABLE_EMAIL_NEW_SHARE_CREATED = str(config_get('DISABLE_EMAIL_NEW_SHARE_CREATED', False)).lower() == 'true'
+
 
 EMAIL_FROM = config_get('EMAIL_FROM')
 EMAIL_HOST = config_get('EMAIL_HOST', 'localhost')

@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from restapi.models import Fileserver_Shard
+from typing import List
 
 
 def delete_shard(shard_id: str) -> dict:
@@ -23,7 +24,7 @@ def delete_shard(shard_id: str) -> dict:
 
 class Command(BaseCommand):
     help = 'Deletes a shard.'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def add_arguments(self, parser):
         parser.add_argument('shard_id', nargs='?')

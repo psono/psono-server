@@ -189,7 +189,7 @@ class Migration(migrations.Migration):
                 ('read', models.BooleanField(default=True, help_text='Designates whether this user has "read" rights and can read this share', verbose_name='Read right')),
                 ('write', models.BooleanField(default=False, help_text='Designates whether this user has "write" rights and can update this share', verbose_name='Write right')),
                 ('grant', models.BooleanField(default=False, help_text='Designates whether this user has "grant" rights and can re-share this share', verbose_name='Grant right')),
-                ('accepted', models.NullBooleanField(default=None, help_text='Defines if the share has been accepted, declined, or still waits for approval', verbose_name='Accepted')),
+                ('accepted', models.BooleanField(default=None, null=True, help_text='Defines if the share has been accepted, declined, or still waits for approval', verbose_name='Accepted')),
                 ('owner', models.ForeignKey(help_text='The guy who created this share right', on_delete=django.db.models.deletion.CASCADE, related_name='own_user_share_rights', to='restapi.User')),
                 ('share', models.ForeignKey(help_text='The share that this share right grants permissions to', on_delete=django.db.models.deletion.CASCADE, related_name='user_share_rights', to='restapi.Share')),
                 ('user', models.ForeignKey(help_text='The guy who will receive this share right', on_delete=django.db.models.deletion.CASCADE, related_name='foreign_user_share_rights', to='restapi.User')),

@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from restapi.models import Fileserver_Cluster_Shard_Link
 import sys
+from typing import List
 
 
 def link_shard(cluster_id: str, shard_id: str, permission: str, fix_link_id=None) -> dict:
@@ -38,7 +39,7 @@ def link_shard(cluster_id: str, shard_id: str, permission: str, fix_link_id=None
 
 class Command(BaseCommand):
     help = 'Links a shard to a cluster'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def add_arguments(self, parser):
         parser.add_argument('cluster_id', nargs='?')

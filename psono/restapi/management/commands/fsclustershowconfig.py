@@ -4,6 +4,7 @@ import nacl.encoding
 from nacl.public import PrivateKey
 import string
 import secrets
+from typing import List
 
 from restapi.models import Fileserver_Cluster
 from restapi.utils import decrypt_with_db_secret
@@ -54,7 +55,7 @@ def show_cluster_config(cluster_id: str) -> dict:
 
 class Command(BaseCommand):
     help = 'Shows the config of cluster members.'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def add_arguments(self, parser):
         parser.add_argument('cluster_id', nargs='?')

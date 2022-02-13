@@ -1,4 +1,3 @@
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
@@ -34,42 +33,42 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
                 only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
                 get(pk=file_transfer_id, type='upload')
         except File_Transfer.DoesNotExist:
-            msg = _('Filetransfer does not exist.')
+            msg = 'Filetransfer does not exist.'
             raise exceptions.ValidationError(msg)
 
         if not file_transfer.user.is_active:
-            msg = _('User inactive.')
+            msg = 'User inactive.'
             raise exceptions.ValidationError(msg)
 
         try:
             ticket_json = decrypt(file_transfer.secret_key, ticket_encrypted, ticket_nonce)
         except:
-            msg = _('Malformed ticket. Decryption failed.')
+            msg = 'Malformed ticket. Decryption failed.'
             raise exceptions.ValidationError(msg)
 
         ticket = json.loads(ticket_json)
 
         if 'chunk_position' not in ticket:
-            msg = _('Malformed ticket. Chunk Position missing.')
+            msg = 'Malformed ticket. Chunk Position missing.'
             raise exceptions.ValidationError(msg)
 
         if 'hash_checksum' not in ticket:
-            msg = _('Malformed ticket. Blake2b hash missing.')
+            msg = 'Malformed ticket. Blake2b hash missing.'
             raise exceptions.ValidationError(msg)
 
         chunk_size_limit = 128 * 1024 * 1024 + 40
         if chunk_size > chunk_size_limit:
-            msg = _("Chunk size exceeds limit.")
+            msg = "Chunk size exceeds limit."
             raise exceptions.ValidationError(msg)
         if chunk_size < 40:
-            msg = _("Chunk size too small.")
+            msg = "Chunk size too small."
             raise exceptions.ValidationError(msg)
 
         chunk_position = ticket['chunk_position']
         hash_checksum_ticket = ticket['hash_checksum'].lower()
 
         if hash_checksum_ticket != hash_checksum:
-            msg = _('Chunk corrupted.')
+            msg = 'Chunk corrupted.'
             raise exceptions.ValidationError(msg)
 
         count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
@@ -77,15 +76,15 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
                  shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
 
         if count_cmsl != 1:
-            msg = _('Permission denied.')
+            msg = 'Permission denied.'
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
-            msg = _('Chunk count exceeded.')
+            msg = 'Chunk count exceeded.'
             raise exceptions.ValidationError(msg)
 
         if file_transfer.size_transferred + chunk_size > file_transfer.size:
-            msg = _('Chunk size exceeded.')
+            msg = 'Chunk size exceeded.'
             raise exceptions.ValidationError(msg)
 
         attrs['file_transfer'] = file_transfer

@@ -1,7 +1,5 @@
 from ..utils import user_has_rights_on_share
 
-from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..models import User_Share_Right, Group_Share_Right
@@ -23,11 +21,11 @@ class UpdateShareRightSerializer(serializers.Serializer):
         share_id = attrs['share_id']
 
         if not user_id and not group_id:
-            msg = _("Either user id or group id needs to be specified.")
+            msg = "Either user id or group id needs to be specified."
             raise exceptions.ValidationError(msg)
 
         if user_id and group_id:
-            msg = _("Either user id or group id needs to be specified, not both.")
+            msg = "Either user id or group id needs to be specified, not both."
             raise exceptions.ValidationError(msg)
 
         # check permissions on share

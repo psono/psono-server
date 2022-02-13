@@ -4,6 +4,7 @@ from nacl.public import PrivateKey
 from restapi.models import Fileserver_Cluster
 from restapi.utils import encrypt_with_db_secret
 import sys
+from typing import List
 
 
 def create_cluster(title: str, file_size_limit=None, fix_cluster_id=None) -> dict:
@@ -32,7 +33,7 @@ def create_cluster(title: str, file_size_limit=None, fix_cluster_id=None) -> dic
 
 class Command(BaseCommand):
     help = 'Creates a cluster'
-    requires_system_checks = False
+    requires_system_checks = [] # type: List
 
     def add_arguments(self, parser):
         parser.add_argument('title', nargs='+')

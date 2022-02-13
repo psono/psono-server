@@ -4,12 +4,12 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
---index-url https://psono.jfrog.io/psono/api/pypi/pypi/simple
-
 adal==1.2.7
     # via
     #   azure-datalake-store
     #   msrestazure
+asgiref==3.4.1
+    # via django
 azure-applicationinsights==0.1.0
     # via azure
 azure-batch==4.1.3
@@ -310,9 +310,9 @@ azure==4.0.0
     # via -r requirements.in
 bcrypt==3.1.7
     # via -r requirements.in
-boto3==1.12.36
+boto3==1.20.52
     # via -r requirements.in
-botocore==1.15.36
+botocore==1.23.52
     # via
     #   boto3
     #   s3transfer
@@ -328,7 +328,7 @@ cffi==1.13.2
     #   cryptography
     #   psycopg2cffi
     #   pynacl
-chardet==3.0.4
+charset-normalizer==2.0.11
     # via requests
 cryptography==3.3.2
     # via
@@ -343,9 +343,9 @@ dj-database-url==0.5.0
     # via -r requirements.in
 django-allauth==0.47.0
     # via -r requirements.in
-django-anymail==7.0.0
+django-anymail==8.5
     # via -r requirements.in
-django-cors-headers==3.2.0
+django-cors-headers==3.10.1
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
@@ -355,7 +355,7 @@ django-redis==4.10.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
-django==2.2.26
+django==3.2.12
     # via
     #   -r requirements.in
     #   django-allauth
@@ -366,12 +366,10 @@ django==2.2.26
     #   django-redis
     #   django-rest-auth
     #   djangorestframework
-djangorestframework==3.12.1
+djangorestframework==3.13.1
     # via
     #   -r requirements.in
     #   django-rest-auth
-docutils==0.15.2
-    # via botocore
 duo-client==4.2.3
     # via -r requirements.in
 idna==2.9
@@ -506,18 +504,20 @@ python-dateutil==2.8.0
 python3-openid==3.1.0
     # via django-allauth
 pytz==2019.3
-    # via django
+    # via
+    #   django
+    #   djangorestframework
 pyyaml==5.4.1
     # via -r requirements.in
 raven==6.10.0
     # via -r requirements.in
 redis==3.4.1
     # via django-redis
-requests-oauthlib==1.3.0
+requests-oauthlib==1.3.1
     # via
     #   django-allauth
     #   msrest
-requests==2.24.0
+requests==2.27.1
     # via
     #   -r requirements.in
     #   adal
@@ -532,15 +532,14 @@ requests==2.24.0
     #   msrest
     #   requests-oauthlib
     #   yubico-client
-s3transfer==0.3.3
+s3transfer==0.5.0
     # via boto3
-scrypt==0.8.13
+scrypt==0.8.19
     # via -r requirements.in
 six==1.14.0
     # via
     #   bcrypt
     #   cryptography
-    #   django-anymail
     #   django-rest-auth
     #   duo-client
     #   isodate
@@ -554,7 +553,9 @@ sqlparse==0.3.1
     # via django
 toml==0.10.2
     # via -r requirements.in
-urllib3==1.25.10
+typing-extensions==4.0.1
+    # via asgiref
+urllib3==1.26.8
     # via
     #   botocore
     #   requests

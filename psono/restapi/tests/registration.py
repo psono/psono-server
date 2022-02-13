@@ -13,7 +13,6 @@ import binascii
 import random
 import string
 import os
-import bcrypt
 
 
 class RegistrationTests(APITestCaseExtended):

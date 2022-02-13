@@ -1,8 +1,6 @@
 from ..utils import user_has_rights_on_share
 from  more_itertools import unique_everseen
 
-from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..models import Secret_Link, Data_Store
