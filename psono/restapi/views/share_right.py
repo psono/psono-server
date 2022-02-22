@@ -202,7 +202,7 @@ class ShareRightView(GenericAPIView):
                     # SenndInBlue does not support inline attachments
                     msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-                msg = EmailMultiAlternatives('New entry shared', msg_plain, settings.EMAIL_FROM,
+                msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_NEW_ENTRY_SHARED_SUBJECT, msg_plain, settings.EMAIL_FROM,
                                              [decrypt_with_db_secret(serializer.validated_data['user'].email)])
 
                 msg.attach_alternative(msg_html, "text/html")

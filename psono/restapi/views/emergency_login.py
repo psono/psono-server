@@ -161,7 +161,7 @@ class EmergencyLoginView(GenericAPIView):
                 # SenndInBlue does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-            msg = EmailMultiAlternatives('Emergency code armed', msg_plain, settings.EMAIL_FROM,
+            msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT, msg_plain, settings.EMAIL_FROM,
                                          [decrypt_with_db_secret(emergency_code.user.email)])
 
             msg.attach_alternative(msg_html, "text/html")

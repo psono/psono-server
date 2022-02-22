@@ -49,13 +49,11 @@ class RegisterView(GenericAPIView):
                 yield w[i:i + n]
 
         if not settings.ALLOW_REGISTRATION:
-            # TODO change this to REGISTRATION_HAS_BEEN_DISABLED
-            return Response({"custom": ["Registration has been disabled."]},
+            return Response({"custom": ["REGISTRATION_HAS_BEEN_DISABLED"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if settings.ENFORCE_MATCHING_USERNAME_AND_EMAIL and self.request.data.get('username', '').lower() != self.request.data.get('email', '').lower():
-            # TODO change this to REGISTRATION_FAILED_USERNAME_AND_EMAIL_HAVE_TO_MATCH
-            return Response({"custom": ["Registration failed. Username and email have to match."]},
+            return Response({"custom": ["REGISTRATION_FAILED_USERNAME_AND_EMAIL_HAVE_TO_MATCH"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
@@ -70,8 +68,7 @@ class RegisterView(GenericAPIView):
         try:
             user = serializer.save()
         except IntegrityError:
-            # TODO change this to REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS
-            return Response({"custom": ["Registration failed. Username already exists."]},
+            return Response({"custom": ["REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -106,7 +103,7 @@ class RegisterView(GenericAPIView):
             # SenndInBlue does not support inline attachments
             msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-        msg = EmailMultiAlternatives('Registration successful', msg_plain, settings.EMAIL_FROM,
+        msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT, msg_plain, settings.EMAIL_FROM,
                                      [self.request.data.get('email', '')])
 
         msg.attach_alternative(msg_html, "text/html")
@@ -121,7 +118,7 @@ class RegisterView(GenericAPIView):
                 fp.close()
                 msg_img.add_header('Content-ID', '<{}>'.format(f))
                 msg.attach(msg_img)
-        
+
         try:
             msg.send()
         except AnymailUnsupportedFeature:
