@@ -74,6 +74,7 @@ class GroupView(GenericAPIView):
             for m in membership.group.members.all():
                 members.append({
                     'id': m.user.id,
+                    'membership_create_date': m.create_date,
                     'membership_id': m.id,
                     'name': m.user.username,
                     'public_key': m.user.public_key,
@@ -88,6 +89,7 @@ class GroupView(GenericAPIView):
             for s in membership.group.group_share_rights.all():
                 group_share_rights.append({
                     'id': s.id,
+                    'create_date': s.create_date,
                     'share_id': s.share_id,
                     'title': s.title,
                     'title_nonce': s.title_nonce,
