@@ -270,7 +270,7 @@ def user_has_rights_on_share(user_id : str = "", share_id : str = "", read : boo
            and (grant is None or grant == rights['grant'])
 
 
-def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : bool = None, write : bool = None) -> bool:  #nosec -- not [B105:hardcoded_password_string]
+def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : bool = None, write : bool = None) -> bool:  #nosec B105, B107
     """
     Checks if the given user has the requested rights for the given secret
 
