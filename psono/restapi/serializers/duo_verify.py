@@ -9,7 +9,7 @@ from ..utils import decrypt_with_db_secret, duo_auth_auth, duo_auth_enroll_statu
 from ..models import Duo
 
 class DuoVerifySerializer(serializers.Serializer):
-    duo_token = serializers.CharField(max_length=6, min_length=6, required=False)
+    duo_token = serializers.CharField(min_length=6, required=False)
 
     def validate(self, attrs: dict) -> dict:
 
