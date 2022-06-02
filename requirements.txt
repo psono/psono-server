@@ -374,7 +374,7 @@ duo-client==4.2.3
     # via -r requirements.in
 idna==2.9
     # via requests
-isodate==0.6.0
+isodate==0.6.1
     # via msrest
 jmespath==0.9.5
     # via
@@ -484,9 +484,9 @@ psycopg2cffi==2.8.1
     # via -r requirements.in
 pycparser==2.20
     # via cffi
-pycryptodomex==3.9.7
+pycryptodomex==3.14.1
     # via -r requirements.in
-pyjwt[crypto]==2.1.0
+pyjwt[crypto]==2.4.0
     # via
     #   adal
     #   django-allauth
