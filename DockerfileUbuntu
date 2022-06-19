@@ -1,5 +1,5 @@
-# PSONO Dockerfile for Ubuntu 18.04
-FROM psono-docker.jfrog.io/ubuntu:20.04
+# PSONO Dockerfile for Ubuntu 22.04
+FROM psono-docker.jfrog.io/ubuntu:22.04
 ENV DEBIAN_FRONTEND noninteractive
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -22,7 +22,6 @@ RUN mkdir -p /root/.pip && \
         python3-psycopg2 \
         postgresql-client && \
     pip3 install -r requirements.txt && \
-    pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \
