@@ -13,20 +13,23 @@ build-container-alpine:
   except:
     - schedules
   stage: build
-  image: psono-docker.jfrog.io/ubuntu:18.04
+  image: psono-docker.jfrog.io/ubuntu:22.04
   services:
-    - docker:18-dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
   variables:
-    DOCKER_HOST: 'tcp://docker:2375'
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   script:
     - sh ./var/update_version.sh
     - apt-get update || true
     - apt install -y ca-certificates
     - apt-get update && apt-get install -y curl
-    - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-17.12.0-ce.tgz" -o docker.tgz && echo "692e1c72937f6214b1038def84463018d8e320c8eaf8530546c84c2f8f9c767d *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
+    - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-20.10.17.tgz" -o docker.tgz && echo "969210917b5548621a2b541caf00f86cc6963c6cf0fb13265b9731c3b98974d9 *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE --pull .
     - docker push $CONTAINER_TEST_IMAGE
   only:
@@ -38,8 +41,15 @@ run-unittests-ubuntu:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
+  services:
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
   variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: ""
@@ -47,23 +57,28 @@ run-unittests-ubuntu:
     PSONO_EMAIL_FROM: test@example.com
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
-  services:
-    - docker:18-dind
   script:
     - docker info
     - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu2004 -t ubu2004-testimage --pull .
+    - docker build -f DockerfileUbuntu -t ubu-testimage --pull .
     - docker run -d --name db postgres:9.6.16
     - sleep 20
-    - docker run --link db:postgres ubu2004-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && pip3 install mypy==0.812 && python3 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
+    - docker run --link db:postgres ubu-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
 
 run-unittests-alpine:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
+  services:
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
   variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: ""
@@ -71,12 +86,9 @@ run-unittests-alpine:
     PSONO_EMAIL_FROM: test@example.com
     PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
     PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
-  services:
-    - docker:18-dind
   script:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -d --name db postgres:9.6.16
     - sleep 20
@@ -85,40 +97,50 @@ run-unittests-alpine:
     - branches@psono/psono-server
     - tags@psono/psono-server
 
-run-unittests-centos7:
-  except:
-    - schedules
-  stage: test
-  image: psono-docker.jfrog.io/docker:19.03.8-git
-  variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: ""
-    PSONO_EMAIL_HOST: 172.17.0.1
-    PSONO_EMAIL_FROM: test@example.com
-    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
-    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
-  services:
-    - docker:18-dind
-  script:
-    - docker info
-    - sh ./var/update_version.sh
-    - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
-    - docker run -d --name db postgres:9.6.16
-    - sleep 20
-    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && pip3.6 install mypy==0.812 && python3.6 /usr/local/bin/mypy -p psono --ignore-missing-imports && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
+#run-unittests-centos7:
+#  except:
+#    - schedules
+#  stage: test
+#  image: psono-docker.jfrog.io/docker:20.10.17-git
+#  services:
+#    - name: docker:20-dind
+#      alias: docker
+#      command: ["--tls=false"]
+#  variables:
+#    DOCKER_DRIVER: overlay2
+#    DOCKER_HOST: tcp://docker:2375/
+#    DOCKER_TLS_CERTDIR: ""
+#    POSTGRES_DB: postgres
+#    POSTGRES_USER: postgres
+#    POSTGRES_PASSWORD: ""
+#    PSONO_EMAIL_HOST: 172.17.0.1
+#    PSONO_EMAIL_FROM: test@example.com
+#    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+#    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+#  script:
+#    - docker info
+#    - sh ./var/update_version.sh
+#    - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
+#    - docker run -d --name db postgres:9.6.16
+#    - sleep 20
+#    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
 
 run-vulnerability-scan:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
   services:
-    - docker:18-dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   script:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety && safety check"
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
@@ -130,14 +152,19 @@ run-vulnerability-scan:
 #  except:
 #    - schedules
 #  stage: deploy
-#  image: psono-docker.jfrog.io/docker:19.03.8-git
+#  image: psono-docker.jfrog.io/docker:20.10.17-git
 #  services:
-#    - docker:18-dind
+#    - name: docker:20-dind
+#      alias: docker
+#      command: ["--tls=false"]
+#  variables:
+#    DOCKER_DRIVER: overlay2
+#    DOCKER_HOST: tcp://docker:2375/
+#    DOCKER_TLS_CERTDIR: ""
 #  script:
 #    - docker info
 #    - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
 #    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
-#    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
 #    - docker pull $CONTAINER_TEST_IMAGE
 #    - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_COMMIT_REF_NAME
 #    - docker push psono/security-scans:psono-server-ce-$CI_COMMIT_REF_NAME
@@ -146,9 +173,15 @@ release-container:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
   services:
-    - docker:18-dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   script:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -166,7 +199,7 @@ release-version-bump:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
   script:
     - mkdir -p /root/.ssh
     - echo "$github_deploy_key" > /root/.ssh/id_rsa
@@ -190,9 +223,15 @@ deploy:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/docker:19.03.8-git
+  image: psono-docker.jfrog.io/docker:20.10.17-git
   services:
-    - docker:18-dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   script:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
@@ -210,7 +249,7 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:18.04
+  image: psono-docker.jfrog.io/ubuntu:22.04
   script:
     - apt-get update || true
     - apt install -y ca-certificates
