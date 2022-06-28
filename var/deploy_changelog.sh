@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 apt-get update && \
-apt-get install -y lsb-release curl gnupg && \
-export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
-echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-apt-get update && apt-get -y install google-cloud-sdk && \
+apt-get install -y curl python3 && \
+curl -fSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-392.0.0-linux-x86_64.tar.gz" -o google-cloud-cli.tar.gz && echo "a7e88856a07ed75cf310ebe5415c922c9b516021a6c7e66b3eb8f2859b9351bc google-cloud-cli.tar.gz" | sha256sum -c - && tar -xzvf google-cloud-cli.tar.gz  && \
+./google-cloud-sdk/install.sh -q && \
+source ./google-cloud-sdk/path.bash.inc && \
 echo "$GOOGLE_APPLICATION_CREDENTIALS" > "/root/key.json" && \
 gcloud auth activate-service-account --key-file=/root/key.json && \
 curl -H "PRIVATE-TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags" --output changelog.json && \
