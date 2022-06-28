@@ -97,34 +97,6 @@ run-unittests-alpine:
     - branches@psono/psono-server
     - tags@psono/psono-server
 
-#run-unittests-centos7:
-#  except:
-#    - schedules
-#  stage: test
-#  image: psono-docker.jfrog.io/docker:20.10.17-git
-#  services:
-#    - name: docker:20-dind
-#      alias: docker
-#      command: ["--tls=false"]
-#  variables:
-#    DOCKER_DRIVER: overlay2
-#    DOCKER_HOST: tcp://docker:2375/
-#    DOCKER_TLS_CERTDIR: ""
-#    POSTGRES_DB: postgres
-#    POSTGRES_USER: postgres
-#    POSTGRES_PASSWORD: ""
-#    PSONO_EMAIL_HOST: 172.17.0.1
-#    PSONO_EMAIL_FROM: test@example.com
-#    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
-#    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
-#  script:
-#    - docker info
-#    - sh ./var/update_version.sh
-#    - docker build -f DockerfileCentos7 -t centos7-testimage --pull .
-#    - docker run -d --name db postgres:9.6.16
-#    - sleep 20
-#    - docker run --link db:postgres centos7-testimage bash -c "yum -y install python36u-pip && pip3.6 install -r requirements-dev.txt && python3.6 ./psono/manage.py presetup && python3.6 ./psono/manage.py migrate && python3.6 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
-
 run-vulnerability-scan:
   except:
     - schedules
@@ -249,10 +221,8 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: psono-docker.jfrog.io/ubuntu:18.04
   script:
-    - apt-get update || true
-    - apt install -y ca-certificates
     - sh ./var/deploy_changelog.sh
   environment:
     name: static.psono.com
