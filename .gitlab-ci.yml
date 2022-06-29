@@ -114,7 +114,7 @@ run-vulnerability-scan:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety && safety check"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install safety==1.10.3 && safety check"
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
   only:
     - branches@psono/psono-server
@@ -221,7 +221,7 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:18.04
+  image: psono-docker.jfrog.io/ubuntu:22.04
   script:
     - sh ./var/deploy_changelog.sh
   environment:
