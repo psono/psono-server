@@ -87,6 +87,7 @@ class EmergencyLoginView(GenericAPIView):
 
         response = {
             "token": token.clear_text_key,
+            "session_valid_till": token.valid_till.isoformat(),
             "session_secret_key": token.secret_key,
             "user_public_key": user.public_key,
             "user_email": decrypt_with_db_secret(user.email),

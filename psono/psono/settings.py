@@ -618,6 +618,7 @@ def generate_signature():
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
         'files': FILES_ENABLED,
+        'auto_prolongation_token_time_valid': AUTO_PROLONGATION_TOKEN_TIME_VALID,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
