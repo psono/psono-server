@@ -72,7 +72,7 @@ class TokenAuthentication(BaseAuthentication):
             token_validator_encrypted = self.get_token_validator(request)
             try:
                 token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
-            except binascii.Error:
+            except (binascii.Error, nacl.exceptions.CryptoError):
                 msg = _('Invalid token header. Not proper encrypted.')
                 raise exceptions.AuthenticationFailed(msg)
 

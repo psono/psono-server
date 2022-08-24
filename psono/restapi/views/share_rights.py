@@ -1,4 +1,5 @@
 from ..utils import calculate_user_rights_on_share
+from uuid import UUID
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -45,8 +46,12 @@ class ShareRightsView(GenericAPIView):
 
             return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Returns the specified share rights if the user has any rights for it and joins the user_share objects
+        try:
+            UUID(share_id, version=4)
+        except ValueError:
+            return Response({"message":"SHARE_ID_IS_NO_VALID_UUID"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Returns the specified share rights if the user has any rights for it and joins the user_share objects
         try:
             share = Share.objects.get(pk=share_id)
         except Share.DoesNotExist:

@@ -165,6 +165,20 @@ class UserShareRightsTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_list_shares_with_invalid_uuid(self):
+        """
+        Tests if the initial listing of share rights without grant rights for the specified share
+        """
+
+        url = reverse('share_rights', kwargs={'share_id': 'invalid-uuid'})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_list_shares(self):
         """
         Tests if the initial listing of share rights works

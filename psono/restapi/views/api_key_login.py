@@ -89,6 +89,7 @@ class APIKeyLoginView(GenericAPIView):
 
         response = {
             "token": token.clear_text_key,
+            "session_valid_till": token.valid_till.isoformat(),
             "session_secret_key": token.secret_key,
             "api_key_restrict_to_secrets": api_key.restrict_to_secrets,
             "api_key_allow_insecure_access": api_key.allow_insecure_access,

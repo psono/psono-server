@@ -15,7 +15,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
     file_transfer_id = UUIDField(required=True)
     ticket = serializers.CharField(required=True)
     ticket_nonce = serializers.CharField(required=True)
-    chunk_size = serializers.IntegerField(required=True)
+    chunk_size = serializers.IntegerField(required=True, min_value=0, max_value=128 * 1024 * 1024 + 40)
     hash_checksum = serializers.CharField(required=True)
     ip_address = serializers.CharField(required=True)
 
@@ -54,14 +54,6 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
 
         if 'hash_checksum' not in ticket:
             msg = 'Malformed ticket. Blake2b hash missing.'
-            raise exceptions.ValidationError(msg)
-
-        chunk_size_limit = 128 * 1024 * 1024 + 40
-        if chunk_size > chunk_size_limit:
-            msg = "Chunk size exceeds limit."
-            raise exceptions.ValidationError(msg)
-        if chunk_size < 40:
-            msg = "Chunk size too small."
             raise exceptions.ValidationError(msg)
 
         chunk_position = ticket['chunk_position']

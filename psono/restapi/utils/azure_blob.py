@@ -1,5 +1,4 @@
-from azure.storage.blob.sharedaccesssignature import BlobSharedAccessSignature
-from azure.storage.blob import BlobPermissions
+from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from datetime import datetime, timedelta
 import requests
 
@@ -30,19 +29,23 @@ def azure_blob_construct_signed_url(storage_account_name, storage_account_primar
     :param hash_checksum: The sha512 checksum of the file
     :type hash_checksum: str
     :param permission: The permission
-    :type permission: azure.storage.blob.BlobPermissions
+    :type permission: azure.storage.blob.BlobSasPermissions
 
     :return: The signed upload url
     :rtype:
     """
 
     expiry = datetime.utcnow() + timedelta(hours=1)
-
-    blob_shared_access_signature = BlobSharedAccessSignature(storage_account_name, storage_account_primary_key)
-
     blob_name = create_key(hash_checksum)
 
-    sas_token = blob_shared_access_signature.generate_blob(container_name, blob_name, expiry=expiry, permission=permission)
+    sas_token = generate_blob_sas(
+        account_name=storage_account_name,
+        container_name=container_name,
+        blob_name=blob_name,
+        account_key=storage_account_primary_key,
+        permission=permission,
+        expiry=expiry,
+    )
 
     return f'https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}?{sas_token}'
 
@@ -64,7 +67,7 @@ def azure_blob_construct_signed_upload_url(storage_account_name, storage_account
     :rtype:
     """
 
-    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobPermissions(write=True))
+    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobSasPermissions(write=True))
 
 
 def azure_blob_construct_signed_download_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum):
@@ -84,7 +87,7 @@ def azure_blob_construct_signed_download_url(storage_account_name, storage_accou
     :rtype:
     """
 
-    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobPermissions(read=True))
+    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobSasPermissions(read=True))
 
 
 def azure_blob_construct_signed_delete_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum):
@@ -104,7 +107,7 @@ def azure_blob_construct_signed_delete_url(storage_account_name, storage_account
     :rtype:
     """
 
-    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobPermissions(delete=True))
+    return azure_blob_construct_signed_url(storage_account_name, storage_account_primary_key, container_name, hash_checksum, BlobSasPermissions(delete=True))
 
 
 def azure_blob_delete(storage_account_name, storage_account_primary_key, container_name, hash_checksum):

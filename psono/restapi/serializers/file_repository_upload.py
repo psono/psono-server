@@ -1,12 +1,9 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
-from ..fields import UUIDField
-from ..models import File_Transfer
-
 class FileRepositoryUploadSerializer(serializers.Serializer):
-    chunk_size = serializers.IntegerField(required=True)
-    chunk_position = serializers.IntegerField(required=True)
+    chunk_size = serializers.IntegerField(required=True, min_value=0, max_value=128 * 1024 * 1024 + 40)
+    chunk_position = serializers.IntegerField(required=True, min_value=0, max_value=2147483647)
     hash_checksum = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -15,11 +12,6 @@ class FileRepositoryUploadSerializer(serializers.Serializer):
         hash_checksum = attrs.get('hash_checksum', '').lower()
 
         file_transfer = self.context['request'].auth
-
-        chunk_size_limit = 128 * 1024 * 1024
-        if chunk_size > chunk_size_limit:
-            msg = _("Chunk size exceeds limit.")
-            raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
             msg = _('Chunk count exceeded.')

@@ -352,7 +352,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
 
     def test_failure_chunk_size_limit_too_small(self):
         """
-        Tests authorize upload failure with a chunk_size_limit that is smaller than 40
+        Tests authorize upload failure with a chunk_size_limit that is negative
         """
 
         url = reverse('fileserver_authorize_upload')
@@ -368,7 +368,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
 
         data = {
             'file_transfer_id': self.file_transfer.id,
-            'chunk_size': 39,
+            'chunk_size': -1,
             'hash_checksum': hash_checksum,
             'ip_address': '127.0.0.1',
             'ticket': ticket_encrypted['text'].decode(),
