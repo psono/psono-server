@@ -31,7 +31,7 @@ cffi==1.15.0
     #   pynacl
 charset-normalizer==2.0.11
     # via requests
-cryptography==3.3.2
+cryptography==38.0.1
     # via
     #   azure-storage-blob
     #   pyjwt
@@ -137,7 +137,6 @@ six==1.16.0
     # via
     #   azure-core
     #   bcrypt
-    #   cryptography
     #   django-rest-auth
     #   duo-client
     #   psycopg2cffi
