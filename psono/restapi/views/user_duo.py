@@ -19,7 +19,7 @@ class UserDuo(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Checks the REST Token and returns a list of a all duo
+        Checks the REST Token and returns a list of all duo
 
         :param request:
         :type request:

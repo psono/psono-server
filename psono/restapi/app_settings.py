@@ -6,6 +6,8 @@ from .serializers import (
     LoginSerializer as DefaultLoginSerializer,
     APIKeyLoginSerializer as DefaultAPIKeyLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
+    WebauthnVerifyInitSerializer as DefaultWebauthnVerifyInitSerializer,
+    WebauthnVerifySerializer as DefaultWebauthnVerifySerializer,
     DuoVerifySerializer as DefaultDuoVerifySerializer,
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
@@ -18,12 +20,15 @@ from .serializers import (
     UserUpdateSerializer as DefaultUserUpdateSerializer,
     UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
+    NewWebauthnSerializer as DefaultNewWebauthnSerializer,
     NewDuoSerializer as DefaultNewDuoSerializer,
     NewYubikeyOTPSerializer as DefaultNewYubikeyOTPSerializer,
     ActivateYubikeySerializer as DefaultActivateYubikeySerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
     ActivateGASerializer as DefaultActivateGASerializer,
+    ActivateWebauthnSerializer as DefaultActivateWebauthnSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    DeleteWebauthnSerializer as DefaultDeleteWebauthnSerializer,
     ActivateDuoSerializer as DefaultActivateDuoSerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
@@ -112,6 +117,14 @@ GAVerifySerializer = import_callable(
     serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
 )
 
+WebauthnVerifyInitSerializer = import_callable(
+    serializers.get('WEBAUTHN_VERIFY_INIT_SERIALIZER', DefaultWebauthnVerifyInitSerializer)
+)
+
+WebauthnVerifySerializer = import_callable(
+    serializers.get('WEBAUTHN_VERIFY_SERIALIZER', DefaultWebauthnVerifySerializer)
+)
+
 DuoVerifySerializer = import_callable(
     serializers.get('DUO_VERIFY_SERIALIZER', DefaultDuoVerifySerializer)
 )
@@ -189,6 +202,13 @@ NewGASerializer = import_callable(
     )
 )
 
+NewWebauthnSerializer = import_callable(
+    serializers.get(
+        'NEW_WEBAUTHN_SERIALIZER',
+        DefaultNewWebauthnSerializer
+    )
+)
+
 NewDuoSerializer = import_callable(
     serializers.get(
         'NEW_DUO_SERIALIZER',
@@ -228,6 +248,20 @@ DeleteGASerializer = import_callable(
     serializers.get(
         'DELETE_GA_SERIALIZER',
         DefaultDeleteGASerializer
+    )
+)
+
+ActivateWebauthnSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_WEBAUTHN_SERIALIZER',
+        DefaultActivateWebauthnSerializer
+    )
+)
+
+DeleteWebauthnSerializer = import_callable(
+    serializers.get(
+        'DELETE_WEBAUTHN_SERIALIZER',
+        DefaultDeleteWebauthnSerializer
     )
 )
 

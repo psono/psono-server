@@ -51,6 +51,8 @@ class User(models.Model):
         help_text='True once ga 2fa is enabled')
     yubikey_otp_enabled = models.BooleanField('Yubikey OTP 2FA enabled', default=False,
         help_text='True once yubikey 2fa is enabled')
+    webauthn_enabled = models.BooleanField('Webauthn 2FA enabled', default=False,
+        help_text='True once webauthn 2fa is enabled')
 
     credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
@@ -104,7 +106,7 @@ class User(models.Model):
         return settings.DEFAULT_TOKEN_TIME_VALID
 
     def any_2fa_active(self):
-        return self.yubikey_otp_enabled or self.google_authenticator_enabled or self.duo_enabled
+        return self.yubikey_otp_enabled or self.google_authenticator_enabled or self.duo_enabled or self.webauthn_enabled
 
     @staticmethod
     def is_authenticated():
@@ -203,6 +205,27 @@ class Google_Authenticator(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_authenticator')
     title = models.CharField('title', max_length=256)
     secret = models.CharField('secret as hex', max_length=256)
+    active = models.BooleanField('Is Active?', default=True,
+        help_text='Designates whether this 2FA is active or not.')
+
+    class Meta:
+        abstract = False
+
+
+class Webauthn(models.Model):
+    """
+    The Google authenticator model
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='webauthn')
+    title = models.CharField('title', max_length=256)
+    origin = models.CharField('origin', max_length=512)
+    rp_id = models.CharField('rp_id', max_length=512)
+    credential_id = models.TextField('The credential id as passed from the frontend', default="")
+    credential_public_key = models.TextField('The credential public key as passed from the frontend', default="")
+    challenge = models.TextField('The challenge encrypted with the db secret')
     active = models.BooleanField('Is Active?', default=True,
         help_text='Designates whether this 2FA is active or not.')
 
@@ -964,6 +987,9 @@ class Token(models.Model):
 
     duo_2fa = models.BooleanField('Duo Required', default=False,
         help_text='Specifies if Duo is required or not')
+
+    webauthn_2fa = models.BooleanField('Webauthn Required', default=False,
+        help_text='Specifies if Webauthn is required or not')
 
     client_date = models.DateTimeField(null=True)
 

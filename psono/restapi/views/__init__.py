@@ -31,9 +31,11 @@ from .user_ga import UserGA
 from .user_duo import UserDuo
 from .user_search import UserSearch
 from .user_update import UserUpdate
+from .user_webauthn import UserWebauthn
 from .user_yubikey_otp import UserYubikeyOTP
 from .user_delete import UserDelete
 from .verify_email import VerifyEmailView
+from .webauthn_verify import WebauthnVerifyView
 from .yubikey_otp_verify import YubikeyOTPVerifyView
 from .group_rights import GroupRightsView
 from .history import HistoryView

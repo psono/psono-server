@@ -164,11 +164,13 @@ ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS', [])
 if isinstance(ALLOWED_DOMAINS, str) and ALLOWED_DOMAINS:
     ALLOWED_DOMAINS = [allowed_domains_single.strip() for allowed_domains_single in ALLOWED_DOMAINS.split(',')]
 
+SERVICE_NAME = config_get('SERVICE_NAME', 'Psono')
+
 ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'true'
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 
-ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
+ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo'])
 if isinstance(ALLOWED_SECOND_FACTORS, str) and ALLOWED_SECOND_FACTORS:
     ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
 elif isinstance(ALLOWED_SECOND_FACTORS, str):

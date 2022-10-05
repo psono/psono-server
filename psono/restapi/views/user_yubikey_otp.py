@@ -18,7 +18,7 @@ class UserYubikeyOTP(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Checks the REST Token and returns a list of a all YubiKey OTPs
+        Checks the REST Token and returns a list of all YubiKey OTPs
 
         :param request:
         :type request:
