@@ -119,6 +119,7 @@ run-vulnerability-scan:
   only:
     - branches@psono/psono-server
     - tags@psono/psono-server
+  allow_failure: true
 
 #deploy-security-scan-image:
 #  except:
