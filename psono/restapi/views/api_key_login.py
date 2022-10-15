@@ -70,6 +70,7 @@ class APIKeyLoginView(GenericAPIView):
             google_authenticator_2fa=False,
             duo_2fa=False,
             yubikey_otp_2fa=False,
+            webauthn_2fa=False,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),

@@ -2,21 +2,31 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+
+import json
+from webauthn import (
+    generate_authentication_options,
+    options_to_json,
+)
+
+from ..utils import encrypt_with_db_secret
 from ..permissions import IsAuthenticated
 from ..models import (
-    Token
+    Token,
+    Webauthn,
 )
 
 from ..app_settings import (
-    DuoVerifySerializer
+    WebauthnVerifyInitSerializer,
+    WebauthnVerifySerializer,
 )
 from ..authentication import TokenAuthenticationAllowInactive
 
-class DuoVerifyView(GenericAPIView):
+class WebauthnVerifyView(GenericAPIView):
 
     authentication_classes = (TokenAuthenticationAllowInactive, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = DuoVerifySerializer
+    serializer_class = WebauthnVerifySerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'duo_verify'
@@ -24,12 +34,32 @@ class DuoVerifyView(GenericAPIView):
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+
+        serializer = WebauthnVerifyInitSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        origin = serializer.validated_data.get('origin')
+        rp_id = serializer.validated_data.get('rp_id')
+
+        opts = generate_authentication_options(
+            rp_id=rp_id,
+            timeout=90000,
+        )
+        options = json.loads(options_to_json(opts))
+
+        Webauthn.objects.filter(user_id=request.user.id, origin=origin, active=True).update(challenge=encrypt_with_db_secret(options['challenge']))
+
+        return Response({
+            "options": options
+        }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """
-        Validates a Duo Token (if provided) or returns once the push message on the phone has been confirmed
+        Validates a Webauthn (if provided) or returns once the push message on the phone has been confirmed
 
         :param request:
         :type request:
@@ -48,13 +78,13 @@ class DuoVerifyView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Duo challenge has been solved, so lets update the token
+        # Webauthn challenge has been solved, so lets update the token
         token = serializer.validated_data['token']
-        token.duo_2fa = False
+        token.webauthn_2fa = False
 
         if settings.MULTIFACTOR_ENABLED:
-            # only mark duo challenge as solved and the others potentially open
-            token.duo_2fa = False
+            # only mark webauthn challenge as solved and the others potentially open
+            token.webauthn_2fa = False
         else:
             token.google_authenticator_2fa = False
             token.yubikey_otp_2fa = False

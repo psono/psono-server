@@ -18,7 +18,7 @@ class UserGA(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Checks the REST Token and returns a list of a all google authenticators
+        Checks the REST Token and returns a list of all google authenticators
 
         :param request:
         :type request:

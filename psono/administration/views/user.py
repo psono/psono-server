@@ -172,7 +172,7 @@ class UserView(GenericAPIView):
             search = serializer.validated_data.get('search')
 
             user_qs = User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
-                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'yubikey_otp_enabled')
+                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'webauthn_enabled', 'yubikey_otp_enabled')
 
             if search:
                 user_qs = user_qs.filter(Q(username__icontains=search) | Q(email_bcrypt=get_static_bcrypt_hash_from_email(search)))
@@ -196,6 +196,7 @@ class UserView(GenericAPIView):
                     'is_email_active': u.is_email_active,
                     'duo_enabled': u.duo_enabled,
                     'google_authenticator_enabled': u.google_authenticator_enabled,
+                    'webauthn_enabled': u.webauthn_enabled,
                     'yubikey_otp_enabled': u.yubikey_otp_enabled,
                     'recovery_code_exist': u.recovery_code_exist,
                     'emergency_code_exist': u.emergency_code_exist,

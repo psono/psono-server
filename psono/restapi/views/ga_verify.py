@@ -59,6 +59,7 @@ class GAVerifyView(GenericAPIView):
             token.google_authenticator_2fa = False
             token.yubikey_otp_2fa = False
             token.duo_2fa = False
+            token.webauthn_2fa = False
 
         token.save()
 

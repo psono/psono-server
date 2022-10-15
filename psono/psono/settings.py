@@ -164,11 +164,13 @@ ALLOWED_DOMAINS = config_get('ALLOWED_DOMAINS', [])
 if isinstance(ALLOWED_DOMAINS, str) and ALLOWED_DOMAINS:
     ALLOWED_DOMAINS = [allowed_domains_single.strip() for allowed_domains_single in ALLOWED_DOMAINS.split(',')]
 
+SERVICE_NAME = config_get('SERVICE_NAME', 'Psono')
+
 ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'true'
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 
-ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'google_authenticator', 'duo'])
+ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo'])
 if isinstance(ALLOWED_SECOND_FACTORS, str) and ALLOWED_SECOND_FACTORS:
     ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
 elif isinstance(ALLOWED_SECOND_FACTORS, str):
@@ -408,6 +410,7 @@ EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
 EMAIL_TIMEOUT = int(config_get('EMAIL_TIMEOUT', 0)) if config_get('EMAIL_TIMEOUT', 0) else None
 
+TOTP_VALID_WINDOW = int(config_get('TOTP_VALID_WINDOW', 0))
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
 YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)

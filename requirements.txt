@@ -6,6 +6,8 @@
 #
 asgiref==3.4.1
     # via django
+asn1crypto==1.5.1
+    # via webauthn
 azure-core==1.24.2
     # via azure-storage-blob
 azure-storage-blob==12.13.0
@@ -18,6 +20,8 @@ botocore==1.23.52
     # via
     #   boto3
     #   s3transfer
+cbor2==5.4.3
+    # via webauthn
 certifi==2019.11.28
     # via
     #   msrest
@@ -31,10 +35,12 @@ cffi==1.15.0
     #   pynacl
 charset-normalizer==2.0.11
     # via requests
-cryptography==3.3.2
+cryptography==38.0.1
     # via
     #   azure-storage-blob
     #   pyjwt
+    #   pyopenssl
+    #   webauthn
 defusedxml==0.6.0
     # via python3-openid
 dj-database-url==0.5.0
@@ -94,10 +100,14 @@ pycparser==2.21
     # via cffi
 pycryptodomex==3.14.1
     # via -r requirements.in
+pydantic==1.10.2
+    # via webauthn
 pyjwt[crypto]==2.4.0
     # via django-allauth
 pynacl==1.5.0
     # via -r requirements.in
+pyopenssl==22.1.0
+    # via webauthn
 pyotp==2.3.0
     # via -r requirements.in
 python-dateutil==2.8.0
@@ -137,7 +147,6 @@ six==1.16.0
     # via
     #   azure-core
     #   bcrypt
-    #   cryptography
     #   django-rest-auth
     #   duo-client
     #   psycopg2cffi
@@ -149,11 +158,15 @@ sqlparse==0.3.1
 toml==0.10.2
     # via -r requirements.in
 typing-extensions==4.3.0
-    # via azure-core
+    # via
+    #   azure-core
+    #   pydantic
 urllib3==1.26.8
     # via
     #   botocore
     #   requests
+webauthn==1.6.0
+    # via -r requirements.in
 yubico-client==1.12.0
     # via -r requirements.in
 

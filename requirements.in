@@ -27,3 +27,4 @@ django-postgrespool2==1.0.1
 dj-database-url==0.5.0
 toml==0.10.2
 azure-storage-blob==12.13.0
+webauthn==1.6.0

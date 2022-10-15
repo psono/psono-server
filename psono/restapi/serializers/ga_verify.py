@@ -1,4 +1,5 @@
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from rest_framework import serializers, exceptions
 import pyotp
 
@@ -28,7 +29,7 @@ class GAVerifySerializer(serializers.Serializer):
         for ga in gas:
             decrypted_ga_secret = decrypt_with_db_secret(ga.secret)
             totp = pyotp.TOTP(decrypted_ga_secret.encode())
-            if totp.verify(ga_token):
+            if totp.verify(ga_token, valid_window=settings.TOTP_VALID_WINDOW):
                 ga_token_correct = True
                 break
 

@@ -630,6 +630,7 @@ def reset_2fa(username: str) -> dict:
     user.duo_enabled = False
     user.google_authenticator_enabled = False
     user.yubikey_otp_enabled = False
+    user.webauthn_enabled = False
     user.save()
 
     Duo.objects.filter(user_id=user.id).delete()

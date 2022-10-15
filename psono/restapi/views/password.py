@@ -86,6 +86,7 @@ class PasswordView(GenericAPIView):
         user.secret_key = secret_key
         user.secret_key_nonce = secret_key_nonce
         user.google_authenticator_enabled = False
+        user.webauthn_enabled = False
         user.yubikey_otp_enabled = False
         user.duo_enabled = False
         user.save()

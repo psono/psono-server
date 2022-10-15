@@ -68,6 +68,7 @@ class LoginView(GenericAPIView):
             user=user,
             google_authenticator_2fa=user.google_authenticator_enabled,
             duo_2fa=user.duo_enabled,
+            webauthn_2fa=user.webauthn_enabled,
             yubikey_otp_2fa=user.yubikey_otp_enabled,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
@@ -117,6 +118,9 @@ class LoginView(GenericAPIView):
 
         if user.yubikey_otp_enabled:
             required_multifactors.append('yubikey_otp_2fa')
+
+        if user.webauthn_enabled:
+            required_multifactors.append('webauthn_2fa')
 
         response = {
             "token": token.clear_text_key,
