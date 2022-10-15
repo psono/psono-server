@@ -3,7 +3,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
+import nacl.encoding
 import json
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 from webauthn import (
     generate_authentication_options,
     options_to_json,
@@ -45,9 +47,15 @@ class WebauthnVerifyView(GenericAPIView):
         origin = serializer.validated_data.get('origin')
         rp_id = serializer.validated_data.get('rp_id')
 
+        allow_credentials = []
+        webauthns = Webauthn.objects.filter(user_id=request.user.id, origin=origin, active=True).only('credential_id')
+        for w in webauthns:
+            allow_credentials.append(PublicKeyCredentialDescriptor(id=nacl.encoding.HexEncoder.decode(w.credential_id)))
+
         opts = generate_authentication_options(
             rp_id=rp_id,
             timeout=90000,
+            allow_credentials=allow_credentials,
         )
         options = json.loads(options_to_json(opts))
 

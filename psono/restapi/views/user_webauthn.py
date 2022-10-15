@@ -81,8 +81,9 @@ class UserWebauthn(GenericAPIView):
             timeout=90000,
             user_id=str(request.user.id),
             user_name=request.user.username,
-            attestation=AttestationConveyancePreference.DIRECT, # so we get the model back
+            # attestation=AttestationConveyancePreference.DIRECT, # so we get the model back
             authenticator_selection=AuthenticatorSelectionCriteria(
+                # authenticator_attachment=AuthenticatorAttachment.PLATFORM,
                 user_verification=UserVerificationRequirement.DISCOURAGED,  # so the user doesn't need to add a pin / passphrase when e.g. using his yubikey
             ),
         )
