@@ -5,6 +5,7 @@ from .delete_user import DeleteUserSerializer
 from .update_user import UpdateUserSerializer
 from .delete_duo import DeleteDuoSerializer
 from .delete_ga import DeleteGASerializer
+from .delete_webauthn import DeleteWebAuthnSerializer
 from .delete_yubikey import DeleteYubikeySerializer
 from .read_session import ReadSessionSerializer
 from .read_group import ReadGroupSerializer

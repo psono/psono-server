@@ -10,6 +10,7 @@ from .serializers import (
     UpdateUserSerializer as DefaultUpdateUserSerializer,
     CreateUserSerializer as DefaultCreateUserSerializer,
     DeleteYubikeySerializer as DefaultDeleteYubikeySerializer,
+    DeleteWebAuthnSerializer as DefaultDeleteWebAuthnSerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
@@ -54,6 +55,10 @@ CreateUserSerializer = import_callable(
 
 DeleteYubikeySerializer = import_callable(
     serializers.get('DELETE_YUBIKEY_SERIALIZER', DefaultDeleteYubikeySerializer)
+)
+
+DeleteWebAuthnSerializer = import_callable(
+    serializers.get('DELETE_WEBAUTHN_SERIALIZER', DefaultDeleteWebAuthnSerializer)
 )
 
 DeleteDuoSerializer = import_callable(
