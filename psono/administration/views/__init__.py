@@ -8,6 +8,7 @@ from .stats_os import StatsOsView
 from .stats_two_factor import StatsTwoFactorView
 from .duo import DuoView
 from .ga import GaView
+from .webauthn import WebAuthnView
 from .yubikey import YubikeyOTPView
 from .group import GroupView
 from .membership import MembershipView

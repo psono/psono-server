@@ -11,7 +11,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right, Webauthn
 from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
 
 import secrets
@@ -63,6 +63,15 @@ class UserView(GenericAPIView):
         yubikey_otps = []
         for y in Yubikey_OTP.objects.filter(user=user).only("id", "title", "create_date", "active"):
             yubikey_otps.append({
+                'id': y.id,
+                'title': y.title,
+                'create_date': y.create_date,
+                'active': y.active,
+            })
+
+        webauthns = []
+        for y in Webauthn.objects.filter(user=user).only("id", "title", "create_date", "active"):
+            webauthns.append({
                 'id': y.id,
                 'title': y.title,
                 'create_date': y.create_date,
@@ -126,6 +135,7 @@ class UserView(GenericAPIView):
             'duos': duos,
             'google_authenticators': google_authenticators,
             'yubikey_otps': yubikey_otps,
+            'webauthns': webauthns,
             'recovery_codes': recovery_codes,
             'emergency_codes': emergency_codes,
             'sessions': sessions,

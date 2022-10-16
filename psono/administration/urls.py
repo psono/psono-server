@@ -28,6 +28,7 @@ if settings.MANAGEMENT_ENABLED:
         re_path(r'^user/(?P<user_id>[^/]+)/$', views.UserView.as_view(), name='admin_user'),
         re_path(r'^user/$', views.UserView.as_view(), name='admin_user'),
         re_path(r'^yubikey-otp/$', views.YubikeyOTPView.as_view(), name='admin_yubikey_otp'),
+        re_path(r'^webautn/$', views.WebAuthnView.as_view(), name='admin_webauthn'),
         re_path(r'^google-authenticator/$', views.GaView.as_view(), name='admin_google_authenticator'),
         re_path(r'^recovery-code/$', views.RecoveryCodeView.as_view(), name='admin_recovery_code'),
         re_path(r'^emergency-code/$', views.EmergencyCodeView.as_view(), name='admin_emergency_code'),
