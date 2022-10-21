@@ -385,6 +385,8 @@ class CreateShareTests(APITestCaseExtended):
                     # 'data': str(initial_data['data']),
                     # 'data_nonce': unicode(initial_data['data_nonce']),
                     'share_right_id': store['share_right_id'],
+                    'share_right_create_date': store['share_right_create_date'],
+                    'share_right_write_date': store['share_right_write_date'],
                     'share_right_create_user_id': self.test_user_obj.id,
                     'share_right_create_user_username': self.test_user_obj.username,
                     'share_right_create_user_public_key': self.test_user_obj.public_key,

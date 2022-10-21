@@ -37,13 +37,15 @@ class ShareView(GenericAPIView):
                 .exclude(creator__isnull=True, accepted__isnull=True)\
                 .exclude(creator__isnull=True, accepted=False)\
                 .only("id","share_id", "user_id", "title", "title_nonce", "key", "key_nonce",
-                                        "read", "write", "grant", "accepted", "creator__id", "creator__username",
-                                        "creator__public_key")
+                      "read", "write", "grant", "accepted", "creator__id", "creator__username",
+                      "creator__public_key", "create_date", "write_date")
 
             for user_share_right in user_share_rights:
 
                 share = {
                     'id': user_share_right.share_id,
+                    'share_right_create_date': user_share_right.create_date,
+                    'share_right_write_date': user_share_right.write_date,
                     'share_right_id': user_share_right.id,
                     'share_right_user_id': user_share_right.user_id,
                     'share_right_title': user_share_right.title,
