@@ -45,7 +45,10 @@ ENV_VAR_HOME = "PSONO_HOME"
 
 CONFIG_FORMATS = ["yaml", "toml"]
 
-ENV_FILE_ACCESS = ["SECRET_KEY", "ACTIVATION_LINK_SECRET", "DB_SECRET", "EMAIL_SECRET_SALT", "PRIVATE_KEY", "PUBLIC_KEY", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "DATABASES_DEFAULT_PASSWORD", "DATABASES_DEFAULT_USER"]
+ENV_FILE_ACCESS = ["SECRET_KEY", "ACTIVATION_LINK_SECRET", "DB_SECRET", 
+"EMAIL_SECRET_SALT", "PRIVATE_KEY", "PUBLIC_KEY", 
+"EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "DATABASES_DEFAULT_NAME", 
+"DATABASES_DEFAULT_PASSWORD", "DATABASES_DEFAULT_USER"]
 
 def get_home_path():
     home_override = os.environ.get(ENV_VAR_HOME, '')
@@ -135,12 +138,12 @@ def config_get(key, *args):
     elif 'PSONO_' + key + '_FILE' in os.environ and key in ENV_FILE_ACCESS:
         p_file = os.environ.get('PSONO_' + key + '_FILE')  
         if os.path.exists(p_file) and os.path.getsize(p_file) > 0:
-        	try:
-        		with open(p_file) as f:
-					val = f.readline()
-    		except EnvironmentError:
-    			raise Exception("Setting not reading", "Couldn't read the setting for PSONO_%s_FILE (check file)" % (key,))
-    		return val
+            try:
+                with open(p_file) as f:
+                    val = f.readline()
+            except EnvironmentError:
+                raise Exception("Setting not reading", "Couldn't read the setting for PSONO_%s_FILE (check file)" % (key,))
+            return val
     if key in CONFIG:
         return CONFIG.get(key)
     if len(args) > 0:
