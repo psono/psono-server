@@ -97,11 +97,20 @@ run-unittests-alpine:
     - branches@psono/psono-server
     - tags@psono/psono-server
 
+run-vulnerability-python-dependencies:
+  except:
+    - schedules
+  stage: test
+  image: python:3.11-buster
+  script:
+    - pip3 install pip-audit==2.4.5
+    - pip-audit -r ./requirements.txt
+
 run-vulnerability-scan:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: psono-docker.jfrog.io/docker:20.10.17-git
   services:
     - name: docker:20-dind
       alias: docker
@@ -111,19 +120,10 @@ run-vulnerability-scan:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
   script:
-    - apt-get update || true
-    - apt install -y ca-certificates curl gnupg lsb-release
-    - mkdir -p /etc/apt/keyrings
-    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    - apt-get update
-    - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-20.10.17.tgz" -o docker.tgz && echo "969210917b5548621a2b541caf00f86cc6963c6cf0fb13265b9731c3b98974d9 *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
+#    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
-    - apt-get install docker-scan-plugin
-    - docker scan --accept-license $CONTAINER_TEST_IMAGE
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
   only:
     - branches@psono/psono-server
