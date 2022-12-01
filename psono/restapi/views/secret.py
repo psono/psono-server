@@ -2,13 +2,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from ..permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import requests
 
 from .secret_link import create_secret_link
-from ..utils import user_has_rights_on_secret, readbuffer, decrypt_with_db_secret, encrypt_with_db_secret
+from ..utils import readbuffer, decrypt_with_db_secret, encrypt_with_db_secret
 from ..models import (
     Secret,
     Secret_History,
@@ -16,6 +14,7 @@ from ..models import (
 
 from ..app_settings import (
     CreateSecretSerializer,
+    ReadSecretSerializer,
     UpdateSecretSerializer,
 )
 
@@ -27,7 +26,7 @@ class SecretView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
-    def get(self, request, secret_id = None, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
         Lists a specific secret
 
@@ -45,23 +44,16 @@ class SecretView(GenericAPIView):
         :return: 200 / 400 / 403
         :rtype:
         """
-        if not secret_id:
-            return Response({"error": "IdNoUUID", 'message': "Secret ID has not been provided"},
-                            status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            secret = Secret.objects.get(pk=secret_id)
-        except ValidationError:
+        serializer = ReadSecretSerializer(data=request.data, context=self.get_serializer_context())
 
-            return Response({"error": "IdNoUUID", 'message': "Secret ID is badly formed and no secret_id"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        except Secret.DoesNotExist:
+        if not serializer.is_valid():
 
-            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if not user_has_rights_on_secret(request.user.id, secret.id, True, None):
-
-            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
+        secret = serializer.validated_data.get('secret')
 
         try:
             callback_pass = decrypt_with_db_secret(secret.callback_pass)

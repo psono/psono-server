@@ -66,6 +66,7 @@ from .delete_webauthn import *
 from .delete_yubikey import *
 from .read_secret_history import *
 from .read_history import *
+from .read_secret import *
 from .create_api_key import *
 from .update_api_key import *
 from .delete_api_key import *
