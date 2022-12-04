@@ -63,6 +63,7 @@ from .serializers import (
     CreateGroupSerializer as DefaultCreateGroupSerializer,
     ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
     CreateSecretSerializer as DefaultCreateSecretSerializer,
+    ReadSecretSerializer as DefaultReadSecretSerializer,
     UpdateSecretSerializer as DefaultUpdateSecretSerializer,
     CreateMembershipSerializer as DefaultCreateMembershipSerializer,
     UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
@@ -513,6 +514,13 @@ CreateSecretSerializer = import_callable(
     serializers.get(
         'CREATE_SECRET_SERIALIZER',
         DefaultCreateSecretSerializer
+    )
+)
+
+ReadSecretSerializer = import_callable(
+    serializers.get(
+        'READ_SECRET_SERIALIZER',
+        DefaultReadSecretSerializer
     )
 )
 
