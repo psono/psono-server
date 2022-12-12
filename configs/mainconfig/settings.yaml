@@ -18,7 +18,7 @@ PUBLIC_KEY: '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 # WEB_CLIENT_URL: 'https://www.psono.pw'
 
 # Switch DEBUG to false if you go into production
-DEBUG: True
+DEBUG: False
 
 # Adjust this according to Django Documentation https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts
 ALLOWED_HOSTS: ['*']
