@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.core.mail import send_mail
 from django.conf import settings
-
+from anymail.backends.sendinblue import EmailBackend
 class Command(BaseCommand):
     help = 'Sends a testmail to the specified email address'
 

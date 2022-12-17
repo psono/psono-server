@@ -49,7 +49,7 @@ class RegisterSerializer(serializers.Serializer):
         email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-            msg = _('E-Mail already exists.')
+            msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
             raise exceptions.ValidationError(msg)
 
         return value
