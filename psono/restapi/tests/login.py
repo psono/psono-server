@@ -472,7 +472,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.data.get('non_field_errors'), [u'No username specified.'])
+        self.assertEqual(response.data.get('non_field_errors'), [u'USERNAME_REQUIRED'])
 
     def test_login_with_no_authkey(self):
         """
@@ -511,7 +511,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.data.get('non_field_errors'), [u'No authkey specified.'])
+        self.assertEqual(response.data.get('non_field_errors'), [u'AUTHKEY_REQUIRED'])
 
     def test_login_with_google_authenticator(self):
         """
