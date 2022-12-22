@@ -78,6 +78,7 @@ class RegisterSerializer(serializers.Serializer):
         username, domain = value.split('@', 1)
 
         if domain not in settings.ALLOWED_DOMAINS and '*' not in settings.ALLOWED_DOMAINS:
+            # TODO replace with PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION
             msg = _('The provided domain in your username is not allowed for the registration on this server.')
             raise exceptions.ValidationError(msg)
 
@@ -114,8 +115,7 @@ class RegisterSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=value).exists():
-            # TODO Replace with USERNAME_ALREADY_EXISTS
-            msg = _('Username already exists.')
+            msg = 'USERNAME_ALREADY_EXISTS'
             raise exceptions.ValidationError(msg)
 
         return value

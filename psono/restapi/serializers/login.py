@@ -40,13 +40,11 @@ class LoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not request_data.get('username', False):
-            # TODO Replace with USERNAME_REQUIRED
-            msg = _('No username specified.')
+            msg = 'USERNAME_REQUIRED'
             raise exceptions.ValidationError(msg)
 
         if not request_data.get('authkey', False):
-            # TODO Replace with AUTHKEY_REQUIRED
-            msg = _('No authkey specified.')
+            msg = 'AUTHKEY_REQUIRED'
             raise exceptions.ValidationError(msg)
 
         username = request_data.get('username').lower().strip()
