@@ -9,7 +9,7 @@ from ..models import Duo
 
 class ActivateDuoSerializer(serializers.Serializer):
     duo_id = UUIDField(required=True)
-    duo_token = serializers.CharField(max_length=6, min_length=6, required=False)
+    duo_token = serializers.CharField(min_length=6, required=False)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -32,6 +32,14 @@ class ActivateDuoSerializer(serializers.Serializer):
             duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
             duo_host = duo.duo_host
 
+
+        if duo_token is not None:
+            factor = 'passcode'
+            device = None
+        else:
+            factor = 'push'
+            device = 'auto'
+
         if duo.enrollment_activation_code:
             enrollment_status = duo_auth_enroll_status(duo_integration_key,
                                                        duo_secret_key, duo_host,
@@ -45,17 +53,10 @@ class ActivateDuoSerializer(serializers.Serializer):
                 msg = _("Duo enrollment expired")
                 raise exceptions.ValidationError(msg)
 
-            if enrollment_status == 'waiting':
+            if enrollment_status == 'waiting' and factor == 'push':
                 # Pending activation
                 msg = _("Scan the barcode first")
                 raise exceptions.ValidationError(msg)
-
-        if duo_token is not None:
-            factor = 'passcode'
-            device = None
-        else:
-            factor = 'push'
-            device = 'auto'
 
         username, domain = self.context['request'].user.username.split("@")
 
