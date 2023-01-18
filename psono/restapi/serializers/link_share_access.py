@@ -53,6 +53,10 @@ class LinkShareAccessSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
 
+        if not link_share.user.is_active:
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
         if link_share.secret_id and not user_has_rights_on_secret(link_share.user_id, link_share.secret_id, read=True):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

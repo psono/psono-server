@@ -262,6 +262,26 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_post_user_has_been_disabled(self):
+        """
+        Tests POST on link share access where the user that created the link share has been disabled
+        """
+
+        self.test_user_obj.is_active = False
+        self.test_user_obj.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_post_with_allowed_reads_already_used(self):
         """
         Tests POST on link share access with allowed reads already being used
