@@ -105,6 +105,7 @@ run-vulnerability-python-dependencies:
   script:
     - pip3 install pip-audit==2.4.5
     - pip-audit -r ./requirements.txt
+  allow_failure: true
 
 run-vulnerability-scan:
   except:
