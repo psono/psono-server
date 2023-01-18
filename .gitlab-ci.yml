@@ -103,7 +103,7 @@ run-vulnerability-python-dependencies:
   stage: test
   image: python:3.11-buster
   script:
-    - pip3 install pip-audit==2.4.5
+    - pip3 install pip-audit==2.4.13
     - pip-audit -r ./requirements.txt
   allow_failure: true
 
