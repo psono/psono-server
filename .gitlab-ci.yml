@@ -27,7 +27,7 @@ build-container-alpine:
     - apt-get update || true
     - apt install -y ca-certificates
     - apt-get update && apt-get install -y curl
-    - curl -fSL "https://download.docker.com/linux/static/stable/x86_64/docker-20.10.17.tgz" -o docker.tgz && echo "969210917b5548621a2b541caf00f86cc6963c6cf0fb13265b9731c3b98974d9 *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
+    - curl -fSL "https://psono.jfrog.io/artifactory/generic-local/docker/docker-20.10.17.tgz" -o docker.tgz && echo "969210917b5548621a2b541caf00f86cc6963c6cf0fb13265b9731c3b98974d9 *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE --pull .
