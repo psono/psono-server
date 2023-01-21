@@ -175,7 +175,7 @@ class DatastoreView(GenericAPIView):
         user, error_code = authenticate(username=request.user.username, authkey=str(serializer.validated_data.get('authkey')))
 
         if not user:
-            raise PermissionDenied({"message":"OLD_PASSWORD_INCORRECT"})
+            raise PermissionDenied({"message": "PASSWORD_INCORRECT"})
 
         # delete it
         datastore.delete()

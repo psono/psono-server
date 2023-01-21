@@ -744,7 +744,7 @@ class DuoTests(APITestCaseExtended):
 
         data = {
             'duo_id': duo.id,
-            'duo_token': '123456',
+            # 'duo_token': '123456',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
