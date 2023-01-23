@@ -73,16 +73,6 @@ class CreateMembershipSerializer(serializers.Serializer):
 
         return value
 
-    def validate_user_id(self, value):
-
-        try:
-            User.objects.get(pk=value)
-        except User.DoesNotExist:
-            msg = _('Target user does not exist.')
-            raise exceptions.ValidationError(msg)
-
-        return value
-
     def validate_group_id(self, value):
 
         # This line also ensures that the desired group exists and that the user firing the request has admin rights
@@ -100,5 +90,13 @@ class CreateMembershipSerializer(serializers.Serializer):
         if User_Group_Membership.objects.filter(group_id=group_id, user_id=user_id).count() > 0:
             msg = _("User is already part of the group.")
             raise exceptions.ValidationError(msg)
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            msg = 'USER_DOES_NOT_EXIST'
+            raise exceptions.ValidationError(msg)
+
+        attrs['user'] = user
 
         return attrs

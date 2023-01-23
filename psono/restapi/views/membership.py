@@ -1,9 +1,15 @@
+import os
+from email.mime.image import MIMEImage
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from ..permissions import IsAuthenticated
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.conf import settings
+
+from ..utils import decrypt_with_db_secret
+from ..permissions import IsAuthenticated
 
 from ..app_settings import (
     CreateMembershipSerializer,
@@ -65,6 +71,46 @@ class MembershipView(GenericAPIView):
             group_admin = serializer.validated_data['group_admin'],
             share_admin = serializer.validated_data['share_admin'],
         )
+
+        if not settings.DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED:
+            # send email
+            if settings.WEB_CLIENT_URL:
+                groups_link = settings.WEB_CLIENT_URL + '/index.html#!/groups'
+            else:
+                groups_link = None
+
+            msg_plain = render_to_string('email/new_group_membership_created.txt', {
+                'groups_link': groups_link
+            })
+            msg_html = render_to_string('email/new_group_membership_created.html', {
+                'groups_link': groups_link
+            })
+
+            if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
+                # SenndInBlue does not support inline attachments
+                msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
+
+            msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT, msg_plain,
+                                         settings.EMAIL_FROM,
+                                         [decrypt_with_db_secret(serializer.validated_data['user'].email)])
+
+            msg.attach_alternative(msg_html, "text/html")
+            msg.mixed_subtype = 'related'
+
+            if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+                for f in ['logo.png']:
+                    fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+
+                    msg_img = MIMEImage(fp.read())
+                    fp.close()
+                    msg_img.add_header('Content-ID', '<{}>'.format(f))
+                    msg.attach(msg_img)
+
+            try:
+                msg.send()
+            except:  # nosec
+                # Lets not fail group invitation for failing emails e.g. due to a completely missing email config
+                pass
 
         if settings.CACHE_ENABLE:
             cache_key = 'psono_user_status_' + str(serializer.validated_data['user_id'])
