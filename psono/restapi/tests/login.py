@@ -210,6 +210,152 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
+        token = models.Token.objects.all().first()
+
+        self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=settings.DEFAULT_TOKEN_TIME_VALID - 5))
+        self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=settings.DEFAULT_TOKEN_TIME_VALID + 5))
+
+    def test_login_custom_session_duration(self):
+        """
+        Ensure we can login and specify a custom session_duration
+        """
+
+        custom_session_duration = 100 # 100 seconds only
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+            'session_duration': custom_session_duration,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.Token.objects.count(), 1)
+
+        token = models.Token.objects.all().first()
+
+        self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=custom_session_duration - 5))
+        self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=custom_session_duration + 5))
+
+    def test_max_web_token_time_valid(self):
+        """
+        Ensure that MAX_WEB_TOKEN_TIME_VALID is applied correctly
+        """
+
+        custom_session_duration = settings.MAX_WEB_TOKEN_TIME_VALID + 1000
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+            'session_duration': custom_session_duration,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.Token.objects.count(), 1)
+
+        token = models.Token.objects.all().first()
+
+        self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=settings.MAX_WEB_TOKEN_TIME_VALID - 5))
+        self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=settings.MAX_WEB_TOKEN_TIME_VALID + 5))
+
+    def test_max_app_token_time_valid(self):
+        """
+        Ensure that MAX_APP_TOKEN_TIME_VALID is applied correctly
+        """
+
+        custom_session_duration = settings.MAX_APP_TOKEN_TIME_VALID + 1000
+
+        # our public / private key box
+        box = PrivateKey.generate()
+
+        # our hex encoded public / private keys
+        user_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
+        user_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+
+        server_crypto_box = Box(PrivateKey(user_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
+                                PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder))
+
+        login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+        encrypted = server_crypto_box.encrypt(json.dumps({
+            'username': self.test_username,
+            'authkey': self.test_authkey,
+            'client_type': "app",
+        }).encode("utf-8"), login_info_nonce)
+        login_info_encrypted = encrypted[len(login_info_nonce):]
+
+        data = {
+            'login_info': nacl.encoding.HexEncoder.encode(login_info_encrypted).decode(),
+            'login_info_nonce': nacl.encoding.HexEncoder.encode(login_info_nonce).decode(),
+            'public_key': user_session_public_key_hex,
+            'session_duration': custom_session_duration,
+        }
+
+        url = reverse('authentication_login')
+
+        models.Token.objects.all().delete()
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(models.Token.objects.count(), 1)
+
+        token = models.Token.objects.all().first()
+
+        self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=settings.MAX_APP_TOKEN_TIME_VALID - 5))
+        self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=settings.MAX_APP_TOKEN_TIME_VALID + 5))
+
+
+
     def test_login_with_corrupted_login_info(self):
         """
         Try to login with corrupted login info
