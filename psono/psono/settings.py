@@ -284,6 +284,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': config_get('THROTTLE_RATE_ANON', '1440/day'),
+        'prelogin': config_get('THROTTLE_RATE_PRE_LOGIN', '48/day'),
         'login': config_get('THROTTLE_RATE_LOGIN', '48/day'),
         'link_share_secret': config_get('THROTTLE_RATE_LINK_SHARE_SECRET', '60/hour'),
         'password': config_get('THROTTLE_RATE_PASSWORD', '24/day'),

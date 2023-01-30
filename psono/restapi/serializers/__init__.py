@@ -31,6 +31,7 @@ from .login import *
 from .logout import *
 from .management_command import *
 from .move_secret_link import *
+from .prelogin import *
 from .public_share_details import *
 from .public_user_details import *
 from .register import *

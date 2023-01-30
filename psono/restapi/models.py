@@ -15,10 +15,27 @@ import nacl.secret
 import nacl.utils
 
 
+def default_hashing_parameters():
+    return {
+        "u": 14,
+        "r": 8,
+        "p": 1,
+        "l": 64
+    }
+
+
+HASHING_ALGORITHM_SCRYPT = 'scrypt'
+HASHING_ALGORITHMS = [
+    (HASHING_ALGORITHM_SCRYPT, 'scrypt'),
+]
+DEFAULT_HASHING_ALGORITHM = HASHING_ALGORITHM_SCRYPT
+
+
 class User(models.Model):
     """
     The custom user who owns the data storage
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
@@ -53,6 +70,10 @@ class User(models.Model):
         help_text='True once yubikey 2fa is enabled')
     webauthn_enabled = models.BooleanField('Webauthn 2FA enabled', default=False,
         help_text='True once webauthn 2fa is enabled')
+    display_name = models.CharField('display name', max_length=512, default='')
+    last_login = models.DateTimeField(default=timezone.now)
+    hashing_algorithm = models.CharField('hashing algorithm', max_length=32, default=DEFAULT_HASHING_ALGORITHM, choices=HASHING_ALGORITHMS,)
+    hashing_parameters = models.JSONField('hashing parameters', default=default_hashing_parameters)
 
     credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
@@ -71,8 +92,14 @@ class User(models.Model):
             private_key_nonce_changed = self.private_key_nonce != stored_user.private_key_nonce
             email_changed = self.email != stored_user.email
             email_bcrypt_changed = self.email_bcrypt != stored_user.email_bcrypt
+            hashing_algorithm_changed = self.hashing_algorithm != stored_user.hashing_algorithm
+            hashing_parameters_changed = self.hashing_parameters != stored_user.hashing_parameters
 
-            if authkey_changed or public_key_changed  or secret_key_changed  or secret_key_nonce_changed  or private_key_changed  or private_key_nonce_changed :
+            if authkey_changed or public_key_changed  or secret_key_changed  or secret_key_nonce_changed  or private_key_changed  or private_key_nonce_changed:
+
+                if hashing_parameters_changed or hashing_algorithm_changed:
+                    Old_Credential.objects.filter(user_id=stored_user.id).delete()
+
                 Old_Credential.objects.create(
                     user_id=stored_user.id,
                     authkey=stored_user.authkey,
@@ -81,6 +108,8 @@ class User(models.Model):
                     secret_key_nonce=stored_user.secret_key_nonce,
                     private_key=stored_user.private_key,
                     private_key_nonce=stored_user.private_key_nonce,
+                    hashing_algorithm=stored_user.hashing_algorithm,
+                    hashing_parameters=stored_user.hashing_parameters,
                 )
 
             if email_changed or email_bcrypt_changed :
@@ -131,6 +160,8 @@ class Old_Credential(models.Model):
     private_key_nonce = models.CharField('private key nonce', max_length=64, unique=True)
     secret_key = models.CharField('secret key', max_length=256)
     secret_key_nonce = models.CharField('secret key nonce', max_length=64, unique=True)
+    hashing_algorithm = models.CharField('hashing algorithm', max_length=32, default=DEFAULT_HASHING_ALGORITHM, choices=HASHING_ALGORITHMS,)
+    hashing_parameters = models.JSONField('hashing parameters', default=default_hashing_parameters)
 
     class Meta:
         abstract = False

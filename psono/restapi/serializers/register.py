@@ -2,11 +2,10 @@ from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
-from decimal import Decimal
 import re
 import bcrypt
 
-from ..models import User
+from ..models import User, HASHING_ALGORITHMS
 from ..utils import encrypt_with_db_secret
 
 class RegisterSerializer(serializers.Serializer):
@@ -28,6 +27,8 @@ class RegisterSerializer(serializers.Serializer):
                                        max_length=settings.USER_SECRET_KEY_LENGTH_BYTES*2)
     secret_key_nonce = serializers.CharField(max_length=64, required=True, )
     user_sauce = serializers.CharField(required=True, )
+    hashing_algorithm = serializers.ChoiceField(choices=HASHING_ALGORITHMS, required=False, )
+    hashing_parameters = serializers.DictField(required=False, )
 
     def validate_email(self, value):
 
@@ -122,6 +123,39 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_authkey(self, value):
         return make_password(value.strip())
+
+    def validate(self, attrs: dict) -> dict:
+
+        # We hardcode the settings for scrypt and the hashing parameters, as every client that is not providing them
+        # is using those parameters below internally
+        hashing_algorithm = attrs.get('hashing_algorithm', 'scrypt')
+        hashing_parameters = attrs.get('hashing_parameters', {})
+        if not hashing_parameters:
+            hashing_parameters = {
+                "u": 14,
+                "r": 8,
+                "p": 1,
+                "l": 64
+            }
+
+        if hashing_algorithm == 'scrypt':
+            if 'u' not in hashing_parameters or hashing_parameters['u'] < 14:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'r' not in hashing_parameters or hashing_parameters['r'] < 8:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'p' not in hashing_parameters or hashing_parameters['p'] < 1:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'l' not in hashing_parameters or hashing_parameters['l'] < 64:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+
+        attrs['hashing_algorithm'] = hashing_algorithm
+        attrs['hashing_parameters'] = hashing_parameters
+
+        return attrs
 
     def create(self, validated_data):
 

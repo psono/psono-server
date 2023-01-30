@@ -78,6 +78,9 @@ class LoginView(GenericAPIView):
             write=True,
         )
 
+        user.last_login = timezone.now()
+        user.save()
+
         # our public / private key box
         box = PrivateKey.generate()
 
@@ -136,7 +139,9 @@ class LoginView(GenericAPIView):
                 "public_key": user.public_key,
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
-                "user_sauce": user.user_sauce
+                "user_sauce": user.user_sauce,
+                'hashing_algorithm': user.hashing_algorithm,
+                'hashing_parameters': user.hashing_parameters,
             }
         }
 

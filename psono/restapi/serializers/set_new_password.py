@@ -5,7 +5,7 @@ from django.contrib.auth.hashers import check_password
 
 from rest_framework import serializers, exceptions
 
-from ..models import User, Recovery_Code
+from ..models import User, Recovery_Code, HASHING_ALGORITHMS
 
 import re
 
@@ -19,7 +19,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
     recovery_authkey = serializers.CharField(required=True)
     update_data = serializers.CharField(required=True)
     update_data_nonce = serializers.CharField(max_length=64, required=True)
-
+    hashing_algorithm = serializers.ChoiceField(choices=HASHING_ALGORITHMS, required=False, )
+    hashing_parameters = serializers.DictField(required=False, )
 
 
     def validate_update_data(self, value):
@@ -47,6 +48,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         username = attrs.get('username')
         recovery_authkey = attrs.get('recovery_authkey')
+        hashing_algorithm = attrs.get('hashing_algorithm', '')
+        hashing_parameters = attrs.get('hashing_parameters', {})
 
         update_data = nacl.encoding.HexEncoder.decode(attrs.get('update_data'))
         update_data_nonce = nacl.encoding.HexEncoder.decode(attrs.get('update_data_nonce'))
@@ -73,6 +76,31 @@ class SetNewPasswordSerializer(serializers.Serializer):
             msg = _("Validator expired.")
             raise exceptions.ValidationError(msg)
 
+        # Either both are provided or none
+        if hashing_algorithm and not hashing_parameters:
+            msg = 'INVALID_HASHING_PARAMETER'
+            raise exceptions.ValidationError(msg)
+
+        if not hashing_algorithm and hashing_parameters:
+            msg = 'INVALID_HASHING_PARAMETER'
+            raise exceptions.ValidationError(msg)
+
+        if hashing_algorithm == 'scrypt':
+            if 'u' not in hashing_parameters or hashing_parameters['u'] < 14:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'r' not in hashing_parameters or hashing_parameters['r'] < 8:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'p' not in hashing_parameters or hashing_parameters['p'] < 1:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+            if 'l' not in hashing_parameters or hashing_parameters['l'] < 64:
+                msg = 'INVALID_HASHING_PARAMETER'
+                raise exceptions.ValidationError(msg)
+
+        attrs['hashing_algorithm'] = hashing_algorithm or user.hashing_algorithm
+        attrs['hashing_parameters'] = hashing_parameters or user.hashing_parameters
         attrs['update_data'] = update_data
         attrs['update_data_nonce'] = update_data_nonce
         attrs['recovery_code'] = recovery_code

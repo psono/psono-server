@@ -25,6 +25,7 @@ urlpatterns = [
     #    name='authentication_authkey_reset'),
     #re_path(r'^authentication/authkey/reset/confirm/$', views.AuthkeyResetConfirmView.as_view(),
     #    name='authentication_authkey_reset_confirm'),
+    re_path(r'^authentication/prelogin/$', views.PreLoginView.as_view(), name='authentication_prelogin'),
     re_path(r'^authentication/login/$', views.LoginView.as_view(), name='authentication_login'),
     re_path(r'^authentication/logout/$', views.LogoutView.as_view(), name='authentication_logout'),
     re_path(r'^authentication/ga-verify/$', views.GAVerifyView.as_view(), name='authentication_ga_verify'),

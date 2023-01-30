@@ -44,6 +44,9 @@ class UserUpdate(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        hashing_algorithm = serializer.validated_data.get('hashing_algorithm')
+        hashing_parameters = serializer.validated_data.get('hashing_parameters')
+
         # E-Mail Change
         if 'email' in request.data and request.data['email'] is not None:
             email = str(request.data['email']).lower().strip()
@@ -69,6 +72,10 @@ class UserUpdate(GenericAPIView):
             request.user.private_key_nonce = str(request.data['private_key_nonce'])
         if 'user_sauce' in request.data and request.data['user_sauce'] is not None:
             request.user.user_sauce = str(request.data['user_sauce'])
+        if hashing_parameters:
+            request.user.hashing_parameters = hashing_parameters
+        if hashing_algorithm:
+            request.user.hashing_algorithm = hashing_algorithm
 
         request.user.save()
 

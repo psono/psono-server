@@ -20,6 +20,7 @@ from .register import RegisterView
 from .secret import SecretView
 from .secret_link import SecretLinkView
 from .file_link import FileLinkView
+from .prelogin import PreLoginView
 from .session import SessionView
 from .share import ShareView
 from .share_right import ShareRightView

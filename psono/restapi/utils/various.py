@@ -8,7 +8,7 @@ import os
 
 import bcrypt
 import time
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -371,7 +371,7 @@ def set_cache(obj, timeout=None):
         cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
 
 
-def generate_authkey(username, password) -> bytes:
+def generate_authkey(username, password, u, r, p, l) -> bytes:
     """
     Generates the authkey that is sent to the server instead of the cleartext password
 
@@ -379,18 +379,27 @@ def generate_authkey(username, password) -> bytes:
     :type username: str
     :param password: The password of the user
     :type password: str
+    :param u:
+    :type u: int
+    :param r:
+    :type r: int
+    :param p:
+    :type p: int
+    :param l:
+    :type l: int
+
     :return: authkey: The authkey of the user
-    :rtype: str
+    :rtype: authkey str
     """
 
     salt = hashlib.sha512(username.lower().encode()).hexdigest()
 
     return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                                         salt=salt.encode("utf-8"),
-                                        N=16384,
-                                        r=8,
-                                        p=1,
-                                        buflen=64))
+                                        N=pow(2, u),
+                                        r=r,
+                                        p=p,
+                                        buflen=l))
 
 
 def get_datastore(datastore_id=None, user=None):
@@ -402,6 +411,7 @@ def get_datastore(datastore_id=None, user=None):
     :type datastore_id: uuid
     :param user: The user and alleged owner of the datastore
     :type user: User
+
     :return:
     :rtype:
     """
@@ -541,7 +551,7 @@ def delete_share_link(link_id):
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
 
 
-def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
+def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, bytes]:
     """
     Encrypts a secret with a password and a random static user specific key we call "user_sauce"
 
@@ -551,6 +561,15 @@ def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
     :type password: str
     :param user_sauce: A random static user specific key
     :type user_sauce: str
+    :param u:
+    :type u: int
+    :param r:
+    :type r: int
+    :param p:
+    :type p: int
+    :param l:
+    :type l: int
+
     :return: A tuple of the encrypted secret and nonce
     :rtype: (bytes, bytes)
     """
@@ -559,10 +578,10 @@ def encrypt_secret(secret, password, user_sauce) -> Tuple[bytes, bytes]:
 
     k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
                                                     salt=salt.encode("utf-8"),
-                                                    N=16384,
-                                                    r=8,
-                                                    p=1,
-                                                    buflen=64))).hexdigest()
+                                                    N=pow(2, u),
+                                                    r=r,
+                                                    p=p,
+                                                    buflen=l))).hexdigest()
     crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
@@ -744,18 +763,36 @@ def create_user(username, password, email, gen_authkey=True):
 
     user_sauce = binascii.hexlify(os.urandom(32))
 
+    hashing_params = default_hashing_parameters()
+
     authkey_hashed = None
     if gen_authkey:
-        authkey = generate_authkey(username, password).decode()
+        authkey = generate_authkey(username, password, u=hashing_params['u'], r=hashing_params['r'], p=hashing_params['p'], l=hashing_params['l']).decode()
         authkey_hashed = make_password(authkey)
 
     box = PrivateKey.generate()
     public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
     private_key_decrypted = box.encode(encoder=nacl.encoding.HexEncoder)
-    (private_key, private_key_nonce) = encrypt_secret(private_key_decrypted, password, user_sauce)
+    (private_key, private_key_nonce) = encrypt_secret(
+        private_key_decrypted,
+        password,
+        user_sauce,
+        u=hashing_params['u'],
+        r=hashing_params['r'],
+        p=hashing_params['p'],
+        l=hashing_params['l'],
+    )
 
     secret_key_decrypted = binascii.hexlify(os.urandom(32))
-    (secret_key, secret_key_nonce) = encrypt_secret(secret_key_decrypted, password, user_sauce)
+    (secret_key, secret_key_nonce) = encrypt_secret(
+        secret_key_decrypted,
+        password,
+        user_sauce,
+        u=hashing_params['u'],
+        r=hashing_params['r'],
+        p=hashing_params['p'],
+        l=hashing_params['l'],
+    )
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
     db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
