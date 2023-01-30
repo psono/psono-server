@@ -53,10 +53,10 @@ class LoginSerializer(serializers.Serializer):
         source = request_data.get('client_type', 'webclient')
 
         if source == 'app':
-            session_duration = max(session_duration, settings.MAX_APP_TOKEN_TIME_VALID)
+            session_duration = min(session_duration, settings.MAX_APP_TOKEN_TIME_VALID)
         else:
             # e.g. webclient
-            session_duration = max(session_duration, settings.MAX_WEB_TOKEN_TIME_VALID)
+            session_duration = min(session_duration, settings.MAX_WEB_TOKEN_TIME_VALID)
 
         user, error_code = authenticate(username=username, authkey=authkey, password=password)
 

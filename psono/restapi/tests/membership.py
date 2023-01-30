@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
+from restapi.utils import encrypt_with_db_secret
 
 import random
 import string
@@ -36,7 +37,7 @@ class CreateMembershipTest(APITestCaseExtended):
 
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -61,7 +62,7 @@ class CreateMembershipTest(APITestCaseExtended):
 
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
-            email=self.test_email2,
+            email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
             authkey=make_password(self.test_authkey2),
             public_key=self.test_public_key2,
@@ -482,7 +483,7 @@ class DeleteMembershipTest(APITestCaseExtended):
 
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -507,7 +508,7 @@ class DeleteMembershipTest(APITestCaseExtended):
 
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
-            email=self.test_email2,
+            email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
             authkey=make_password(self.test_authkey2),
             public_key=self.test_public_key2,
@@ -763,7 +764,7 @@ class UpdateMembershipTest(APITestCaseExtended):
 
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
@@ -788,7 +789,7 @@ class UpdateMembershipTest(APITestCaseExtended):
 
         self.test_user_obj2 = models.User.objects.create(
             username=self.test_username2,
-            email=self.test_email2,
+            email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
             authkey=make_password(self.test_authkey2),
             public_key=self.test_public_key2,
@@ -1046,7 +1047,7 @@ class ReadMembershipTest(APITestCaseExtended):
 
         self.test_user_obj = models.User.objects.create(
             username=self.test_username,
-            email=self.test_email,
+            email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
