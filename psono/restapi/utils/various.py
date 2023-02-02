@@ -747,7 +747,7 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     return plaintext.decode()
 
 
-def create_user(username, password, email, gen_authkey=True):
+def create_user(username, password, email, gen_authkey=True, display_name=''):
 
     username = username.strip().lower()
     email = email.strip().lower().encode()
@@ -802,6 +802,7 @@ def create_user(username, password, email, gen_authkey=True):
 
     user = User.objects.create(
         username=username,
+        display_name=display_name,
         email=email.decode(),
         email_bcrypt=email_bcrypt,
         authkey=authkey_hashed,
