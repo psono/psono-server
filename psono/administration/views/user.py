@@ -124,6 +124,7 @@ class UserView(GenericAPIView):
             'username': user.username,
             'email': decrypt_with_db_secret(user.email),
             'create_date': user.create_date,
+            'last_login': user.last_login,
             'public_key': user.public_key,
             'is_active': user.is_active,
             'is_email_active': user.is_email_active,
@@ -182,7 +183,7 @@ class UserView(GenericAPIView):
             search = serializer.validated_data.get('search')
 
             user_qs = User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
-                    .only('id', 'create_date', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'webauthn_enabled', 'yubikey_otp_enabled')
+                    .only('id', 'create_date', 'last_login', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'webauthn_enabled', 'yubikey_otp_enabled')
 
             if search:
                 user_qs = user_qs.filter(Q(username__icontains=search) | Q(email_bcrypt=get_static_bcrypt_hash_from_email(search)))
@@ -201,6 +202,7 @@ class UserView(GenericAPIView):
                 users.append({
                     'id': u.id,
                     'create_date': u.create_date,
+                    'last_login': u.last_login,
                     'username': u.username,
                     'is_active': u.is_active,
                     'is_email_active': u.is_email_active,

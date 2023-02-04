@@ -963,6 +963,340 @@ class PasswordTests(APITestCaseExtended):
         self.assertIsNone(db_recovery_code.verifier_issue_date)
 
 
+    def test_put_password_with_hashing_algorithm_and_parameters(self):
+        """
+        Tests PUT method on password with hashing algorithm and parameters
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {'l': 65, 'p': 2, 'r': 9, 'u': 15},
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertEqual(user.hashing_algorithm, data['hashing_algorithm'])
+        self.assertEqual(user.hashing_parameters, data['hashing_parameters'])
+
+    def test_put_password_with_hashing_algorithm_and_without_parameters(self):
+        """
+        Tests PUT method on password with a hashing algorithm yet without parameters
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            # 'hashing_parameters': {'l': 65, 'p': 2, 'r': 9, 'u': 15},
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_password_with_hashing_parameters_and_without_algorithm(self):
+        """
+        Tests PUT method on password with a hashing_parameters yet without algorithm
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            # 'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {'l': 65, 'p': 2, 'r': 9, 'u': 15},
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_password_with_invalid_hashing_parameters_l(self):
+        """
+        Tests PUT method on password with invalid l as hashing parameter
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {
+                'l': 63, # min 64
+                'p': 2,
+                'r': 9,
+                'u': 15
+            },
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_password_with_invalid_hashing_parameters_p(self):
+        """
+        Tests PUT method on password with invalid p as hashing parameter
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {
+                'l': 65,
+                'p': 0, # min 1
+                'r': 9,
+                'u': 15
+            },
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_password_with_invalid_hashing_parameters_r(self):
+        """
+        Tests PUT method on password with invalid r as hashing parameter
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {
+                'l': 65,
+                'p': 2,
+                'r': 7, # min 8
+                'u': 15
+            },
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_password_with_invalid_hashing_parameters_u(self):
+        """
+        Tests PUT method on password with invalid u as hashing parameter
+        """
+
+        url = reverse('password')
+
+        update_data_nonce = nacl.utils.random(Box.NONCE_SIZE)
+        update_data_nonce_hex = nacl.encoding.HexEncoder.encode(update_data_nonce).decode()
+
+        crypto_box = Box(PrivateKey(self.user_private_key, encoder=nacl.encoding.HexEncoder),
+                         PublicKey(self.verifier_public_key, encoder=nacl.encoding.HexEncoder))
+
+        new_authkey = 'authkey'
+        new_private_key = 'private_key'
+        new_private_key_nonce = 'private_key_nonce'
+        new_secret_key = 'secret_key'
+        new_secret_key_nonce = 'secret_key_nonce'
+
+        update_data_dec = crypto_box.encrypt(json.dumps({
+            'authkey': new_authkey,
+            'private_key': new_private_key,
+            'private_key_nonce': new_private_key_nonce,
+            'secret_key': new_secret_key,
+            'secret_key_nonce': new_secret_key_nonce,
+        }).encode("utf-8"), update_data_nonce)
+
+        update_data = update_data_dec[len(update_data_nonce):]
+        update_data_hex = nacl.encoding.HexEncoder.encode(update_data).decode()
+
+        data = {
+            'username': self.test_username,
+            'recovery_authkey': self.test_recovery_authkey,
+            'update_data': update_data_hex,
+            'update_data_nonce': update_data_nonce_hex,
+            'hashing_algorithm': 'scrypt',
+            'hashing_parameters': {
+                'l': 65,
+                'p': 2,
+                'r': 9,
+                'u': 13 # min 14
+            },
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
     def test_post_password_with_no_username(self):
         """
         Tests POST method on password with no username

@@ -55,7 +55,7 @@ class CommandCreateuserTestCase(TestCase):
         password = 'myPassword'
         authkey = '2d67919ba1021eb38b0647cfdf926aab6d25c7465a179551894a2b2d6fc1c8a8183076c5f7b7f7245419c3cf57c574f84386a1b1e30cddfc10606c67a28e2587'
 
-        self.assertEqual(generate_authkey(username, password).decode(), authkey)
+        self.assertEqual(generate_authkey(username, password, u=14, r=8, p=1, l=64).decode(), authkey)
 
     def test_createuser(self):
         """
@@ -78,7 +78,7 @@ class CommandCreateuserTestCase(TestCase):
 
         self.assertEqual(decrypt_with_db_secret(user.email), email)
         self.assertEqual(user.email_bcrypt, email_bcrypt)
-        self.assertTrue(check_password(generate_authkey(username, password).decode(), user.authkey))
+        self.assertTrue(check_password(generate_authkey(username, password, u=14, r=8, p=1, l=64).decode(), user.authkey))
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_email_active)
 

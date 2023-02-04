@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 from rest_framework import serializers, exceptions
 from typing import Dict
 
@@ -43,7 +44,7 @@ class UserSearchSerializer(serializers.Serializer):
                 pass
         elif user_username and settings.ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL:
             user_split = user_username.split('@', 1)
-            for user in User.objects.filter(username__contains=str(user_split[0])).all():
+            for user in User.objects.filter(Q(username__contains=str(user_split[0])) | Q(display_name__icontains=user_username)).all():
                 if user.id not in user_index:
                     users.append(user)
                     user_index[user.id] = True

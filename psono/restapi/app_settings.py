@@ -3,6 +3,7 @@ from django.conf import settings
 from importlib import import_module
 
 from .serializers import (
+    PreLoginSerializer as DefaultPreLoginSerializer,
     LoginSerializer as DefaultLoginSerializer,
     APIKeyLoginSerializer as DefaultAPIKeyLoginSerializer,
     GAVerifySerializer as DefaultGAVerifySerializer,
@@ -107,6 +108,9 @@ def import_callable(path_or_callable):
 
 serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
 
+PreLoginSerializer = import_callable(
+    serializers.get('PRE_LOGIN_SERIALIZER', DefaultPreLoginSerializer)
+)
 LoginSerializer = import_callable(
     serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
 )

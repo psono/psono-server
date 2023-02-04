@@ -60,6 +60,8 @@ class PasswordView(GenericAPIView):
         update_data_nonce = serializer.validated_data['update_data_nonce']
         recovery_code = serializer.validated_data['recovery_code']
         user = serializer.validated_data['user']
+        hashing_algorithm = serializer.validated_data['hashing_algorithm']
+        hashing_parameters = serializer.validated_data['hashing_parameters']
 
         try:
             crypto_box = Box(PrivateKey(recovery_code.verifier, encoder=nacl.encoding.HexEncoder),
@@ -89,6 +91,8 @@ class PasswordView(GenericAPIView):
         user.webauthn_enabled = False
         user.yubikey_otp_enabled = False
         user.duo_enabled = False
+        user.hashing_algorithm = hashing_algorithm
+        user.hashing_parameters = hashing_parameters
         user.save()
 
         # Delete 2 Factors
@@ -138,6 +142,8 @@ class PasswordView(GenericAPIView):
             'recovery_data_nonce': recovery_code.recovery_data_nonce,
             'recovery_sauce': recovery_code.recovery_sauce,
             'user_sauce': user.user_sauce,
+            'hashing_algorithm': user.hashing_algorithm,
+            'hashing_parameters': user.hashing_parameters,
             'verifier_public_key': public_key.decode(),
             'verifier_time_valid': settings.RECOVERY_VERIFIER_TIME_VALID
         }, status=status.HTTP_200_OK)
