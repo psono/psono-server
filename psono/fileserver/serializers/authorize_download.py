@@ -61,7 +61,7 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         try:
-            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
+            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum, file_id=file_transfer.file_id)
         except File_Chunk.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

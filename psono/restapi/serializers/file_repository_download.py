@@ -17,7 +17,7 @@ class FileRepositoryDownloadSerializer(serializers.Serializer):
         file_transfer = self.context['request'].auth
 
         try:
-            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
+            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum, file_id=file_transfer.file_id)
         except File_Chunk.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
