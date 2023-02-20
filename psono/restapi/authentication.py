@@ -216,7 +216,7 @@ class FileTransferAuthentication(BaseAuthentication):
         file_transfer_id = self.get_file_transfer_id(request)
 
         try:
-            file_transfer = File_Transfer.objects.select_related('user').get(pk=file_transfer_id)
+            file_transfer = File_Transfer.objects.select_related('user').get(pk=file_transfer_id, create_date__gte=timezone.now()-timedelta(hours=12))
         except File_Transfer.DoesNotExist:
             raise exceptions.AuthenticationFailed(_('FILE_TRANSFER_INVALID'))
 

@@ -31,7 +31,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
         try:
             file_transfer = File_Transfer.objects.select_related('user').\
                 only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
-                get(pk=file_transfer_id, type='upload')
+                get(pk=file_transfer_id, type='upload', create_date__gte=timezone.now()-timedelta(hours=12))
         except File_Transfer.DoesNotExist:
             msg = 'Filetransfer does not exist.'
             raise exceptions.ValidationError(msg)
