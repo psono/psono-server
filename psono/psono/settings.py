@@ -549,6 +549,9 @@ DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPO
 DISABLE_CALLBACKS = str(config_get('DISABLE_CALLBACKS', True)).lower() == 'true' # disables callbacks
 ALLOWED_CALLBACK_URL_PREFIX = config_get('ALLOWED_CALLBACK_URL_PREFIX', ['*'])
 
+if isinstance(ALLOWED_CALLBACK_URL_PREFIX, str):
+    ALLOWED_CALLBACK_URL_PREFIX = [allowed_callback_prefix.strip() for allowed_callback_prefix in ALLOWED_CALLBACK_URL_PREFIX.split(',')]
+
 ALLOW_MULTIPLE_SESSIONS = str(config_get('ALLOW_MULTIPLE_SESSIONS', True)).lower() == 'true' # Allows multiple sessions for each user
 AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIME_VALID', 0)) #  in seconds, 900 = 15 mins, 0 disables it
 
