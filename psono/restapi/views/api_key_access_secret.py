@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
-from rest_framework.renderers import StaticHTMLRenderer
+from django.conf import settings
 
 import nacl.secret
 import nacl.encoding
@@ -15,6 +15,7 @@ from ..models import (
     Secret_History,
 )
 from ..utils import filter_as_json, decrypt_with_db_secret, encrypt_with_db_secret
+from ..utils import is_valid_callback_url
 from ..app_settings import (
     UpdateSecretWithAPIKeySerializer,
     ReadSecretWithAPIKeySerializer,
@@ -78,7 +79,7 @@ class APIKeyAccessSecretView(GenericAPIView):
 
         secret.save()
 
-        if secret.callback_url:
+        if secret.callback_url and not settings.DISABLE_CALLBACKS and is_valid_callback_url(secret.callback_url):
             headers = {'content-type': 'application/json'}
             data = {
                 'event': 'UPDATE_SECRET_SUCCESS',

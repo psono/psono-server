@@ -546,6 +546,9 @@ DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)
 REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20)) # in seconds
 DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPORTS', False)).lower() == 'true' # disables central security reports
 
+DISABLE_CALLBACKS = str(config_get('DISABLE_CALLBACKS', True)).lower() == 'true' # disables callbacks
+ALLOWED_CALLBACK_URL_PREFIX = config_get('ALLOWED_CALLBACK_URL_PREFIX', ['*'])
+
 ALLOW_MULTIPLE_SESSIONS = str(config_get('ALLOW_MULTIPLE_SESSIONS', True)).lower() == 'true' # Allows multiple sessions for each user
 AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIME_VALID', 0)) #  in seconds, 900 = 15 mins, 0 disables it
 
@@ -641,6 +644,7 @@ def generate_signature():
         'auto_prolongation_token_time_valid': AUTO_PROLONGATION_TOKEN_TIME_VALID,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
+        'disable_callbacks': DISABLE_CALLBACKS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'system_wide_duo_exists': DUO_SECRET_KEY != '',  #nosec -- not [B105:hardcoded_password_string]
