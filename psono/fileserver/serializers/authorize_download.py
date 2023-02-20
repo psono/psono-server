@@ -1,3 +1,4 @@
+import re
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
@@ -51,6 +52,10 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         hash_checksum = ticket['hash_checksum'].lower()
+
+        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
+            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+            raise exceptions.ValidationError(msg)
 
         count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),

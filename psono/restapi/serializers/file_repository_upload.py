@@ -1,3 +1,4 @@
+import re
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
@@ -12,6 +13,10 @@ class FileRepositoryUploadSerializer(serializers.Serializer):
         hash_checksum = attrs.get('hash_checksum', '').lower()
 
         file_transfer = self.context['request'].auth
+
+        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
+            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+            raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
             msg = _('Chunk count exceeded.')
