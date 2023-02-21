@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
+from django.test.utils import override_settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -507,6 +508,57 @@ class CreateFileRepositryTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=[
+        'azure_blob',
+        # 'gcp_cloud_storage',
+        'aws_s3',
+        'do_spaces',
+        'backblaze',
+        # 'other_s3',
+    ])
+    def test_create_failure_not_allowed_type(self):
+        """
+        Tests to create a file repository with a not allowed type
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'gcp_cloud_storage',
+            'gcp_cloud_storage_bucket': 'abc',
+            'gcp_cloud_storage_json_key': '{}'
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=['other_s3'])
+    @override_settings(ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=['https://allowed.s3.url.com/with-path'])
+    def test_create_failure_not_allowed_other_s3_url(self):
+        """
+        Tests to create a file repository with a not allowed type
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'title': 'Test file repository',
+            'type': 'other_s3',
+            'other_s3_bucket': 'abc',
+            'other_s3_region': 'region',
+            'other_s3_access_key_id': 'access-key-id',
+            'other_s3_secret_access_key': 'secret-access-key',
+            'other_s3_endpoint_url': 'https://not.allowed.com',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 
 class UpdateFileRepositryTest(APITestCaseExtended):
@@ -920,6 +972,63 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             'type': 'UnKnOwN',
             'gcp_cloud_storage_bucket': 'abc',
             'gcp_cloud_storage_json_key': '{}',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=[
+        'azure_blob',
+        # 'gcp_cloud_storage',
+        'aws_s3',
+        'do_spaces',
+        'backblaze',
+        # 'other_s3',
+    ])
+    def test_update_failure_not_allowed_type(self):
+        """
+        Tests to update a file repository with a type that is not allwoed
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'gcp_cloud_storage',
+            'gcp_cloud_storage_bucket': 'abc',
+            'gcp_cloud_storage_json_key': '{}',
+            'active': True
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=['other_s3'])
+    @override_settings(ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=['https://allowed.s3.url.com/with-path'])
+    def test_update_failure_not_allowed_other_s3_url(self):
+        """
+        Tests to update a other s3 file repository with an url that is not allowed
+        """
+
+        url = reverse('file_repository')
+
+        data = {
+            'file_repository_id': self.file_repository.id,
+            'title': 'Test file repository',
+            'type': 'other_s3',
+            'other_s3_bucket': 'abc',
+            'other_s3_region': 'region',
+            'other_s3_access_key_id': 'access-key-id',
+            'other_s3_secret_access_key': 'secret-access-key',
+            'other_s3_endpoint_url': 'https://not.allowed.com',
             'active': True
         }
 

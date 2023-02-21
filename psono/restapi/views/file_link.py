@@ -10,6 +10,7 @@ import json
 
 from ..permissions import IsAuthenticated
 from ..utils import decrypt_with_db_secret, gcs_delete, aws_delete, azure_blob_delete, do_delete, backblaze_delete, s3_delete
+from ..utils import is_allowed_other_s3_endpoint_url
 
 from ..app_settings import (
     MoveFileLinkSerializer,
@@ -149,7 +150,7 @@ class FileLinkView(GenericAPIView):
                         do_delete(data['do_space'], data['do_region'], data['do_key'], data['do_secret'], c.hash_checksum)
                     if file_repository_type == 'backblaze':
                         backblaze_delete(data['backblaze_bucket'], data['backblaze_region'], data['backblaze_access_key_id'], data['backblaze_secret_access_key'], c.hash_checksum)
-                    if file_repository_type == 'other_s3':
+                    if file_repository_type == 'other_s3' and is_allowed_other_s3_endpoint_url(data['other_s3_endpoint_url']):
                         s3_delete(data['other_s3_bucket'], data['other_s3_region'], data['other_s3_access_key_id'], data['other_s3_secret_access_key'], c.hash_checksum, endpoint_url=data['other_s3_endpoint_url'])
 
             File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False).delete()

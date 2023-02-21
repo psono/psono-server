@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 
 from rest_framework import serializers, exceptions
@@ -9,6 +8,7 @@ import json
 
 from ..fields import UUIDField, BooleanField
 from ..models import File_Repository
+from ..utils import is_allowed_other_s3_endpoint_url
 
 class UpdateFileRepositorySerializer(serializers.Serializer):
 
@@ -80,6 +80,10 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
             msg = "UNKNOWN_TYPE"
             raise exceptions.ValidationError(msg)
 
+        if type not in settings.ALLOWED_FILE_REPOSITORY_TYPES:
+            msg = "FILEREPOSITORY_TYPE_NOT_ALLOWED"
+            raise exceptions.ValidationError(msg)
+
         data = {} # type: Dict
 
         if type == 'gcp_cloud_storage':
@@ -131,15 +135,15 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
         if type == 'azure_blob':
 
             if not azure_blob_storage_account_name:
-                msg = _("ACCOUNT_NAME_IS_REQUIRED")
+                msg = "ACCOUNT_NAME_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not azure_blob_storage_account_primary_key:
-                msg = _("PRIMARY_KEY_IS_REQUIRED")
+                msg = "PRIMARY_KEY_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             if not azure_blob_storage_account_container_name:
-                msg = _("CONTAINER_NAME_IS_REQUIRED")
+                msg = "CONTAINER_NAME_IS_REQUIRED"
                 raise exceptions.ValidationError(msg)
 
             data = {
@@ -168,6 +172,10 @@ class UpdateFileRepositorySerializer(serializers.Serializer):
 
             if not other_s3_endpoint_url:
                 msg = "URL_IS_REQUIRED"
+                raise exceptions.ValidationError(msg)
+
+            if not is_allowed_other_s3_endpoint_url(other_s3_endpoint_url):
+                msg = "ENDPOINT_URL_NOT_ALLOWED"
                 raise exceptions.ValidationError(msg)
 
             data = {
