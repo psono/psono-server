@@ -747,6 +747,45 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     return plaintext.decode()
 
 
+def is_allowed_url(url: str, url_filter: list) -> bool:
+    """
+    Takes an url, checks it against URL_FILTER and returns whether the url is allowed or not
+
+    :param url: The url to test
+    :param url_filter: The url filter
+
+    :return: Whether the url is allowed or not
+    """
+
+    return any(
+        pattern == "*" or url.startswith(pattern) for pattern in url_filter
+    )
+
+
+def is_allowed_callback_url(url: str) -> bool:
+    """
+    Takes an url, checks it against ALLOWED_CALLBACK_URL_PREFIX and returns whether the url is allowed or not
+
+    :param url: The url to test
+
+    :return: Whether the url is allowed or not
+    """
+
+    return is_allowed_url(url, settings.ALLOWED_CALLBACK_URL_PREFIX)
+
+
+def is_allowed_other_s3_endpoint_url(url: str) -> bool:
+    """
+    Takes an url, checks it against ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX and returns whether the url is allowed or not
+
+    :param url: The url to test
+
+    :return: Whether the url is allowed or not
+    """
+
+    return is_allowed_url(url, settings.ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX)
+
+
 def create_user(username, password, email, gen_authkey=True, display_name=''):
 
     username = username.strip().lower()

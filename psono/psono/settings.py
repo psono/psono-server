@@ -524,6 +524,27 @@ FILE_REPOSITORY_TYPES = [
     'other_s3',
 ]
 
+ALLOWED_FILE_REPOSITORY_TYPES = config_get('ALLOWED_FILE_REPOSITORY_TYPES', [
+    'azure_blob',
+    'gcp_cloud_storage',
+    'aws_s3',
+    'do_spaces',
+    'backblaze',
+    # 'other_s3',
+])
+if isinstance(ALLOWED_FILE_REPOSITORY_TYPES, str):
+    _ALLOWED_FILE_REPOSITORY_TYPES = ALLOWED_FILE_REPOSITORY_TYPES.split(',')
+    ALLOWED_FILE_REPOSITORY_TYPES = []
+    for allowed_type in _ALLOWED_FILE_REPOSITORY_TYPES:
+        allowed_type_lowercase = allowed_type.strip().lower()
+        if allowed_type_lowercase in FILE_REPOSITORY_TYPES:
+            ALLOWED_FILE_REPOSITORY_TYPES.append(allowed_type_lowercase)
+
+ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX = config_get('ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX', ['*'])
+if isinstance(ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX, str):
+    ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX = [allowed_prefix.strip() for allowed_prefix in ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX.split(',')]
+
+
 FILESERVER_ALIVE_TIMEOUT = int(config_get('FILESERVER_ALIVE_TIMEOUT', 30))
 AUTH_KEY_LENGTH_BYTES = int(config_get('AUTH_KEY_LENGTH_BYTES', 64))
 USER_PRIVATE_KEY_LENGTH_BYTES = int(config_get('USER_PRIVATE_KEY_LENGTH_BYTES', 80))
@@ -545,6 +566,12 @@ REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)
 DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)).lower() == 'true' # disables the device fingerprint protection
 REPLAY_PROTECTION_TIME_DFFERENCE = int(config_get('REPLAY_PROTECTION_TIME_DFFERENCE', 20)) # in seconds
 DISABLE_CENTRAL_SECURITY_REPORTS = str(config_get('DISABLE_CENTRAL_SECURITY_REPORTS', False)).lower() == 'true' # disables central security reports
+
+DISABLE_CALLBACKS = str(config_get('DISABLE_CALLBACKS', True)).lower() == 'true' # disables callbacks
+ALLOWED_CALLBACK_URL_PREFIX = config_get('ALLOWED_CALLBACK_URL_PREFIX', ['*'])
+
+if isinstance(ALLOWED_CALLBACK_URL_PREFIX, str):
+    ALLOWED_CALLBACK_URL_PREFIX = [allowed_prefix.strip() for allowed_prefix in ALLOWED_CALLBACK_URL_PREFIX.split(',')]
 
 ALLOW_MULTIPLE_SESSIONS = str(config_get('ALLOW_MULTIPLE_SESSIONS', True)).lower() == 'true' # Allows multiple sessions for each user
 AUTO_PROLONGATION_TOKEN_TIME_VALID = int(config_get('AUTO_PROLONGATION_TOKEN_TIME_VALID', 0)) #  in seconds, 900 = 15 mins, 0 disables it
@@ -641,6 +668,7 @@ def generate_signature():
         'auto_prolongation_token_time_valid': AUTO_PROLONGATION_TOKEN_TIME_VALID,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
+        'disable_callbacks': DISABLE_CALLBACKS,
         'allow_user_search_by_email': ALLOW_USER_SEARCH_BY_EMAIL,
         'allow_user_search_by_username_partial': ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL,
         'system_wide_duo_exists': DUO_SECRET_KEY != '',  #nosec -- not [B105:hardcoded_password_string]

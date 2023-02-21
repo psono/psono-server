@@ -1,3 +1,4 @@
+import re
 from django.utils import timezone
 from django.conf import settings
 
@@ -28,7 +29,7 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
         try:
             file_transfer = File_Transfer.objects.select_related('user').\
                 only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
-                get(pk=file_transfer_id, type='download')
+                get(pk=file_transfer_id, type='download', create_date__gte=timezone.now()-timedelta(hours=12))
         except File_Transfer.DoesNotExist:
             msg = 'Filetransfer does not exist.'
             raise exceptions.ValidationError(msg)
@@ -51,6 +52,10 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
 
         hash_checksum = ticket['hash_checksum'].lower()
 
+        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
+            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+            raise exceptions.ValidationError(msg)
+
         count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
             .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
                  shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
@@ -60,7 +65,7 @@ class FileserverRevokeDownloadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         try:
-            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
+            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum, file_id=file_transfer.file_id)
         except File_Chunk.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

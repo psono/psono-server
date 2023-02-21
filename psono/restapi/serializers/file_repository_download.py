@@ -1,10 +1,9 @@
+import re
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 
-from restapi.models import File_Transfer, File_Chunk
-
-from ..fields import UUIDField
+from restapi.models import File_Chunk
 
 class FileRepositoryDownloadSerializer(serializers.Serializer):
 
@@ -16,8 +15,12 @@ class FileRepositoryDownloadSerializer(serializers.Serializer):
 
         file_transfer = self.context['request'].auth
 
+        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
+            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+            raise exceptions.ValidationError(msg)
+
         try:
-            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum)
+            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum, file_id=file_transfer.file_id)
         except File_Chunk.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

@@ -1,12 +1,14 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from django.conf import settings
 from ..permissions import IsAuthenticated
 from django.db import IntegrityError
 import requests
 
 from .secret_link import create_secret_link
 from ..utils import readbuffer, decrypt_with_db_secret, encrypt_with_db_secret
+from ..utils import is_allowed_callback_url
 from ..models import (
     Secret,
     Secret_History,
@@ -173,7 +175,7 @@ class SecretView(GenericAPIView):
 
         secret.save()
 
-        if secret.callback_url:
+        if secret.callback_url and not settings.DISABLE_CALLBACKS and is_allowed_callback_url(secret.callback_url):
             headers = {'content-type': 'application/json'}
             data = {
                 'event': 'UPDATE_SECRET_SUCCESS',

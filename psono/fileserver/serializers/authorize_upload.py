@@ -1,3 +1,4 @@
+import re
 from django.utils import timezone
 from django.conf import settings
 
@@ -31,7 +32,7 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
         try:
             file_transfer = File_Transfer.objects.select_related('user').\
                 only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
-                get(pk=file_transfer_id, type='upload')
+                get(pk=file_transfer_id, type='upload', create_date__gte=timezone.now()-timedelta(hours=12))
         except File_Transfer.DoesNotExist:
             msg = 'Filetransfer does not exist.'
             raise exceptions.ValidationError(msg)
@@ -58,6 +59,10 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
 
         chunk_position = ticket['chunk_position']
         hash_checksum_ticket = ticket['hash_checksum'].lower()
+
+        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
+            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+            raise exceptions.ValidationError(msg)
 
         if hash_checksum_ticket != hash_checksum:
             msg = 'Chunk corrupted.'

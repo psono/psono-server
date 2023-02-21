@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
+from django.test.utils import override_settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -711,8 +712,10 @@ class UserUpdateSecretTest(APITestCaseExtended):
         self.assertEqual(models.Secret_History.objects.filter(secret=updated_secret).count(), 1)
 
 
+    @override_settings(DISABLE_CALLBACKS=False)
+    @override_settings(ALLOWED_CALLBACK_URL_PREFIX=['https://example.com'])
     @patch('requests.post', side_effect=mock_request_post)
-    def test_success_with_callback_url(self, mock_request_post):
+    def test_success_with_callback_url_and_prefix_match(self, mock_request_post):
         """
         Tests to update a specific secret with a callback url
         """
@@ -747,6 +750,101 @@ class UserUpdateSecretTest(APITestCaseExtended):
         mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
+    @override_settings(DISABLE_CALLBACKS=False)
+    @override_settings(ALLOWED_CALLBACK_URL_PREFIX=['*'])
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_success_with_callback_url_and_prefix_match_by_widlcard(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        target_data = {
+            'event': 'UPDATE_SECRET_SUCCESS',
+            'secret_id': str(self.secret_id)
+        }
+
+        target_headers = {'content-type': 'application/json'}
+        target_auth = None
+
+        mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
+
+
+    @override_settings(DISABLE_CALLBACKS=True)
+    @override_settings(ALLOWED_CALLBACK_URL_PREFIX=['https://example.com'])
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_with_callback_url_with_callbacks_disabled(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url yet DISABLE_CALLBACKS is disabled
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 0)
+
+
+    @override_settings(DISABLE_CALLBACKS=False)
+    @override_settings(ALLOWED_CALLBACK_URL_PREFIX=['https://google.com'])
+    @patch('requests.post', side_effect=mock_request_post)
+    def test_with_callback_url_with_callback_prefix_not_matching(self, mock_request_post):
+        """
+        Tests to update a specific secret with a callback url yet ALLOWED_CALLBACK_URL_PREFIX don't match
+        """
+
+        secret = models.Secret.objects.get(pk=str(self.secret_id))
+        secret.callback_url = 'https://example.com'
+        secret.save()
+
+        url = reverse('secret')
+
+        data = {
+            'secret_id': str(self.secret_id),
+            'data': '123457',
+            'data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(mock_request_post.call_count, 0)
+
+
+    @override_settings(DISABLE_CALLBACKS=False)
     @patch('requests.post', side_effect=mock_request_post)
     def test_success_with_updated_callback_url(self, mock_request_post):
         """
@@ -782,6 +880,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         mock_request_post.assert_any_call(data.get('callback_url'), data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
+    @override_settings(DISABLE_CALLBACKS=False)
     @patch('requests.post', side_effect=mock_request_post)
     def test_success_with_callback_url_that_is_malformed(self, mock_request_post):
         """
@@ -809,6 +908,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         self.assertEqual(mock_request_post.call_count, 1)
 
 
+    @override_settings(DISABLE_CALLBACKS=False)
     @patch('requests.post', side_effect=mock_request_post)
     def test_success_with_callback_url_user_and_pass(self, mock_request_post):
         """
@@ -848,6 +948,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
         mock_request_post.assert_any_call(secret.callback_url, data=target_data, headers=target_headers, auth=target_auth, timeout=5.0)
 
 
+    @override_settings(DISABLE_CALLBACKS=False)
     @patch('requests.post', side_effect=mock_request_post)
     def test_success_with_callback_url_user_and_pass_that_is_not_proper_encrypted(self, mock_request_post):
         """
