@@ -665,6 +665,7 @@ def generate_signature():
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
         'files': FILES_ENABLED,
+        'allowed_file_repository_types': ALLOWED_FILE_REPOSITORY_TYPES,
         'auto_prolongation_token_time_valid': AUTO_PROLONGATION_TOKEN_TIME_VALID,
         'allowed_second_factors': ALLOWED_SECOND_FACTORS,
         'disable_central_security_reports': DISABLE_CENTRAL_SECURITY_REPORTS,
