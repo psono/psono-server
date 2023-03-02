@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 
-from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer, get_datastore
+from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer, get_datastore, is_allowed_url
 from restapi import models
 
 from uuid import uuid4
@@ -375,4 +375,53 @@ class TestCalculateShareRightsOnShare(TestCase):
             calculate_user_rights_on_share(self.user1.id, self.share1.id),
             {'read': False, 'grant': False, 'write': False}
         )
+
+    def test_is_allowed_url_successful_with_star(self):
+        """
+        Tests that '*' in filters allows any domain
+        """
+
+        self.assertTrue(is_allowed_url('https://test.me/path/here', ['*']))
+
+    def test_is_allowed_url_successful_with_subpath(self):
+        """
+        Tests that a subpath is sufficient to allow an url
+        """
+
+        self.assertTrue(is_allowed_url('https://test.me/path/here', ['https://test.me/path']))
+
+    def test_is_allowed_url_scheme_downgrades(self):
+        """
+        Tests that a schema cannot be downgraded http vs https
+        """
+
+        self.assertFalse(is_allowed_url('https://test.me/path/here', ['http://test.me/path/here']))
+
+    def test_is_allowed_url_domain_changes(self):
+        """
+        Tests that a domain change (that wouldn't be detected by a simple prefix check) is actually caught
+        """
+
+        self.assertFalse(is_allowed_url('https://test.me.evil.org', ['https://test.me']))
+
+    def test_is_allowed_url_path_traversal(self):
+        """
+        Tests that a path traversal with .. (that wouldn't be detected by a simple prefix check) is actually caught
+        """
+
+        self.assertFalse(is_allowed_url('https://test.me/allowed', ['https://test.me/allowed/../protected']))
+
+    def test_is_allowed_url_path_with_empty_path_in_filter(self):
+        """
+        Tests that an empty path in is_allowed_url as filter doesn't produce any issues
+        """
+
+        self.assertTrue(is_allowed_url('https://test.me/my/path', ['https://test.me']))
+
+    def test_is_allowed_url_path_with_empty_path_in_url(self):
+        """
+        Tests that an empty path in is_allowed_url in the url doesn't produce any issues
+        """
+
+        self.assertTrue(is_allowed_url('https://test.me', ['https://test.me']))
 

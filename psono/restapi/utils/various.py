@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from urllib.parse import urlparse
 
 from typing import Optional
 import os
@@ -756,10 +757,31 @@ def is_allowed_url(url: str, url_filter: list) -> bool:
 
     :return: Whether the url is allowed or not
     """
+    parsed_url = urlparse(url)
+    for pattern in url_filter:
+        if pattern == "*":
+            return True
 
-    return any(
-        pattern == "*" or url.startswith(pattern) for pattern in url_filter
-    )
+        if not url.startswith(pattern):
+            continue
+
+        parsed_pattern = urlparse(pattern)
+
+        if parsed_url.scheme != parsed_pattern.scheme:
+            # prevents https://good.corp being whitelisted and an attacker using http://good.corp
+            continue
+
+        if parsed_url.netloc != parsed_pattern.netloc:
+            # prevents https://good.corp being whitelisted and an attacker using https://good.corp.evil.org
+            continue
+
+        if parsed_pattern.path and (not parsed_url.path or os.path.abspath(parsed_pattern.path).startswith(os.path.abspath(parsed_url.path))):
+            # prevents path traversals with https://good.corp/allowed being whitelisted and an attacker using something like "https://good.corp/allowed/../protected"
+            continue
+
+        return True
+
+    return False
 
 
 def is_allowed_callback_url(url: str) -> bool:
