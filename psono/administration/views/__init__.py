@@ -1,5 +1,6 @@
 from .user import UserView
 from .info import InfoView
+from .link_share import LinkShareView
 from .security_report import SecurityReportView
 from .session import SessionView
 from .stats_browser import StatsBrowserView

@@ -10,6 +10,7 @@ from .delete_yubikey import DeleteYubikeySerializer
 from .read_session import ReadSessionSerializer
 from .read_group import ReadGroupSerializer
 from .delete_group import DeleteGroupSerializer
+from .delete_link_share import DeleteLinkShareSerializer
 from .delete_membership import DeleteMembershipSerializer
 from .delete_recovery_code import DeleteRecoveryCodeSerializer
 from .delete_emergency_code import DeleteEmergencyCodeSerializer
