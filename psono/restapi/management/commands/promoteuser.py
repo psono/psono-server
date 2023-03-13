@@ -6,14 +6,14 @@ class Command(BaseCommand):
     help = 'Promotes a user'
 
     def add_arguments(self, parser):
-        parser.add_argument('username', nargs='+')
-        parser.add_argument('role', nargs='+')
+        parser.add_argument('username')
+        parser.add_argument('role')
 
 
     def handle(self, *args, **options):
 
-        username = str(options['username'][0])
-        role = str(options['role'][0])
+        username = options['username']
+        role = options['role']
 
         result = promote_user(username, role)
 
