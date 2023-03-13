@@ -134,6 +134,7 @@ class UserView(GenericAPIView):
         return {
             'id': user.id,
             'username': user.username,
+            'is_managed': False,
             'email': decrypt_with_db_secret(user.email),
             'create_date': user.create_date,
             'last_login': user.last_login,
