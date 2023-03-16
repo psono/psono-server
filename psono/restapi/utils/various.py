@@ -923,18 +923,21 @@ def filter_as_json(data, filter):
         return json.dumps(decrypted_data)
 
 def get_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', None)
-    num_proxies = settings.NUM_PROXIES
     if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
-        ip_address = request.META.get(settings.TRUSTED_IP_HEADER, None)
-    elif num_proxies is not None and x_forwarded_for is not None:
-        addrs = x_forwarded_for.split(',')
-        client_addr = addrs[-min(num_proxies, len(addrs))]
-        ip_address = client_addr.strip()
+        return request.META.get(settings.TRUSTED_IP_HEADER, None)
     else:
-        ip_address = request.META.get('REMOTE_ADDR')
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        remote_addr = request.META.get('REMOTE_ADDR')
+        num_proxies = settings.NUM_PROXIES
 
-    return ip_address
+        if num_proxies is not None:
+            if num_proxies == 0 or xff is None:
+                return remote_addr
+            addrs = xff.split(',')
+            client_addr = addrs[-min(num_proxies, len(addrs))]
+            return client_addr.strip()
+
+        return ''.join(xff.split()) if xff else remote_addr
 
 def get_country(request):
     if settings.TRUSTED_COUNTRY_HEADER:
