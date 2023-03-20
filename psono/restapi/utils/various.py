@@ -923,6 +923,12 @@ def filter_as_json(data, filter):
         return json.dumps(decrypted_data)
 
 def get_ip(request):
+    """
+    Analyzes a request and returns the ip of the client.
+
+    :param request:
+    :return:
+    """
     if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
         return request.META.get(settings.TRUSTED_IP_HEADER, None)
     else:
