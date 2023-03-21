@@ -209,49 +209,49 @@ def create_url(client_id_email, key, method, path, content_type='', content_md5=
 
     return base_url, query_params
 
-
-def gcs_download(bucket, json_key, hash_checksum):
-    """
-    Downloads a file with a GET request
-
-    :param bucket:
-    :type bucket:
-    :param json_key:
-    :type json_key:
-    :param hash_checksum:
-    :type hash_checksum:
-
-    :return:
-    :rtype:
-    """
-
-    base_url, query_params = gcs_construct_signed_download_url(bucket, json_key, hash_checksum)
-
-    return requests.get(base_url, params=query_params)
-
-
-def gcs_upload(bucket, json_key, hash_checksum, data):
-    """
-    Uploads a file with a PUT request
-
-    :param bucket:
-    :type bucket:
-    :param json_key:
-    :type json_key:
-    :param hash_checksum:
-    :type hash_checksum:
-    :param data:
-    :type data:
-
-    :return:
-    :rtype:
-    """
-
-    base_url, query_params = gcs_construct_signed_upload_url(bucket, json_key, hash_checksum)
-    headers = {}
-    headers['Content-Type'] = 'application/octet-stream'
-
-    return requests.put(base_url, params=query_params, headers=headers, data=data)
+#
+# def gcs_download(bucket, json_key, hash_checksum):
+#     """
+#     Downloads a file with a GET request
+#
+#     :param bucket:
+#     :type bucket:
+#     :param json_key:
+#     :type json_key:
+#     :param hash_checksum:
+#     :type hash_checksum:
+#
+#     :return:
+#     :rtype:
+#     """
+#
+#     base_url, query_params = gcs_construct_signed_download_url(bucket, json_key, hash_checksum)
+#
+#     return requests.get(base_url, params=query_params)
+#
+#
+# def gcs_upload(bucket, json_key, hash_checksum, data):
+#     """
+#     Uploads a file with a PUT request
+#
+#     :param bucket:
+#     :type bucket:
+#     :param json_key:
+#     :type json_key:
+#     :param hash_checksum:
+#     :type hash_checksum:
+#     :param data:
+#     :type data:
+#
+#     :return:
+#     :rtype:
+#     """
+#
+#     base_url, query_params = gcs_construct_signed_upload_url(bucket, json_key, hash_checksum)
+#     headers = {}
+#     headers['Content-Type'] = 'application/octet-stream'
+#
+#     return requests.put(base_url, params=query_params, headers=headers, data=data)
 
 
 def gcs_delete(bucket, json_key, hash_checksum):
@@ -271,5 +271,5 @@ def gcs_delete(bucket, json_key, hash_checksum):
 
     base_url, query_params = gcs_construct_signed_delete_url(bucket, json_key, hash_checksum)
 
-    return requests.delete(base_url, params=query_params)
+    return requests.delete(base_url, params=query_params, timeout=5.0)
 

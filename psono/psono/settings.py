@@ -278,9 +278,9 @@ REST_FRAMEWORK = {
         # 'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-        'rest_framework.throttling.ScopedRateThrottle',
+        'restapi.throttling.AnonRateThrottle',
+        'restapi.throttling.UserRateThrottle',
+        'restapi.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': config_get('THROTTLE_RATE_ANON', '1440/day'),

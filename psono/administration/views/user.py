@@ -12,6 +12,7 @@ from ..app_settings import (
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right, Webauthn
+from restapi.models import Link_Share
 from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
 
 import secrets
@@ -94,6 +95,17 @@ class UserView(GenericAPIView):
                 'activation_delay': r.activation_delay,
             })
 
+        link_shares = []
+        for r in Link_Share.objects.filter(user=user).only("id", "create_date", "public_title", "allowed_reads", "valid_till", "passphrase"):
+            link_shares.append({
+                'id': r.id,
+                'create_date': r.create_date,
+                'public_title': r.public_title,
+                'allowed_reads': r.allowed_reads,
+                'valid_till': r.valid_till,
+                'has_passphrase': r.passphrase is not None,
+            })
+
         sessions = []
         for u in Token.objects.filter(user=user).only('id', 'create_date', 'active',
                                                            'valid_till', 'device_description',
@@ -122,6 +134,7 @@ class UserView(GenericAPIView):
         return {
             'id': user.id,
             'username': user.username,
+            'is_managed': False,
             'email': decrypt_with_db_secret(user.email),
             'create_date': user.create_date,
             'last_login': user.last_login,
@@ -139,6 +152,7 @@ class UserView(GenericAPIView):
             'webauthns': webauthns,
             'recovery_codes': recovery_codes,
             'emergency_codes': emergency_codes,
+            'link_shares': link_shares,
             'sessions': sessions,
             'share_rights': share_rights,
         }

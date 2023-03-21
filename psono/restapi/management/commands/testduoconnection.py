@@ -7,21 +7,21 @@ from ssl import SSLError
 from urllib.parse import urlencode
 
 class Command(BaseCommand):
-    help = 'Tests your ldap config. Requires one user and pass to test login.'
+    help = 'Tests your duo config. Requires one user and pass to test login.'
 
     def add_arguments(self, parser):
-        parser.add_argument('integration_key', nargs='+')
-        parser.add_argument('secret_key', nargs='+')
-        parser.add_argument('host', nargs='+')
-        parser.add_argument('username', nargs='+', default='')
+        parser.add_argument('integration_key')
+        parser.add_argument('secret_key')
+        parser.add_argument('host')
+        parser.add_argument('username', default='')
 
 
     def handle(self, *args, **options):
 
-        integration_key = str(options['integration_key'][0])
-        secret_key = str(options['secret_key'][0])
-        host = str(options['host'][0])
-        username = str(options['username'][0])
+        integration_key = options['integration_key']
+        secret_key = options['secret_key']
+        host = options['host']
+        username = options['username']
 
         if username:
             print('Testing username format:')

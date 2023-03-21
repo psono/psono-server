@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from urllib.parse import urlparse
 
 from typing import Optional
 import os
@@ -756,10 +757,31 @@ def is_allowed_url(url: str, url_filter: list) -> bool:
 
     :return: Whether the url is allowed or not
     """
+    parsed_url = urlparse(url)
+    for pattern in url_filter:
+        if pattern == "*":
+            return True
 
-    return any(
-        pattern == "*" or url.startswith(pattern) for pattern in url_filter
-    )
+        if not url.startswith(pattern):
+            continue
+
+        parsed_pattern = urlparse(pattern)
+
+        if parsed_url.scheme != parsed_pattern.scheme:
+            # prevents https://good.corp being whitelisted and an attacker using http://good.corp
+            continue
+
+        if parsed_url.netloc != parsed_pattern.netloc:
+            # prevents https://good.corp being whitelisted and an attacker using https://good.corp.evil.org
+            continue
+
+        if parsed_pattern.path and (not parsed_url.path or os.path.abspath(parsed_pattern.path).startswith(os.path.abspath(parsed_url.path))):
+            # prevents path traversals with https://good.corp/allowed being whitelisted and an attacker using something like "https://good.corp/allowed/../protected"
+            continue
+
+        return True
+
+    return False
 
 
 def is_allowed_callback_url(url: str) -> bool:
@@ -901,18 +923,27 @@ def filter_as_json(data, filter):
         return json.dumps(decrypted_data)
 
 def get_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', None)
-    num_proxies = settings.NUM_PROXIES
-    if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
-        ip_address = request.META.get(settings.TRUSTED_IP_HEADER, None)
-    elif num_proxies is not None and x_forwarded_for is not None:
-        addrs = x_forwarded_for.split(',')
-        client_addr = addrs[-min(num_proxies, len(addrs))]
-        ip_address = client_addr.strip()
-    else:
-        ip_address = request.META.get('REMOTE_ADDR')
+    """
+    Analyzes a request and returns the ip of the client.
 
-    return ip_address
+    :param request:
+    :return:
+    """
+    if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+        return request.META.get(settings.TRUSTED_IP_HEADER, None)
+    else:
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        remote_addr = request.META.get('REMOTE_ADDR')
+        num_proxies = settings.NUM_PROXIES
+
+        if num_proxies is not None:
+            if num_proxies == 0 or xff is None:
+                return remote_addr
+            addrs = xff.split(',')
+            client_addr = addrs[-min(num_proxies, len(addrs))]
+            return client_addr.strip()
+
+        return ''.join(xff.split()) if xff else remote_addr
 
 def get_country(request):
     if settings.TRUSTED_COUNTRY_HEADER:

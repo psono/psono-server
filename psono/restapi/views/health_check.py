@@ -7,6 +7,7 @@ from django.conf import settings
 
 from django.db.migrations.executor import MigrationExecutor
 from django.db import connections, DEFAULT_DB_ALIAS
+from restapi.utils.various import get_ip
 
 import ntplib
 
@@ -89,6 +90,7 @@ class HealthCheckView(GenericAPIView):
             'db_read': { 'healthy': db_read },
             'db_sync': { 'healthy': db_sync },
             'time_sync': { 'healthy': time_sync },
+            '_info': { 'ip': get_ip(request) },
         }, status=health_status)
 
     def put(self, *args, **kwargs):

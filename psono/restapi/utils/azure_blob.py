@@ -132,5 +132,6 @@ def azure_blob_delete(storage_account_name, storage_account_primary_key, contain
         delete_url,
         headers={
             'x-ms-delete-snapshots': 'include',
-        }
+        },
+        timeout=5.0
     )
