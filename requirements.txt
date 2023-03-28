@@ -8,6 +8,8 @@ asgiref==3.4.1
     # via django
 asn1crypto==1.5.1
     # via webauthn
+async-timeout==4.0.2
+    # via redis
 azure-core==1.24.2
     # via azure-storage-blob
 azure-storage-blob==12.13.0
@@ -124,7 +126,7 @@ pyyaml==5.4.1
     # via -r requirements.in
 raven==6.10.0
     # via -r requirements.in
-redis==3.4.1
+redis==4.5.3
     # via django-redis
 requests==2.27.1
     # via
