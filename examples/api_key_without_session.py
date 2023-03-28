@@ -1,3 +1,6 @@
+"""
+A small demo script that shows how to access a specific secret without a session (restricted API key)
+"""
 import requests
 import json
 import nacl.encoding

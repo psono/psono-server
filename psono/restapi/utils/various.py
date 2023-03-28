@@ -943,7 +943,7 @@ def get_ip(request):
             client_addr = addrs[-min(num_proxies, len(addrs))]
             return client_addr.strip()
 
-        return ''.join(xff.split()) if xff else remote_addr
+        return remote_addr
 
 def get_country(request):
     if settings.TRUSTED_COUNTRY_HEADER:

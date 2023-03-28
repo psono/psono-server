@@ -1,5 +1,5 @@
 """
-A small demo script that shows how to access the datastore with a session (unrestricted API key) and modify a secret
+A small demo script that shows how to export the datastore (unrestricted API key)
 """
 import requests
 import json
@@ -11,10 +11,10 @@ from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
 
-api_key_id = '13250ce0-a98f-4e31-83a7-a181fa785baa'
-api_key_private_key = '318c9e10c4081d0d38df376f93ebe0b9fd9d96871496911b9f39614312a1fd55'
-api_key_secret_key = '45bd4658c4018f6b81b26b9a6757f4980c1edfc41b7d811aa8e8e78f3851fef7'
-server_url = 'https://browserplugins.chickahoona.com/server'
+api_key_id = '1794337d-de80-4aa0-8509-7070448221e6'
+api_key_private_key = '5c315e95703afd125d59bd26e5d7013683707a7671957b997b6cf11bb5670999'
+api_key_secret_key = '06f97520b4462565713851435c297ae8f70ee87fa6a8a4072bad87ccdb6d8d89'
+server_url = 'https://psonoclient.chickahoona.com/server'
 server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
 
@@ -287,9 +287,9 @@ def api_read_secret(token, session_secret_key, secret_id):
 
     return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
 
-def api_update_secret(token, session_secret_key, secret_id, data, data_nonce):
+def api_read_share(token, session_secret_key, share_id):
     """
-    Updates the content of a specific secret
+    Reads the content of a specific share
 
     :param token:
     :type token:
@@ -297,25 +297,144 @@ def api_update_secret(token, session_secret_key, secret_id, data, data_nonce):
     :type session_secret_key:
     :param secret_id:
     :type secret_id:
-    :param data:
-    :type data:
-    :param data_nonce:
-    :type data_nonce:
     :return:
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/secret/'
+    method = 'GET'
+    endpoint = '/share/' + share_id + '/'
+
+    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+
+def get_all_shares(folder, token, session_secret_key):
+
+    def handle_share(share):
+        share_read_result = api_read_share(token, session_secret_key, share['share_id'])
+        secret_content = json.loads(decrypt_symmetric(share_read_result['data'], share_read_result['data_nonce'], share['share_secret_key']))
+        return secret_content
+
+    if "folders" in folder:
+        new_folders = []
+        for f in folder["folders"]:
+            if 'share_id' in f and 'share_secret_key' in f:
+                f = handle_share(f)
+            new_folders.append(f)
+
+        get_all_shares(f, token, session_secret_key)
+
+        folder["folders"] = new_folders
+
+    if "items" in folder:
+        new_items = []
+        for i in folder["items"]:
+            if 'share_id' in i and 'share_secret_key' in i:
+                i = handle_share(i)
+            new_items.append(i)
+
+        folder["items"] = new_items
 
 
-    data = json.dumps({
-        'secret_id': secret_id,
-        'data': data,
-        'data_nonce': data_nonce
-    })
+def get_all_secrets(datastore, token, session_secret_key, include_trash_bin_items=False):
 
-    return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
+    def handle_items(items):
+        for item in items:
+            if not "secret_id" in item:
+                continue
+            if not "secret_key" in item:
+                continue
+
+            if not include_trash_bin_items and 'deleted' in item and item['deleted']:
+                continue
+
+            secret_read_result = api_read_secret(token, session_secret_key, item['secret_id'])
+            secret_content = json.loads(decrypt_symmetric(secret_read_result['data'], secret_read_result['data_nonce'], item['secret_key']))
+
+            for key in secret_content.keys():
+                item[key] = secret_content[key]
+
+            item["create_date"] = secret_read_result["create_date"]
+            item["write_date"] = secret_read_result["write_date"]
+            item["callback_url"] = secret_read_result["callback_url"]
+            item["callback_user"] = secret_read_result["callback_user"]
+            item["callback_pass"] = secret_read_result["callback_pass"]
+
+
+    def handle_folders(folders):
+        for folder in folders:
+            if "folders" in folder:
+                handle_folders(folder["folders"])
+
+            if "items" in folder:
+                handle_items(folder["items"])
+
+    if "folders" in datastore:
+        handle_folders(datastore["folders"])
+
+    if "items" in datastore:
+        handle_items(datastore["items"])
+
+def filter_datastore_export(folder, include_trash_bin_items=False):
+
+    unwanted_folder_properties = [
+        "id",
+        "datastore_id",
+        "is_folder",
+        "parent_datastore_id",
+        "share_index",
+        "parent_share_id",
+        "share_id",
+        "path",
+        "share_rights",
+        "share_secret_key",
+    ]
+
+    unwanted_item_properties = [
+        "id",
+        "datastore_id",
+        "is_folder",
+        "parent_datastore_id",
+        "parent_share_id",
+        "secret_id",
+        "secret_key",
+        "share_id",
+        "path",
+        "share_rights",
+        "share_secret_key",
+    ]
+
+    # filter out unwanted folder properties
+    for p in unwanted_folder_properties:
+        if p in folder:
+            del folder[p]
+
+    # Delete items that have been marked as deleted if includeTrashBinItems is not set
+    if "items" in folder and not include_trash_bin_items:
+        folder['items'] = [i for i in folder['items'] if 'deleted' not in i or not i['deleted']]
+
+    # Delete items attribute if its empty
+    if "items" in folder and len(folder['items']) == 0:
+        del folder['items']
+
+    # filter out unwanted item properties
+    if "items" in folder:
+        for p in unwanted_item_properties:
+            for item in folder["items"]:
+                if p in item:
+                    del item[p]
+
+    # Delete folders that have been marked as deleted if includeTrashBinItems is not set
+    if "folders" in folder and not include_trash_bin_items:
+        folder['folders'] = [f for f in folder['folders'] if 'deleted' not in f or not f['deleted']]
+
+    # Delete folders attribute if its empty
+    if "folders" in folder and len(folder['folders']) == 0:
+        del folder['folders']
+
+    # filter folders recursive
+    if "folders" in folder:
+        folder["folders"] = [filter_datastore_export(f) for f in folder["folders"]]
+
+    return folder
 
 def main():
     # 1. Generate the login info including the private key for PFS
@@ -347,81 +466,34 @@ def main():
     # 5. Now we can start actual reading the datastore and secrets e.g. to read the datastore:
     content = api_read_datastores(token, session_secret_key)
 
-    datastore_secret = None
 
-    # 6. Read content of all password datastores
+    # 6. Read content of the first password datastore including all its shares, all secrets and filter the secrets
+    datastore_content = None
     for datastore in content['datastores']:
         if datastore['type'] != 'password':
             continue
         datastore_read_result = api_read_datastore(token, session_secret_key, datastore['id'])
         datastore_secret = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
         datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_secret))
-        # print(datastore_content)
-        # {
-        #     "datastore_id": "73229adf-14bc-4370-8e8c-755732322558",
-        #     "items": [{
-        #         "id": "bef4212a-a169-4be8-8521-4da899c3f507",
-        #         "type": "website_password",
-        #         "urlfilter": "example.com",
-        #         "name": "A website Password",
-        #         "secret_id": "6562a9bf-b8f2-47ba-8b07-4a3040af0c86",
-        #         "secret_key": "64f629843d479ebab32e69be10ffff3cfaf64d69a0d6ea785611bbce7cb66052"
-        #     }
-        #     ],
-        #     "folders": [{
-        #         "id": "7d6a3eec-0ff6-4a67-b7f0-b886fa771408",
-        #         "name": "A folder",
-        #         "folders": [{
-        #             "id": "e360e080-5cf0-4e59-8db8-c06aa66ffed3",
-        #             "name": "A subfolder",
-        #             "items": [{
-        #                 "id": "21e1e13c-257a-4537-8cd2-35f123a42192",
-        #                 "type": "note",
-        #                 "name": "A note in subfolder",
-        #                 "secret_id": "10d14e24-a05e-4428-b245-35cb0fdc7256",
-        #                 "secret_key": "26060d92a1e150e8810160551c5b23b1ab02c8fa3563c77e9544a0b145eee63d"
-        #             }
-        #             ]
-        #         }
-        #         ]
-        #     }
-        #     ]
-        # }
 
-        # search the datastore for the secret that you would like to have, either by the urlfilter, id, or name...
-        # for the purpose of this example we will pick the first website_password that is in the root of the datastore
-        if 'items' in datastore_content:
-            for item in datastore_content['items']:
-                if item['type'] == 'website_password':
-                    datastore_secret = item
+        break
 
+    # 7. Reads all shares recursively
+    get_all_shares(datastore_content, token, session_secret_key)
 
-    if datastore_secret is None:
-        print("No website password found in datastore. This demo script expects a website password in the root of the datastore")
-        return
+    # 8. Reads all the secrets
+    get_all_secrets(datastore_content, token, session_secret_key)
 
+    # 9. Filter the datastore content to remove unnecessary data
+    datastore_content = filter_datastore_export(datastore_content)
 
-    # 7. Read a secret
-    secret_read_result = api_read_secret(token, session_secret_key, datastore_secret['secret_id'])
-    secret_content = json.loads(decrypt_symmetric(secret_read_result['data'], secret_read_result['data_nonce'], datastore_secret['secret_key']))
-    # print(secret_content)
-    # {
-    #     'website_password_url_filter': 'example.com',
-    #     'website_password_password': 'aPassWord',
-    #     'website_password_username': 'something@example.com',
-    #     'website_password_url': 'https://example.com',
-    #     'website_password_title': 'A website Password'
-    # }
-
-    # 9. Update Secret
-    # You can update the secret now. Please take note that this updates only the secret. If you'd update the title
-    # and want that the title is shown correctly in the datastore too, you will have to update the datastore accordingly.
-    secret_content['website_password_password'] = 'Any value'
-    encrypted_secret = encrypt_symmetric(json.dumps(secret_content), datastore_secret['secret_key'])
-    api_update_secret(token, session_secret_key, datastore_secret['secret_id'], encrypted_secret['text'], encrypted_secret['nonce'])
-
-    # 9. Logout
+    # 10. Logout
     api_logout(token, session_secret_key)
+
+    # 11. Write export.json
+    with open('export.json', 'w') as outfile:
+        json.dump(datastore_content, outfile)
+
 
 if __name__ == '__main__':
     main()
