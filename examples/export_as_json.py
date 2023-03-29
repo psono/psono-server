@@ -310,14 +310,21 @@ def get_all_shares(folder, token, session_secret_key):
 
     def handle_share(share):
         share_read_result = api_read_share(token, session_secret_key, share['share_id'])
-        secret_content = json.loads(decrypt_symmetric(share_read_result['data'], share_read_result['data_nonce'], share['share_secret_key']))
-        return secret_content
+        share_content = None
+        try:
+            share_content = json.loads(decrypt_symmetric(share_read_result['data'], share_read_result['data_nonce'], share['share_secret_key']))
+        except:
+            pass
+
+        return share_content
 
     if "folders" in folder:
         new_folders = []
         for f in folder["folders"]:
             if 'share_id' in f and 'share_secret_key' in f:
                 f = handle_share(f)
+            if f is None:
+                continue
             new_folders.append(f)
 
         get_all_shares(f, token, session_secret_key)
@@ -329,6 +336,8 @@ def get_all_shares(folder, token, session_secret_key):
         for i in folder["items"]:
             if 'share_id' in i and 'share_secret_key' in i:
                 i = handle_share(i)
+            if i is None:
+                continue
             new_items.append(i)
 
         folder["items"] = new_items
