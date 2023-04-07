@@ -1,4 +1,3 @@
-from ..utils import calculate_user_rights_on_share
 from .share_link import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
@@ -10,10 +9,10 @@ from ..models import (
 )
 
 from ..app_settings import (
+    ReadShareSerializer,
     CreateShareSerializer,
     UpdateShareSerializer,
 )
-from django.core.exceptions import ValidationError
 
 from ..utils import readbuffer
 from ..authentication import TokenAuthentication
@@ -95,25 +94,6 @@ class ShareView(GenericAPIView):
 
             return [share for share_id, share in share_index.items()]
 
-    def get_share(self, user, uuid):
-
-        try:
-            share = Share.objects.get(pk=uuid)
-        except ValidationError:
-            return None
-        except Share.DoesNotExist:
-            return None
-
-        rights = calculate_user_rights_on_share(user.id, uuid)
-
-        if not rights['read']:
-            return None
-        
-        return {
-            'share': share,
-            'rights': rights,
-        }
-
     def get(self, request, share_id = None, *args, **kwargs):
         """
         Returns a list of all shares with all own share rights on that share or
@@ -134,22 +114,23 @@ class ShareView(GenericAPIView):
 
         else:
 
-            # UUID specified
-            # Returns the specified share if the user has any rights for it and joins the user_share objects
+            serializer = ReadShareSerializer(data=request.data, context=self.get_serializer_context())
 
-            share = self.get_share(request.user, share_id)
+            if not serializer.is_valid():
 
-            if share is None:
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
 
-                return Response("The share does not exist or you don't have read permissions",
-                                status=status.HTTP_400_BAD_REQUEST)
+            share = serializer.validated_data.get('share')
+            rights = serializer.validated_data.get('rights')
 
             response = {
-                'id': share['share'].id,
-                'data': readbuffer(share['share'].data),
-                'data_nonce': share['share'].data_nonce if share['share'].data_nonce else '',
-                'user_id': share['share'].user_id,
-                'rights': share['rights'],
+                'id': share.id,
+                'data': readbuffer(share.data),
+                'data_nonce': share.data_nonce if share.data_nonce else '',
+                'user_id': share.user_id,
+                'rights': rights,
             }
 
             return Response(response,

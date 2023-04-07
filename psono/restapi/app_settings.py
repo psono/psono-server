@@ -45,6 +45,7 @@ from .serializers import (
     CreateShareLinkSerializer as DefaultCreateShareLinkSerializer,
     UpdateShareLinkSerializer as DefaultUpdateShareLinkSerializer,
     DeleteShareLinkSerializer as DefaultDeleteShareLinkSerializer,
+    ReadShareSerializer as DefaultReadShareSerializer,
     CreateShareSerializer as DefaultCreateShareSerializer,
     UpdateShareSerializer as DefaultUpdateShareSerializer,
     CreateFileSerializer as DefaultCreateFileSerializer,
@@ -380,6 +381,14 @@ DeleteShareLinkSerializer = import_callable(
     serializers.get(
         'DELETE_SHARE_LINK_SERIALIZER',
         DefaultDeleteShareLinkSerializer
+    )
+)
+
+
+ReadShareSerializer = import_callable(
+    serializers.get(
+        'READ_SHARE_SERIALIZER',
+        DefaultReadShareSerializer
     )
 )
 
