@@ -7,6 +7,6 @@ backup_folder_running="${PSONO_BACKUP_PATH}/backup_${PSONO_BACKUP_TIMESTAMP}.run
 backup_folder_complete="${PSONO_BACKUP_PATH}/backup_${PSONO_BACKUP_TIMESTAMP}.complete"
 
 mkdir -p $backup_folder_running
-pg_dump -U $PSONO_BACKUP_DATABASE_USER $PSONO_BACKUP_DATABASE_NAME | gzip > "${backup_folder_running}/db.sql.gz"
+pg_dump --no-owner -p $PSONO_BACKUP_DATABASE_PORT -h $PSONO_BACKUP_DATABASE_HOST -U $PSONO_BACKUP_DATABASE_USER $PSONO_BACKUP_DATABASE_NAME | gzip > "${backup_folder_running}/db.sql.gz"
 cp $PSONO_BACKUP_PATH_TO_SETTINGS_YML "${backup_folder_running}/settings.yaml"
 mv "$backup_folder_running" "$backup_folder_complete"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 source .env
 
+export PGPASSWORD="$PSONO_BACKUP_DATABASE_PASSWORD"
+
 # http://stackoverflow.com/a/39398359/4582775
 
 # As long as there is at least one more argument, keep looping
@@ -48,12 +50,12 @@ if [ ! -f "$settings_file" ]; then
     echo "No valid backup, settings.yaml is missing."
 fi
 
-if ! psql -U "$PSONO_BACKUP_DATABASE_USER" -lqt | cut -d \| -f 1 | grep -qw "$PSONO_BACKUP_DATABASE_NAME"; then
+if ! psql -p $PSONO_BACKUP_DATABASE_PORT -h $PSONO_BACKUP_DATABASE_HOST -U "$PSONO_BACKUP_DATABASE_USER" -lqt | cut -d \| -f 1 | grep -qw "$PSONO_BACKUP_DATABASE_NAME"; then
     errors=1
     echo "Database does not exist."
 fi
 
-if [ "$( psql -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME -tAc "SELECT 1 FROM  information_schema.tables  WHERE table_name = 'django_migrations'" )" = '1' ]
+if [ "$( psql -p $PSONO_BACKUP_DATABASE_PORT -h $PSONO_BACKUP_DATABASE_HOST -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME -tAc "SELECT 1 FROM  information_schema.tables  WHERE table_name = 'django_migrations'" )" = '1' ]
 then
     errors=1
     echo "Database already has another django installation. Please delete all content first."
@@ -64,7 +66,7 @@ if [ "$errors" -eq "1" ]; then
 	exit 1
 fi
 
-gunzip -c $db_file | psql -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME
+gunzip -c $db_file | psql -p $PSONO_BACKUP_DATABASE_PORT -h $PSONO_BACKUP_DATABASE_HOST -U "$PSONO_BACKUP_DATABASE_USER" $PSONO_BACKUP_DATABASE_NAME
 cp "$settings_file" "$PSONO_BACKUP_PATH_TO_SETTINGS_YML"
 
 echo "Backup restored."
