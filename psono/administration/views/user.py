@@ -33,7 +33,7 @@ class UserView(GenericAPIView):
             return None
 
         memberships = []
-        for m in User_Group_Membership.objects.filter(user=user).select_related('group').only("id", "accepted", "group_admin", "create_date", "group__id", "group__name", "group__create_date", "group__public_key"):
+        for m in User_Group_Membership.objects.filter(user=user).select_related('group').only("id", "accepted", "group_admin", "share_admin", "create_date", "group__id", "group__name", "group__create_date", "group__public_key"):
             memberships.append({
                 'id': m.id,
                 'create_date': m.create_date,
@@ -41,6 +41,7 @@ class UserView(GenericAPIView):
                 'admin': m.group_admin,
                 'group_id': m.group.id,
                 'group_name': m.group.name,
+                'share_admin': m.share_admin,
             })
 
         duos = []

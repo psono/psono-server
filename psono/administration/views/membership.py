@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..app_settings import (
-    DeleteMembershipSerializer
+    UpdateMembershipSerializer,
+    DeleteMembershipSerializer,
 )
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -41,8 +42,32 @@ class MembershipView(GenericAPIView):
             'memberships': memberships
         }, status=status.HTTP_200_OK)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+
+        serializer = UpdateMembershipSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        membership = serializer.validated_data.get('membership')
+        group_admin = serializer.validated_data.get('group_admin')
+        share_admin = serializer.validated_data.get('share_admin')
+
+        require_save = False
+        if group_admin is not None:
+            membership.group_admin = group_admin
+            require_save = True
+        if share_admin is not None:
+            membership.share_admin = share_admin
+            require_save = True
+
+        if require_save:
+            membership.save()
+
+        return Response(status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
