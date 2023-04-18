@@ -13,7 +13,8 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  re_path(r'^blog/', include(blog_urls))
 """
-from django.urls import re_path, include
+from django.urls import re_path, include, path
+from django.conf import settings
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -30,3 +31,6 @@ urlpatterns = [
     re_path(r'^fileserver/', include('fileserver.urls')),
     re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
+
+if settings.URL_PREFIX:
+    urlpatterns = [path(f'{settings.URL_PREFIX}', include(urlpatterns))]
