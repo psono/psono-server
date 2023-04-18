@@ -223,22 +223,98 @@ class UpdateMembershipTests(APITestCaseExtended):
             is_superuser=True
         )
 
+        self.test_group_obj = models.Group.objects.create(
+            name = 'Test Group',
+            public_key = 'a123',
+        )
 
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret_key',
+            secret_key_nonce = 'secret_key_nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private_key',
+            private_key_nonce = 'private_key_nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
 
-    def test_update_membership(self):
+    def test_update_membership_group_admin(self):
         """
-        Tests PUT method on membership
+        Tests PUT method on membership to update the group admin flag
         """
 
         url = reverse('admin_membership')
 
         data = {
+            'membership_id': str(self.test_membership_obj.id),
+            'group_admin': False,
         }
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        membership = models.User_Group_Membership.objects.get(pk=self.test_membership_obj.id)
+        self.assertFalse(membership.group_admin)
+
+    def test_update_membership_share_admin(self):
+        """
+        Tests PUT method on membership to update the share admin flag
+        """
+
+        url = reverse('admin_membership')
+
+        data = {
+            'membership_id': str(self.test_membership_obj.id),
+            'share_admin': False,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        membership = models.User_Group_Membership.objects.get(pk=self.test_membership_obj.id)
+        self.assertFalse(membership.share_admin)
+
+    def test_update_membership_invalid_membership_id(self):
+        """
+        Tests PUT method on membership with an invalid membership id
+        """
+
+        url = reverse('admin_membership')
+
+        data = {
+            'membership_id': '9ac7c4ba-199b-4a78-813a-78e97c9bf86f',
+            'share_admin': False,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_membership_missing_membership_id(self):
+        """
+        Tests PUT method on membership without a membership_id
+        """
+
+        url = reverse('admin_membership')
+
+        data = {
+            # 'membership_id': str(self.test_membership_obj.id),
+            'share_admin': False,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 class DeleteMembershipTests(APITestCaseExtended):
     def setUp(self):
