@@ -2,6 +2,7 @@ from .create_user import CreateUserSerializer
 from .delete_session import DeleteSessionSerializer
 from .read_user import ReadUserSerializer
 from .delete_user import DeleteUserSerializer
+from .update_membership import UpdateMembershipSerializer
 from .update_user import UpdateUserSerializer
 from .delete_duo import DeleteDuoSerializer
 from .delete_ga import DeleteGASerializer

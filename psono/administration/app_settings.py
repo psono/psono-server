@@ -15,6 +15,7 @@ from .serializers import (
     DeleteGASerializer as DefaultDeleteGASerializer,
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     ReadGroupSerializer as DefaultReadGroupSerializer,
+    UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
     DeleteMembershipSerializer as DefaultDeleteMembershipSerializer,
     DeleteRecoveryCodeSerializer as DefaultDeleteRecoveryCodeSerializer,
     DeleteEmergencyCodeSerializer as DefaultDeleteEmergencyCodeSerializer,
@@ -76,6 +77,10 @@ DeleteGroupSerializer = import_callable(
 
 ReadGroupSerializer = import_callable(
     serializers.get('READ_GROUP_SERIALIZER', DefaultReadGroupSerializer)
+)
+
+UpdateMembershipSerializer = import_callable(
+    serializers.get('UPDATE_MEMBERSHIP_SERIALIZER', DefaultUpdateMembershipSerializer)
 )
 
 DeleteMembershipSerializer = import_callable(
