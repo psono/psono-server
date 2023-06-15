@@ -1,5 +1,5 @@
 cffi==1.15.0
-Django==3.2.18
+django==3.2.19
 djangorestframework==3.13.1
 django-rest-auth==0.9.5
 django-allauth==0.47.0
@@ -27,4 +27,4 @@ django-postgrespool2==1.0.1
 dj-database-url==0.5.0
 toml==0.10.2
 azure-storage-blob==12.13.0
-webauthn==1.6.0
+webauthn==1.8.1
