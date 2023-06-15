@@ -20,7 +20,7 @@ python-dateutil==2.8.0
 duo-client==4.2.3
 scrypt==0.8.19
 raven==6.10.0
-requests==2.27.1
+requests==2.31.0
 pycryptodomex==3.14.1
 boto3==1.20.52
 django-postgrespool2==1.0.1
