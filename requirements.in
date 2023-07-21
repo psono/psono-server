@@ -6,7 +6,7 @@ django-allauth==0.47.0
 django-cors-headers==3.10.1
 Markdown==3.1.1
 django-filter==2.4.0
-PyYAML==5.4.1
+PyYAML==6.0.1
 bcrypt==3.1.7
 psycopg2cffi==2.9.0
 more-itertools==7.2.0
