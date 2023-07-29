@@ -401,6 +401,18 @@ else:
     })
 
 for db_name, db_values in DATABASES.items():
+    if "ENGINE" not in db_values:
+        db_values["ENGINE"] = 'django.db.backends.postgresql_psycopg2'
+    if "NAME" not in db_values:
+        db_values["NAME"] = ''
+    if "PASSWORD" not in db_values:
+        db_values["PASSWORD"] = ''
+    if "USER" not in db_values:
+        db_values["USER"] = ''
+    if "HOST" not in db_values:
+        db_values["HOST"] = ''
+    if "PORT" not in db_values:
+        db_values["PORT"] = '5432'
     for db_configname, db_value in db_values.items():
         DATABASES[db_name][db_configname] = config_get('DATABASES_' + db_name.upper() + '_' + db_configname.upper(), DATABASES[db_name][db_configname])
 
