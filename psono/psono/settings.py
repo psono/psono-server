@@ -140,7 +140,7 @@ def config_get(key, *args):
         if os.path.exists(p_file) and os.path.getsize(p_file) > 0:
             try:
                 with open(p_file) as f:
-                    val = f.readline()
+                    val = f.read().rstrip('\n')
             except EnvironmentError:
                 raise Exception("Setting not reading", "Couldn't read the setting for PSONO_%s_FILE (check file)" % (key,))
             return val
