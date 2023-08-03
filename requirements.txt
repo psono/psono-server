@@ -24,7 +24,7 @@ botocore==1.23.52
     #   s3transfer
 cbor2==5.4.3
     # via webauthn
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   msrest
     #   requests
