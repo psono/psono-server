@@ -210,6 +210,7 @@ class EmergencyLoginView(GenericAPIView):
             'emergency_data_nonce': emergency_code.emergency_data_nonce,
             'emergency_sauce': emergency_code.emergency_sauce,
             'user_sauce': user.user_sauce,
+            'authentication': user.authentication,
             'hashing_algorithm': user.hashing_algorithm,
             'hashing_parameters': user.hashing_parameters,
             'verifier_public_key': public_key.decode(),
