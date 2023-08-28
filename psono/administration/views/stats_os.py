@@ -39,7 +39,7 @@ class StatsOsView(GenericAPIView):
         for operation_system in operations_systems:
             if 'windows' in operation_system['device_description'].lower():
                 windows = windows + operation_system['total']
-            elif 'linux' in operation_system['device_description'].lower():
+            elif any([term in operation_system['device_description'].lower() for term in ['linux', 'ubuntu']]):
                 linux = linux + operation_system['total']
             elif 'mac os' in operation_system['device_description'].lower():
                 mac_os = mac_os + operation_system['total']
