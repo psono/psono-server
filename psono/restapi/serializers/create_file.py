@@ -7,6 +7,7 @@ from datetime import timedelta
 from ..fields import UUIDField
 from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link, File_Repository
 from ..utils import user_has_rights_on_share, get_datastore, fileserver_access, get_ip
+from ..utils import calculate_user_rights_on_file_repository
 
 class CreateFileSerializer(serializers.Serializer):
 
@@ -47,8 +48,17 @@ class CreateFileSerializer(serializers.Serializer):
         if file_repository_id is not None:
             # check if the file repository exists
             try:
-                file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, file_repository_right__user=self.context['request'].user, active=True, file_repository_right__accepted=True)
+                file_repository = File_Repository.objects.only('id', 'type', 'data').get(pk=file_repository_id, active=True)
             except File_Repository.DoesNotExist:
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+
+            # check if the user has permission to upload a file
+            rights = calculate_user_rights_on_file_repository(
+                user_id=self.context['request'].user.id,
+                file_repository_id=file_repository_id,
+            )
+            if not rights['shared']:
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 

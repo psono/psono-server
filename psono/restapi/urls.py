@@ -81,6 +81,8 @@ urlpatterns = [
     re_path(r'^file-repository-right/decline/$', views.FileRepositoryRightDeclineView.as_view(), name='file_repository_right_decline'),
     re_path(r'^file-repository-right/$', views.FileRepositoryRightView.as_view(), name='file_repository_right'),
 
+    re_path(r'^group-file-repository-right/$', views.GroupFileRepositoryRightView.as_view(), name='group_file_repository_right'),
+
     re_path(r'^file-repository/download/$', views.FileRepositoryDownloadView.as_view(), name='file_repository_download'),
     re_path(r'^file-repository/upload/$', views.FileRepositoryUploadView.as_view(), name='file_repository_upload'),
     re_path(r'^file-repository/(?P<file_repository_id>[^/]+)/$', views.FileRepositoryView.as_view(), name='file_repository'),

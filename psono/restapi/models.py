@@ -786,6 +786,38 @@ class File_Repository_Right(models.Model):
         abstract = False
 
 
+class Group_File_Repository_Right(models.Model):
+    """
+    The access permissions for group file repository config.
+
+    Read: The user can read the config
+    Write: The user can write / update the config
+    Grant: The user can share the config with other users
+
+    Info: These permissions have nothing to do, if a user can download files from this repository. Download permissions
+    are determined if the user has access to a file object according to datastore permissions.
+
+    Info: The sole existence of this object for a user means, that he can upload to this repository.
+    (even with read = False, write = false, grant = false, as they have nothing to do with the permission to upload)
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='file_repository_right')
+    file_repository = models.ForeignKey(File_Repository, on_delete=models.CASCADE, related_name='group_file_repository_right')
+
+    read = models.BooleanField('Read', default=True,
+        help_text='Weather this user can read the configured file repository details')
+    write = models.BooleanField('Write', default=True,
+        help_text='Weather this user can update the configured file repository')
+    grant = models.BooleanField('Grant', default=True,
+        help_text='Weather this user can change permissions and delete the configured file repository')
+
+    class Meta:
+        abstract = False
+
+
 class Fileserver_Cluster_Member_Shard_Link(models.Model):
     """
     The shards that are announced to be accessible by this Cluster Member
