@@ -13,7 +13,7 @@ class CreateFileSerializer(serializers.Serializer):
 
     shard_id = UUIDField(required=False)
     file_repository_id = UUIDField(required=False)
-    chunk_count = serializers.IntegerField(required=False)
+    chunk_count = serializers.IntegerField(required=True)
     size = serializers.IntegerField(required=False)
     link_id = UUIDField(required=True)
     parent_share_id = UUIDField(required=False)
@@ -25,7 +25,7 @@ class CreateFileSerializer(serializers.Serializer):
         file_repository_id = attrs.get('file_repository_id', None)
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
-        size = attrs.get('size', None)
+        size = attrs.get('size', 0)
 
         file_repository = None
         shard = None
