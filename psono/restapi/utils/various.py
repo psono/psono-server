@@ -10,6 +10,7 @@ import os
 import bcrypt
 import time
 from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
+from ..models import File_Repository_Right
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -27,7 +28,7 @@ from typing import Tuple, List
 import json
 
 
-def generate_activation_code(email : str) -> str:
+def generate_activation_code(email: str) -> str:
     """
     Takes email address and combines it with a timestamp before encrypting everything with the ACTIVATION_LINK_SECRET
     No database storage required for this action
@@ -67,7 +68,7 @@ def get_static_bcrypt_hash_from_email(email):
     return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, '', 1)
 
 
-def validate_activation_code(activation_code : str) -> Optional[User]:
+def validate_activation_code(activation_code: str) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure
@@ -89,13 +90,13 @@ def validate_activation_code(activation_code : str) -> Optional[User]:
             email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
             return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
-    except: # nosec
+    except:  # nosec
         #wrong format or whatever could happen
         pass
 
     return None
 
-def authenticate(username : str = "", user : User = None, authkey : str = "", password : str = "") -> Tuple: # nosec
+def authenticate(username: str = "", user: User = None, authkey: str = "", password: str = "") -> Tuple: # nosec
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
@@ -132,7 +133,7 @@ def authenticate(username : str = "", user : User = None, authkey : str = "", pa
     return False, error_code
 
 
-def get_all_inherited_rights(user_id : str, share_id : str) -> User_Share_Right:
+def get_all_inherited_rights(user_id: str, share_id: str) -> User_Share_Right:
 
     return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
         FROM (
@@ -189,7 +190,7 @@ def get_all_direct_group_rights(user_id: str, share_id: str) -> Group_Share_Righ
     })
 
 
-def calculate_user_rights_on_share(user_id : str = "", share_id : str = "") -> dict:
+def calculate_user_rights_on_share(user_id: str = "", share_id: str = "") -> dict:
     """
     Calculates the user's rights on a share
 
@@ -243,7 +244,7 @@ def calculate_user_rights_on_share(user_id : str = "", share_id : str = "") -> d
     }
 
 
-def user_has_rights_on_share(user_id : str = "", share_id : str = "", read : bool = None, write : bool = None, grant : bool = None) -> bool:
+def user_has_rights_on_share(user_id: str = "", share_id: str = "", read: bool = None, write: bool = None, grant: bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given share.
     User_share_rights and all Group_share_rights be checked first.
@@ -271,7 +272,7 @@ def user_has_rights_on_share(user_id : str = "", share_id : str = "", read : boo
            and (grant is None or grant == rights['grant'])
 
 
-def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : bool = None, write : bool = None) -> bool:  #nosec B105, B107
+def user_has_rights_on_secret(user_id: str = "", secret_id: str = "", read: bool = None, write: bool = None) -> bool:  #nosec B105, B107
     """
     Checks if the given user has the requested rights for the given secret
 
@@ -283,7 +284,7 @@ def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : b
     """
 
     datastores_loaded = False
-    datastores = [] # type: List[str]
+    datastores = []  # type: List[str]
 
     try:
         # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
@@ -310,7 +311,65 @@ def user_has_rights_on_secret(user_id : str = "", secret_id : str = "", read : b
     return False
 
 
-def user_has_rights_on_file(user_id : str = "", file_id : str = "", read : bool = None, write : bool = None) -> bool:
+def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_id: str = ""):
+    grouped_shared = False
+    grouped_read = False
+    grouped_write = False
+    grouped_grant = False
+
+    user_rights = File_Repository_Right.objects.filter(user_id=user_id, file_repository_id=file_repository_id, accepted=True).all()
+
+    for user_right in user_rights:
+        grouped_shared = True
+        grouped_read = grouped_read or user_right.read
+        grouped_write = grouped_write or user_right.write
+        grouped_grant = grouped_grant or user_right.grant
+
+
+    group_rights = File_Repository_Right.objects.raw("""SELECT gfrr.id, gfrr.read, gfrr.write, gfrr.grant
+        FROM restapi_group_file_repository_right gfrr
+            JOIN restapi_user_group_membership ms ON ms.group_id = gfrr.group_id
+        WHERE gfrr.file_repository_id = %(file_repository_id)s
+            AND ms.user_id = %(user_id)s
+            AND ms.accepted = true""", {
+        'file_repository_id': file_repository_id,
+        'user_id': user_id,
+    })
+
+    for s in group_rights:
+        grouped_shared = True
+        grouped_read = grouped_read or s.read
+        grouped_write = grouped_write or s.write
+        grouped_grant = grouped_grant or s.grant
+
+
+    return {
+        'shared': grouped_shared,
+        'read': grouped_read,
+        'write': grouped_write,
+        'grant': grouped_grant,
+    }
+
+
+def user_has_rights_on_file_repository(user_id: str = "", file_repository_id: str = "", read: bool = None, write: bool = None, grant: bool = None) -> bool:
+    """
+    Checks if the given user has the requested rights for the given file repository
+
+    :param user_id:
+    :param file_repository_id:
+    :param read:
+    :param write:
+    :param grant:
+    :return:
+    """
+
+    rights = calculate_user_rights_on_file_repository(user_id, file_repository_id)
+
+    return (read is None or read == rights['read']) \
+           and (write is None or write == rights['write']) \
+           and (grant is None or grant == rights['grant'])
+
+def user_has_rights_on_file(user_id: str = "", file_id: str = "", read: bool = None, write: bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given file
 

@@ -92,6 +92,9 @@ from .file_repository_decline import *
 from .create_file_repository_right import *
 from .update_file_repository_right import *
 from .delete_file_repository_right import *
+from .create_group_file_repository_right import *
+from .update_group_file_repository_right import *
+from .delete_group_file_repository_right import *
 from .create_link_share import *
 from .update_link_share import *
 from .delete_link_share import *

@@ -36,6 +36,8 @@ from .api_key_secret import *
 from .api_key_access_inspect import *
 from .api_key_access_secret import *
 from .emergencycode import *
+from .file import *
 from .secret_history import *
 from .history import *
 from .file_repository import *
+from .file_repository_right import *

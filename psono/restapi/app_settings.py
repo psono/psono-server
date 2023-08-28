@@ -92,6 +92,9 @@ from .serializers import (
     CreateFileRepositoryRightSerializer as DefaultCreateFileRepositoryRightSerializer,
     UpdateFileRepositoryRightSerializer as DefaultUpdateFileRepositoryRightSerializer,
     DeleteFileRepositoryRightSerializer as DefaultDeleteFileRepositoryRightSerializer,
+    CreateGroupFileRepositoryRightSerializer as DefaultCreateGroupFileRepositoryRightSerializer,
+    UpdateGroupFileRepositoryRightSerializer as DefaultUpdateGroupFileRepositoryRightSerializer,
+    DeleteGroupFileRepositoryRightSerializer as DefaultDeleteGroupFileRepositoryRightSerializer,
     CreateLinkShareSerializer as DefaultCreateLinkShareSerializer,
     UpdateLinkShareSerializer as DefaultUpdateLinkShareSerializer,
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
@@ -718,6 +721,28 @@ DeleteFileRepositoryRightSerializer = import_callable(
     serializers.get(
         'DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER',
         DefaultDeleteFileRepositoryRightSerializer
+    )
+)
+
+CreateGroupFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultCreateGroupFileRepositoryRightSerializer
+    )
+)
+
+UpdateGroupFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultUpdateGroupFileRepositoryRightSerializer
+    )
+)
+
+
+DeleteGroupFileRepositoryRightSerializer = import_callable(
+    serializers.get(
+        'DELETE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
+        DefaultDeleteGroupFileRepositoryRightSerializer
     )
 )
 

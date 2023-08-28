@@ -140,6 +140,7 @@ class LoginView(GenericAPIView):
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
                 "user_sauce": user.user_sauce,
+                "authentication": user.authentication,
                 'hashing_algorithm': user.hashing_algorithm,
                 'hashing_parameters': user.hashing_parameters,
             }

@@ -5,6 +5,8 @@ from rest_framework.generics import GenericAPIView
 
 import json
 
+from ..utils import calculate_user_rights_on_file_repository
+
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -15,6 +17,7 @@ from ..app_settings import (
 from ..models import (
     File_Repository,
     File_Repository_Right,
+    Group_File_Repository_Right,
 )
 
 from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
@@ -48,10 +51,19 @@ class FileRepositoryView(GenericAPIView):
 
         if not file_repository_id:
 
-            file_repositories = []
+            file_repository_index = {}
 
-            for file_repository_right in File_Repository.objects.filter(file_repository_right__user=request.user).annotate(read=F('file_repository_right__read'), write=F('file_repository_right__write'), grant=F('file_repository_right__grant'), accepted=F('file_repository_right__accepted'), file_repository_right_id=F('file_repository_right__id')):
-                file_repositories.append({
+            for file_repository_right in File_Repository.objects.filter(
+                    file_repository_right__user=request.user,
+            ).annotate(
+                read=F('file_repository_right__read'),
+                write=F('file_repository_right__write'),
+                grant=F('file_repository_right__grant'),
+                accepted=F('file_repository_right__accepted'),
+                file_repository_right_id=F('file_repository_right__id'),
+            ):
+
+                file_repository_index[str(file_repository_right.id)] = {
                     'id': str(file_repository_right.id),
                     'title': file_repository_right.title,
                     'type': file_repository_right.type,
@@ -61,7 +73,36 @@ class FileRepositoryView(GenericAPIView):
                     'grant': file_repository_right.grant,
                     'accepted': file_repository_right.accepted,
                     'file_repository_right_id': str(file_repository_right.file_repository_right_id),
-                })
+                }
+
+            #for file_repository_right in File_Repository.objects.filter(group_file_repository_right__group__user=request.user).annotate(read=F('group_file_repository_right__read'), write=F('group_file_repository_right__write'), grant=F('group_file_repository_right__grant')):
+            for file_repository_right in File_Repository.objects.raw("""SELECT fr.id, fr.title, fr.type, fr.active, gfrr.read, gfrr.write, gfrr.grant
+                FROM restapi_file_repository fr
+                    JOIN restapi_group_file_repository_right gfrr ON gfrr.file_repository_id = fr.id
+                    JOIN restapi_user_group_membership ms ON ms.group_id = gfrr.group_id
+                WHERE ms.user_id = %(user_id)s
+                    AND ms.accepted = true""", {
+                'user_id': request.user.id,
+            }):
+                if str(file_repository_right.id) in file_repository_index:
+                    file_repository_index[str(file_repository_right.id)]['read'] = file_repository_index[str(file_repository_right.id)]['read'] or file_repository_right.read
+                    file_repository_index[str(file_repository_right.id)]['write'] = file_repository_index[str(file_repository_right.id)]['write'] or file_repository_right.write
+                    file_repository_index[str(file_repository_right.id)]['grant'] = file_repository_index[str(file_repository_right.id)]['grant'] or file_repository_right.grant
+                    continue
+
+                file_repository_index[str(file_repository_right.id)] = {
+                    'id': str(file_repository_right.id),
+                    'title': file_repository_right.title,
+                    'type': file_repository_right.type,
+                    'active': file_repository_right.active,
+                    'read': file_repository_right.read,
+                    'write': file_repository_right.write,
+                    'grant': file_repository_right.grant,
+                    'accepted': True,
+                    'file_repository_right_id': None,
+                }
+
+
 
             # if settings.DEFAULT_FILE_REPOSITORY_ENABLED:
             #     file_repositories.append({
@@ -74,38 +115,49 @@ class FileRepositoryView(GenericAPIView):
             #         'grant': False,
             #     })
 
-            return Response({'file_repositories': file_repositories},
+            return Response({'file_repositories': list(file_repository_index.values())},
                             status=status.HTTP_200_OK)
         else:
             # Returns the specified file_repository if the user has any rights for it
+
+            rights = calculate_user_rights_on_file_repository(
+                user_id=request.user.id,
+                file_repository_id=file_repository_id,
+            )
             try:
-                # file_repository = File_Repository.objects.annotate(read=F('file_repository_right__read'), write=F('file_repository_right__write'), grant=F('file_repository_right__grant')).get(id=file_repository_id, file_repository_right__user=request.user, file_repository_right__accepted=True)
-                file_repository_right = File_Repository_Right.objects.select_related('file_repository').get(file_repository_id=file_repository_id, user=request.user, accepted=True)
-            except File_Repository_Right.DoesNotExist:
+                file_repository = File_Repository.objects.get(
+                    pk=file_repository_id
+                )
+            except File_Repository.DoesNotExist:
+                return Response({"message": "NO_PERMISSION_OR_NOT_EXIST",
+                                 "resource_id": file_repository_id}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not rights['shared']:
                 return Response({"message": "NO_PERMISSION_OR_NOT_EXIST",
                                  "resource_id": file_repository_id}, status=status.HTTP_400_BAD_REQUEST)
 
             response = {
-                'id': str(file_repository_right.file_repository.id),
-                'title': file_repository_right.file_repository.title,
-                'type': file_repository_right.file_repository.type,
-                'active': file_repository_right.file_repository.active,
-                'read': file_repository_right.read,
-                'write': file_repository_right.write,
-                'grant': file_repository_right.grant,
+                'id': str(file_repository_id),
+                'title': file_repository.title,
+                'type': file_repository.type,
+                'active': file_repository.active,
+                'read': rights['read'],
+                'write': rights['write'],
+                'grant': rights['grant'],
                 'file_repository_rights': [],
+                'group_file_repository_rights': [],
             }
 
-            if file_repository_right.read:
-                data = json.loads(decrypt_with_db_secret(file_repository_right.file_repository.data))
+            if rights['read']:
+                data = json.loads(decrypt_with_db_secret(file_repository.data))
                 for key, value in data.items():
                     if key in response:
                         # protect existing keys
                         continue
                     response[key] = value
 
-            if file_repository_right.grant:
-                for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository_right.file_repository_id).select_related('user').only('id', 'user__id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
+            if rights['grant']:
+                for file_repository_right in File_Repository_Right.objects.filter(file_repository_id=file_repository_id).select_related('user').only('id', 'user__id', 'user__username', 'read', 'write', 'grant', 'accepted').all():
                     response['file_repository_rights'].append({
                         'id': str(file_repository_right.id),
                         'user_id': str(file_repository_right.user.id),
@@ -114,6 +166,17 @@ class FileRepositoryView(GenericAPIView):
                         'write': file_repository_right.write,
                         'grant': file_repository_right.grant,
                         'accepted': file_repository_right.accepted,
+                    })
+
+            if rights['grant']:
+                for file_repository_right in Group_File_Repository_Right.objects.filter(file_repository_id=file_repository_id).select_related('group').only('id', 'group__id', 'group__name', 'read', 'write', 'grant').all():
+                    response['group_file_repository_rights'].append({
+                        'id': str(file_repository_right.id),
+                        'group_id': str(file_repository_right.group.id),
+                        'group_name': file_repository_right.group.name,
+                        'read': file_repository_right.read,
+                        'write': file_repository_right.write,
+                        'grant': file_repository_right.grant,
                     })
 
             return Response(response,

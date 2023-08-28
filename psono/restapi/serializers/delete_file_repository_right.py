@@ -1,8 +1,8 @@
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..models import File_Repository_Right
+from ..utils import user_has_rights_on_file_repository
+
 
 class DeleteFileRepositoryRightSerializer(serializers.Serializer):
 
@@ -21,9 +21,11 @@ class DeleteFileRepositoryRightSerializer(serializers.Serializer):
         if file_repository_right.user_id != self.context['request'].user.id:
             # Its not his own file repository right (leave group functionality) check if the user has the necessary access
             # privileges for this file repository
-            if not File_Repository_Right.objects.\
-                    filter(file_repository_id=file_repository_right.file_repository_id, user=self.context['request'].user, grant=True, accepted=True).\
-                    exists():
+            if not user_has_rights_on_file_repository(
+                user_id=self.context['request'].user.id,
+                file_repository_id=file_repository_right.file_repository_id,
+                grant=True,
+            ):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 

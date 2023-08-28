@@ -406,7 +406,7 @@ for db_name, db_values in DATABASES.items():
     if "NAME" not in db_values:
         db_values["NAME"] = ''
     if "PASSWORD" not in db_values:
-        db_values["PASSWORD"] = ''
+        db_values["PASSWORD"] = ''  #nosec B105
     if "USER" not in db_values:
         db_values["USER"] = ''
     if "HOST" not in db_values:

@@ -76,7 +76,7 @@ class FileView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
-        Indirectly creats a file by providing a filetransfer id for upload
+        Indirectly creates a file by providing a filetransfer id for upload
 
         :param request:
         :type request:
