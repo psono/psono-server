@@ -4,7 +4,9 @@ from .enableuser import *
 from .disableuser import *
 from .cleartoken import *
 from .generateserverkeys import *
+from .reset2fa import *
 from .sendtestmail import *
+from .verifyuseremail import *
 from .demoteuser import *
 from .promoteuser import *
 from .fsclustercreate import *

@@ -40,4 +40,7 @@ from .file import *
 from .secret_history import *
 from .history import *
 from .file_repository import *
+from .file_repository_download import *
 from .file_repository_right import *
+from .file_repository_upload import *
+from .group_file_repository_right import *
