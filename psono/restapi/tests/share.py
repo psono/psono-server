@@ -425,7 +425,8 @@ class CreateShareTests(APITestCaseExtended):
                 'grant': True,
                 'read': True,
                 'write': True,
-            }
+            },
+            'write_date': models.Share.objects.get(pk=new_share_id).write_date.isoformat()
         }
 
         self.assertEqual(response.data, target_store)
@@ -824,7 +825,8 @@ class UpdateShareTests(APITestCaseExtended):
                 'grant': True,
                 'read': True,
                 'write': True,
-            }
+            },
+            'write_date': models.Share.objects.get(pk=new_share_id).write_date.isoformat()
         }
 
         self.assertEqual(response.data, target_store)

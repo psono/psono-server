@@ -14,6 +14,8 @@ from .logout import *
 from .membership import *
 from .membership_accept import *
 from .membership_decline import *
+from .metadata_datastore import *
+from .metadata_share import *
 from .mfa_duo import *
 from .mfa_google_authenticator import *
 from .mfa_yubikey_otp import *

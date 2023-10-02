@@ -50,7 +50,6 @@ from .serializers import (
     UpdateShareSerializer as DefaultUpdateShareSerializer,
     CreateFileSerializer as DefaultCreateFileSerializer,
     ReadFileSerializer as DefaultReadFileSerializer,
-    DatastoreOverviewSerializer as DefaultDatastoreOverviewSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
@@ -100,6 +99,8 @@ from .serializers import (
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
     LinkShareAccessSerializer as DefaultLinkShareAccessSerializer,
     CreateSecurityReportSerializer as DefaultCreateSecurityReportSerializer,
+    ReadMetadataDatastoreSerializer as DefaultReadMetadataDatastoreSerializer,
+    ReadMetadataShareSerializer as DefaultReadMetadataShareSerializer,
     ManagementCommandSerializer as DefaultManagementCommandSerializer,
 )
 
@@ -424,13 +425,6 @@ ReadFileSerializer = import_callable(
     serializers.get(
         'READ_FILE_SERIALIZER',
         DefaultReadFileSerializer
-    )
-)
-
-DatastoreOverviewSerializer = import_callable(
-    serializers.get(
-        'DATASTORE_OVERVIEW_SERIALIZER',
-        DefaultDatastoreOverviewSerializer
     )
 )
 
@@ -778,6 +772,20 @@ CreateSecurityReportSerializer = import_callable(
     serializers.get(
         'CREATE_SECURITY_REPORT_SERIALIZER',
         DefaultCreateSecurityReportSerializer
+    )
+)
+
+ReadMetadataDatastoreSerializer = import_callable(
+    serializers.get(
+        'READ_METADATA_DATASTORE_SERIALIZER',
+        DefaultReadMetadataDatastoreSerializer
+    )
+)
+
+ReadMetadataShareSerializer = import_callable(
+    serializers.get(
+        'READ_METADATA_SHARE_SERIALIZER',
+        DefaultReadMetadataShareSerializer
     )
 )
 

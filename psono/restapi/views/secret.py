@@ -63,8 +63,8 @@ class SecretView(GenericAPIView):
             callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
 
         return Response({
-            'create_date': secret.create_date,
-            'write_date': secret.write_date,
+            'create_date': secret.create_date.isoformat(),
+            'write_date': secret.write_date.isoformat(),
             'data': readbuffer(secret.data),
             'data_nonce': secret.data_nonce if secret.data_nonce else '',
             'type': secret.type,

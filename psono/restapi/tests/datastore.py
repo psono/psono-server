@@ -225,6 +225,7 @@ class InsertDatastoreTests(APITestCaseExtended):
             'secret_key': initial_data['secret_key'],
             'secret_key_nonce': initial_data['secret_key_nonce'],
             'is_default': True,
+            'write_date': models.Data_Store.objects.get(pk=new_datastore_id).write_date.isoformat(),
         })
 
         # ok lets try to get the same datastore with a bad user
@@ -524,6 +525,7 @@ class UpdateDatastoreTests(APITestCaseExtended):
             'secret_key': updated_data['secret_key'],
             'secret_key_nonce': updated_data['secret_key_nonce'],
             'is_default': updated_data['is_default'],
+            'write_date': models.Data_Store.objects.get(pk=new_datastore_id).write_date.isoformat(),
         })
 
     def test_update_datastore_no_datastore_id(self):
@@ -631,14 +633,15 @@ class UpdateDatastoreTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {
+            'data': updated_data['data'],
+            'data_nonce': updated_data['data_nonce'],
             'type': initial_data['type'],
             'description': updated_data['description'],
 
-            'data': updated_data['data'],
-            'data_nonce': updated_data['data_nonce'],
             'secret_key': updated_data['secret_key'],
             'secret_key_nonce': updated_data['secret_key_nonce'],
             'is_default': True,
+            'write_date': models.Data_Store.objects.get(pk=new_datastore_id).write_date.isoformat(),
         })
 
     def test_change_datastore_with_no_permissions(self):

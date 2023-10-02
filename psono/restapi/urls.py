@@ -117,6 +117,9 @@ urlpatterns = [
     re_path(r'^membership/decline/$', views.MembershipDeclineView.as_view(), name='membership_decline'),
     re_path(r'^membership/$', views.MembershipView.as_view(), name='membership'),
 
+    re_path(r'^metadata-datastore/(?P<datastore_id>[^/]+)/$', views.MetadataDatastoreView.as_view(), name='metadata_datastore'),
+    re_path(r'^metadata-share/(?P<share_id>[^/]+)/$', views.MetadataShareView.as_view(), name='metadata_share'),
+
     re_path(r'^management-command/$', views.ManagementCommandView.as_view(), name='management_command'),
     # re_path(r'^$', views.api_root),
 

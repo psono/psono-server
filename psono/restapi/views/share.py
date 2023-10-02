@@ -43,8 +43,8 @@ class ShareView(GenericAPIView):
 
                 share = {
                     'id': user_share_right.share_id,
-                    'share_right_create_date': user_share_right.create_date,
-                    'share_right_write_date': user_share_right.write_date,
+                    'share_right_create_date': user_share_right.create_date.isoformat(),
+                    'share_right_write_date': user_share_right.write_date.isoformat(),
                     'share_right_id': user_share_right.id,
                     'share_right_user_id': user_share_right.user_id,
                     'share_right_title': user_share_right.title,
@@ -131,6 +131,7 @@ class ShareView(GenericAPIView):
                 'data_nonce': share.data_nonce if share.data_nonce else '',
                 'user_id': share.user_id,
                 'rights': rights,
+                'write_date': share.write_date.isoformat(),
             }
 
             return Response(response,

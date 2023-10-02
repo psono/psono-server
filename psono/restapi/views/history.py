@@ -52,8 +52,8 @@ class HistoryView(GenericAPIView):
             callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
 
         return Response({
-            'create_date': secret_history.create_date,
-            'write_date': secret_history.write_date,
+            'create_date': secret_history.create_date.isoformat(),
+            'write_date': secret_history.write_date.isoformat(),
             'data': readbuffer(secret_history.data),
             'data_nonce': secret_history.data_nonce if secret_history.data_nonce else '',
             'type': secret_history.type,

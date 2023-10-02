@@ -9,7 +9,6 @@ from ..models import (
 from ..utils import readbuffer, authenticate, get_datastore
 
 from ..app_settings import (
-    DatastoreOverviewSerializer,
     CreateDatastoreSerializer,
     UpdateDatastoreSerializer,
     DeleteDatastoreSerializer,
@@ -24,7 +23,7 @@ class DatastoreView(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
     def get(self, request, datastore_id = None, *args, **kwargs):
         """
@@ -43,9 +42,17 @@ class DatastoreView(GenericAPIView):
         """
 
         if not datastore_id:
-            datastores = get_datastore(user=request.user)
+            datastores = []
 
-            return Response({'datastores': DatastoreOverviewSerializer(datastores, many=True).data},
+            for datastore in get_datastore(user=request.user):
+                datastores.append({
+                    'id': str(datastore.id),
+                    'type': datastore.type,
+                    'description': datastore.description,
+                    'is_default': datastore.is_default,
+                })
+
+            return Response({'datastores': datastores},
                 status=status.HTTP_200_OK)
         else:
             datastore = get_datastore(datastore_id, request.user)
@@ -61,6 +68,7 @@ class DatastoreView(GenericAPIView):
                 'secret_key': datastore.secret_key,
                 'secret_key_nonce': datastore.secret_key_nonce,
                 'is_default': datastore.is_default,
+                'write_date': datastore.write_date.isoformat(),
             },status=status.HTTP_200_OK)
 
 
