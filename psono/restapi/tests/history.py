@@ -188,8 +188,8 @@ class ReadHistory(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get('create_date'), self.test_secret_history_obj.create_date)
-        self.assertEqual(response.data.get('write_date'), self.test_secret_history_obj.write_date)
+        self.assertEqual(response.data.get('create_date'), self.test_secret_history_obj.create_date.isoformat())
+        self.assertEqual(response.data.get('write_date'), self.test_secret_history_obj.write_date.isoformat())
         self.assertEqual(response.data.get('data'), self.test_secret_history_obj.data.decode())
         self.assertEqual(response.data.get('data_nonce'), self.test_secret_history_obj.data_nonce)
         self.assertEqual(response.data.get('type'), self.test_secret_history_obj.type)

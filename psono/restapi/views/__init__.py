@@ -5,9 +5,11 @@ from .ga_verify import GAVerifyView
 from .duo_verify import DuoVerifyView
 from .group import GroupView
 from .group_file_repository_right import GroupFileRepositoryRightView
+from .membership import MembershipView
 from .membership_accept import MembershipAcceptView
 from .membership_decline import MembershipDeclineView
-from .membership import MembershipView
+from .metadata_datastore import MetadataDatastoreView
+from .metadata_share import MetadataShareView
 from .health_check import HealthCheckView
 from .info import InfoView
 from .status import StatusView

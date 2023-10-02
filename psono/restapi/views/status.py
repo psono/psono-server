@@ -50,9 +50,9 @@ class StatusView(GenericAPIView):
                 latest_security_report = None
 
             if latest_security_report:
-                last_security_report_created = latest_security_report.create_date
+                last_security_report_created = latest_security_report.create_date.isoformat()
             else:
-                last_security_report_created = request.user.create_date
+                last_security_report_created = request.user.create_date.isoformat()
 
             user_status = {
                 'unaccepted_shares_count': unaccepted_shares_count,

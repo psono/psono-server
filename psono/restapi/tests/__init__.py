@@ -14,6 +14,8 @@ from .logout import *
 from .membership import *
 from .membership_accept import *
 from .membership_decline import *
+from .metadata_datastore import *
+from .metadata_share import *
 from .mfa_duo import *
 from .mfa_google_authenticator import *
 from .mfa_yubikey_otp import *
@@ -40,4 +42,7 @@ from .file import *
 from .secret_history import *
 from .history import *
 from .file_repository import *
+from .file_repository_download import *
 from .file_repository_right import *
+from .file_repository_upload import *
+from .group_file_repository_right import *

@@ -9,7 +9,6 @@ from .create_share import *
 from .create_share_right import *
 from .create_emergencycode import *
 from .delete_emergencycode import *
-from .datastore_overview import *
 from .delete_datastore import *
 from .delete_membership import *
 from .delete_secret_link import *
@@ -67,6 +66,8 @@ from .delete_webauthn import *
 from .delete_yubikey import *
 from .read_secret_history import *
 from .read_history import *
+from .read_metadata_datastore import *
+from .read_metadata_share import *
 from .read_secret import *
 from .create_api_key import *
 from .update_api_key import *

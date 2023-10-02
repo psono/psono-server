@@ -6,6 +6,7 @@ from rest_framework.generics import GenericAPIView
 import nacl.encoding
 import json
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
+from webauthn.helpers.structs import UserVerificationRequirement
 from webauthn import (
     generate_authentication_options,
     options_to_json,
@@ -56,6 +57,7 @@ class WebauthnVerifyView(GenericAPIView):
             rp_id=rp_id,
             timeout=90000,
             allow_credentials=allow_credentials,
+            user_verification=UserVerificationRequirement.DISCOURAGED
         )
         options = json.loads(options_to_json(opts))
 
