@@ -247,7 +247,7 @@ class GroupView(GenericAPIView):
             group.name = name
             group.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -277,4 +277,4 @@ class GroupView(GenericAPIView):
         # delete it
         group.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

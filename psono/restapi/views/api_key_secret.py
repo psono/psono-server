@@ -130,4 +130,4 @@ class APIKeySecretView(GenericAPIView):
         # delete it
         api_key_secret.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

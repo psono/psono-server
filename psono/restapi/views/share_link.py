@@ -61,7 +61,7 @@ class ShareLinkView(GenericAPIView):
             return Response({"message":"Link id already exists.",
                             "resource_id": request.data['link_id']}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
         """
@@ -98,7 +98,7 @@ class ShareLinkView(GenericAPIView):
         for share_id in shares:
             create_share_link(request.data['link_id'], share_id, new_parent_share_id, new_parent_datastore_id)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
 
 
@@ -126,4 +126,4 @@ class ShareLinkView(GenericAPIView):
 
         delete_share_link(request.data['link_id'])
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

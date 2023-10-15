@@ -57,4 +57,4 @@ class WebAuthnView(GenericAPIView):
             user.webauthn_enabled = False
             user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

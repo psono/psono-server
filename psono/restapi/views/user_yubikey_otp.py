@@ -113,7 +113,7 @@ class UserYubikeyOTP(GenericAPIView):
         request.user.yubikey_otp_enabled = True
         request.user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -144,4 +144,4 @@ class UserYubikeyOTP(GenericAPIView):
         # delete it
         yubikey_otp.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

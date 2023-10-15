@@ -99,7 +99,7 @@ class SecretLinkView(GenericAPIView):
         for secret_id in secrets:
             create_secret_link(link_id, secret_id, new_parent_share_id, new_parent_datastore_id)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
 
 
@@ -127,4 +127,4 @@ class SecretLinkView(GenericAPIView):
 
         delete_secret_link(link_id)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

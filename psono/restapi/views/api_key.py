@@ -181,7 +181,7 @@ class APIKeyView(GenericAPIView):
 
         api_key.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -206,4 +206,4 @@ class APIKeyView(GenericAPIView):
         # delete it
         api_key.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

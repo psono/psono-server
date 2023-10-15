@@ -138,7 +138,7 @@ class UserWebauthn(GenericAPIView):
         request.user.webauthn_enabled = True
         request.user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -169,4 +169,4 @@ class UserWebauthn(GenericAPIView):
         # delete it
         webauthn.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

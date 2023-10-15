@@ -274,7 +274,7 @@ class UserView(GenericAPIView):
         # saves it
         user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """
@@ -341,4 +341,4 @@ class UserView(GenericAPIView):
         # delete it
         user.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

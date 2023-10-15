@@ -85,7 +85,7 @@ class CleanupChunksView(GenericAPIView):
 
         File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now()).delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -48,7 +48,7 @@ class AliveView(GenericAPIView):
         fileserver.valid_till=timezone.now()+datetime.timedelta(seconds=30)
         fileserver.save(update_fields=["valid_till"])
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

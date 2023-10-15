@@ -321,5 +321,5 @@ class ShareRightView(GenericAPIView):
         # delete it
         share_right.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 

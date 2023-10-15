@@ -109,7 +109,7 @@ class UserGA(GenericAPIView):
         request.user.google_authenticator_enabled = True
         request.user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -140,4 +140,4 @@ class UserGA(GenericAPIView):
         # delete it
         google_authenticator.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

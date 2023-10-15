@@ -157,7 +157,7 @@ class LinkShareView(GenericAPIView):
 
         link_share.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -182,4 +182,4 @@ class LinkShareView(GenericAPIView):
         # delete it
         link_share.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

@@ -253,7 +253,7 @@ class FileRepositoryView(GenericAPIView):
 
         file_repository.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -277,4 +277,4 @@ class FileRepositoryView(GenericAPIView):
         # delete it
         file_repository.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

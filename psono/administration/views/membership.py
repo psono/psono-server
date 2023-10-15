@@ -67,7 +67,7 @@ class MembershipView(GenericAPIView):
         if require_save:
             membership.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -96,4 +96,4 @@ class MembershipView(GenericAPIView):
         # delete it
         membership.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

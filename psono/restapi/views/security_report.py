@@ -108,7 +108,7 @@ class SecurityReportView(GenericAPIView):
             cache_key = 'psono_user_status_' + str(request.user.id)
             cache.delete(cache_key)
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_201_CREATED)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
