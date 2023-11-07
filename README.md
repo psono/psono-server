@@ -1,6 +1,6 @@
 # PSONO Server - Password Manager
 
-[![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master) [![Code Climate](https://codeclimate.com/github/psono/psono-server/badges/gpa.svg)](https://codeclimate.com/github/psono/psono-server) [![build status](https://img.shields.io/docker/pulls/psono/psono-server.svg)](https://hub.docker.com/r/psono/psono-server/) [![Discord](https://img.shields.io/badge/Discord-join%20chat-738bd7.svg)](https://discord.gg/RuSvEjj)
+[![coverage report](https://gitlab.com/psono/psono-server/badges/master/coverage.svg)](https://gitlab.com/psono/psono-server/commits/master) [![Code Climate](https://codeclimate.com/github/psono/psono-server/badges/gpa.svg)](https://codeclimate.com/github/psono/psono-server) [![build status](https://img.shields.io/docker/pulls/psono/psono-server.svg)](https://hub.docker.com/r/psono/psono-server/) [![Discord](https://img.shields.io/badge/Discord-join%20chat-738bd7.svg)](https://discord.gg/VmBMzTSbGV)
 
 
 # Canonical source
