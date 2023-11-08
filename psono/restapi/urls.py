@@ -44,6 +44,7 @@ urlpatterns = [
     re_path(r'^user/webauthn/$', views.UserWebauthn.as_view(), name='user_webauthn'),
     re_path(r'^user/yubikey-otp/$', views.UserYubikeyOTP.as_view(), name='user_yubikey_otp'),
     re_path(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
+    re_path(r'^user/policy/$', views.UserPolicyView.as_view(), name='user_policy'),
     re_path(r'^user/delete/$', views.UserDelete.as_view(), name='user_delete'),
     re_path(r'^user/security-report/$', views.SecurityReportView.as_view(), name='user_security_report'),
 
