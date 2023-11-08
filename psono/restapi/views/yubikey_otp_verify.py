@@ -64,7 +64,7 @@ class YubikeyOTPVerifyView(GenericAPIView):
 
         token.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

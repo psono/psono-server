@@ -97,7 +97,7 @@ class FileLinkView(GenericAPIView):
         for file_id in files:
             create_file_link(link_id, file_id, new_parent_share_id, new_parent_datastore_id)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
 
 
@@ -155,4 +155,4 @@ class FileLinkView(GenericAPIView):
 
             File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False).delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

@@ -188,4 +188,4 @@ class DatastoreView(GenericAPIView):
         # delete it
         datastore.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

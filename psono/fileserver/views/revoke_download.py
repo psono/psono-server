@@ -48,7 +48,7 @@ class RevokeDownloadView(GenericAPIView):
             file_transfer.chunk_count_transferred = F('chunk_count_transferred') - 1
             file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

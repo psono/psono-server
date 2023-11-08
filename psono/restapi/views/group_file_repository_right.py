@@ -86,7 +86,7 @@ class GroupFileRepositoryRightView(GenericAPIView):
         group_file_repository_right.grant = serializer.validated_data['grant']
         group_file_repository_right.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -111,4 +111,4 @@ class GroupFileRepositoryRightView(GenericAPIView):
         # delete it
         group_file_repository_right.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

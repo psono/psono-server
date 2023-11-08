@@ -145,7 +145,7 @@ class MembershipView(GenericAPIView):
         membership.share_admin = serializer.validated_data['share_admin']
         membership.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -174,4 +174,4 @@ class MembershipView(GenericAPIView):
         # delete it
         membership.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

@@ -53,4 +53,4 @@ class UserDelete(GenericAPIView):
         # delete it
         request.user.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

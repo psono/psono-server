@@ -49,4 +49,4 @@ class LinkShareView(GenericAPIView):
         # delete it
         link_share.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

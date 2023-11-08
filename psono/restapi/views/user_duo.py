@@ -136,7 +136,7 @@ class UserDuo(GenericAPIView):
         request.user.duo_enabled = True
         request.user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -167,4 +167,4 @@ class UserDuo(GenericAPIView):
         # delete it
         duo.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

@@ -71,4 +71,4 @@ class RecoveryCodeView(GenericAPIView):
         # delete it
         recovery_code.delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
