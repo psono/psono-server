@@ -15,7 +15,7 @@ build-container-alpine:
   stage: build
   image: psono-docker.jfrog.io/ubuntu:22.04
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -25,13 +25,17 @@ build-container-alpine:
   script:
     - sh ./var/update_version.sh
     - apt-get update || true
-    - apt install -y ca-certificates
-    - apt-get update && apt-get install -y curl
-    - curl -fSL "https://psono.jfrog.io/artifactory/generic-local/docker/docker-20.10.17.tgz" -o docker.tgz && echo "969210917b5548621a2b541caf00f86cc6963c6cf0fb13265b9731c3b98974d9 *docker.tgz" | sha256sum -c - && tar -xzvf docker.tgz && mv docker/* /usr/local/bin/ && rm -Rf docker && rm docker.tgz
+    - apt install -y curl ca-certificates iptables libdevmapper1.02.1
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/containerd.io_1.6.24-1_amd64.deb" -o containerd.deb && echo "5e57863201a147369d1cc54dcb1493ada00ee22ceb90c49f91adc7a8238cd51f containerd.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-buildx-plugin_0.11.2-1~ubuntu.22.04~jammy_amd64.deb" -o docker-buildx-plugin.deb && echo "18289b895394f8ad694f2107070dd95365866e5fa79a8d7f8f6d405bb8e9b68b docker-buildx-plugin.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce-cli_24.0.7-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce-cli.deb && echo "bfca81c55faacef808c476e16de548a9b7f1d1e537d24d546aef47df7c598564 docker-ce-cli.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce_24.0.7-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce.deb && echo "81273f05dbc410d9ec62b264bbef5452bfa892117e82be5a673e8e9a39192699 docker-ce.deb" | sha256sum -c -
+    - dpkg -i ./containerd.deb ./docker-ce.deb ./docker-ce-cli.deb ./docker-buildx-plugin.deb
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - docker build -f DockerfileAlpine -t $CONTAINER_TEST_IMAGE --pull .
-    - docker push $CONTAINER_TEST_IMAGE
+    - docker context create builder
+    - docker buildx create builder --use
+    - docker buildx build -f DockerfileAlpine --platform linux/amd64,linux/arm64 -t $CONTAINER_TEST_IMAGE --push --pull .
   only:
     - branches@psono/psono-server
     - tags@psono/psono-server
@@ -41,9 +45,9 @@ run-unittests-ubuntu:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -70,9 +74,42 @@ run-unittests-alpine:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: ""
+    PSONO_EMAIL_HOST: 172.17.0.1
+    PSONO_EMAIL_FROM: test@example.com
+    PSONO_ACTIVATION_LINK_SECRET: 9SruC2qPmKScVzGaF4378LW4rvNNkK2G3Gddqy9kPQqgkjeDQjs7jaLBCstgtJTt
+    PSONO_SECRET_KEY: RQTKawYQv4w6KkuphcLzLu7r5ap7xE5DSDu5SkKXjMnWBQ93mcMKjdZfeZkY2Y7C
+  script:
+    - docker info
+    - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run -d --name db postgres:9.6.16
+    - sleep 20
+    - docker run --link db:postgres $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
+  only:
+    - branches@psono/psono-server
+    - tags@psono/psono-server
+
+run-unittests-alpine-arm64:
+  except:
+    - schedules
+  stage: test
+  image: psono-docker.jfrog.io/docker:24.0.7-git
+  tags:
+    - arm64
+  services:
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -111,9 +148,9 @@ run-vulnerability-scan:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -137,9 +174,9 @@ run-vulnerability-scan:
 #  except:
 #    - schedules
 #  stage: deploy
-#  image: psono-docker.jfrog.io/docker:20.10.17-git
+#  image: psono-docker.jfrog.io/docker:24.0.7-git
 #  services:
-#    - name: docker:20-dind
+#    - name: docker:24-dind
 #      alias: docker
 #      command: ["--tls=false"]
 #  variables:
@@ -158,9 +195,9 @@ release-container:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -168,15 +205,13 @@ release-container:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
   script:
+    - apk add skopeo
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
-    - docker pull $CONTAINER_TEST_IMAGE
-    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_LATEST_IMAGE
-    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_TEST_ARTIFACTORY_IMAGE
-    - docker push $CONTAINER_LATEST_IMAGE
-    - docker push $CONTAINER_TEST_ARTIFACTORY_IMAGE
+    - skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://$CONTAINER_LATEST_IMAGE
+    - skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://$CONTAINER_TEST_ARTIFACTORY_IMAGE
   only:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
@@ -184,7 +219,7 @@ release-version-bump:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   script:
     - mkdir -p /root/.ssh
     - echo "$github_deploy_key" > /root/.ssh/id_rsa
@@ -208,9 +243,9 @@ deploy:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/docker:20.10.17-git
+  image: psono-docker.jfrog.io/docker:24.0.7-git
   services:
-    - name: docker:20-dind
+    - name: docker:24-dind
       alias: docker
       command: ["--tls=false"]
   variables:

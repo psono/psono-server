@@ -32,6 +32,7 @@ from .share_right_decline import ShareRightDeclineView
 from .share_rights import ShareRightsView
 from .share_link import ShareLinkView
 from .user_ga import UserGA
+from .user_policy import UserPolicyView
 from .user_duo import UserDuo
 from .user_search import UserSearch
 from .user_update import UserUpdate

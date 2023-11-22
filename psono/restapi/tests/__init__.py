@@ -46,3 +46,4 @@ from .file_repository_download import *
 from .file_repository_right import *
 from .file_repository_upload import *
 from .group_file_repository_right import *
+from .user_policy import *
