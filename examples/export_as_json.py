@@ -327,7 +327,7 @@ def get_all_shares(folder, token, session_secret_key):
                 continue
             new_folders.append(f)
 
-        get_all_shares(f, token, session_secret_key)
+            get_all_shares(f, token, session_secret_key)
 
         folder["folders"] = new_folders
 
@@ -356,6 +356,9 @@ def get_all_secrets(datastore, token, session_secret_key, include_trash_bin_item
                 continue
 
             secret_read_result = api_read_secret(token, session_secret_key, item['secret_id'])
+            if 'non_field_errors' in secret_read_result:
+                # we skip over entries that don't exist or that we have lost permission for
+                continue
             secret_content = json.loads(decrypt_symmetric(secret_read_result['data'], secret_read_result['data_nonce'], item['secret_key']))
 
             for key in secret_content.keys():
