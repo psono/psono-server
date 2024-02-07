@@ -15,7 +15,7 @@ build-container-alpine:
   stage: build
   image: psono-docker.jfrog.io/ubuntu:22.04
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -47,7 +47,7 @@ run-unittests-ubuntu:
   stage: test
   image: psono-docker.jfrog.io/docker:25.0.3-git
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -76,7 +76,7 @@ run-unittests-alpine:
   stage: test
   image: psono-docker.jfrog.io/docker:25.0.3-git
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -109,7 +109,7 @@ run-unittests-alpine-arm64:
   tags:
     - arm64
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -150,7 +150,7 @@ run-vulnerability-scan:
   stage: test
   image: psono-docker.jfrog.io/docker:25.0.3-git
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -176,7 +176,7 @@ run-vulnerability-scan:
 #  stage: deploy
 #  image: psono-docker.jfrog.io/docker:25.0.3-git
 #  services:
-#    - name: docker:24-dind
+#    - name: docker:25-dind
 #      alias: docker
 #      command: ["--tls=false"]
 #  variables:
@@ -197,7 +197,7 @@ release-container:
   stage: release
   image: psono-docker.jfrog.io/docker:25.0.3-git
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
@@ -245,7 +245,7 @@ deploy:
   stage: deploy
   image: psono-docker.jfrog.io/docker:25.0.3-git
   services:
-    - name: docker:24-dind
+    - name: docker:25-dind
       alias: docker
       command: ["--tls=false"]
   variables:
