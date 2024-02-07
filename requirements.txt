@@ -37,7 +37,7 @@ cffi==1.15.0
     #   pynacl
 charset-normalizer==2.0.11
     # via requests
-cryptography==41.0.7
+cryptography==42.0.0
     # via
     #   azure-storage-blob
     #   pyjwt
@@ -108,7 +108,7 @@ pyjwt[crypto]==2.7.0
     # via django-allauth
 pynacl==1.5.0
     # via -r requirements.in
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via webauthn
 pyotp==2.3.0
     # via -r requirements.in
