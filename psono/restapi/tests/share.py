@@ -392,6 +392,8 @@ class CreateShareTests(APITestCaseExtended):
                     'share_right_create_user_public_key': self.test_user_obj.public_key,
                     'share_right_title': "",
                     'share_right_title_nonce': "",
+                    'share_right_type': None,
+                    'share_right_type_nonce': None,
                     'share_right_key': initial_data['key'],
                     'share_right_key_nonce': initial_data['key_nonce'],
                     'share_right_key_type': initial_data['key_type'],

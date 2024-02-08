@@ -49,6 +49,8 @@ class ShareView(GenericAPIView):
                     'share_right_user_id': user_share_right.user_id,
                     'share_right_title': user_share_right.title,
                     'share_right_title_nonce': user_share_right.title_nonce,
+                    'share_right_type': user_share_right.type,
+                    'share_right_type_nonce': user_share_right.type_nonce,
                     'share_right_key': user_share_right.key,
                     'share_right_key_nonce': user_share_right.key_nonce,
                     'share_right_key_type': 'symmetric',
@@ -63,33 +65,6 @@ class ShareView(GenericAPIView):
 
                 share_index[user_share_right.share_id] = share
                 specific_right_share_index[user_share_right.share_id] = share
-
-            # shares = Share.objects.filter(user_share_rights__user=user).distinct()
-            #
-            # for share in shares:
-            #
-            #     for user_share_right in share.user_share_rights.filter(user=user):
-            #
-            #         s = {
-            #             'id': share.id,
-            #             'share_right_id': user_share_right.id,
-            #             'share_right_user_id': user_share_right.user_id,
-            #             'share_right_title': user_share_right.title,
-            #             'share_right_title_nonce': user_share_right.title_nonce,
-            #             'share_right_key': user_share_right.key,
-            #             'share_right_key_nonce': user_share_right.key_nonce,
-            #             'share_right_key_type': 'symmetric',
-            #             'share_right_read': user_share_right.read,
-            #             'share_right_write': user_share_right.write,
-            #             'share_right_grant': user_share_right.grant,
-            #             'share_right_accepted': user_share_right.accepted,
-            #             'share_right_create_user_id': user_share_right.creator.id if user_share_right.creator is not None else '',
-            #             'share_right_create_user_username': user_share_right.creator.username if user_share_right.creator is not None else '',
-            #             'share_right_create_user_public_key': user_share_right.creator.public_key if user_share_right.creator is not None else ''
-            #         }
-            #
-            #         share_index[share.id] = s
-            #         specific_right_share_index[share.id] = s
 
 
             return [share for share_id, share in share_index.items()]
