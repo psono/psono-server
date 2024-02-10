@@ -111,8 +111,8 @@ class LinkShareView(GenericAPIView):
             file_id = file_id,
             allowed_reads = allowed_reads,
             public_title = public_title,
-            node = str(node),
-            node_nonce = str(node_nonce),
+            node = node.encode(),
+            node_nonce = node_nonce,
             passphrase = passphrase,
             valid_till = valid_till,
         )

@@ -4,7 +4,6 @@ from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 from restapi import models
 
 import random
@@ -94,7 +93,7 @@ class CreateGroupRightsTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -131,7 +130,7 @@ class CreateGroupRightsTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 

@@ -28,14 +28,6 @@ from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 import dj_database_url
 
-
-try:
-    # Fall back to psycopg2cffi
-    from psycopg2cffi import compat
-    compat.register()
-except ImportError:
-    import psycopg2
-
 def eprint_and_exit_gunicorn(error_message):
     print(f"ERROR: {error_message}", file=sys.stderr)
     sys.exit(4)
@@ -391,7 +383,7 @@ if DATABASE_URL:
 else:
     DATABASES = config_get('DATABASES', {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2', # django_postgrespool2
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'YourPostgresDatabase',
             'USER': 'YourPostgresUser',
             'PASSWORD': 'YourPostgresPassword',
@@ -401,8 +393,8 @@ else:
     })
 
 for db_name, db_values in DATABASES.items():
-    if "ENGINE" not in db_values:
-        db_values["ENGINE"] = 'django.db.backends.postgresql_psycopg2'
+    if "ENGINE" not in db_values or db_values["ENGINE"] == 'django.db.backends.postgresql_psycopg2':
+        db_values["ENGINE"] = 'django.db.backends.postgresql'
     if "NAME" not in db_values:
         db_values["NAME"] = ''
     if "PASSWORD" not in db_values:

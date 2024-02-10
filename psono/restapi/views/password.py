@@ -21,9 +21,6 @@ from ..models import (
     Duo
 )
 
-
-from ..utils import readbuffer
-
 class PasswordView(GenericAPIView):
 
     permission_classes = (AllowAny,)
@@ -138,7 +135,7 @@ class PasswordView(GenericAPIView):
         recovery_code.save()
 
         return Response({
-            'recovery_data': readbuffer(recovery_code.recovery_data),
+            'recovery_data': recovery_code.recovery_data.decode(),
             'recovery_data_nonce': recovery_code.recovery_data_nonce,
             'recovery_sauce': recovery_code.recovery_sauce,
             'user_sauce': user.user_sauce,

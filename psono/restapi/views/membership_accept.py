@@ -5,7 +5,6 @@ from ..permissions import IsAuthenticated
 from django.core.cache import cache
 from django.conf import settings
 
-from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
 from ..app_settings import (
@@ -62,7 +61,7 @@ class MembershipAcceptView(GenericAPIView):
                     "share_title_nonce": share_right.title_nonce,
                     "share_type": share_right.type,
                     "share_type_nonce": share_right.type_nonce,
-                    "share_data": readbuffer(share_right.share.data),
+                    "share_data": share_right.share.data.decode(),
                     "share_data_nonce": share_right.share.data_nonce,
                     "share_key": share_right.key,
                     "share_key_nonce": share_right.key_nonce,

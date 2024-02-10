@@ -5,7 +5,6 @@ from django.test.utils import override_settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 from restapi import models
 from mock import patch
 
@@ -87,7 +86,7 @@ class UserCreateSecretTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -95,7 +94,7 @@ class UserCreateSecretTest(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -409,7 +408,7 @@ class UserGetSecretTest(APITestCaseExtended):
         )
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -418,7 +417,7 @@ class UserGetSecretTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -433,7 +432,7 @@ class UserGetSecretTest(APITestCaseExtended):
 
         self.test_secret2_obj = models.Secret.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -603,7 +602,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -627,7 +626,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -703,10 +702,10 @@ class UserUpdateSecretTest(APITestCaseExtended):
 
         updated_secret = models.Secret.objects.get(pk=self.secret_id)
 
-        self.assertEqual(readbuffer(updated_secret.data), data['data'],
+        self.assertEqual(updated_secret.data.decode(), data['data'],
                             'data in secret was not updated')
 
-        self.assertEqual(str(updated_secret.data_nonce), data['data_nonce'],
+        self.assertEqual(updated_secret.data_nonce, data['data_nonce'],
                             'data_nonce in secret was not updated')
 
         self.assertEqual(models.Secret_History.objects.filter(secret=updated_secret).count(), 1)

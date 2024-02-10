@@ -6,11 +6,6 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import readbuffer
-
-import os
-
-from uuid import UUID
 
 class UserRightsDecline(APITestCaseExtended):
     """
@@ -91,7 +86,7 @@ class UserRightsDecline(APITestCaseExtended):
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -160,7 +155,7 @@ class UserRightsDecline(APITestCaseExtended):
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -201,7 +196,7 @@ class UserRightsDecline(APITestCaseExtended):
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -242,7 +237,7 @@ class UserRightsDecline(APITestCaseExtended):
         # Lets first insert our first dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 

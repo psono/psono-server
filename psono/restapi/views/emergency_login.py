@@ -29,8 +29,6 @@ from ..models import (
     Token
 )
 
-from ..utils import readbuffer
-
 class EmergencyLoginView(GenericAPIView):
 
     permission_classes = (AllowAny,)
@@ -206,7 +204,7 @@ class EmergencyLoginView(GenericAPIView):
         return Response({
             'remaining_wait_time': 0,
             'status': 'ready',
-            'emergency_data': readbuffer(emergency_code.emergency_data),
+            'emergency_data': emergency_code.emergency_data.decode(),
             'emergency_data_nonce': emergency_code.emergency_data_nonce,
             'emergency_sauce': emergency_code.emergency_sauce,
             'user_sauce': user.user_sauce,

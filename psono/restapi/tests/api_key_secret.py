@@ -74,7 +74,7 @@ class CreateApiKeySecretTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= "12345",
+            data=b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -101,7 +101,7 @@ class CreateApiKeySecretTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345',
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -550,7 +550,7 @@ class DeleteApiKeySecretTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345',
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -716,7 +716,7 @@ class ReadApiKeySecretTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345',
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )

@@ -79,7 +79,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345',
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -88,7 +88,7 @@ class LinkShareAccess(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= "12345",
+            data=b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -103,7 +103,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.test_secret2_obj = models.Secret.objects.create(
             user_id=self.test_user2_obj.id,
-            data='12345',
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -167,7 +167,7 @@ class LinkShareAccess(APITestCaseExtended):
             file_id=None,
             allowed_reads=True,
             public_title='A public title',
-            node=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            node=b'kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi',
             node_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             passphrase=None,
             valid_till=None,

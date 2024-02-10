@@ -6,7 +6,7 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import readbuffer, authenticate, get_datastore
+from ..utils import authenticate, get_datastore
 
 from ..app_settings import (
     CreateDatastoreSerializer,
@@ -61,7 +61,7 @@ class DatastoreView(GenericAPIView):
                 raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
 
             return Response({
-                'data': readbuffer(datastore.data),
+                'data': datastore.data.decode(),
                 'data_nonce': datastore.data_nonce if datastore.data_nonce else '',
                 'type': datastore.type,
                 'description': datastore.description,
@@ -98,7 +98,7 @@ class DatastoreView(GenericAPIView):
             datastore = Data_Store.objects.create(
                 type = str(request.data['type']),
                 description = str(request.data['description']),
-                data = readbuffer(request.data['data']),
+                data = request.data['data'].encode(),
                 data_nonce = str(request.data['data_nonce']),
                 secret_key = str(request.data['secret_key']),
                 secret_key_nonce = str(request.data['secret_key_nonce']),

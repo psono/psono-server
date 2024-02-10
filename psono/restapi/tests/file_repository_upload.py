@@ -76,7 +76,7 @@ class FileRepositryUploadTest(APITestCaseExtended):
             data=encrypt_with_db_secret(json.dumps({
                 'gcp_cloud_storage_bucket': 'psono-file-upload',
                 'gcp_cloud_storage_json_key': '{}'
-            })),
+            })).encode(),
             active=True,
         )
 

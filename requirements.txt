@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-asgiref==3.4.1
+asgiref==3.7.2
     # via django
 asn1crypto==1.5.1
     # via webauthn
@@ -14,11 +14,11 @@ azure-core==1.24.2
     # via azure-storage-blob
 azure-storage-blob==12.13.0
     # via -r requirements.in
-bcrypt==3.1.7
+bcrypt==3.2.2
     # via -r requirements.in
-boto3==1.20.52
+boto3==1.34.39
     # via -r requirements.in
-botocore==1.23.52
+botocore==1.34.39
     # via
     #   boto3
     #   s3transfer
@@ -33,7 +33,6 @@ cffi==1.15.0
     #   -r requirements.in
     #   bcrypt
     #   cryptography
-    #   psycopg2cffi
     #   pynacl
 charset-normalizer==2.0.11
     # via requests
@@ -45,11 +44,12 @@ cryptography==42.0.2
     #   webauthn
 defusedxml==0.6.0
     # via python3-openid
-dj-database-url==0.5.0
+dj-database-url==2.1.0
     # via -r requirements.in
-django==3.2.24
+django==4.2.10
     # via
     #   -r requirements.in
+    #   dj-database-url
     #   django-allauth
     #   django-anymail
     #   django-cors-headers
@@ -72,7 +72,7 @@ django-redis==5.2.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
-djangorestframework==3.13.1
+djangorestframework==3.14.0
     # via
     #   -r requirements.in
     #   django-rest-auth
@@ -86,9 +86,9 @@ jmespath==0.9.5
     # via
     #   boto3
     #   botocore
-markdown==3.1.1
+markdown==3.5.2
     # via -r requirements.in
-more-itertools==7.2.0
+more-itertools==8.2.0
     # via -r requirements.in
 msrest==0.6.21
     # via azure-storage-blob
@@ -96,8 +96,10 @@ ntplib==0.3.4
     # via -r requirements.in
 oauthlib==3.1.0
     # via requests-oauthlib
-psycopg2cffi==2.9.0
+psycopg[binary]==3.1.18
     # via -r requirements.in
+psycopg-binary==3.1.18
+    # via psycopg
 pycparser==2.21
     # via cffi
 pycryptodomex==3.19.1
@@ -119,9 +121,7 @@ python-dateutil==2.8.0
 python3-openid==3.1.0
     # via django-allauth
 pytz==2022.1
-    # via
-    #   django
-    #   djangorestframework
+    # via djangorestframework
 pyyaml==6.0.1
     # via -r requirements.in
 raven==6.10.0
@@ -141,18 +141,16 @@ requests-oauthlib==1.3.1
     # via
     #   django-allauth
     #   msrest
-s3transfer==0.5.0
+s3transfer==0.10.0
     # via boto3
 scrypt==0.8.19
     # via -r requirements.in
 six==1.16.0
     # via
     #   azure-core
-    #   bcrypt
     #   django-rest-auth
     #   duo-client
     #   isodate
-    #   psycopg2cffi
     #   python-dateutil
 sqlalchemy==1.3.15
     # via django-postgrespool2
@@ -162,8 +160,13 @@ toml==0.10.2
     # via -r requirements.in
 typing-extensions==4.3.0
     # via
+    #   asgiref
     #   azure-core
+    #   dj-database-url
+    #   psycopg
     #   pydantic
+tzdata==2023.4
+    # via -r requirements.in
 urllib3==1.26.18
     # via
     #   botocore

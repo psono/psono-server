@@ -14,8 +14,6 @@ from ..models import (
     Emergency_Code
 )
 
-from ..utils import readbuffer
-
 
 class EmergencyCodeView(GenericAPIView):
 
@@ -78,7 +76,7 @@ class EmergencyCodeView(GenericAPIView):
             description = serializer.validated_data['description'],
             activation_delay = serializer.validated_data['activation_delay'],
             emergency_authkey = make_password(str(serializer.validated_data['emergency_authkey'])),
-            emergency_data = readbuffer(serializer.validated_data['emergency_data']),
+            emergency_data = serializer.validated_data['emergency_data'].encode(),
             emergency_data_nonce = serializer.validated_data['emergency_data_nonce'],
             emergency_sauce = str(serializer.validated_data['emergency_sauce']),
         )

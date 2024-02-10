@@ -5,7 +5,6 @@ from ..permissions import IsAuthenticated
 from django.core.cache import cache
 from django.conf import settings
 
-from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
 from ..app_settings import (
@@ -71,7 +70,7 @@ class ShareRightAcceptView(GenericAPIView):
 
             return Response({
                 "share_id": user_share_right_obj.share.id,
-                "share_data": readbuffer(user_share_right_obj.share.data),
+                "share_data": user_share_right_obj.share.data.decode(),
                 "share_data_nonce": user_share_right_obj.share.data_nonce,
                 "share_type": type,
                 "share_type_nonce": type_nonce

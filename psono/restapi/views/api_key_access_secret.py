@@ -135,7 +135,7 @@ class APIKeyAccessSecretView(GenericAPIView):
 
         if not secret_key:
             return Response(json.dumps({
-                'data': secret.data.tobytes().decode(),
+                'data': secret.data.decode(),
                 'data_nonce': str(secret.data_nonce),
                 'secret_key': api_key_secret.secret_key,
                 'secret_key_nonce': api_key_secret.secret_key_nonce,

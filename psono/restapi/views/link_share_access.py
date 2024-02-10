@@ -13,7 +13,6 @@ from ..models import (
 from ..app_settings import (
     LinkShareAccessSerializer,
 )
-from restapi.utils import readbuffer
 
 class LinkShareAccessView(GenericAPIView):
     """
@@ -57,7 +56,7 @@ class LinkShareAccessView(GenericAPIView):
         credit = serializer.validated_data.get('credit')
         shards = serializer.validated_data.get('shards')
 
-        node = readbuffer(link_share.node)
+        node = link_share.node.decode()
         node_nonce = link_share.node_nonce
         user = link_share.user
 
@@ -73,7 +72,7 @@ class LinkShareAccessView(GenericAPIView):
             return Response({
                 'node': node,
                 'node_nonce': node_nonce,
-                'secret_data': readbuffer(secret.data),
+                'secret_data': secret.data.decode(),
                 'secret_data_nonce': secret.data_nonce,
             }, status=status.HTTP_200_OK)
 

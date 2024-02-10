@@ -4,7 +4,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 from restapi import models
-from ..utils import readbuffer
 from .base import APITestCaseExtended
 
 import random
@@ -70,7 +69,7 @@ class ShareTests(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -80,7 +79,7 @@ class ShareTests(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -327,7 +326,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description="my-description",
-            data=readbuffer("12345"),
+            data=b"12345",
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -337,7 +336,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description="my-description",
-            data=readbuffer("12345"),
+            data=b"12345",
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),

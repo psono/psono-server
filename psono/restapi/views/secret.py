@@ -7,7 +7,7 @@ from django.db import IntegrityError
 import requests
 
 from .secret_link import create_secret_link
-from ..utils import readbuffer, decrypt_with_db_secret, encrypt_with_db_secret
+from ..utils import decrypt_with_db_secret, encrypt_with_db_secret
 from ..utils import is_allowed_callback_url
 from ..models import (
     Secret,
@@ -65,7 +65,7 @@ class SecretView(GenericAPIView):
         return Response({
             'create_date': secret.create_date.isoformat(),
             'write_date': secret.write_date.isoformat(),
-            'data': readbuffer(secret.data),
+            'data': secret.data.decode(),
             'data_nonce': secret.data_nonce if secret.data_nonce else '',
             'type': secret.type,
             'callback_url': secret.callback_url,
@@ -104,7 +104,7 @@ class SecretView(GenericAPIView):
             callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
 
             secret = Secret.objects.create(
-                data = readbuffer(str(request.data['data'])),
+                data = request.data['data'].encode(),
                 data_nonce = str(request.data['data_nonce']),
                 callback_url = serializer.validated_data['callback_url'],
                 callback_user = serializer.validated_data['callback_user'],

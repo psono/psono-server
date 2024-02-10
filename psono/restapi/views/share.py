@@ -14,7 +14,6 @@ from ..app_settings import (
     UpdateShareSerializer,
 )
 
-from ..utils import readbuffer
 from ..authentication import TokenAuthentication
 
 class ShareView(GenericAPIView):
@@ -102,15 +101,14 @@ class ShareView(GenericAPIView):
 
             response = {
                 'id': share.id,
-                'data': readbuffer(share.data),
+                'data': share.data.decode(),
                 'data_nonce': share.data_nonce if share.data_nonce else '',
                 'user_id': share.user_id,
                 'rights': rights,
                 'write_date': share.write_date.isoformat(),
             }
 
-            return Response(response,
-                status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """

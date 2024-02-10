@@ -4,7 +4,6 @@ from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 from restapi import models
 
 import random
@@ -76,7 +75,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -85,7 +84,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -102,7 +101,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         # # Lets first insert our dummy share
         # self.test_share2_obj = models.Share.objects.create(
         #     user_id=self.test_user_obj.id,
-        #     data=readbuffer("my-data"),
+        #     data=b"my-data",
         #     data_nonce="12345"
         # )
         #
@@ -120,7 +119,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -286,7 +285,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -296,7 +295,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
             user_id=self.test_user_obj2.id,
             type="my-type2",
             description= "my-description2",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -305,7 +304,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -322,7 +321,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -340,7 +339,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )

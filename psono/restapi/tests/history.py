@@ -3,7 +3,6 @@ from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 from restapi import models
 
 import random
@@ -69,7 +68,7 @@ class ReadHistory(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -93,7 +92,7 @@ class ReadHistory(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -101,7 +100,7 @@ class ReadHistory(APITestCaseExtended):
         self.test_secret_history_obj = models.Secret_History.objects.create(
             user_id=self.test_user_obj.id,
             secret_id=self.test_secret_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -115,7 +114,7 @@ class ReadHistory(APITestCaseExtended):
 
         self.share1 = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
