@@ -12,6 +12,7 @@ RUN apk upgrade && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add \
+        gettext \
         ca-certificates \
         curl \
         postgresql-dev && \

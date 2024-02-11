@@ -2,6 +2,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from django.utils import translation
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -142,25 +143,32 @@ class EmergencyLoginView(GenericAPIView):
             else:
                 emergency_code_link = None
 
-            msg_plain = render_to_string('email/emergency_code_armed.txt', {
-                'emergency_code_description': emergency_code.description,
-                'emergency_code_activation_delay': emergency_code.activation_delay,
-                'activation_link': emergency_code_link,
-                'host_url': settings.HOST_URL,
-            })
-            msg_html = render_to_string('email/emergency_code_armed.html', {
-                'emergency_code_description': emergency_code.description,
-                'emergency_code_activation_delay': emergency_code.activation_delay,
-                'activation_link': emergency_code_link,
-                'host_url': settings.HOST_URL,
-            })
+            with translation.override(request.LANGUAGE_CODE):
+                subject = render_to_string('email/emergency_code_armed_subject.txt', {
+                    'emergency_code_description': emergency_code.description,
+                    'emergency_code_activation_delay': emergency_code.activation_delay,
+                    'activation_link': emergency_code_link,
+                    'host_url': settings.HOST_URL,
+                }).replace('\n', ' ').replace('\r', '')
+                msg_plain = render_to_string('email/emergency_code_armed.txt', {
+                    'emergency_code_description': emergency_code.description,
+                    'emergency_code_activation_delay': emergency_code.activation_delay,
+                    'activation_link': emergency_code_link,
+                    'host_url': settings.HOST_URL,
+                })
+                msg_html = render_to_string('email/emergency_code_armed.html', {
+                    'emergency_code_description': emergency_code.description,
+                    'emergency_code_activation_delay': emergency_code.activation_delay,
+                    'activation_link': emergency_code_link,
+                    'host_url': settings.HOST_URL,
+                })
 
 
             if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
                 # SenndInBlue does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-            msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT, msg_plain, settings.EMAIL_FROM,
+            msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM,
                                          [decrypt_with_db_secret(emergency_code.user.email)])
 
             msg.attach_alternative(msg_html, "text/html")

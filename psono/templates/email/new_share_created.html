@@ -1,9 +1,10 @@
+{% load i18n %}
 <!doctype html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>New entry shared</title>
+    <title>{% trans "New entry shared" %}</title>
 
       <!--
       the htm file is the base template.
@@ -281,7 +282,7 @@
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">New entry shared.</span>
+            <span class="preheader">{% trans "New entry shared." %}</span>
             <table class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -291,11 +292,11 @@
                     <tr>
                       <td>
                         <p><img style="user-select: none;" src="cid:logo.png" width="172" height="50"></p>
-                        <p>Hello,</p>
-                        <p>A new entry has been shared with you. Please login to Psono and accept or decline the now pending request.</p>
+                        <p>{% trans "Hello," %}</p>
+                        <p>{% trans "A new entry has been shared with you. Please login to Psono and accept or decline the now pending request." %}</p>
 
-                        <p>Best regards</p>
-                        <p>Your Psono Team</p>
+                        <p>{% trans "Best regards" %}</p>
+                        <p>{% trans "Your Psono Team" %}</p>
                       </td>
                     </tr>
                   </table>
@@ -310,7 +311,7 @@
               <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="content-block">
-                    <span class="apple-link">powered by Psono</span>
+                    <span class="apple-link">{% trans "powered by Psono" %}</span>
                   </td>
                 </tr>
               </table>

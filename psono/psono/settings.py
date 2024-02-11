@@ -230,6 +230,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = (
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'restapi.middleware.DisableMiddleware',
     'restapi.middleware.MaintenanceMiddleware',
@@ -439,11 +440,6 @@ if isinstance(YUBICO_API_URLS, str) and YUBICO_API_URLS:
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 
-EMAIL_TEMPLATE_NEW_ENTRY_SHARED_SUBJECT = config_get('EMAIL_TEMPLATE_NEW_ENTRY_SHARED_SUBJECT', 'New entry shared')
-EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT = config_get('EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT', 'New group invitation')
-EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT = config_get('EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT', 'Emergency code armed')
-EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT = config_get('EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT', 'Registration successful')
-
 ANYMAIL = {
     "MAILGUN_API_URL": config_get('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),  # For EU: https://api.eu.mailgun.net/v3
     "MAILGUN_API_KEY": config_get('MAILGUN_ACCESS_KEY', ''),
@@ -624,6 +620,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+LOCALE_PATHS = (
+    os.path.join(os.path.dirname(__file__), "..", "locale"),
+)
 
 AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
 if isinstance(AUTHENTICATION_METHODS, str) and AUTHENTICATION_METHODS:

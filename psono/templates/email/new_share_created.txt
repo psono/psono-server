@@ -1,6 +1,7 @@
-Hello,
+{% load i18n %}
+{% trans "Hello," %}
 
-A new entry has been shared with you. Please login to Psono and accept or decline the now pending request.
+{% trans "A new entry has been shared with you. Please login to Psono and accept or decline the now pending request." %}
 
-Best regards
-Your Psono Team
+{% trans "Best regards" %}
+{% trans "Your Psono Team" %}
