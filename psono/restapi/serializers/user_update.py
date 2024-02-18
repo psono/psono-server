@@ -15,9 +15,7 @@ class UserUpdateSerializer(serializers.Serializer):
     authkey = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True,
                                     max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
                                     min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
-    authkey_old = serializers.CharField(style={'input_type': 'password'}, required=True,
-                                    max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
-                                    min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
+    authkey_old = serializers.CharField(style={'input_type': 'password'}, required=False, allow_null=True)
 
     private_key = serializers.CharField(required=False, allow_null=True,
                                     max_length=settings.USER_PRIVATE_KEY_LENGTH_BYTES*2,
@@ -30,12 +28,22 @@ class UserUpdateSerializer(serializers.Serializer):
     hashing_algorithm = serializers.ChoiceField(choices=HASHING_ALGORITHMS, required=False, )
     hashing_parameters = serializers.DictField(required=False, )
 
+    language = serializers.CharField(max_length=16, required=False, allow_null=True)
+
     def validate(self, attrs: dict) -> dict:
         email = attrs.get('email')
         authkey_old = attrs.get('authkey_old')
         authkey = attrs.get('authkey', False)
         hashing_algorithm = attrs.get('hashing_algorithm', '')
         hashing_parameters = attrs.get('hashing_parameters', {})
+        secret_key = attrs.get('secret_key', '')
+        private_key_nonce = attrs.get('private_key_nonce', '')
+        private_key = attrs.get('private_key', '')
+        secret_key_nonce = attrs.get('secret_key_nonce', '')
+
+        if not authkey_old and any([email, authkey, hashing_algorithm, hashing_parameters, private_key, secret_key, private_key_nonce, secret_key_nonce]):
+            msg = 'AUTHKEY_REQUIRED'
+            raise exceptions.ValidationError(msg)
 
         if email:
             email = email.lower().strip()
@@ -46,11 +54,12 @@ class UserUpdateSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
             attrs['email'] = email
 
-        user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey_old))
+        if authkey_old:
+            user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey_old))
 
-        if not user:
-            msg = _("OLD_PASSWORD_INCORRECT")
-            raise exceptions.ValidationError(msg)
+            if not user:
+                msg = _("OLD_PASSWORD_INCORRECT")
+                raise exceptions.ValidationError(msg)
 
         if authkey and settings.DISABLE_LAST_PASSWORDS > 0:
             user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))

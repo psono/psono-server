@@ -59,6 +59,9 @@ class UserUpdate(GenericAPIView):
             request.user.email_bcrypt = get_static_bcrypt_hash_from_email(email)
             request.user.email = encrypt_with_db_secret(email)
 
+        if 'language' in request.data and request.data['language'] is not None:
+            request.user.language = str(request.data['language'])
+
         # Password Change
         if 'authkey' in request.data and request.data['authkey'] is not None:
             request.user.authkey = make_password(str(request.data['authkey']))

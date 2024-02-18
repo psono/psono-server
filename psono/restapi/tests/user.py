@@ -172,6 +172,26 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('private_key' in response.data)
 
+    def test_update_user_with_language(self):
+        """
+        Tests to update the user with a new language
+        """
+
+        url = reverse('user_update')
+
+        data = {
+            'language': 'de',
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = models.User.objects.get(pk=self.test_user_obj.pk)
+
+        self.assertEqual(user.language, data['language'])
+
     def test_update_user_with_private_key_nonce_not_being_in_hex_format(self):
         """
         Tests to update the user with private key nonce not being in hex format
