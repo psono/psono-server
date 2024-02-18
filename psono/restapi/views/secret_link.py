@@ -32,10 +32,10 @@ def create_secret_link(link_id, secret_id, parent_share_id, parent_datastore_id)
 
     try:
         Secret_Link.objects.create(
-            link_id = link_id,
-            secret_id = secret_id,
-            parent_datastore_id = parent_datastore_id,
-            parent_share_id = parent_share_id
+            link_id=link_id,
+            secret_id=secret_id,
+            parent_datastore_id=parent_datastore_id,
+            parent_share_id=parent_share_id
         )
     except:
         return False

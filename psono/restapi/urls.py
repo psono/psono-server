@@ -91,6 +91,7 @@ urlpatterns = [
 
     re_path(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
 
+    re_path(r'^bulk-secret/$', views.BulkSecretView.as_view(), name='bulk_secret'),
     re_path(r'^secret/$', views.SecretView.as_view(), name='secret'),
     re_path(r'^secret/history/(?P<secret_id>[^/]+)/$', views.SecretHistoryView.as_view(), name='secret_history'),
     re_path(r'^secret/(?P<secret_id>[^/]+)/$', views.SecretView.as_view(), name='secret'),

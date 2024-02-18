@@ -42,7 +42,7 @@ class CreateShareSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
         if parent_share is None and parent_datastore is None:
-            msg = "Either parent share or datastore need to be specified."
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
             raise exceptions.ValidationError(msg)
 
         attrs['parent_share_id'] = parent_share_id

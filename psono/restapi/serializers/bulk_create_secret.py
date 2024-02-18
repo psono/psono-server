@@ -3,7 +3,8 @@ from ..fields import UUIDField
 
 from ..utils import user_has_rights_on_share, get_datastore
 
-class CreateSecretSerializer(serializers.Serializer):
+
+class BulkCreateSecretSingleSerializer(serializers.Serializer):
 
     data = serializers.CharField(required=True)
     data_nonce = serializers.CharField(required=True, max_length=64)
@@ -11,12 +12,17 @@ class CreateSecretSerializer(serializers.Serializer):
     callback_user = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
     callback_pass = serializers.CharField(required=False, max_length=128, default='', allow_blank=True)
     link_id = UUIDField(required=True)
+
+class BulkCreateSecretSerializer(serializers.Serializer):
+
+    secrets = serializers.ListField(child=BulkCreateSecretSingleSerializer(), min_length=1)
     parent_share_id = UUIDField(required=False)
     parent_datastore_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
+
 
         if parent_share_id is None and parent_datastore_id is None:
             msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
