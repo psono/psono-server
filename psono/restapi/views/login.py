@@ -136,6 +136,7 @@ class LoginView(GenericAPIView):
             "user_validator_nonce": user_validator_nonce_hex.decode('utf-8'),
             "user": {
                 "username": user.username,
+                "language": user.language,
                 "public_key": user.public_key,
                 "private_key": user.private_key,
                 "private_key_nonce": user.private_key_nonce,
