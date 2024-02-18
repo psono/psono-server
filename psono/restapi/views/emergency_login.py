@@ -143,7 +143,7 @@ class EmergencyLoginView(GenericAPIView):
             else:
                 emergency_code_link = None
 
-            with translation.override(request.LANGUAGE_CODE):
+            with translation.override(user.language):
                 subject = render_to_string('email/emergency_code_armed_subject.txt', {
                     'emergency_code_description': emergency_code.description,
                     'emergency_code_activation_delay': emergency_code.activation_delay,
@@ -169,7 +169,7 @@ class EmergencyLoginView(GenericAPIView):
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
             msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM,
-                                         [decrypt_with_db_secret(emergency_code.user.email)])
+                                         [decrypt_with_db_secret(user.email)])
 
             msg.attach_alternative(msg_html, "text/html")
             msg.mixed_subtype = 'related'

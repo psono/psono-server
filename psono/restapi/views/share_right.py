@@ -191,7 +191,7 @@ class ShareRightView(GenericAPIView):
                 else:
                     pending_share_link = None
 
-                with translation.override(request.LANGUAGE_CODE):
+                with translation.override(serializer.validated_data['user'].language):
                     subject = render_to_string('email/new_share_created_subject.txt', {
                         'pending_share_link': pending_share_link
                     }).replace('\n', ' ').replace('\r', '')

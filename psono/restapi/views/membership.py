@@ -80,7 +80,7 @@ class MembershipView(GenericAPIView):
             else:
                 groups_link = None
 
-            with translation.override(request.LANGUAGE_CODE):
+            with translation.override(serializer.validated_data['user'].language):
                 subject = render_to_string('email/new_group_membership_created_subject.txt', {
                     'groups_link': groups_link
                 }).replace('\n', ' ').replace('\r', '')
