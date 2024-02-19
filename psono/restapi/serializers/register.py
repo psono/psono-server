@@ -154,6 +154,7 @@ class RegisterSerializer(serializers.Serializer):
 
         attrs['hashing_algorithm'] = hashing_algorithm
         attrs['hashing_parameters'] = hashing_parameters
+        attrs['language'] = self.context['request'].LANGUAGE_CODE
 
         return attrs
 

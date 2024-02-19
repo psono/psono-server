@@ -22,8 +22,6 @@ class RegisterView(GenericAPIView):
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'registration'
 
-    serializer_class = RegisterSerializer
-
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -57,7 +55,7 @@ class RegisterView(GenericAPIView):
             return Response({"custom": ["REGISTRATION_FAILED_USERNAME_AND_EMAIL_HAVE_TO_MATCH"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
@@ -65,17 +63,11 @@ class RegisterView(GenericAPIView):
 
         activation_code = generate_activation_code(serializer.validated_data['email'])
 
-        # serializer.validated_data['email'] gets now encrypted
         try:
             user = serializer.save()
         except IntegrityError:
             return Response({"custom": ["REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS"]},
                             status=status.HTTP_400_BAD_REQUEST)
-
-
-        # if len(self.request.data.get('base_url', '')) < 1:
-        #    raise exceptions.ValidationError(msg)
-
 
         if settings.WEB_CLIENT_URL:
             activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code

@@ -85,7 +85,7 @@ class RegistrationTests(APITestCaseExtended):
             'user_sauce': user_sauce,
         }
 
-        response = self.client.post(url, data)
+        response = self.client.post(url, data, headers={"ACCEPT_LANGUAGE": 'de,en-US;q=0.9,en;q=0.8'})
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(models.User.objects.count(), 1)
@@ -95,6 +95,7 @@ class RegistrationTests(APITestCaseExtended):
         email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
         self.assertEqual(decrypt_with_db_secret(user.email), email)
+        self.assertEqual(user.language, 'de')
         self.assertEqual(user.email_bcrypt, email_bcrypt)
         self.assertTrue(check_password(authkey, user.authkey))
         self.assertEqual(user.public_key, public_key)
