@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
@@ -16,6 +17,7 @@ import datetime
 from .parsers import decrypt
 from .models import Token, User, Fileserver_Cluster_Members, Fileserver_Cluster, Fileserver_Cluster_Shard_Link, Fileserver_Cluster_Member_Shard_Link, File_Transfer
 from .utils import get_cache, decrypt_with_db_secret, get_ip
+
 
 import nacl.exceptions
 import nacl.encoding
@@ -61,6 +63,10 @@ class TokenAuthentication(BaseAuthentication):
         token = self.get_db_token(token_hash)
 
         user = get_cache(User, token.user_id)
+
+        if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", ""):
+            from .telemetry import setup_user_in_baggage_and_spans
+            setup_user_in_baggage_and_spans(user, token)
 
         if not user.is_active:
             raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
