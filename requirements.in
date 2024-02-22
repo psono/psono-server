@@ -29,11 +29,3 @@ toml==0.10.2
 azure-storage-blob==12.13.0
 webauthn==1.8.1
 tzdata==2023.4
-opentelemetry-sdk==1.22.0
-opentelemetry-exporter-otlp-proto-grpc==1.22.0
-opentelemetry-instrumentation-wsgi==0.43b0
-opentelemetry-instrumentation-django==0.43b0
-opentelemetry-instrumentation-requests==0.43b0
-opentelemetry-instrumentation-grpc==0.43b0
-opentelemetry-instrumentation-redis==0.43b0
-opentelemetry-instrumentation-logging==0.43b0

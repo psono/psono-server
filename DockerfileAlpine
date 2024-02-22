@@ -7,6 +7,9 @@ COPY . /root/
 ENV PYTHONUNBUFFERED True
 WORKDIR /root
 
+# Buildkit should populate this on build with e.g. "arm64" or "amd64"
+ARG TARGETARCH
+
 RUN apk upgrade && \
     mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
@@ -15,15 +18,16 @@ RUN apk upgrade && \
         gettext \
         ca-certificates \
         curl \
-        py3-grpcio \
         postgresql-dev && \
     apk add --virtual .build-deps \
         build-base \
         libffi-dev \
         linux-headers && \
     pip3 install --upgrade pip && \
-    sed -i '/^grpcio==/d' ./requirements.txt && \
     pip3 install -r requirements.txt && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+    pip3 install -r requirements-amd64.txt ; \
+    fi; \
     pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
