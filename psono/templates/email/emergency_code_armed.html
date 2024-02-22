@@ -1,9 +1,10 @@
+{% load i18n %}
 <!doctype html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Emergency code armed</title>
+    <title>{% trans "Emergency code armed" %}</title>
 
       <!--
       the htm file is the base template.
@@ -281,7 +282,7 @@
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">Emergency code armed.</span>
+            <span class="preheader">{% trans "Emergency code armed." %}</span>
             <table class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -291,15 +292,15 @@
                     <tr>
                       <td>
                         <p><img style="user-select: none;" src="cid:logo.png" width="172" height="50"></p>
-                        <p>Hello,</p>
-                        <p>One of your emergency codes has been armed. Description of the code:</p>
+                        <p>{% trans "Hello," %}</p>
+                        <p>{% trans "One of your emergency codes has been armed. Description of the code:" %}</p>
                         <p><b>{{ emergency_code_description }}</b></p>
-                        <p>The code will grant access to your account in:</p>
+                        <p>{% trans "The code will grant access to your account in:" %}</p>
                         <p><b>{{ emergency_code_activation_delay }} sec</b></p>
-                        <p>If you don't want that, then please delete login and delete the emergency code.</p>
+                        <p>{% trans "If you don't want that, then please login and delete the emergency code." %}</p>
 
-                        <p>Best regards</p>
-                        <p>Your Psono Team</p>
+                        <p>{% trans "Best regards" %}</p>
+                        <p>{% trans "Your Psono Team" %}</p>
                       </td>
                     </tr>
                   </table>
@@ -314,7 +315,7 @@
               <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="content-block">
-                    <span class="apple-link">powered by Psono</span>
+                    <span class="apple-link">{% trans "powered by Psono" %}</span>
                   </td>
                 </tr>
               </table>

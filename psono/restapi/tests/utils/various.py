@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 
-from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, readbuffer, get_datastore, is_allowed_url
+from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, get_datastore, is_allowed_url
 from restapi import models
 
 from uuid import uuid4
@@ -119,7 +119,7 @@ class TestVariousUtils(TestCase):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -129,7 +129,7 @@ class TestVariousUtils(TestCase):
             user_id=self.test_user_obj.id,
             type="my-second-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -211,22 +211,22 @@ class TestCalculateShareRightsOnShare(TestCase):
 
         self.group1 = models.Group.objects.create(
             name="Group Name",
-            public_key=readbuffer("my-data"),
+            public_key=b"my-data",
         )
 
         self.share1 = models.Share.objects.create(
             user_id=self.user1.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         self.share2 = models.Share.objects.create(
             user_id=self.user2.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         self.share3 = models.Share.objects.create(
             user_id=self.user2.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 

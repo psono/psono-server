@@ -7,6 +7,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.conf import settings
+from django.utils import translation
 
 from ..utils import decrypt_with_db_secret
 from ..permissions import IsAuthenticated
@@ -79,18 +80,22 @@ class MembershipView(GenericAPIView):
             else:
                 groups_link = None
 
-            msg_plain = render_to_string('email/new_group_membership_created.txt', {
-                'groups_link': groups_link
-            })
-            msg_html = render_to_string('email/new_group_membership_created.html', {
-                'groups_link': groups_link
-            })
+            with translation.override(serializer.validated_data['user'].language):
+                subject = render_to_string('email/new_group_membership_created_subject.txt', {
+                    'groups_link': groups_link
+                }).replace('\n', ' ').replace('\r', '')
+                msg_plain = render_to_string('email/new_group_membership_created.txt', {
+                    'groups_link': groups_link
+                })
+                msg_html = render_to_string('email/new_group_membership_created.html', {
+                    'groups_link': groups_link
+                })
 
             if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
                 # SenndInBlue does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-            msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT, msg_plain,
+            msg = EmailMultiAlternatives(subject, msg_plain,
                                          settings.EMAIL_FROM,
                                          [decrypt_with_db_secret(serializer.validated_data['user'].email)])
 

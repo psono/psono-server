@@ -1,5 +1,5 @@
 # PSONO Dockerfile for Alpine
-FROM psono-docker.jfrog.io/python:3.10.10-alpine3.16
+FROM psono-docker.jfrog.io/python:3.11.8-alpine3.19
 
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -7,11 +7,15 @@ COPY . /root/
 ENV PYTHONUNBUFFERED True
 WORKDIR /root
 
+# Buildkit should populate this on build with e.g. "arm64" or "amd64"
+ARG TARGETARCH
+
 RUN apk upgrade && \
     mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add \
+        gettext \
         ca-certificates \
         curl \
         postgresql-dev && \
@@ -21,6 +25,9 @@ RUN apk upgrade && \
         linux-headers && \
     pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+    pip3 install -r requirements-amd64.txt ; \
+    fi; \
     pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \

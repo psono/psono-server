@@ -1,12 +1,14 @@
-Hello,
-You registered for an account with username:
+{% load i18n %}
+{% trans "Hello," %}
+{% trans "You registered for an account with username:" %}
 {{ username }}
 
-Your activation link is:
+{% trans "Your activation link is:" %}
 {{ activation_link }}
 
-If you registered with a browser extension, make sure to open the link in the browser with the extension.
+{% trans "If you registered with a browser extension, make sure to open the link in the browser with the extension." %}</p>
 
+{% trans "Should the link not work, then please copy / paste the following link into your browser." %}
 
-Best regards
-Your Psono Team
+{% trans "Best regards" %}
+{% trans "Your Psono Team" %}

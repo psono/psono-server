@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer, encrypt_with_db_secret
+from ..utils import encrypt_with_db_secret
 from restapi import models
 
 import random
@@ -89,7 +89,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             user_id=self.test_user1_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -99,7 +99,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -109,7 +109,7 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
             user_id=self.test_user3_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),

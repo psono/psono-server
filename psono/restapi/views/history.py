@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 
 from ..permissions import IsAuthenticated
-from ..utils import readbuffer, decrypt_with_db_secret
+from ..utils import decrypt_with_db_secret
 
 from ..app_settings import (
     ReadHistorySerializer
@@ -54,7 +54,7 @@ class HistoryView(GenericAPIView):
         return Response({
             'create_date': secret_history.create_date.isoformat(),
             'write_date': secret_history.write_date.isoformat(),
-            'data': readbuffer(secret_history.data),
+            'data': secret_history.data.decode(),
             'data_nonce': secret_history.data_nonce if secret_history.data_nonce else '',
             'type': secret_history.type,
             'callback_url': secret_history.callback_url,

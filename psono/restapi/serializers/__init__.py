@@ -78,6 +78,7 @@ from .read_api_key_inspect import *
 from .read_secret_with_api_key import *
 from .update_secret_with_api_key import *
 from .api_key_login import *
+from .bulk_create_secret import *
 from .read_shard import *
 from .read_share import *
 from .read_file import *

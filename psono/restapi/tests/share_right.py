@@ -4,7 +4,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 from restapi import models
-from ..utils import readbuffer
 from .base import APITestCaseExtended
 from ..utils import encrypt_with_db_secret
 
@@ -100,7 +99,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -148,7 +147,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -189,7 +188,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -248,7 +247,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(readbuffer(response.data.get('data', '')), self.test_share1_obj.data,
+        self.assertEqual(response.data.get('data', '').encode(), self.test_share1_obj.data,
                          'Share should contain data and data should be equal to the original data')
         self.assertEqual(response.data.get('data_nonce', ''), self.test_share1_obj.data_nonce,
                          'Share should contain the data nonce and data should be equal to the original data nonce')
@@ -261,7 +260,7 @@ class ReadUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -396,7 +395,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         models.User_Share_Right.objects.create(
@@ -412,7 +411,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -774,7 +773,7 @@ class DeleteUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         self.test_user_share_right1 = models.User_Share_Right.objects.create(
@@ -1024,14 +1023,14 @@ class UpdateUserShareRightTest(APITestCaseExtended):
         # Lets first insert our dummy share
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
         # Lets first insert our dummy share
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         self.test_user_share_right1_obj = models.User_Share_Right.objects.create(

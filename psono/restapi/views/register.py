@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from django.db import IntegrityError
+from django.utils import translation
 
 import os
 from email.mime.image import MIMEImage
@@ -20,8 +21,6 @@ class RegisterView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'registration'
-
-    serializer_class = RegisterSerializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -56,7 +55,7 @@ class RegisterView(GenericAPIView):
             return Response({"custom": ["REGISTRATION_FAILED_USERNAME_AND_EMAIL_HAVE_TO_MATCH"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
 
@@ -64,46 +63,49 @@ class RegisterView(GenericAPIView):
 
         activation_code = generate_activation_code(serializer.validated_data['email'])
 
-        # serializer.validated_data['email'] gets now encrypted
         try:
             user = serializer.save()
         except IntegrityError:
             return Response({"custom": ["REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
-        # if len(self.request.data.get('base_url', '')) < 1:
-        #    raise exceptions.ValidationError(msg)
-
-
         if settings.WEB_CLIENT_URL:
             activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code
         else:
             activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
 
-        msg_plain = render_to_string('email/registration_successful.txt', {
-            'email': self.request.data.get('email', ''),
-            'username': self.request.data.get('username', ''),
-            'activation_code': activation_code,
-            'activation_link': activation_link,
-            'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
-            'host_url': settings.HOST_URL,
-        })
-        msg_html = render_to_string('email/registration_successful.html', {
-            'email': self.request.data.get('email', ''),
-            'username': self.request.data.get('username', ''),
-            'activation_code': activation_code,
-            'activation_link': activation_link,
-            'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
-            'host_url': settings.HOST_URL,
-        })
+        with translation.override(request.LANGUAGE_CODE):
+            subject = render_to_string('email/registration_successful_subject.txt', {
+                'email': self.request.data.get('email', ''),
+                'username': self.request.data.get('username', ''),
+                'activation_code': activation_code,
+                'activation_link': activation_link,
+                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
+                'host_url': settings.HOST_URL,
+            }).replace('\n', ' ').replace('\r', '')
+            msg_plain = render_to_string('email/registration_successful.txt', {
+                'email': self.request.data.get('email', ''),
+                'username': self.request.data.get('username', ''),
+                'activation_code': activation_code,
+                'activation_link': activation_link,
+                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
+                'host_url': settings.HOST_URL,
+            })
+            msg_html = render_to_string('email/registration_successful.html', {
+                'email': self.request.data.get('email', ''),
+                'username': self.request.data.get('username', ''),
+                'activation_code': activation_code,
+                'activation_link': activation_link,
+                'activation_link_with_wbr': "<wbr>".join(splitAt(activation_link,40)),
+                'host_url': settings.HOST_URL,
+            })
 
 
         if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
             # SenndInBlue does not support inline attachments
             msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-        msg = EmailMultiAlternatives(settings.EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT, msg_plain, settings.EMAIL_FROM,
+        msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM,
                                      [self.request.data.get('email', '')])
 
         msg.attach_alternative(msg_html, "text/html")

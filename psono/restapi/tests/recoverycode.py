@@ -10,7 +10,7 @@ from restapi import models
 from .base import APITestCaseExtended
 
 from datetime import timedelta
-from ..utils import readbuffer
+
 import random
 import string
 import os
@@ -443,7 +443,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey),
-            recovery_data = readbuffer(self.test_recovery_data),
+            recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),
@@ -458,7 +458,7 @@ class PasswordTests(APITestCaseExtended):
         self.test_recovery_code_obj_expired = models.Recovery_Code.objects.create(
             user = self.test_user_obj3,
             recovery_authkey = make_password(self.test_recovery_authkey2),
-            recovery_data = readbuffer(self.test_recovery_data2),
+            recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now() - datetime.timedelta(0, settings.RECOVERY_VERIFIER_TIME_VALID),

@@ -11,6 +11,7 @@ RUN mkdir -p /root/.pip && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apt-get update && \
     apt-get install -y \
+        gettext \
         haveged \
         libyaml-dev \
         libpython3-dev \
@@ -22,6 +23,7 @@ RUN mkdir -p /root/.pip && \
         python3-psycopg2 \
         postgresql-client && \
     pip3 install -r requirements.txt && \
+    pip3 install -r requirements-amd64.txt && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \

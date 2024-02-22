@@ -28,14 +28,6 @@ from corsheaders.defaults import default_headers
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 import dj_database_url
 
-
-try:
-    # Fall back to psycopg2cffi
-    from psycopg2cffi import compat
-    compat.register()
-except ImportError:
-    import psycopg2
-
 def eprint_and_exit_gunicorn(error_message):
     print(f"ERROR: {error_message}", file=sys.stderr)
     sys.exit(4)
@@ -238,6 +230,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = (
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'restapi.middleware.DisableMiddleware',
     'restapi.middleware.MaintenanceMiddleware',
@@ -391,7 +384,7 @@ if DATABASE_URL:
 else:
     DATABASES = config_get('DATABASES', {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2', # django_postgrespool2
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'YourPostgresDatabase',
             'USER': 'YourPostgresUser',
             'PASSWORD': 'YourPostgresPassword',
@@ -401,8 +394,8 @@ else:
     })
 
 for db_name, db_values in DATABASES.items():
-    if "ENGINE" not in db_values:
-        db_values["ENGINE"] = 'django.db.backends.postgresql_psycopg2'
+    if "ENGINE" not in db_values or db_values["ENGINE"] == 'django.db.backends.postgresql_psycopg2':
+        db_values["ENGINE"] = 'django.db.backends.postgresql'
     if "NAME" not in db_values:
         db_values["NAME"] = ''
     if "PASSWORD" not in db_values:
@@ -446,11 +439,6 @@ if isinstance(YUBICO_API_URLS, str) and YUBICO_API_URLS:
     YUBICO_API_URLS = [yubico_api_url.strip() for yubico_api_url in YUBICO_API_URLS.split(',')]
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-
-EMAIL_TEMPLATE_NEW_ENTRY_SHARED_SUBJECT = config_get('EMAIL_TEMPLATE_NEW_ENTRY_SHARED_SUBJECT', 'New entry shared')
-EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT = config_get('EMAIL_TEMPLATE_NEW_GROUP_MEMBERSHIP_SUBJECT', 'New group invitation')
-EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT = config_get('EMAIL_TEMPLATE_EMERGENCY_CODE_ARMED_SUBJECT', 'Emergency code armed')
-EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT = config_get('EMAIL_TEMPLATE_REGISTRATION_SUCCESSFUL_SUBJECT', 'Registration successful')
 
 ANYMAIL = {
     "MAILGUN_API_URL": config_get('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),  # For EU: https://api.eu.mailgun.net/v3
@@ -632,6 +620,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+LOCALE_PATHS = (
+    os.path.join(os.path.dirname(__file__), "..", "locale"),
+)
 
 AUTHENTICATION_METHODS = config_get('AUTHENTICATION_METHODS', ['AUTHKEY'])
 if isinstance(AUTHENTICATION_METHODS, str) and AUTHENTICATION_METHODS:

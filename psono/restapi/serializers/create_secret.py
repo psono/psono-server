@@ -1,5 +1,3 @@
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 
@@ -21,11 +19,11 @@ class CreateSecretSerializer(serializers.Serializer):
         parent_datastore_id = attrs.get('parent_datastore_id', None)
 
         if parent_share_id is None and parent_datastore_id is None:
-            msg = _("Either parent share or datastore need to be specified.")
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None and parent_datastore_id is not None:
-            msg = _("Either parent share or datastore need to be specified, not both.")
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:

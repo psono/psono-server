@@ -10,7 +10,6 @@ import binascii
 import os
 
 from restapi import models
-from restapi.utils import readbuffer
 from restapi.tests.base import APITestCaseExtended
 
 
@@ -75,7 +74,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey),
-            recovery_data = readbuffer(self.test_recovery_data),
+            recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),
@@ -90,7 +89,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
         self.test_recovery_code_obj2 = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey2),
-            recovery_data = readbuffer(self.test_recovery_data2),
+            recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),
@@ -312,7 +311,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey),
-            recovery_data = readbuffer(self.test_recovery_data),
+            recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),
@@ -327,7 +326,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
         self.test_recovery_code_obj2 = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
             recovery_authkey = make_password(self.test_recovery_authkey2),
-            recovery_data = readbuffer(self.test_recovery_data2),
+            recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
             verifier_issue_date = timezone.now(),

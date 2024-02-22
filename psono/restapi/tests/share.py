@@ -6,7 +6,6 @@ from rest_framework import status
 from restapi import models
 
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 
 import random
 import string
@@ -142,7 +141,7 @@ class ReadShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -265,7 +264,7 @@ class CreateShareTests(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -273,7 +272,7 @@ class CreateShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -303,7 +302,7 @@ class CreateShareTests(APITestCaseExtended):
 
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -312,7 +311,7 @@ class CreateShareTests(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -392,6 +391,8 @@ class CreateShareTests(APITestCaseExtended):
                     'share_right_create_user_public_key': self.test_user_obj.public_key,
                     'share_right_title': "",
                     'share_right_title_nonce': "",
+                    'share_right_type': None,
+                    'share_right_type_nonce': None,
                     'share_right_key': initial_data['key'],
                     'share_right_key_nonce': initial_data['key_nonce'],
                     'share_right_key_type': initial_data['key_type'],
@@ -718,7 +719,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -748,7 +749,7 @@ class UpdateShareTests(APITestCaseExtended):
 
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -874,7 +875,7 @@ class MoreUpdateShareTests(APITestCaseExtended):
 
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -903,12 +904,12 @@ class MoreUpdateShareTests(APITestCaseExtended):
         )
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         self.test_share3_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -1006,7 +1007,7 @@ class MoreUpdateShareTests(APITestCaseExtended):
 
         updated_share = models.Share.objects.get(pk=str(self.test_share1_obj.id))
 
-        self.assertEqual(readbuffer(updated_share.data), data['data'],
+        self.assertEqual(updated_share.data, data['data'].encode(),
                          'data was not saved proper')
         self.assertEqual(updated_share.data_nonce, data['data_nonce'],
                          'data_nonce was not saved proper')

@@ -77,6 +77,9 @@ class User(models.Model):
 
     credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 
+    language = models.CharField('language', max_length=16, default='en')
+    external_id = models.CharField('external id', max_length=64, null=True, db_index=True)
+
     is_cachable = True
 
     def save(self, *args, **kwargs):

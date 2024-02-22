@@ -4,10 +4,40 @@ variables:
   CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
 stages:
+  - translate
   - build
   - test
   - release
   - deploy
+
+upload-translations:
+  except:
+    - schedules
+  stage: translate
+  image: psono-docker.jfrog.io/ubuntu:22.04
+  services:
+    - name: docker:25-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - apt-get update && apt-get install -y curl iptables libdevmapper1.02.1 python3 python3-pip
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/containerd.io_1.6.28-1_amd64.deb" -o containerd.deb && echo "3fcc3e44e6d507c346ae05bbaef8f4bb04dfa8da9f04af658537f7e373c91340 containerd.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-buildx-plugin_0.12.1-1~ubuntu.22.04~jammy_amd64.deb" -o docker-buildx-plugin.deb && echo "3fb7cd11fd9bf7c31d81c1afa96c023519d9e6e17422192aa4d0aa2767ed0776 docker-buildx-plugin.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce-cli_25.0.3-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce-cli.deb && echo "624abe860a3d9dd190c278263b3ae115d54ce1135774a79f84026a6ec6ebafd1 docker-ce-cli.deb" | sha256sum -c -
+    - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce_25.0.3-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce.deb && echo "63c7703814558a829ab3cc37c8018c050c9dad56f99c261090500f6c87821fd1 docker-ce.deb" | sha256sum -c -
+    - dpkg -i ./containerd.deb ./docker-ce.deb ./docker-ce-cli.deb ./docker-buildx-plugin.deb
+    - docker info
+    - docker build -f DockerfileUbuntu -t ubu-testimage --pull .
+    - mkdir locale
+    - docker run -v $(pwd)/locale:/root/psono/locale ubu-testimage bash -c "cd /root/psono && django-admin makemessages --locale=en -i 'restapi' -i 'fileserver' -i 'administration'"
+    - pip3 install requests
+    - python3 var/upload_translations.py
+  only:
+    - develop@psono/psono-server
 
 build-container-alpine:
   except:
@@ -25,7 +55,9 @@ build-container-alpine:
   script:
     - sh ./var/update_version.sh
     - apt-get update || true
-    - apt install -y curl ca-certificates iptables libdevmapper1.02.1
+    - apt install -y curl ca-certificates iptables libdevmapper1.02.1 python3 python3-pip
+    - pip3 install requests
+    - python3 var/download_translations.py
     - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/containerd.io_1.6.28-1_amd64.deb" -o containerd.deb && echo "3fcc3e44e6d507c346ae05bbaef8f4bb04dfa8da9f04af658537f7e373c91340 containerd.deb" | sha256sum -c -
     - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-buildx-plugin_0.12.1-1~ubuntu.22.04~jammy_amd64.deb" -o docker-buildx-plugin.deb && echo "3fb7cd11fd9bf7c31d81c1afa96c023519d9e6e17422192aa4d0aa2767ed0776 docker-buildx-plugin.deb" | sha256sum -c -
     - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce-cli_25.0.3-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce-cli.deb && echo "624abe860a3d9dd190c278263b3ae115d54ce1135774a79f84026a6ec6ebafd1 docker-ce-cli.deb" | sha256sum -c -
@@ -65,7 +97,7 @@ run-unittests-ubuntu:
     - docker info
     - sh ./var/update_version.sh
     - docker build -f DockerfileUbuntu -t ubu-testimage --pull .
-    - docker run -d --name db postgres:9.6.16
+    - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
     - docker run --link db:postgres ubu-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
@@ -94,7 +126,7 @@ run-unittests-alpine:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -d --name db postgres:9.6.16
+    - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
     - docker run --link db:postgres $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
   only:
@@ -127,7 +159,7 @@ run-unittests-alpine-arm64:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -d --name db postgres:9.6.16
+    - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
     - docker run --link db:postgres $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
   only:

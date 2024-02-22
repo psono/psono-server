@@ -80,7 +80,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description= "my-description",
-            data= "12345",
+            data=b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -105,7 +105,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=nacl.encoding.HexEncoder.encode(encrypted.ciphertext).decode(),
+            data=nacl.encoding.HexEncoder.encode(encrypted.ciphertext),
             data_nonce=nacl.encoding.HexEncoder.encode(nonce).decode(),
             type="dummy"
         )
@@ -172,7 +172,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         Tests PUT on api_key_access_secret
         """
         self.assertFalse(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
-        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
+        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data=b'abc', data_nonce='def').exists())
 
         url = reverse('api_key_access_secret')
 
@@ -187,7 +187,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertTrue(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
+        self.assertTrue(models.Secret.objects.filter(id=self.test_secret_obj.id, data=b'abc', data_nonce='def').exists())
         self.assertTrue(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
 
     def test_put_no_write_permission(self):
@@ -235,7 +235,7 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         Tests PUT on api_key_access_secret with api_key_secret_key being sent to the server
         """
         self.assertFalse(models.Secret_History.objects.filter(secret_id=self.test_secret_obj.id).exists())
-        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data='abc', data_nonce='def').exists())
+        self.assertFalse(models.Secret.objects.filter(id=self.test_secret_obj.id, data=b'abc', data_nonce='def').exists())
 
         url = reverse('api_key_access_secret')
         insecure_data = '{}'

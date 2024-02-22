@@ -206,7 +206,7 @@ class FileRepositoryView(GenericAPIView):
         file_repository = File_Repository.objects.create(
             title=str(serializer.validated_data.get('title')),
             type=str(serializer.validated_data.get('type')),
-            data=encrypt_with_db_secret(json.dumps(serializer.validated_data.get('data'))),
+            data=encrypt_with_db_secret(json.dumps(serializer.validated_data.get('data'))).encode(),
             active=True,
         )
 

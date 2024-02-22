@@ -70,7 +70,7 @@ class ReadEmergencyCodeTests(APITestCaseExtended):
             description = 'Some Description',
             activation_delay = 240,
             emergency_authkey = '123456',
-            emergency_data = '123456',
+            emergency_data =b'123456',
             emergency_data_nonce = '123456A',
             emergency_sauce = '123456',
         )
@@ -80,7 +80,7 @@ class ReadEmergencyCodeTests(APITestCaseExtended):
             description = 'Some Description',
             activation_delay = 240,
             emergency_authkey = '123456',
-            emergency_data = '123456',
+            emergency_data =b'123456',
             emergency_data_nonce = '123456B',
             emergency_sauce = '123456',
         )
@@ -297,7 +297,7 @@ class DeleteEmergencyCodeTests(APITestCaseExtended):
             description = 'Some Description',
             activation_delay = 240,
             emergency_authkey = '123456',
-            emergency_data = '123456',
+            emergency_data =b'123456',
             emergency_data_nonce = '123456A',
             emergency_sauce = '123456',
         )
@@ -307,7 +307,7 @@ class DeleteEmergencyCodeTests(APITestCaseExtended):
             description = 'Some Description',
             activation_delay = 240,
             emergency_authkey = '123456',
-            emergency_data = '123456',
+            emergency_data =b'123456',
             emergency_data_nonce = '123456B',
             emergency_sauce = '123456',
         )

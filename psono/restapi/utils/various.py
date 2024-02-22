@@ -492,25 +492,6 @@ def get_datastore(datastore_id=None, user=None):
 
     return datastore
 
-
-def readbuffer(data):
-    """
-    Reads an arbitary data objects and returns the byte representation
-    :param data:
-    :type data:
-    :return:
-    :rtype:
-    """
-    if not data:
-        return b''
-    if str(type(data)) == "<type 'buffer'>":
-        return str(data)
-    elif str(type(data)) == "<class 'memoryview'>":
-        return data.tobytes().decode()
-    else:
-        return str(data).encode("utf-8")
-
-
 def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
     """
     DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of

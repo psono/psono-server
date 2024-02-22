@@ -1,6 +1,7 @@
-Hello,
+{% load i18n %}
+{% trans "Hello," %}
 
-You have been invited to a new group. Please login to Psono and accept or decline the invitation.
+{% trans "You have been invited to a new group. Please login to Psono and accept or decline the invitation." %}
 
-Best regards
-Your Psono Team
+{% trans "Best regards" %}
+{% trans "Your Psono Team" %}

@@ -63,11 +63,11 @@ class CreateFileSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
         if parent_share_id is None and parent_datastore_id is None:
-            msg = "Either parent share or datastore need to be specified."
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None and parent_datastore_id is not None:
-            msg = "Either parent share or datastore need to be specified, not both."
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"
             raise exceptions.ValidationError(msg)
 
         if parent_share_id is not None:

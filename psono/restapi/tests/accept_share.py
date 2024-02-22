@@ -2,16 +2,12 @@ from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
-from ..utils import readbuffer
 from restapi import models
 
 from .base import APITestCaseExtended
 
-import os
 import random
 import string
-
-from uuid import UUID
 
 class UserRightsAccept(APITestCaseExtended):
     """
@@ -64,7 +60,7 @@ class UserRightsAccept(APITestCaseExtended):
         # Lets first insert our first dummy share for which share_rights can be accepted
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -85,7 +81,7 @@ class UserRightsAccept(APITestCaseExtended):
         # Lets first insert our first dummy parent_share
         self.test_parent_share2_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -106,7 +102,7 @@ class UserRightsAccept(APITestCaseExtended):
         # Lets first insert our first dummy parent_share
         self.test_parent_share3_obj = models.Share.objects.create(
             user_id=self.test_user3_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -153,7 +149,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -181,7 +177,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('share_data_nonce', False), self.test_share1_obj.data_nonce)
-        self.assertEqual(readbuffer(response.data.get('share_data', False)), self.test_share1_obj.data)
+        self.assertEqual(response.data.get('share_data', False), self.test_share1_obj.data.decode())
         self.assertIsUUIDString(str(response.data.get('share_id', '')),
                                 'share id is no valid UUID')
 
@@ -227,7 +223,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -243,7 +239,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share2_obj = models.Share.objects.create(
             user_id=self.test_user3_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -302,7 +298,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -347,7 +343,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -366,7 +362,7 @@ class UserRightsAccept(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -403,7 +399,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -459,7 +455,7 @@ class UserRightsAccept(APITestCaseExtended):
             user_id=self.test_user2_obj.id,
             type="my-type",
             description= "my-description",
-            data= readbuffer("12345"),
+            data= b"12345",
             data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -479,7 +475,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('share_data_nonce', False), self.test_share1_obj.data_nonce)
-        self.assertEqual(readbuffer(response.data.get('share_data', False)), self.test_share1_obj.data)
+        self.assertEqual(response.data.get('share_data', False), self.test_share1_obj.data.decode())
         self.assertIsUUIDString(str(response.data.get('share_id', '')),
                                 'share id is no valid UUID')
 
@@ -535,7 +531,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -589,7 +585,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -642,7 +638,7 @@ class UserRightsAccept(APITestCaseExtended):
 
         test_parent_share1_obj = models.Share.objects.create(
             user_id=self.test_user2_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 

@@ -4,7 +4,6 @@ from django.conf import settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import readbuffer
 from restapi import models
 
 import json
@@ -79,7 +78,7 @@ class MetadataShareTest(APITestCaseExtended):
             user_id=self.test_user_obj.id,
             type="my-type",
             description="my-description",
-            data=readbuffer("12345"),
+            data=b"12345",
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
             secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
@@ -88,7 +87,7 @@ class MetadataShareTest(APITestCaseExtended):
         self.share_link_id = '1515a857-0bb9-46e0-9a84-97787b3d8ec6'
         self.test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
 
@@ -106,7 +105,7 @@ class MetadataShareTest(APITestCaseExtended):
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer('12345'),
+            data=b'12345',
             data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
             type="dummy"
         )
@@ -127,7 +126,7 @@ class MetadataShareTest(APITestCaseExtended):
         self.share_link2_id = '2626a857-0bb9-46e0-9a84-97787b3d8ed7'
         self.test_share2_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
-            data=readbuffer("my-data"),
+            data=b"my-data",
             data_nonce="12345"
         )
         models.Share_Tree.objects.create(

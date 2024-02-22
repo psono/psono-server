@@ -335,7 +335,7 @@ class DeleteEmergencyCodeTest(APITestCaseExtended):
             description = 'Some description',
             activation_delay = 3600,
             emergency_authkey = make_password('abcd'),
-            emergency_data = 'a123',
+            emergency_data=b'a123',
             emergency_data_nonce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
             emergency_sauce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
         )
@@ -475,7 +475,7 @@ class ReadEmergencyCodeTest(APITestCaseExtended):
             description = 'Some description',
             activation_delay = 3600,
             emergency_authkey = make_password('abcd'),
-            emergency_data = 'a123',
+            emergency_data =b'a123',
             emergency_data_nonce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
             emergency_sauce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
         )

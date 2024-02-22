@@ -88,7 +88,7 @@ DEVICE_PROTECTION_DISABLED: True
 # Your Postgres Database credentials
 DATABASES:
     default:
-        'ENGINE': 'django.db.backends.postgresql_psycopg2'
+        'ENGINE': 'django.db.backends.postgresql'
         'NAME': 'YourPostgresDatabase'
         'USER': 'YourPostgresUser'
         'PASSWORD': 'YourPostgresPassword'
@@ -96,7 +96,7 @@ DATABASES:
         'PORT': 'YourPostgresPort'
 # for master / slave replication setup comment in the following (all reads will be redirected to the slave
 #    slave:
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2'
+#        'ENGINE': 'django.db.backends.postgresql'
 #        'NAME': 'YourPostgresDatabase'
 #        'USER': 'YourPostgresUser'
 #        'PASSWORD': 'YourPostgresPassword'
