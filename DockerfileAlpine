@@ -15,12 +15,14 @@ RUN apk upgrade && \
         gettext \
         ca-certificates \
         curl \
+        py3-grpcio \
         postgresql-dev && \
     apk add --virtual .build-deps \
         build-base \
         libffi-dev \
         linux-headers && \
     pip3 install --upgrade pip && \
+    sed -i '/^grpcio==/d' ./requirements.txt && \
     pip3 install -r requirements.txt && \
     pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
