@@ -2,8 +2,10 @@ from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, get_datastore, is_allowed_url
+from restapi.utils import encrypt_secret, decrypt_secret
 from restapi import models
 
+import nacl.encoding
 from uuid import uuid4
 from mock import patch
 import random
@@ -149,6 +151,47 @@ class TestVariousUtils(TestCase):
 
     def test_get_datastore_get_single_datastore_that_does_not_exist(self):
         self.assertEqual(get_datastore(datastore_id=uuid4()), None)
+    def test_decrypt_secret(self):
+        hashing_params = models.default_hashing_parameters()
+
+        decrypted_secret = decrypt_secret(
+            nacl.encoding.HexEncoder.decode(b'dc7173d3e66cfda6057f16c752953aa91c452eb8df042b7a'),
+            nacl.encoding.HexEncoder.decode(b'f09293db1a4d875c7cfb939e2e83c2c0c9455de898e9b745'),
+            "myPassword",
+            "userSauce".encode(),
+            hashing_params['u'],
+            hashing_params['r'],
+            hashing_params['p'],
+            hashing_params['l'],
+        )
+
+        self.assertEqual(decrypted_secret.decode(), "mySecret")
+
+    def test_encrypt_secret(self):
+        hashing_params = models.default_hashing_parameters()
+
+        data, nonce = encrypt_secret(
+            "mySecret".encode(),
+            "myPassword",
+            "userSauce".encode(),
+            hashing_params['u'],
+            hashing_params['r'],
+            hashing_params['p'],
+            hashing_params['l'],
+        )
+
+        decrypted_secret = decrypt_secret(
+            nacl.encoding.HexEncoder.decode(data),
+            nacl.encoding.HexEncoder.decode(nonce),
+            "myPassword",
+            "userSauce".encode(),
+            hashing_params['u'],
+            hashing_params['r'],
+            hashing_params['p'],
+            hashing_params['l'],
+        )
+
+        self.assertEqual(decrypted_secret.decode(), "mySecret")
 
 
 

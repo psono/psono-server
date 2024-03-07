@@ -597,11 +597,11 @@ def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, byt
     Encrypts a secret with a password and a random static user specific key we call "user_sauce"
 
     :param secret: The secret to encrypt
-    :type secret: str
+    :type secret: bytes
     :param password: The password to use for the encryption
     :type password: str
     :param user_sauce: A random static user specific key
-    :type user_sauce: str
+    :type user_sauce: bytes
     :param u:
     :type u: int
     :param r:
@@ -630,6 +630,46 @@ def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, byt
     encrypted_secret = encrypted_secret_full[len(nonce):]
 
     return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
+
+
+def decrypt_secret(encrypted_secret_hex, encrypted_secret_hex_nonce, password, user_sauce, u, r, p, l) -> bytes:
+    """
+    Decrypts a secret with a password and a random static user specific key we call "user_sauce"
+
+    :param encrypted_secret_hex: The secret to decrypt
+    :type encrypted_secret_hex: bytes
+    :param encrypted_secret_hex_nonce: The nonce for the secret to decrypt
+    :type encrypted_secret_hex_nonce: bytes
+    :param password: The password to use for the encryption
+    :type password: str
+    :param user_sauce: A random static user specific key
+    :type user_sauce: bytes
+    :param u:
+    :type u: int
+    :param r:
+    :type r: int
+    :param p:
+    :type p: int
+    :param l:
+    :type l: int
+
+    :return: The decrypted secret
+    :rtype: bytes
+    """
+
+    salt = hashlib.sha512(user_sauce).hexdigest()
+
+    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
+                                                    salt=salt.encode("utf-8"),
+                                                    N=pow(2, u),
+                                                    r=r,
+                                                    p=p,
+                                                    buflen=l))).hexdigest()
+    crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
+
+    decrypted_secret = crypto_box.decrypt(encrypted_secret_hex, encrypted_secret_hex_nonce)
+
+    return decrypted_secret
 
 
 def delete_user(username: str) -> dict:
