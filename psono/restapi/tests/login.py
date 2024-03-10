@@ -1,6 +1,5 @@
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from datetime import timedelta
 from django.db import IntegrityError
@@ -1063,7 +1062,7 @@ class LoginTests(APITestCaseExtended):
         login_info_nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
         encrypted = server_crypto_box.encrypt(json.dumps({
             'username': self.test_username,
-            'authkey': make_password(binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()),
+            'authkey': 'abc',
         }).encode("utf-8"), login_info_nonce)
         login_info_encrypted = encrypted[len(login_info_nonce):]
 

@@ -2,7 +2,6 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.conf import settings
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
 from datetime import timedelta
 
 from restapi import models
@@ -32,7 +31,7 @@ class CommandCleartokenTestCase(TestCase):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,

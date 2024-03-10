@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.conf import settings
 
 from rest_framework import status
@@ -36,7 +35,7 @@ class CreateEmergencyCodeTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -296,7 +295,7 @@ class DeleteEmergencyCodeTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -320,7 +319,7 @@ class DeleteEmergencyCodeTest(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -334,7 +333,7 @@ class DeleteEmergencyCodeTest(APITestCaseExtended):
             user = self.test_user_obj,
             description = 'Some description',
             activation_delay = 3600,
-            emergency_authkey = make_password('abcd'),
+            emergency_authkey = 'abcd',
             emergency_data=b'a123',
             emergency_data_nonce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
             emergency_sauce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
@@ -435,7 +434,7 @@ class ReadEmergencyCodeTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -460,7 +459,7 @@ class ReadEmergencyCodeTest(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -474,7 +473,7 @@ class ReadEmergencyCodeTest(APITestCaseExtended):
             user = self.test_user_obj,
             description = 'Some description',
             activation_delay = 3600,
-            emergency_authkey = make_password('abcd'),
+            emergency_authkey = 'abcd',
             emergency_data =b'a123',
             emergency_data_nonce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
             emergency_sauce = 'D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884',
@@ -549,7 +548,7 @@ class UpdateEmergencyCodeTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
