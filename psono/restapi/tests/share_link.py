@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 
@@ -41,7 +40,7 @@ class ShareTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -55,7 +54,7 @@ class ShareTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -284,7 +283,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -298,7 +297,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -312,7 +311,7 @@ class ShareTreeModificationTests(APITestCaseExtended):
             email=self.test_email3,
             email_bcrypt=self.test_email_bcrypt3,
             username=self.test_username3,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce3,

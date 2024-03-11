@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.conf import settings
 
 from rest_framework import status
@@ -36,7 +35,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -61,7 +60,7 @@ class UserDeleteSecretLinkTest(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -246,7 +245,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -271,7 +270,7 @@ class UserMoveSecretLinkTest(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,

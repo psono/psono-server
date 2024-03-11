@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.test.utils import override_settings
 
 from rest_framework import status
@@ -41,7 +40,7 @@ class ReadFileRepositryTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -55,7 +54,7 @@ class ReadFileRepositryTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -222,7 +221,7 @@ class CreateFileRepositryTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -593,7 +592,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -607,7 +606,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -621,7 +620,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         self.file_repository = models.File_Repository.objects.create(
             title='Some Title',
             type='gcp_cloud_storage',
-            data=encrypt_with_db_secret(json.dumps({})),
+            data=encrypt_with_db_secret(json.dumps({})).encode(),
             active=True,
         )
 
@@ -1071,7 +1070,7 @@ class DeleteFileRepositryTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -1085,7 +1084,7 @@ class DeleteFileRepositryTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -1099,7 +1098,7 @@ class DeleteFileRepositryTest(APITestCaseExtended):
         self.file_repository = models.File_Repository.objects.create(
             title='Some Title',
             type='gcp_cloud_storage',
-            data=encrypt_with_db_secret(json.dumps({})),
+            data=encrypt_with_db_secret(json.dumps({})).encode(),
             active=True,
         )
 

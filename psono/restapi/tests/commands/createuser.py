@@ -1,7 +1,7 @@
 from django.core.management import call_command
 from django.test import TestCase
 from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 
 from restapi import models
 from restapi.utils import generate_authkey, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
@@ -35,7 +35,7 @@ class CommandCreateuserTestCase(TestCase):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,

@@ -1,5 +1,10 @@
 from rest_framework.test import APITestCase
 from uuid import UUID
+from django.contrib.auth.hashers import make_password
+
+test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
+               "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+test_authkey_password_hash = make_password(test_authkey)
 
 def is_uuid(expr):
     """

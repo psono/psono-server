@@ -1,7 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 import random
@@ -42,7 +41,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -56,7 +55,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce2,
@@ -73,7 +72,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
 
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
-            recovery_authkey = make_password(self.test_recovery_authkey),
+            recovery_authkey = "abc",
             recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
@@ -88,7 +87,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
 
         self.test_recovery_code_obj2 = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
-            recovery_authkey = make_password(self.test_recovery_authkey2),
+            recovery_authkey = "abc",
             recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
@@ -100,7 +99,7 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email3,
             email_bcrypt=self.test_email_bcrypt3,
             username=self.test_username3,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce3,
@@ -149,7 +148,7 @@ class CreateRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -163,7 +162,7 @@ class CreateRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce2,
@@ -212,7 +211,7 @@ class UpdateRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -226,7 +225,7 @@ class UpdateRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce2,
@@ -278,7 +277,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -292,7 +291,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce2,
@@ -310,7 +309,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
 
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
-            recovery_authkey = make_password(self.test_recovery_authkey),
+            recovery_authkey = "abc",
             recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
@@ -325,7 +324,7 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
 
         self.test_recovery_code_obj2 = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
-            recovery_authkey = make_password(self.test_recovery_authkey2),
+            recovery_authkey = "abc",
             recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,

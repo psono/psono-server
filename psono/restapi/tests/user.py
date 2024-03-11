@@ -1,11 +1,11 @@
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from rest_framework import status
 
 from restapi import models
 
-from .base import APITestCaseExtended
+from .base import APITestCaseExtended, test_authkey, test_authkey_password_hash
 from ..utils import encrypt_with_db_secret, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
 import random
@@ -28,7 +28,7 @@ class UserModificationTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = test_authkey
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -39,7 +39,7 @@ class UserModificationTests(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey=test_authkey_password_hash,
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -65,7 +65,7 @@ class UserModificationTests(APITestCaseExtended):
             username=self.test_username2,
             email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -124,7 +124,7 @@ class UserModificationTests(APITestCaseExtended):
             'username': self.test_username,
             'email': self.test_email,
             'email_bcrypt': self.test_email_bcrypt,
-            'authkey': make_password(self.test_authkey),
+            'authkey': test_authkey_password_hash,
             'authkey_old': self.test_public_key,
             'private_key': self.test_private_key,
             'private_key_nonce': self.test_private_key_nonce,
@@ -989,7 +989,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = test_authkey
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1000,7 +1000,7 @@ class UserSearchTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey=test_authkey_password_hash,
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -1013,7 +1013,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'some-partial-username@psono.pw'
-        self.test_authkey2 = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey2 = test_authkey
         self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1024,7 +1024,7 @@ class UserSearchTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -1265,7 +1265,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = test_authkey
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1276,7 +1276,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey=test_authkey_password_hash,
             public_key=self.test_public_key,
             private_key=self.test_private_key, # usually this one is encrypted with the user password
             private_key_nonce=self.test_private_key_nonce,
@@ -1650,7 +1650,7 @@ class UserDeleteTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = test_authkey
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1661,7 +1661,7 @@ class UserDeleteTests(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey=test_authkey_password_hash,
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,

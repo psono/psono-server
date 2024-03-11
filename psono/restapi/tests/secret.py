@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.test.utils import override_settings
 
@@ -47,7 +46,7 @@ class UserCreateSecretTest(APITestCaseExtended):
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -72,7 +71,7 @@ class UserCreateSecretTest(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -371,7 +370,7 @@ class UserGetSecretTest(APITestCaseExtended):
             username=self.test_username,
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -384,7 +383,7 @@ class UserGetSecretTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -397,7 +396,7 @@ class UserGetSecretTest(APITestCaseExtended):
             email=self.test_email3,
             email_bcrypt=self.test_email_bcrypt3,
             username=self.test_username3,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce3,
@@ -575,7 +574,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -588,7 +587,7 @@ class UserUpdateSecretTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,

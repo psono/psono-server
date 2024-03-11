@@ -12,6 +12,7 @@ from .link_share import *
 from .link_share_access import *
 from .login import *
 from .logout import *
+from .management_command import *
 from .membership import *
 from .membership_accept import *
 from .membership_decline import *
@@ -20,6 +21,7 @@ from .metadata_share import *
 from .mfa_duo import *
 from .mfa_google_authenticator import *
 from .mfa_yubikey_otp import *
+from .prelogin import *
 from .recoverycode import *
 from .registration import *
 from .rest import *

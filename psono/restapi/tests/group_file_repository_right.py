@@ -1,6 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
-from django.test.utils import override_settings
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -41,7 +39,7 @@ class ReadGroupFileRepositryRightTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -55,7 +53,7 @@ class ReadGroupFileRepositryRightTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -145,7 +143,7 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -159,7 +157,7 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -385,7 +383,7 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class UpdateFileRepositryTest(APITestCaseExtended):
+class UpdateGroupFileRepositryTest(APITestCaseExtended):
     """
     Test to update a file repository (POST)
     """
@@ -417,7 +415,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -431,7 +429,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -584,7 +582,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteFileRepositryTest(APITestCaseExtended):
+class DeleteGroupFileRepositryTest(APITestCaseExtended):
     """
     Test to delete a file repository (DELETE)
     """
@@ -616,7 +614,7 @@ class DeleteFileRepositryTest(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -630,7 +628,7 @@ class DeleteFileRepositryTest(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,

@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.conf import settings
 
 from rest_framework import status
@@ -39,7 +38,7 @@ class CreateMembershipTest(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -64,7 +63,7 @@ class CreateMembershipTest(APITestCaseExtended):
             username=self.test_username2,
             email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -485,7 +484,7 @@ class DeleteMembershipTest(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -510,7 +509,7 @@ class DeleteMembershipTest(APITestCaseExtended):
             username=self.test_username2,
             email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -766,7 +765,7 @@ class UpdateMembershipTest(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -791,7 +790,7 @@ class UpdateMembershipTest(APITestCaseExtended):
             username=self.test_username2,
             email=encrypt_with_db_secret(self.test_email2),
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey2),
+            authkey="abc",
             public_key=self.test_public_key2,
             private_key=self.test_private_key2,
             private_key_nonce=self.test_private_key_nonce2,
@@ -1049,7 +1048,7 @@ class ReadMembershipTest(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,

@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
@@ -10,7 +9,7 @@ import binascii
 from rest_framework import status
 from restapi import models
 
-from .base import APITestCaseExtended
+from .base import APITestCaseExtended, test_authkey_password_hash
 
 import random
 import string
@@ -53,7 +52,7 @@ class LinkShareAccess(APITestCaseExtended):
             username=self.test_username,
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -67,7 +66,7 @@ class LinkShareAccess(APITestCaseExtended):
             username=self.test_username2,
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
-            authkey=make_password(self.test_authkey),
+            authkey="abc",
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -307,7 +306,7 @@ class LinkShareAccess(APITestCaseExtended):
         Tests POST on link share access without providing a passphrase while a passphrase is required
         """
 
-        self.link_share.passphrase = make_password('passphrase')
+        self.link_share.passphrase = test_authkey_password_hash
         self.link_share.save()
 
         url = reverse('link_share_access')
@@ -327,7 +326,7 @@ class LinkShareAccess(APITestCaseExtended):
         Tests POST on link share access with a passphrase that is wrong
         """
 
-        self.link_share.passphrase = make_password('passphrase')
+        self.link_share.passphrase = test_authkey_password_hash
         self.link_share.save()
 
         url = reverse('link_share_access')

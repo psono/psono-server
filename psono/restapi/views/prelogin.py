@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny
 from ..models import (
     User,
     default_hashing_parameters,
+    DEFAULT_HASHING_ALGORITHM,
 )
 from ..app_settings import (
     PreLoginSerializer
@@ -48,7 +49,7 @@ class PreLoginView(GenericAPIView):
         user = serializer.validated_data['user']
 
         hashing_parameters = default_hashing_parameters()
-        hashing_algorithm = User.DEFAULT_HASHING_ALGORITHM
+        hashing_algorithm = DEFAULT_HASHING_ALGORITHM
 
         if user:
             hashing_parameters = user.hashing_parameters
