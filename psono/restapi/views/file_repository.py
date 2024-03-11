@@ -248,7 +248,7 @@ class FileRepositoryView(GenericAPIView):
 
         file_repository.title = serializer.validated_data.get('title')
         file_repository.type = serializer.validated_data.get('type')
-        file_repository.data = encrypt_with_db_secret(json.dumps(serializer.validated_data.get('data')))
+        file_repository.data = encrypt_with_db_secret(json.dumps(serializer.validated_data.get('data'))).encode()
         file_repository.active = serializer.validated_data.get('active')
 
         file_repository.save()

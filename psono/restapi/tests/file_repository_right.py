@@ -379,7 +379,7 @@ class UpdateFileRepositoryRightTest(APITestCaseExtended):
         self.file_repository = models.File_Repository.objects.create(
             title='Some Title',
             type='gcp_cloud_storage',
-            data=encrypt_with_db_secret(json.dumps({})),
+            data=encrypt_with_db_secret(json.dumps({})).encode(),
             active=True,
         )
 
@@ -543,7 +543,7 @@ class DeleteFileRepositoryRightTest(APITestCaseExtended):
         self.file_repository = models.File_Repository.objects.create(
             title='Some Title',
             type='gcp_cloud_storage',
-            data=encrypt_with_db_secret(json.dumps({})),
+            data=encrypt_with_db_secret(json.dumps({})).encode(),
             active=True,
         )
 
