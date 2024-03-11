@@ -7,7 +7,7 @@ from restapi.utils import encrypt_with_db_secret
 
 import json
 
-class ReadFileRepositryRightTest(APITestCaseExtended):
+class ReadFileRepositoryRightTest(APITestCaseExtended):
     """
     Test to read file repository rights (GET)
     """
@@ -111,7 +111,7 @@ class ReadFileRepositryRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class CreateFileRepositryRightTest(APITestCaseExtended):
+class CreateFileRepositoryRightTest(APITestCaseExtended):
     """
     Test to create a file repository right (PUT)
     """
@@ -319,7 +319,7 @@ class CreateFileRepositryRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class UpdateFileRepositryTest(APITestCaseExtended):
+class UpdateFileRepositoryRightTest(APITestCaseExtended):
     """
     Test to update a file repository (POST)
     """
@@ -483,7 +483,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteFileRepositryTest(APITestCaseExtended):
+class DeleteFileRepositoryRightTest(APITestCaseExtended):
     """
     Test to delete a file repository (DELETE)
     """

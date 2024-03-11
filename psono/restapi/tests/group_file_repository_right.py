@@ -383,7 +383,7 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class UpdateFileRepositryTest(APITestCaseExtended):
+class UpdateGroupFileRepositryTest(APITestCaseExtended):
     """
     Test to update a file repository (POST)
     """
@@ -582,7 +582,7 @@ class UpdateFileRepositryTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteFileRepositryTest(APITestCaseExtended):
+class DeleteGroupFileRepositryTest(APITestCaseExtended):
     """
     Test to delete a file repository (DELETE)
     """
