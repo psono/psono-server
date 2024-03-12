@@ -11,6 +11,7 @@ from .info import *
 from .link_share import *
 from .membership import *
 from .recovery_code import *
+from .security_report import *
 from .user import *
 from .webauthn import *
 from .yubikey import *
