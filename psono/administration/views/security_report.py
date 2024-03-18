@@ -17,18 +17,18 @@ class SecurityReportView(GenericAPIView):
     def get_security_report_info(self, security_report_id):
 
         try:
-            seurity_report = SecurityReport.objects.select_related('user').prefetch_related('security_report_entries').get(pk=security_report_id)
+            security_report = SecurityReport.objects.select_related('user').prefetch_related('security_report_entries').get(pk=security_report_id)
         except SecurityReport.DoesNotExist:
             return None
 
         entries = []
-        for entry in seurity_report.security_report_entries.all():
+        for entry in security_report.security_report_entries.all():
             entries.append({
                 'id': entry.id,
                 'name': entry.name,
                 'type': entry.type,
-                'create_age': duration_string(entry.create_age),
-                'write_age': duration_string(entry.write_age),
+                'create_age': duration_string(entry.create_age) if entry.create_age is not None else None,
+                'write_age': duration_string(entry.write_age) if entry.write_age is not None else None,
                 'master_password': entry.master_password,
                 'breached': entry.breached,
                 'duplicate': entry.duplicate,
@@ -36,19 +36,19 @@ class SecurityReportView(GenericAPIView):
                 'variation_count': entry.variation_count,
             })
         return {
-            'id': seurity_report.id,
-            'create_date': seurity_report.create_date,
-            'username': seurity_report.user.username,
-            'recovery_code_exists': seurity_report.recovery_code_exists,
-            'two_factor_exists': seurity_report.two_factor_exists,
-            'website_password_count': seurity_report.website_password_count,
-            'breached_password_count': seurity_report.breached_password_count,
-            'duplicate_password_count': seurity_report.duplicate_password_count,
-            'check_haveibeenpwned': seurity_report.check_haveibeenpwned,
-            'master_password_breached': seurity_report.master_password_breached,
-            'master_password_duplicate': seurity_report.master_password_duplicate,
-            'master_password_length': seurity_report.master_password_length,
-            'master_password_variation_count': seurity_report.master_password_variation_count,
+            'id': security_report.id,
+            'create_date': security_report.create_date,
+            'username': security_report.user.username,
+            'recovery_code_exists': security_report.recovery_code_exists,
+            'two_factor_exists': security_report.two_factor_exists,
+            'website_password_count': security_report.website_password_count,
+            'breached_password_count': security_report.breached_password_count,
+            'duplicate_password_count': security_report.duplicate_password_count,
+            'check_haveibeenpwned': security_report.check_haveibeenpwned,
+            'master_password_breached': security_report.master_password_breached,
+            'master_password_duplicate': security_report.master_password_duplicate,
+            'master_password_length': security_report.master_password_length,
+            'master_password_variation_count': security_report.master_password_variation_count,
             'entries': entries,
         }
 
@@ -77,21 +77,21 @@ class SecurityReportView(GenericAPIView):
         else:
 
             security_reports = []
-            for seurity_report in  SecurityReport.objects.select_related('user').filter(user__is_active=True, user__is_email_active=True).order_by('user__username', '-create_date').distinct('user__username'):
+            for security_report in  SecurityReport.objects.select_related('user').filter(user__is_active=True, user__is_email_active=True).order_by('user__username', '-create_date').distinct('user__username'):
                 security_reports.append({
-                    'id': seurity_report.id,
-                    'create_date': seurity_report.create_date,
-                    'username': seurity_report.user.username,
-                    'recovery_code_exists': seurity_report.recovery_code_exists,
-                    'two_factor_exists': seurity_report.two_factor_exists,
-                    'website_password_count': seurity_report.website_password_count,
-                    'breached_password_count': seurity_report.breached_password_count,
-                    'duplicate_password_count': seurity_report.duplicate_password_count,
-                    'check_haveibeenpwned': seurity_report.check_haveibeenpwned,
-                    'master_password_breached': seurity_report.master_password_breached,
-                    'master_password_duplicate': seurity_report.master_password_duplicate,
-                    'master_password_length': seurity_report.master_password_length,
-                    'master_password_variation_count': seurity_report.master_password_variation_count,
+                    'id': security_report.id,
+                    'create_date': security_report.create_date,
+                    'username': security_report.user.username,
+                    'recovery_code_exists': security_report.recovery_code_exists,
+                    'two_factor_exists': security_report.two_factor_exists,
+                    'website_password_count': security_report.website_password_count,
+                    'breached_password_count': security_report.breached_password_count,
+                    'duplicate_password_count': security_report.duplicate_password_count,
+                    'check_haveibeenpwned': security_report.check_haveibeenpwned,
+                    'master_password_breached': security_report.master_password_breached,
+                    'master_password_duplicate': security_report.master_password_duplicate,
+                    'master_password_length': security_report.master_password_length,
+                    'master_password_variation_count': security_report.master_password_variation_count,
                 })
 
             users_missing_reports = []

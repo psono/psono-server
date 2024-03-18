@@ -46,7 +46,7 @@ defusedxml==0.6.0
     # via python3-openid
 dj-database-url==2.1.0
     # via -r requirements.in
-django==4.2.10
+django==4.2.11
     # via
     #   -r requirements.in
     #   dj-database-url
