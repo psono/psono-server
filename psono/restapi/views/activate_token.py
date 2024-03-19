@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from django.utils import timezone
 
 from ..permissions import IsAuthenticated
 from ..models import Token
@@ -48,6 +49,9 @@ class ActivateTokenView(GenericAPIView):
         token.active = True
         token.user_validator = None
         token.save()
+
+        request.user.last_login = timezone.now()
+        request.user.save()
 
         return Response({
             "user": {
