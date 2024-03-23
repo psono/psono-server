@@ -526,6 +526,34 @@ class UserGetSecretTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    def test_read_secret_read_count(self):
+        """
+        Tests to read a specific secret and verifies that the read counter is incremented
+        """
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
+
+        url = reverse('secret', kwargs={'secret_id': str(self.test_secret_obj.id)})
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['read_count'], 1)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=1).exists())
+
+        # Try to read a second time
+        response = self.client.get(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['read_count'], 2)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=2).exists())
+
+
     def test_delete_secret_update(self):
         """
         Tests DELETE method on user_update

@@ -219,6 +219,43 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
+    def test_post_success_check_read_count(self):
+        """
+        Tests POST on link share access with a secret and check that the read counter is incremented
+        """
+
+        self.link_share.allowed_reads = 2
+        self.link_share.save()
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 1)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=1).exists())
+
+        # try again a second time
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 2)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=2).exists())
+
     def test_post_success_with_file(self):
         """
         Tests POST on link share access with a file that is being shared

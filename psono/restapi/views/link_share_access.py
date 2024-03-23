@@ -69,11 +69,16 @@ class LinkShareAccessView(GenericAPIView):
             link_share.save()
 
         if secret:
+            read_count = secret.read_count
+            secret.read_count = F('read_count') + 1
+            secret.save(update_fields=["read_count"])
+
             return Response({
                 'node': node,
                 'node_nonce': node_nonce,
                 'secret_data': secret.data.decode(),
                 'secret_data_nonce': secret.data_nonce,
+                'secret_read_count': read_count + 1,
             }, status=status.HTTP_200_OK)
 
         if file:

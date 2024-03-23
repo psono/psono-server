@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from django.db.models import F
 from django.conf import settings
 from ..permissions import IsAuthenticated
 from django.db import IntegrityError
@@ -62,12 +63,17 @@ class SecretView(GenericAPIView):
         except:
             callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
 
+        read_count = secret.read_count
+        secret.read_count = F('read_count') + 1
+        secret.save(update_fields=["read_count"])
+
         return Response({
             'create_date': secret.create_date.isoformat(),
             'write_date': secret.write_date.isoformat(),
             'data': secret.data.decode(),
             'data_nonce': secret.data_nonce if secret.data_nonce else '',
             'type': secret.type,
+            'read_count': read_count + 1,
             'callback_url': secret.callback_url,
             'callback_user': secret.callback_user,
             'callback_pass': callback_pass,

@@ -386,6 +386,8 @@ class Secret(models.Model):
     callback_url = models.CharField('Callback URL', max_length=2048, default='')
     callback_user = models.CharField('Callback User', max_length=128, default='')
     callback_pass = models.CharField('Callback Password', max_length=256, default='')
+    read_count = models.IntegerField('Read Count',
+                                     help_text='A counter how often this secret has been read so far', default=0)
 
     class Meta:
         abstract = False

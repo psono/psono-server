@@ -213,12 +213,13 @@ class CreateApiKeyAccessInspectTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-        data = json.loads(response.data)
+        response_data = json.loads(response.data)
 
-        self.assertEqual(data.get('allow_insecure_access', not self.test_api_key_obj.allow_insecure_access), self.test_api_key_obj.allow_insecure_access)
-        self.assertEqual(data.get('restrict_to_secrets', not self.test_api_key_obj.restrict_to_secrets), self.test_api_key_obj.restrict_to_secrets)
-        self.assertEqual(data.get('read', not self.test_api_key_obj.read), self.test_api_key_obj.read)
-        self.assertEqual(data.get('write', not self.test_api_key_obj.write), self.test_api_key_obj.write)
-        self.assertEqual(len(data.get('api_key_secrets', [])), 1)
-        self.assertEqual(data['api_key_secrets'][0]['secret_id'], str(self.test_secret_obj.id))
-        self.assertEqual(data['api_key_secrets'][0]['write_date'], self.test_secret_obj.write_date.isoformat())
+        self.assertEqual(response_data.get('allow_insecure_access', not self.test_api_key_obj.allow_insecure_access), self.test_api_key_obj.allow_insecure_access)
+        self.assertEqual(response_data.get('restrict_to_secrets', not self.test_api_key_obj.restrict_to_secrets), self.test_api_key_obj.restrict_to_secrets)
+        self.assertEqual(response_data.get('read', not self.test_api_key_obj.read), self.test_api_key_obj.read)
+        self.assertEqual(response_data.get('write', not self.test_api_key_obj.write), self.test_api_key_obj.write)
+        self.assertEqual(len(response_data.get('api_key_secrets', [])), 1)
+        self.assertEqual(response_data['api_key_secrets'][0]['secret_id'], str(self.test_secret_obj.id))
+        self.assertEqual(response_data['api_key_secrets'][0]['write_date'], self.test_secret_obj.write_date.isoformat())
+

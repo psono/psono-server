@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from django.conf import settings
+from django.db.models import F
 
 import nacl.secret
 import nacl.encoding
@@ -131,7 +132,9 @@ class APIKeyAccessSecretView(GenericAPIView):
         json_filter = serializer.validated_data.get('json_filter')
         api_key_secret = serializer.validated_data.get('api_key_secret')
 
-
+        read_count = secret.read_count
+        secret.read_count = F('read_count') + 1
+        secret.save(update_fields=["read_count"])
 
         if not secret_key:
             return Response(json.dumps({
@@ -139,6 +142,7 @@ class APIKeyAccessSecretView(GenericAPIView):
                 'data_nonce': str(secret.data_nonce),
                 'secret_key': api_key_secret.secret_key,
                 'secret_key_nonce': api_key_secret.secret_key_nonce,
+                'read_count': read_count + 1,
             }), status=status.HTTP_200_OK)
 
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
