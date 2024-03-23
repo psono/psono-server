@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
+from django.test.utils import override_settings
 from datetime import timedelta
 from django.db import IntegrityError
 from ..authentication import TokenAuthentication
@@ -25,6 +26,7 @@ from nacl.public import PrivateKey, PublicKey, Box
 
 
 class LoginTests(APITestCaseExtended):
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
 
         # our public / private key box
@@ -32,7 +34,7 @@ class LoginTests(APITestCaseExtended):
 
         self.test_email = "test@example.com"
         self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
@@ -70,6 +72,7 @@ class LoginTests(APITestCaseExtended):
         )
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_unique_constraint_token(self):
         key = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
 
@@ -91,6 +94,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(error_thrown,
                         'Unique constraint lifted for Tokens which can lead to security problems')
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_authentication_login(self):
         """
         Tests GET method on authentication_register
@@ -104,6 +108,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_authentication_login(self):
         """
         Tests DELETE method on authentication_register
@@ -117,6 +122,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_authentication_login(self):
         """
         Tests PUT method on authentication_register
@@ -130,6 +136,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login(self):
         """
         Ensure we can login
@@ -214,6 +221,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=settings.DEFAULT_TOKEN_TIME_VALID - 5))
         self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=settings.DEFAULT_TOKEN_TIME_VALID + 5))
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_custom_session_duration(self):
         """
         Ensure we can login and specify a custom session_duration
@@ -260,6 +268,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=custom_session_duration - 5))
         self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=custom_session_duration + 5))
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_max_web_token_time_valid(self):
         """
         Ensure that MAX_WEB_TOKEN_TIME_VALID is applied correctly
@@ -306,6 +315,7 @@ class LoginTests(APITestCaseExtended):
         self.assertTrue(token.valid_till > timezone.now() + timedelta(seconds=settings.MAX_WEB_TOKEN_TIME_VALID - 5))
         self.assertTrue(token.valid_till < timezone.now() + timedelta(seconds=settings.MAX_WEB_TOKEN_TIME_VALID + 5))
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_max_app_token_time_valid(self):
         """
         Ensure that MAX_APP_TOKEN_TIME_VALID is applied correctly
@@ -355,6 +365,7 @@ class LoginTests(APITestCaseExtended):
 
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_corrupted_login_info(self):
         """
         Try to login with corrupted login info
@@ -392,6 +403,7 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'], ['LOGIN_INFO_CANNOT_BE_DECRYPTED'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_disabled_user(self):
         """
         Try to login with a disabled user
@@ -431,6 +443,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_user_where_email_is_not_verified(self):
         """
         Try to login with a user who did not yet verify his email address
@@ -471,6 +484,7 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_failure_no_login_info(self):
         """
         Test to login without login info
@@ -507,6 +521,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_failure_no_login_info_nonce(self):
         """
         Test to login without login info nonce
@@ -543,6 +558,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_failure_no_public_key(self):
         """
         Test to login without public_key
@@ -579,6 +595,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_no_username(self):
         """
         Test to login with no username
@@ -619,6 +636,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.data.get('non_field_errors'), [u'USERNAME_REQUIRED'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_no_authkey(self):
         """
         Test to login with no authkey
@@ -658,6 +676,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.data.get('non_field_errors'), [u'AUTHKEY_REQUIRED'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_google_authenticator(self):
         """
         Ensure we can login with google authenticator
@@ -746,6 +765,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_yubikey_otp(self):
         """
         Ensure we can login with YubiKey OTP
@@ -833,6 +853,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(models.Token.objects.count(), 1)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_duo(self):
         """
         Ensure we can login with duo
@@ -927,6 +948,7 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(models.Token.objects.count(), 1)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_activate_token(self):
         """
         Ensure we can activate our token
@@ -1044,6 +1066,7 @@ class LoginTests(APITestCaseExtended):
 
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_wrong_password(self):
         """
         Ensure we cannot login with wrong authkey
@@ -1084,6 +1107,7 @@ class LoginTests(APITestCaseExtended):
         self.assertEqual(models.Token.objects.count(), 0)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_token_expiration(self):
         """
         Ensure expired tokens are invalid

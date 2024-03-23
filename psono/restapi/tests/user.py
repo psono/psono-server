@@ -1,11 +1,13 @@
 from django.urls import reverse
 from django.conf import settings
+from django.test.utils import override_settings
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 from restapi import models
 
-from .base import APITestCaseExtended, test_authkey, test_authkey_password_hash
+from .base import APITestCaseExtended
 from ..utils import encrypt_with_db_secret, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
 import random
@@ -23,12 +25,13 @@ import bcrypt
 
 
 class UserModificationTests(APITestCaseExtended):
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
 
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = test_authkey
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -39,7 +42,7 @@ class UserModificationTests(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -75,6 +78,7 @@ class UserModificationTests(APITestCaseExtended):
             is_email_active=True
         )
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_user_update(self):
         """
         Tests GET method on user_update
@@ -89,6 +93,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_update(self):
         """
         Tests DELETE method on user_update
@@ -103,6 +108,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_user_update(self):
         """
         Tests POST method on user_update
@@ -117,6 +123,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def reset(self):
         url = reverse('user_update')
 
@@ -124,7 +131,7 @@ class UserModificationTests(APITestCaseExtended):
             'username': self.test_username,
             'email': self.test_email,
             'email_bcrypt': self.test_email_bcrypt,
-            'authkey': test_authkey_password_hash,
+            'authkey': make_password(self.test_authkey),
             'authkey_old': self.test_public_key,
             'private_key': self.test_private_key,
             'private_key_nonce': self.test_private_key_nonce,
@@ -136,6 +143,7 @@ class UserModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         self.client.put(url, data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_private_key_not_being_in_hex_format(self):
         """
         Tests to update the user with private key not being in hex format
@@ -172,6 +180,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('private_key' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_language(self):
         """
         Tests to update the user with a new language
@@ -192,6 +201,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(user.language, data['language'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_private_key_nonce_not_being_in_hex_format(self):
         """
         Tests to update the user with private key nonce not being in hex format
@@ -227,6 +237,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('private_key_nonce' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_secret_key_not_being_in_hex_format(self):
         """
         Tests to update the user with private key not being in hex format
@@ -263,6 +274,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('secret_key' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_secret_key_nonce_not_being_in_hex_format(self):
         """
         Tests to update the user with private key nonce not being in hex format
@@ -298,6 +310,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('secret_key_nonce' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user(self):
         """
         Tests to update the user
@@ -351,6 +364,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_users_hashing_algorithm_and_parameters(self):
         """
         Tests to update the user's hashing_algorithm and hashing_parameters
@@ -392,6 +406,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(user.hashing_algorithm, data['hashing_algorithm'])
         self.assertEqual(user.hashing_parameters, data['hashing_parameters'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_invalid_hashing_parameters_l(self):
         """
         Tests to update the user's hashing_parameters with an invalid l
@@ -433,6 +448,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_invalid_hashing_parameters_p(self):
         """
         Tests to update the user's hashing_parameters with an invalid p
@@ -474,6 +490,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_invalid_hashing_parameters_r(self):
         """
         Tests to update the user's hashing_parameters with an invalid r
@@ -515,6 +532,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_invalid_hashing_parameters_u(self):
         """
         Tests to update the user's hashing_parameters with an invalid u
@@ -557,6 +575,7 @@ class UserModificationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_users_hashing_algorithm_without_parameters(self):
         """
         Tests to update the user's hashing_algorithm without hashing_parameters. Either both or none of those two parameters
@@ -594,6 +613,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_users_hashing_parameters_without_algorithm(self):
         """
         Tests to update the user's hashing_parameters without hashing_algorithm. Either both or none of those two parameters
@@ -631,6 +651,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_without_old_password_block(self):
         """
         Tests to update the user with a new password that is the same as an old password but without the block
@@ -683,6 +704,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     @patch('restapi.serializers.user_update.settings', DISABLE_LAST_PASSWORDS=1, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
     def test_update_user_with_old_password_block_1(self, mocked_fnct):
         """
@@ -737,6 +759,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     @patch('restapi.serializers.user_update.settings', DISABLE_LAST_PASSWORDS=2, EMAIL_SECRET_SALT=settings.EMAIL_SECRET_SALT)
     def test_update_user_with_old_password_block_2(self, mocked_fnct):
         """
@@ -809,6 +832,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_wrong_password(self):
         """
         Tests to update the user with wrong password
@@ -843,6 +867,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_with_email_duplicate(self):
         """
         Tests to update the user with an email address that already exists
@@ -892,6 +917,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_missing_old_authkey(self):
         """
         Tests to update the user without the old authentication key
@@ -937,6 +963,7 @@ class UserModificationTests(APITestCaseExtended):
 
         self.reset()
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_update_user_wrong_old_authkey(self):
         """
         Tests to update the user with the wrong old authentication key
@@ -985,11 +1012,12 @@ class UserModificationTests(APITestCaseExtended):
 
 
 class UserSearchTests(APITestCaseExtended):
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = test_authkey
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1000,7 +1028,7 @@ class UserSearchTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -1013,7 +1041,7 @@ class UserSearchTests(APITestCaseExtended):
         self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt2 = bcrypt.hashpw(self.test_email2.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'some-partial-username@psono.pw'
-        self.test_authkey2 = test_authkey
+        self.test_authkey2 = '456'
         self.test_public_key2 = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key2 = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1265,7 +1293,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = 'a'
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = test_authkey
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1276,7 +1304,7 @@ class UserActivateTokenTests(APITestCaseExtended):
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key, # usually this one is encrypted with the user password
             private_key_nonce=self.test_private_key_nonce,
@@ -1645,12 +1673,13 @@ class UserActivateTokenTests(APITestCaseExtended):
 
 
 class UserDeleteTests(APITestCaseExtended):
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
 
         self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
         self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = test_authkey
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
         self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
@@ -1661,7 +1690,7 @@ class UserDeleteTests(APITestCaseExtended):
             username=self.test_username,
             email=encrypt_with_db_secret(self.test_email),
             email_bcrypt=self.test_email_bcrypt,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key,
             private_key_nonce=self.test_private_key_nonce,
@@ -1671,6 +1700,7 @@ class UserDeleteTests(APITestCaseExtended):
             is_email_active=True
         )
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user(self):
         """
         Tests to delete a user
@@ -1687,6 +1717,7 @@ class UserDeleteTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_no_authkey(self):
         """
         Tests to delete a user
@@ -1702,6 +1733,7 @@ class UserDeleteTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_authkey_wrong(self):
         """
         Tests to delete a user
@@ -1718,6 +1750,7 @@ class UserDeleteTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_with_get(self):
         """
         Tests GET on user_delete
@@ -1732,6 +1765,7 @@ class UserDeleteTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_with_put(self):
         """
         Tests PUT on user_delete
@@ -1746,6 +1780,7 @@ class UserDeleteTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_user_with_post(self):
         """
         Tests POST on user_delete

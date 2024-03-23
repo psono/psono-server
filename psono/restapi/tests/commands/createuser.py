@@ -2,6 +2,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.test.utils import override_settings
 
 from restapi import models
 from restapi.utils import generate_authkey, decrypt_with_db_secret, get_static_bcrypt_hash_from_email
@@ -12,6 +13,7 @@ import bcrypt
 
 class CommandCreateuserTestCase(TestCase):
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(settings.EMAIL_SECRET_SALT, '', 1)

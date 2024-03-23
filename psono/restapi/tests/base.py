@@ -1,10 +1,47 @@
+import hashlib
 from rest_framework.test import APITestCase
 from uuid import UUID
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import BasePasswordHasher
 
-test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
-               "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
-test_authkey_password_hash = make_password(test_authkey)
+class InsecureUnittestPasswordHasher(BasePasswordHasher):
+    """
+    The Salted MD5 password hashing algorithm (not recommended) and only used for unittests to speed them up
+    """
+
+    algorithm = "md5"
+
+    def encode(self, password, salt):
+        self._check_encode_args(password, salt)
+        hash = hashlib.md5((salt + password).encode()).hexdigest()
+        return "%s$%s$%s" % (self.algorithm, salt, hash)
+
+    def decode(self, encoded):
+        algorithm, salt, hash = encoded.split("$", 2)
+        assert algorithm == self.algorithm
+        return {
+            "algorithm": algorithm,
+            "hash": hash,
+            "salt": salt,
+        }
+
+    def verify(self, password, encoded):
+        decoded = self.decode(encoded)
+        encoded_2 = self.encode(password, decoded["salt"])
+        return encoded == encoded_2
+
+    def safe_summary(self, encoded):
+        decoded = self.decode(encoded)
+        return {
+            _("algorithm"): decoded["algorithm"],
+            _("salt"): mask_hash(decoded["salt"], show=2),
+            _("hash"): mask_hash(decoded["hash"]),
+        }
+
+    def must_update(self, encoded):
+        return False
+
+    def harden_runtime(self, password, encoded):
+        pass
 
 def is_uuid(expr):
     """
