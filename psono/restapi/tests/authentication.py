@@ -103,6 +103,7 @@ class AuthenticationTests(APITestCaseExtended):
 
 class AuthenticateTests(APITestCaseExtended):
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
 
 
@@ -114,7 +115,7 @@ class AuthenticateTests(APITestCaseExtended):
 
         self.test_email = "test@example.com"
         self.test_username = "test6@" + settings.ALLOWED_DOMAINS[0]
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_real_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
         self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()

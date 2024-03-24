@@ -78,9 +78,6 @@ class LoginView(GenericAPIView):
             write=True,
         )
 
-        user.last_login = timezone.now()
-        user.save()
-
         # our public / private key box
         box = PrivateKey.generate()
 

@@ -1,5 +1,7 @@
 from django.urls import reverse
 from django.utils import timezone
+from django.test.utils import override_settings
+from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from datetime import timedelta
 import json
@@ -9,7 +11,7 @@ import binascii
 from rest_framework import status
 from restapi import models
 
-from .base import APITestCaseExtended, test_authkey_password_hash
+from .base import APITestCaseExtended
 
 import random
 import string
@@ -19,6 +21,7 @@ class LinkShareAccess(APITestCaseExtended):
     Test to access a link share
     """
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "a"
@@ -173,6 +176,7 @@ class LinkShareAccess(APITestCaseExtended):
         )
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get(self):
         """
         Tests PUT on link share access
@@ -188,6 +192,7 @@ class LinkShareAccess(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put(self):
         """
         Tests PUT on link share access
@@ -203,6 +208,7 @@ class LinkShareAccess(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_success_with_secret(self):
         """
         Tests POST on link share access with a secret that is being shared
@@ -219,6 +225,45 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_success_check_read_count(self):
+        """
+        Tests POST on link share access with a secret and check that the read counter is incremented
+        """
+
+        self.link_share.allowed_reads = 2
+        self.link_share.save()
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 1)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=1).exists())
+
+        # try again a second time
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 2)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=2).exists())
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_success_with_file(self):
         """
         Tests POST on link share access with a file that is being shared
@@ -241,6 +286,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(models.File_Transfer.objects.count(), 1)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_with_expired_link_share(self):
         """
         Tests POST on link share access with an already expired link share
@@ -261,6 +307,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_user_has_been_disabled(self):
         """
         Tests POST on link share access where the user that created the link share has been disabled
@@ -281,6 +328,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_with_allowed_reads_already_used(self):
         """
         Tests POST on link share access with allowed reads already being used
@@ -301,12 +349,13 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_without_passphrase_while_passphrase_being_required(self):
         """
         Tests POST on link share access without providing a passphrase while a passphrase is required
         """
 
-        self.link_share.passphrase = test_authkey_password_hash
+        self.link_share.passphrase = make_password("gbnfalasd")
         self.link_share.save()
 
         url = reverse('link_share_access')
@@ -321,12 +370,13 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_with_not_matching_passphrase(self):
         """
         Tests POST on link share access with a passphrase that is wrong
         """
 
-        self.link_share.passphrase = test_authkey_password_hash
+        self.link_share.passphrase = make_password("gbnfalasd")
         self.link_share.save()
 
         url = reverse('link_share_access')
@@ -342,6 +392,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_for_link_share_without_file_id_nor_secret_id(self):
         """
         Tests POST on link share access for a link share that has no file nor secret id
@@ -364,6 +415,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_for_link_share_where_issuing_user_lost_privileges_to_secret(self):
         """
         Tests POST on link share access where the issuing user lost his privileges
@@ -384,6 +436,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_for_link_share_where_issuing_user_lost_privileges_to_file(self):
         """
         Tests POST on link share access where the issuing user lost his privileges
@@ -408,6 +461,7 @@ class LinkShareAccess(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_for_link_share_where_no_fileserver_being_able_to_serve_file(self):
         """
         Tests POST on link share access where no fileserver is available to serve the file

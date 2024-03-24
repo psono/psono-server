@@ -1,10 +1,12 @@
 from django.urls import reverse
+from django.test.utils import override_settings
+from django.contrib.auth.hashers import make_password
 
 from rest_framework import status
 
 from restapi import models
 
-from .base import APITestCaseExtended, test_authkey, test_authkey_password_hash
+from .base import APITestCaseExtended
 
 import random
 import string
@@ -687,6 +689,7 @@ class UpdateDatastoreTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 class DeleteDatastoreTests(APITestCaseExtended):
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "asd"
@@ -695,7 +698,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
         self.test_username = "test@psono.pw"
         self.test_username2 = "test2@psono.pw"
         self.test_password = "myPassword"
-        self.test_authkey = test_authkey
+        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
         self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
         self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
@@ -714,7 +717,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
             username=self.test_username,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce,
@@ -728,7 +731,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
             email=self.test_email2,
             email_bcrypt=self.test_email_bcrypt2,
             username=self.test_username2,
-            authkey=test_authkey_password_hash,
+            authkey=make_password(self.test_authkey),
             public_key=self.test_public_key,
             private_key=self.test_private_key_enc,
             private_key_nonce=self.test_private_key_nonce2,
@@ -772,6 +775,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.new_datastore_id2 = str(response.data.get('datastore_id'))
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete(self):
         """
         Tests to delete the datastore
@@ -787,6 +791,7 @@ class DeleteDatastoreTests(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_datastore_that_does_not_belong_to_the_user(self):

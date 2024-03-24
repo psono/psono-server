@@ -1,13 +1,14 @@
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
+from django.test.utils import override_settings
 from django.utils import timezone
 
 from rest_framework import status
 
 from restapi import models
 
-from .base import APITestCaseExtended, test_authkey_password_hash, test_authkey
+from .base import APITestCaseExtended
 
 from datetime import timedelta
 
@@ -358,6 +359,8 @@ class RecoveryCodeTests(APITestCaseExtended):
 
 
 class PasswordTests(APITestCaseExtended):
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def setUp(self):
         self.verifier_private_key = '4491f6c03d8196d65f45f7f6ab693088b1e8cd14e728201e5cca8333f2a88b4e'
         self.verifier_public_key = '7a372bb1558b0d42eaac3e238e633efd997f6496c62302bdb56c3a729a7ce41c'
@@ -435,14 +438,14 @@ class PasswordTests(APITestCaseExtended):
             is_email_active=True
         )
 
-        self.test_recovery_authkey = test_authkey
+        self.test_recovery_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
         self.test_recovery_data = 'test_recovery_data'
         self.test_recovery_data_nonce = 'test_recovery_data_nonce'
         self.test_recovery_sauce = 'test_recovery_sauce'
 
         self.test_recovery_code_obj = models.Recovery_Code.objects.create(
             user = self.test_user_obj,
-            recovery_authkey = test_authkey_password_hash,
+            recovery_authkey = make_password(self.test_recovery_authkey),
             recovery_data = self.test_recovery_data.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce,
             verifier = self.verifier_private_key,
@@ -450,14 +453,14 @@ class PasswordTests(APITestCaseExtended):
             recovery_sauce = self.test_recovery_sauce
         )
 
-        self.test_recovery_authkey2 = test_authkey
+        self.test_recovery_authkey2 = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345679'
         self.test_recovery_data2 = 'test_recovery_data2'
         self.test_recovery_data_nonce2 = 'test_recovery_data_nonce2'
         self.test_recovery_sauce2 = 'test_recovery_sauce2'
 
         self.test_recovery_code_obj_expired = models.Recovery_Code.objects.create(
             user = self.test_user_obj3,
-            recovery_authkey = test_authkey_password_hash,
+            recovery_authkey = make_password(self.test_recovery_authkey2),
             recovery_data = self.test_recovery_data2.encode(),
             recovery_data_nonce = self.test_recovery_data_nonce2,
             verifier = self.verifier_private_key,
@@ -467,6 +470,7 @@ class PasswordTests(APITestCaseExtended):
 
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_password(self):
         """
         Tests GET method on password
@@ -481,6 +485,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_no_username(self):
         """
         Tests PUT method on password with no username
@@ -500,6 +505,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('username' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_no_recovery_authkey(self):
         """
         Tests PUT method on password with no recovery authkey
@@ -519,6 +525,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('recovery_authkey' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_no_email_like_username(self):
         """
         Tests PUT method on password with no email like username
@@ -539,6 +546,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('username' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_incorrect_username(self):
         """
         Tests PUT method on password with incorrect username
@@ -558,6 +566,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_incorrect_authkey(self):
         """
         Tests PUT method on password with incorrect authkey
@@ -577,6 +586,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_user_who_has_no_recovery_key(self):
         """
         Tests PUT method on password with user who has no recovery key
@@ -597,6 +607,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_expired_recovery_code_verifier(self):
         """
         Tests PUT method on password with expired recovery code verifier
@@ -617,6 +628,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_missing_authkey(self):
         """
         Tests PUT method on password with missing authkey
@@ -654,6 +666,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_missing_private_key(self):
         """
         Tests PUT method on password with missing private_key
@@ -691,6 +704,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_missing_private_key_nonce(self):
         """
         Tests PUT method on password with missing private_key_nonce
@@ -728,6 +742,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_missing_secret_key(self):
         """
         Tests PUT method on password with missing secret_key
@@ -765,6 +780,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_missing_secret_key_nonce(self):
         """
         Tests PUT method on password with missing secret_key_nonce
@@ -802,6 +818,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_invalid_json(self):
         """
         Tests PUT method on password with invalid json
@@ -834,6 +851,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_no_validation(self):
         """
         Tests PUT method on password with no validation
@@ -855,6 +873,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_update_data_being_no_hex(self):
         """
         Tests PUT method on password with update_data being no hex
@@ -876,6 +895,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_update_data_nonce_being_no_hex(self):
         """
         Tests PUT method on password with update_data being no hex
@@ -897,6 +917,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password(self):
         """
         Tests PUT method on password
@@ -963,6 +984,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertIsNone(db_recovery_code.verifier_issue_date)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_hashing_algorithm_and_parameters(self):
         """
         Tests PUT method on password with hashing algorithm and parameters
@@ -1012,6 +1034,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(user.hashing_algorithm, data['hashing_algorithm'])
         self.assertEqual(user.hashing_parameters, data['hashing_parameters'])
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_hashing_algorithm_and_without_parameters(self):
         """
         Tests PUT method on password with a hashing algorithm yet without parameters
@@ -1056,6 +1079,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_hashing_parameters_and_without_algorithm(self):
         """
         Tests PUT method on password with a hashing_parameters yet without algorithm
@@ -1100,6 +1124,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_invalid_hashing_parameters_l(self):
         """
         Tests PUT method on password with invalid l as hashing parameter
@@ -1149,6 +1174,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_invalid_hashing_parameters_p(self):
         """
         Tests PUT method on password with invalid p as hashing parameter
@@ -1198,6 +1224,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_invalid_hashing_parameters_r(self):
         """
         Tests PUT method on password with invalid r as hashing parameter
@@ -1247,6 +1274,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_password_with_invalid_hashing_parameters_u(self):
         """
         Tests PUT method on password with invalid u as hashing parameter
@@ -1297,6 +1325,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_no_username(self):
         """
         Tests POST method on password with no username
@@ -1315,6 +1344,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('username' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_no_recovery_authkey(self):
         """
         Tests POST method on password with no recovery authkey
@@ -1333,6 +1363,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('recovery_authkey' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_no_email_like_username(self):
         """
         Tests POST method on password with no email like username
@@ -1351,6 +1382,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('username' in response.data)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_incorrect_username(self):
         """
         Tests POST method on password with incorrect username
@@ -1368,6 +1400,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_incorrect_authkey(self):
         """
         Tests POST method on password with incorrect authkey
@@ -1385,6 +1418,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password_with_user_who_has_no_recovery_key(self):
         """
         Tests POST method on password with user who has no recovery key
@@ -1402,6 +1436,7 @@ class PasswordTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_password(self):
         """
         Tests POST method on password
@@ -1432,6 +1467,7 @@ class PasswordTests(APITestCaseExtended):
         self.assertTrue('verifier_public_key' in response.data)
         self.assertEqual(len(response.data['verifier_public_key']), 64)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_password(self):
         """
         Tests DELETE method on password

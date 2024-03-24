@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
+from django.test.utils import override_settings
 from django.contrib.auth.hashers import check_password
 from django.core.mail import EmailMultiAlternatives
 from rest_framework import status
@@ -17,6 +18,7 @@ import os
 
 class RegistrationTests(APITestCaseExtended):
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_authentication_register(self):
         """
         Tests GET method on authentication_register
@@ -30,6 +32,7 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_authentication_register(self):
         """
         Tests PUT method on authentication_register
@@ -43,6 +46,7 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_authentication_register(self):
         """
         Tests DELETE method on authentication_register
@@ -57,6 +61,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account(self):
         """
         Ensure we can create a new account object.
@@ -108,6 +113,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertFalse(user.is_email_active)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_custom_hashing_params(self):
         """
         Ensure we can create a new user with custom hashing parameters
@@ -155,6 +161,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(user.hashing_parameters['p'], 2)
         self.assertEqual(user.hashing_parameters['l'], 65)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_u(self):
         """
         Ensure that hashing parameter for u that are too low are declined
@@ -195,6 +202,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_r(self):
         """
         Ensure that hashing parameter for r that are too low are declined
@@ -235,6 +243,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_p(self):
         """
         Ensure that hashing parameter for p that are too low are declined
@@ -275,6 +284,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_l(self):
         """
         Ensure that hashing parameter for l that are too low are declined
@@ -315,6 +325,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_not_same_email(self):
         """
         Ensure we can not create an account with the same email address twice
@@ -359,6 +370,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertTrue(response.data.get('email', False),
                         'E-Mail in error message does not exist in registration response')
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_no_authoritative_email(self):
         """
         Ensure we can not create an account with an authoritative email address
@@ -392,6 +404,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_email_no_email_syntax(self):
         """
         Test to register with a email without email syntax
@@ -426,6 +439,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('email'), [u'INVALID_EMAIL_FORMAT'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_no_email_syntax(self):
         """
         Test to register with a username without email syntax
@@ -460,6 +474,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_in_allowed_domains(self):
         """
         Test to register with a username that is not in allowed domains
@@ -494,6 +509,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'The provided domain in your username is not allowed for the registration on this server.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_with_not_allowed_chars(self):
         """
         Test to register with a username that contains not allowed characters
@@ -528,6 +544,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may only contain letters, numbers, periods and dashes.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_start_with_a_period(self):
         """
         Test to register with a username that starts with a period
@@ -563,6 +580,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_start_with_a_dash(self):
         """
         Test to register with a username that starts with a dash
@@ -598,6 +616,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not start with a dash.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_end_with_a_period(self):
         """
         Test to register with a username that ends with a period
@@ -632,6 +651,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_contain_consecutive_periods(self):
         """
         Test to register with a username that contains consecutive periods
@@ -666,6 +686,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_contain_consecutive_dashes(self):
         """
         Test to register with a username that contains consecutive dashes
@@ -700,6 +721,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not contain consecutive dashes.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_periods_following_dashes(self):
         """
         Test to register with a username that contains periods following dashes
@@ -734,6 +756,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not contain dashes followed by periods.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_dashes_following_periods(self):
         """
         Test to register with a username that contains dashes following periods
@@ -768,6 +791,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not contain periods followed by dashes.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_end_with_a_dash(self):
         """
         Test to register with a username that ends with a dash
@@ -802,6 +826,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), [u'Usernames may not end with a dash.'])
 
 
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_with_only_one_chars(self):
         """
         Test to register with a username that only has 1 char
@@ -837,6 +862,7 @@ class RegistrationTests(APITestCaseExtended):
 
 
     @patch('restapi.views.register.settings', ALLOW_REGISTRATION=False)
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_with_disabled_registration(self, patched_allow_registration):
         """
         Ensure we cannot create a new account object while registration is disabled.
@@ -871,6 +897,7 @@ class RegistrationTests(APITestCaseExtended):
 
 
     @patch('restapi.views.register.settings', ENFORCE_MATCHING_USERNAME_AND_EMAIL=True)
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_with_enforced_matching_usernanme_and_email(self, patched_force_matched_username_and_email):
         """
         Ensure we cannot create a new account object with mismatching username and email if ENFORCE_MATCHING_USERNAME_AND_EMAIL is set
@@ -905,6 +932,7 @@ class RegistrationTests(APITestCaseExtended):
 
 
     @patch.object(EmailMultiAlternatives, 'send')
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_sends_mail(self, mocked_send):
         """
         Ensure a mail is sent if a new account is created

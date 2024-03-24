@@ -27,7 +27,6 @@ class ReadSecretSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-
         attrs['secret'] = secret
 
         return attrs

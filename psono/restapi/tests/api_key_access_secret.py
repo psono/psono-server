@@ -325,6 +325,37 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_read_secret_read_count(self):
+        """
+        Tests to read a secret and checks that the read counter was incremented
+        """
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
+
+        url = reverse('api_key_access_secret')
+
+        data = {
+            'api_key_id': self.test_api_key_obj.id,
+            'secret_id': self.test_secret_obj.id
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = json.loads(response.data)
+        self.assertEqual(response_data['read_count'], 1)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=1).exists())
+
+        # Read a second time
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = json.loads(response.data)
+        self.assertEqual(response_data['read_count'], 2)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=2).exists())
+
     def test_read_secret_success_with_server_side_decryption(self):
         """
         Tests to read a secret with an API key successful and decrypt it on the server
