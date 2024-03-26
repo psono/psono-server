@@ -1,6 +1,5 @@
 import os
 from datetime import timedelta
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
@@ -69,17 +68,17 @@ class TokenAuthentication(BaseAuthentication):
             setup_user_in_baggage_and_spans(user, token)
 
         if not user.is_active:
-            raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
+            raise exceptions.AuthenticationFailed('User inactive or deleted.')
 
         if not user.is_email_active:
-            raise exceptions.AuthenticationFailed(_('Account not yet verified.'))
+            raise exceptions.AuthenticationFailed('Account not yet verified.')
 
         if token.device_fingerprint or token.client_date:
             token_validator_encrypted = self.get_token_validator(request)
             try:
                 token_validator_json = decrypt(token.secret_key, token_validator_encrypted['text'], token_validator_encrypted['nonce'])
             except (binascii.Error, nacl.exceptions.CryptoError):
-                msg = _('Invalid token header. Not proper encrypted.')
+                msg = 'Invalid token header. Not proper encrypted.'
                 raise exceptions.AuthenticationFailed(msg)
 
 
@@ -132,20 +131,20 @@ class TokenAuthentication(BaseAuthentication):
         auth = get_authorization_header(request).split()
 
         if not auth or auth[0].lower() != b'token':
-            msg = _('Invalid token header. No token header present.')
+            msg = 'Invalid token header. No token header present.'
             raise exceptions.AuthenticationFailed(msg)
 
         if len(auth) == 1:
-            msg = _('Invalid token header. No credentials provided.')
+            msg = 'Invalid token header. No credentials provided.'
             raise exceptions.AuthenticationFailed(msg)
         elif len(auth) > 2:
-            msg = _('Invalid token header. Token string should not contain spaces.')
+            msg = 'Invalid token header. Token string should not contain spaces.'
             raise exceptions.AuthenticationFailed(msg)
 
         try:
             token = auth[1].decode()
         except UnicodeError:
-            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            msg = 'Invalid token header. Token string should not contain invalid characters.'
             raise exceptions.AuthenticationFailed(msg)
         return TokenAuthentication.user_token_to_token_hash(token)
 
@@ -156,25 +155,25 @@ class TokenAuthentication(BaseAuthentication):
         try:
             auth = auth.decode()
         except UnicodeError:
-            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            msg = 'Invalid token header. Token string should not contain invalid characters.'
             raise exceptions.AuthenticationFailed(msg)
 
         if auth == '':
-            msg = _('Invalid token header. Incorrect format in token header.')
+            msg = 'Invalid token header. Incorrect format in token header.'
             raise exceptions.AuthenticationFailed(msg)
 
         try:
             auth = json.loads(auth)
         except ValueError:
-            msg = _('Invalid token header. Incorrect format in token header.')
+            msg = 'Invalid token header. Incorrect format in token header.'
             raise exceptions.AuthenticationFailed(msg)
 
         if 'text' not in auth:
-            msg = _('Invalid token header. Token attribute not present.')
+            msg = 'Invalid token header. Token attribute not present.'
             raise exceptions.AuthenticationFailed(msg)
 
         if 'nonce' not in auth:
-            msg = _('Invalid token header. Token attribute not present.')
+            msg = 'Invalid token header. Token attribute not present.'
             raise exceptions.AuthenticationFailed(msg)
 
         return auth
@@ -184,13 +183,13 @@ class TokenAuthentication(BaseAuthentication):
         token = get_cache(Token, token_hash)
 
         if token is None:
-            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
+            raise exceptions.AuthenticationFailed('Invalid token or not yet activated.')
 
         if not self.allow_inactive and not token.active:
-            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
+            raise exceptions.AuthenticationFailed('Invalid token or not yet activated.')
 
         if token.valid_till < timezone.now():
-            raise exceptions.AuthenticationFailed(_('Invalid token or not yet activated.'))
+            raise exceptions.AuthenticationFailed('Invalid token or not yet activated.')
 
         return token
 
@@ -224,13 +223,13 @@ class FileTransferAuthentication(BaseAuthentication):
         try:
             file_transfer = File_Transfer.objects.select_related('user').get(pk=file_transfer_id, create_date__gte=timezone.now()-timedelta(hours=12))
         except File_Transfer.DoesNotExist:
-            raise exceptions.AuthenticationFailed(_('FILE_TRANSFER_INVALID'))
+            raise exceptions.AuthenticationFailed('FILE_TRANSFER_INVALID')
 
         if not file_transfer.user.is_active:
-            raise exceptions.AuthenticationFailed(_('USER_INACTIVE_OR_DELETED'))
+            raise exceptions.AuthenticationFailed('USER_INACTIVE_OR_DELETED')
 
         if not file_transfer.user.is_email_active:
-            raise exceptions.AuthenticationFailed(_('ACCOUNT_NOT_VERIFIED'))
+            raise exceptions.AuthenticationFailed('ACCOUNT_NOT_VERIFIED')
 
         request.user = file_transfer.user
         file_transfer.session_secret_key = file_transfer.secret_key
@@ -248,20 +247,20 @@ class FileTransferAuthentication(BaseAuthentication):
         auth = get_authorization_header(request).split()
 
         if not auth or auth[0].lower() != b'filetransfer':
-            msg = _('Invalid filetransfer header. No token header present.')
+            msg = 'Invalid filetransfer header. No token header present.'
             raise exceptions.AuthenticationFailed(msg)
 
         if len(auth) == 1:
-            msg = _('Invalid filetransfer header. No credentials provided.')
+            msg = 'Invalid filetransfer header. No credentials provided.'
             raise exceptions.AuthenticationFailed(msg)
         elif len(auth) > 2:
-            msg = _('Invalid filetransfer header. File transfer id string should not contain spaces.')
+            msg = 'Invalid filetransfer header. File transfer id string should not contain spaces.'
             raise exceptions.AuthenticationFailed(msg)
 
         try:
             file_transfer_id = auth[1].decode()
         except UnicodeError:
-            msg = _('Invalid filetransfer header. File transfer id string should not contain invalid characters.')
+            msg = 'Invalid filetransfer header. File transfer id string should not contain invalid characters.'
             raise exceptions.AuthenticationFailed(msg)
 
         return file_transfer_id
@@ -277,7 +276,7 @@ class FileserverAuthentication(TokenAuthentication):
         try:
             fileserver = Fileserver_Cluster_Members.objects.get(key=token_hash, valid_till__gte=timezone.now())
         except Fileserver_Cluster_Members.DoesNotExist:
-            msg = _('Fileserver not alive.')
+            msg = 'Fileserver not alive.'
             raise exceptions.AuthenticationFailed(msg)
 
         return fileserver, fileserver
@@ -302,7 +301,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
             try:
                 cluster = Fileserver_Cluster.objects.get(pk=cluster_id)
             except Fileserver_Cluster.DoesNotExist:
-                msg = _('Invalid token header. Cluster ID does not exist.')
+                msg = 'Invalid token header. Cluster ID does not exist.'
                 raise exceptions.AuthenticationFailed(msg)
 
             cluster_public_key = decrypt_with_db_secret(cluster.auth_public_key)
@@ -313,15 +312,15 @@ class FileserverAliveAuthentication(TokenAuthentication):
             try:
                 fileserver_info = json.loads(cluster_crypto_box.decrypt(nacl.encoding.HexEncoder.decode(fileserver_info_enc)).decode())
             except nacl.exceptions.CryptoError:
-                msg = _('Invalid fileserver info.')
+                msg = 'Invalid fileserver info.'
                 raise exceptions.AuthenticationFailed(msg)
 
             if not constant_time_compare(fileserver_info['CLUSTER_ID'], cluster_id):
-                msg = _('Invalid fileserver info.')
+                msg = 'Invalid fileserver info.'
                 raise exceptions.AuthenticationFailed(msg)
 
             if not constant_time_compare(FileserverAliveAuthentication.user_token_to_token_hash(fileserver_info['FILESERVER_ID']), token_hash):
-                msg = _('Invalid fileserver info.')
+                msg = 'Invalid fileserver info.'
                 raise exceptions.AuthenticationFailed(msg)
 
             self.validate_cluster_shard_access(cluster_id, fileserver_info['SHARDS_PUBLIC'])
@@ -357,7 +356,7 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 )
 
         if fileserver is None:
-            msg = _('Login failed')
+            msg = 'Login failed'
             raise exceptions.AuthenticationFailed(msg)
 
         return fileserver, fileserver
@@ -377,19 +376,19 @@ class FileserverAliveAuthentication(TokenAuthentication):
 
         for shard in announced_shards:
             if shard['shard_id'] not in shards:
-                msg = _('No permission for shard.')
+                msg = 'No permission for shard.'
                 raise exceptions.AuthenticationFailed(msg)
 
             if shard['read'] and not shards[shard['shard_id']]['read']:
-                msg = _('No read permission for shard.')
+                msg = 'No read permission for shard.'
                 raise exceptions.AuthenticationFailed(msg)
 
             if shard['write'] and not shards[shard['shard_id']]['write']:
-                msg = _('No write permission for shard.')
+                msg = 'No write permission for shard.'
                 raise exceptions.AuthenticationFailed(msg)
 
             if shard['delete'] and not shards[shard['shard_id']]['delete']:
-                msg = _('No write permission for shard.')
+                msg = 'No write permission for shard.'
                 raise exceptions.AuthenticationFailed(msg)
 
     @staticmethod
@@ -398,21 +397,21 @@ class FileserverAliveAuthentication(TokenAuthentication):
         try:
             auth = auth.decode()
         except UnicodeError:
-            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            msg = 'Invalid token header. Token string should not contain invalid characters.'
             raise exceptions.AuthenticationFailed(msg)
 
         try:
             auth = json.loads(auth)
         except ValueError:
-            msg = _('Invalid token header. Incorrect format in token header.')
+            msg = 'Invalid token header. Incorrect format in token header.'
             raise exceptions.AuthenticationFailed(msg)
 
         if 'cluster_id' not in auth:
-            msg = _('Invalid token header. Token attribute not present.')
+            msg = 'Invalid token header. Token attribute not present.'
             raise exceptions.AuthenticationFailed(msg)
 
         if 'fileserver_info' not in auth:
-            msg = _('Invalid token header. Token attribute not present.')
+            msg = 'Invalid token header. Token attribute not present.'
             raise exceptions.AuthenticationFailed(msg)
 
         return auth['cluster_id'], auth['fileserver_info']
@@ -432,7 +431,7 @@ class ManagementCommandAuthentication(BaseAuthentication):
         management_command_access_key = self.get_management_command_access_key(request)
 
         if not management_command_access_key or not constant_time_compare(management_command_access_key, settings.MANAGEMENT_COMMAND_ACCESS_KEY):
-            msg = _('Invalid access key')
+            msg = 'Invalid access key'
             raise exceptions.AuthenticationFailed(msg)
 
         management_command_user = ManagementCommandUser(management_command_access_key)
@@ -443,20 +442,20 @@ class ManagementCommandAuthentication(BaseAuthentication):
         auth = get_authorization_header(request).split()
 
         if not auth or auth[0].lower() != b'token':
-            msg = _('Invalid token header. No token header present.')
+            msg = 'Invalid token header. No token header present.'
             raise exceptions.AuthenticationFailed(msg)
 
         if len(auth) == 1:
-            msg = _('Invalid token header. No credentials provided.')
+            msg = 'Invalid token header. No credentials provided.'
             raise exceptions.AuthenticationFailed(msg)
         elif len(auth) > 2:
-            msg = _('Invalid token header. Token string should not contain spaces.')
+            msg = 'Invalid token header. Token string should not contain spaces.'
             raise exceptions.AuthenticationFailed(msg)
 
         try:
             token = auth[1].decode()
         except UnicodeError:
-            msg = _('Invalid token header. Token string should not contain invalid characters.')
+            msg = 'Invalid token header. Token string should not contain invalid characters.'
             raise exceptions.AuthenticationFailed(msg)
 
         return token

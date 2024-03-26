@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
 from ..models import Yubikey_OTP
@@ -14,11 +13,11 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
         yubikey_is_valid = yubikey_authenticate(yubikey_otp)
 
         if yubikey_is_valid is None:
-            msg = _('Server does not support YubiKeys.')
+            msg = 'SERVER_NOT_SUPPORT_YUBIKEY'
             raise exceptions.ValidationError(msg)
 
         if not yubikey_is_valid:
-            msg = _('YubiKey OTP incorrect.')
+            msg = 'YUBICO_TOKEN_INVALID'
             raise exceptions.ValidationError(msg)
 
         token = self.context['request'].auth
@@ -27,7 +26,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
         yks = Yubikey_OTP.objects.filter(user_id=token.user_id).all()
         if len(yks) < 1:
-            msg = _('No Yubikeys found.')
+            msg = 'NO_YUBIKEY_FOUND'
             raise exceptions.ValidationError(msg)
 
         otp_token_correct = False
@@ -40,7 +39,8 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
                 break
 
         if not otp_token_correct:
-            msg = _('YubiKey OTP not attached to this account.')
+            # TODO replace with YUBICO_TOKEN_VALID_BUT_NOT_CONFIGURED
+            msg = 'YubiKey OTP not attached to this account.'
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

@@ -38,11 +38,11 @@ class CreateLinkShareSerializer(serializers.Serializer):
         valid_till = attrs.get('valid_till', None)
 
         if not secret_id and not file_id:
-            msg = _("EITHER_SECRET_OR_FILE_REQUIRED")
+            msg = "EITHER_SECRET_OR_FILE_REQUIRED"
             raise exceptions.ValidationError(msg)
 
         if secret_id and file_id:
-            msg = _("EITHER_SECRET_OR_FILE_REQUIRED_NOT_BOTH")
+            msg = "EITHER_SECRET_OR_FILE_REQUIRED_NOT_BOTH"
             raise exceptions.ValidationError(msg)
 
         if secret_id and not user_has_rights_on_secret(self.context['request'].user.id, secret_id):
@@ -55,7 +55,7 @@ class CreateLinkShareSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if valid_till is not None and valid_till < timezone.now():
-            msg = _("VALID_TILL_CANNOT_BE_IN_THE_PAST")
+            msg = "VALID_TILL_CANNOT_BE_IN_THE_PAST"
             raise exceptions.ValidationError(msg)
 
         if passphrase == '':  #nosec -- not [B105:hardcoded_password_string]

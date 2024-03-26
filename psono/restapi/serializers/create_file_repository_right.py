@@ -28,11 +28,11 @@ class CreateFileRepositoryRightSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not User.objects.filter(pk=user_id).exists():
-            msg = _("USER_DOES_NOT_EXIST")
+            msg = "USER_DOES_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if File_Repository_Right.objects.filter(file_repository_id=file_repository_id, user_id=user_id).exists():
-            msg = _("USER_HAS_ALREADY_RIGHTS_FOR_FILE_REPOSITORY")
+            msg = "USER_HAS_ALREADY_RIGHTS_FOR_FILE_REPOSITORY"
             raise exceptions.ValidationError(msg)
 
         return attrs

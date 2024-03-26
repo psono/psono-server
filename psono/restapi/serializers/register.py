@@ -37,8 +37,7 @@ class RegisterSerializer(serializers.Serializer):
         if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
             email_prefix, domain = value.split("@")
             if domain not in settings.REGISTRATION_EMAIL_FILTER:
-                # TODO Replace with EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER
-                msg = _('E-Mail not allowed to register.')
+                msg = 'EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER'
                 raise exceptions.ValidationError(msg)
 
         # generate bcrypt with static salt.
@@ -79,40 +78,39 @@ class RegisterSerializer(serializers.Serializer):
         username, domain = value.split('@', 1)
 
         if domain not in settings.ALLOWED_DOMAINS and '*' not in settings.ALLOWED_DOMAINS:
-            # TODO replace with PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION
-            msg = _('The provided domain in your username is not allowed for the registration on this server.')
+            msg = 'PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION'
             raise exceptions.ValidationError(msg)
 
         if not re.match('^[a-z0-9.\-]*$', username, re.IGNORECASE):
-            msg = _('Usernames may only contain letters, numbers, periods and dashes.')
+            msg = 'USERNAME_VALIDATION_NAME_CONTAINS_INVALID_CHARS'
             raise exceptions.ValidationError(msg)
 
         if len(username) < 2:
-            msg = _('Usernames may not be shorter than 2 chars.')
+            msg = 'Usernames may not be shorter than 2 chars.'
             raise exceptions.ValidationError(msg)
 
         if username.startswith('-'):
-            msg = _('Usernames may not start with a dash.')
+            msg = 'Usernames may not start with a dash.'
             raise exceptions.ValidationError(msg)
 
         if username.endswith('-'):
-            msg = _('Usernames may not end with a dash.')
+            msg = 'Usernames may not end with a dash.'
             raise exceptions.ValidationError(msg)
 
         if '--' in username:
-            msg = _('Usernames may not contain consecutive dashes.')
+            msg = 'Usernames may not contain consecutive dashes.'
             raise exceptions.ValidationError(msg)
 
         if '.-' in username:
-            msg = _('Usernames may not contain periods followed by dashes.')
+            msg = 'Usernames may not contain periods followed by dashes.'
             raise exceptions.ValidationError(msg)
 
         if '-.' in username:
-            msg = _('Usernames may not contain dashes followed by periods.')
+            msg = 'Usernames may not contain dashes followed by periods.'
             raise exceptions.ValidationError(msg)
 
         if username in forbidden_usernames:
-            msg = _('Usernames like admin@ info@ webmaster@ and so on are forbidden.')
+            msg = 'Usernames like admin@ info@ webmaster@ and so on are forbidden.'
             raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=value).exists():

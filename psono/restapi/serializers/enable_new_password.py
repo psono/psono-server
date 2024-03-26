@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 from django.conf import settings
 
@@ -18,7 +17,7 @@ class EnableNewPasswordSerializer(serializers.Serializer):
         recovery_authkey = attrs.get('recovery_authkey')
 
         if not settings.ALLOW_LOST_PASSWORD:
-            msg = _("PASSWORD_RESET_HAS_BEEN_DISABLED")
+            msg = "PASSWORD_RESET_HAS_BEEN_DISABLED"
             raise exceptions.ValidationError(msg)
 
 

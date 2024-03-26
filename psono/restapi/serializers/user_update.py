@@ -58,7 +58,7 @@ class UserUpdateSerializer(serializers.Serializer):
             user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey_old))
 
             if not user:
-                msg = _("OLD_PASSWORD_INCORRECT")
+                msg = "OLD_PASSWORD_INCORRECT"
                 raise exceptions.ValidationError(msg)
 
         if authkey and settings.DISABLE_LAST_PASSWORDS > 0:

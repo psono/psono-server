@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
 from ..utils import duo_auth_check, duo_auth_enroll
@@ -29,27 +28,25 @@ class NewDuoSerializer(serializers.Serializer):
             host = settings.DUO_API_HOSTNAME
 
         if Duo.objects.filter(user=self.context['request'].user).count() > 0:
-            # TODO replace with ONLY_ONE_DUO_DEVICE_ALLOWED
-            msg = _('Only one Duo device allowed.')
+            msg = 'ONLY_ONE_DUO_DEVICE_ALLOWED'
             raise exceptions.ValidationError(msg)
 
         if settings.ALLOWED_SECOND_FACTORS and 'duo' not in settings.ALLOWED_SECOND_FACTORS:
-            # TODO replace with SERVER_NOT_SUPPORT_DUO
-            msg = _('The server does not allow Duo 2FA.')
+            msg = 'SERVER_NOT_SUPPORT_DUO'
             raise exceptions.ValidationError(msg)
 
 
         check = duo_auth_check(integration_key, secret_key, host)
 
         if "error" in check:
-            msg = _(check['error'])
+            msg = check['error']
             raise exceptions.ValidationError(msg)
 
         username, domain = self.context['request'].user.username.split("@")
         enrollment = duo_auth_enroll(integration_key, secret_key, host, username)
 
         if "error" in enrollment:
-            msg = _(enrollment['error'])
+            msg = enrollment['error']
             raise exceptions.ValidationError(msg)
 
         validity_in_seconds = 0

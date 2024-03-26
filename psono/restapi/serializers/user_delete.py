@@ -18,7 +18,7 @@ class UserDeleteSerializer(serializers.Serializer):
         user, error_code = authenticate(username=self.context['request'].user.username, authkey=authkey)
 
         if not user:
-            msg = _("PASSWORD_INCORRECT")
+            msg = "PASSWORD_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         return attrs

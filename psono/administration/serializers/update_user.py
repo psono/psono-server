@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField, BooleanField
@@ -36,7 +35,7 @@ class UpdateUserSerializer(serializers.Serializer):
             if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
                 email_prefix, domain = email.split("@")
                 if domain not in settings.REGISTRATION_EMAIL_FILTER:
-                    msg = _('E-Mail not allowed to register.')
+                    msg = 'E-Mail not allowed to register.'
                     raise exceptions.ValidationError(msg)
 
             # generate bcrypt with static salt.
@@ -48,7 +47,7 @@ class UpdateUserSerializer(serializers.Serializer):
             email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=user_id).exists():
-                msg = _('E-Mail already exists.')
+                msg = 'E-Mail already exists.'
                 raise exceptions.ValidationError(msg)
 
             attrs['email_bcrypt'] = email_bcrypt
