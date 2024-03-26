@@ -188,7 +188,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'Server does not support YubiKeys.'])
+        self.assertEqual(response.data.get('non_field_errors'), ['SERVER_NOT_SUPPORT_YUBIKEY'])
 
 
     @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
@@ -209,7 +209,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'YubiKey OTP incorrect.'])
+        self.assertEqual(response.data.get('non_field_errors'), ['YUBICO_TOKEN_INVALID'])
 
 
     @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
@@ -231,7 +231,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'YubiKey OTP not attached to this account.'])
+        self.assertEqual(response.data.get('non_field_errors'), ['YubiKey OTP not attached to this account.'])
 
 
 

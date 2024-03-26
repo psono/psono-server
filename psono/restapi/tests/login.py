@@ -634,7 +634,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.data.get('non_field_errors'), [u'USERNAME_REQUIRED'])
+        self.assertEqual(response.data.get('non_field_errors'), ['USERNAME_REQUIRED'])
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_no_authkey(self):
@@ -674,7 +674,7 @@ class LoginTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.data.get('non_field_errors'), [u'AUTHKEY_REQUIRED'])
+        self.assertEqual(response.data.get('non_field_errors'), ['AUTHKEY_REQUIRED'])
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_login_with_google_authenticator(self):
@@ -1102,7 +1102,7 @@ class LoginTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), [u'USERNAME_OR_PASSWORD_WRONG'])
+        self.assertEqual(response.data.get('non_field_errors'), ['USERNAME_OR_PASSWORD_WRONG'])
 
         self.assertEqual(models.Token.objects.count(), 0)
 
