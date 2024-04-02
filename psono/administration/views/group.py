@@ -52,6 +52,8 @@ class GroupView(GenericAPIView):
         return {
             'id': group.id,
             'name': group.name,
+            'is_managed': False,
+            'forced_membership': group.forced_membership,
             'create_date': group.create_date,
             'public_key': group.public_key,
 
@@ -111,7 +113,7 @@ class GroupView(GenericAPIView):
                 group_qs = chosen_page.object_list
 
             groups = []
-            for g in  group_qs:
+            for g in group_qs:
                 groups.append({
                     'id': g.id,
                     'create_date': g.create_date,

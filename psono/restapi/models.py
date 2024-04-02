@@ -461,6 +461,8 @@ class Group(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=64)
     public_key = models.CharField('public key', max_length=256)
+    forced_membership = models.BooleanField('Forced Membership', default=False,
+                                            help_text='Designates whether users can deny or leave this groups membership')
 
 
     class Meta:
