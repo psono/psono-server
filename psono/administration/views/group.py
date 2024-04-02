@@ -5,6 +5,7 @@ from rest_framework.generics import GenericAPIView
 from django.core.paginator import Paginator
 
 from ..app_settings import (
+    UpdateGroupSerializer,
     DeleteGroupSerializer,
     ReadGroupSerializer
 )
@@ -127,8 +128,31 @@ class GroupView(GenericAPIView):
                 'groups': groups
             }, status=status.HTTP_200_OK)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+        """
+        Updates a group
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: 200 / 400
+        """
+
+        serializer = UpdateGroupSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        group = serializer.validated_data.get('group')
+        name = serializer.validated_data.get('name')
+
+        group.name = name
+        group.save()
+
+        return Response({}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
