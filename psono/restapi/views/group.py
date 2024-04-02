@@ -43,7 +43,8 @@ class GroupView(GenericAPIView):
                 'public_key': membership.group.public_key,
                 'group_admin': membership.group_admin,
                 'share_admin': membership.share_admin,
-                'accepted': membership.accepted
+                'accepted': membership.accepted,
+                'forced_membership': False,
             }
 
             if membership.accepted:
@@ -109,6 +110,7 @@ class GroupView(GenericAPIView):
             'group_admin': membership.group_admin,
             'share_admin': membership.share_admin,
             'accepted': membership.accepted,
+            'forced_membership': False,
         }
 
         if membership.accepted:
