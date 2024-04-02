@@ -39,7 +39,7 @@ class UpdateLinkShareSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if valid_till is not None and valid_till < timezone.now():
-            msg = _("VALID_TILL_CANNOT_BE_IN_THE_PAST")
+            msg = "VALID_TILL_CANNOT_BE_IN_THE_PAST"
             raise exceptions.ValidationError(msg)
 
         if passphrase == '':  #nosec -- not [B105:hardcoded_password_string]

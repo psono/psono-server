@@ -259,6 +259,11 @@ class UpdateGroupTests(APITestCaseExtended):
             is_superuser=True
         )
 
+        self.test_group_obj = models.Group.objects.create(
+            name='Test Group',
+            public_key='a123',
+        )
+
 
 
     def test_update_group(self):
@@ -269,12 +274,104 @@ class UpdateGroupTests(APITestCaseExtended):
         url = reverse('admin_group')
 
         data = {
+            'group_id': str(self.test_group_obj.id),
+            'name': "new name",
         }
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        group = models.Group.objects.get(pk=self.test_group_obj.id)
+
+        self.assertEqual(group.name, data['name'])
+
+    def test_update_group_that_doesnt_exist(self):
+        """
+        Tests PUT method on group that doesn't exist
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': "42355067-119f-499c-a67d-15d3cc86f865",
+            'name': "new name",
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_group_name_too_short(self):
+        """
+        Tests PUT method on group with a name that is too short
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': str(self.test_group_obj.id),
+            'name': "A",
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_group_name_contains_forbidden_character(self):
+        """
+        Tests PUT method on group with a name that contains a forbidden character (e.g. @)
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': str(self.test_group_obj.id),
+            'name': "mygroup@example",
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_update_group_unauthenticated(self):
+        """
+        Tests PUT method on group without authentication
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': str(self.test_group_obj.id),
+            'name': "new name",
+        }
+
+        #self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_group_unauthorized(self):
+        """
+        Tests PUT method on group with a user that is not authorized
+        """
+
+        url = reverse('admin_group')
+
+        data = {
+            'group_id': str(self.test_group_obj.id),
+            'name': "new name",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 class DeleteGroupTests(APITestCaseExtended):
     def setUp(self):

@@ -1,9 +1,6 @@
 from .create_user import CreateUserSerializer
 from .delete_session import DeleteSessionSerializer
-from .read_user import ReadUserSerializer
 from .delete_user import DeleteUserSerializer
-from .update_membership import UpdateMembershipSerializer
-from .update_user import UpdateUserSerializer
 from .delete_duo import DeleteDuoSerializer
 from .delete_ga import DeleteGASerializer
 from .delete_webauthn import DeleteWebAuthnSerializer
@@ -15,3 +12,7 @@ from .delete_link_share import DeleteLinkShareSerializer
 from .delete_membership import DeleteMembershipSerializer
 from .delete_recovery_code import DeleteRecoveryCodeSerializer
 from .delete_emergency_code import DeleteEmergencyCodeSerializer
+from .read_user import ReadUserSerializer
+from .update_group import UpdateGroupSerializer
+from .update_membership import UpdateMembershipSerializer
+from .update_user import UpdateUserSerializer

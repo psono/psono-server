@@ -16,13 +16,11 @@ class NewYubikeyOTPSerializer(serializers.Serializer):
         value = value.strip()
 
         if settings.ALLOWED_SECOND_FACTORS and 'yubikey_otp' not in settings.ALLOWED_SECOND_FACTORS:
-            # TODO Replace with SERVER_NOT_SUPPORT_YUBIKEY
-            msg = _('The server does not allow Yubikeys.')
+            msg = 'SERVER_NOT_SUPPORT_YUBIKEY'
             raise exceptions.ValidationError(msg)
 
         if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
-            # TODO Replace with SERVER_NOT_SUPPORT_YUBIKEY
-            msg = _('Server does not support Yubikeys')
+            msg = 'SERVER_NOT_SUPPORT_YUBIKEY'
             raise exceptions.ValidationError(msg)
 
         client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY)
@@ -32,8 +30,7 @@ class NewYubikeyOTPSerializer(serializers.Serializer):
             yubikey_is_valid = False
 
         if not yubikey_is_valid:
-            # TODO Replace with YUBICO_TOKEN_INVALID
-            msg = _('Yubikey token invalid')
+            msg = 'YUBICO_TOKEN_INVALID'
             raise exceptions.ValidationError(msg)
 
         return value

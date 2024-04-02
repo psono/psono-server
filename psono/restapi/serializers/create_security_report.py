@@ -15,13 +15,13 @@ class CreateSecurityReportSerializer(serializers.Serializer):
         authkey = attrs.get('authkey')
 
         if settings.DISABLE_CENTRAL_SECURITY_REPORTS:
-            msg = _("CENTRAL_SECURITY_REPORTS_DISABLED")
+            msg = "CENTRAL_SECURITY_REPORTS_DISABLED"
             raise exceptions.ValidationError(msg)
 
         user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))
 
         if not user:
-            msg = _("PASSWORD_INCORRECT")
+            msg = "PASSWORD_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         return attrs

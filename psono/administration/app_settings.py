@@ -13,6 +13,7 @@ from .serializers import (
     DeleteWebAuthnSerializer as DefaultDeleteWebAuthnSerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
     DeleteGASerializer as DefaultDeleteGASerializer,
+    UpdateGroupSerializer as DefaultUpdateGroupSerializer,
     DeleteGroupSerializer as DefaultDeleteGroupSerializer,
     ReadGroupSerializer as DefaultReadGroupSerializer,
     UpdateMembershipSerializer as DefaultUpdateMembershipSerializer,
@@ -69,6 +70,10 @@ DeleteDuoSerializer = import_callable(
 
 DeleteGASerializer = import_callable(
     serializers.get('DELETE_GA_SERIALIZER', DefaultDeleteGASerializer)
+)
+
+UpdateGroupSerializer = import_callable(
+    serializers.get('UPDATE_GROUP_SERIALIZER', DefaultUpdateGroupSerializer)
 )
 
 DeleteGroupSerializer = import_callable(

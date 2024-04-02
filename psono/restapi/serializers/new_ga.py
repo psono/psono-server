@@ -11,8 +11,7 @@ class NewGASerializer(serializers.Serializer):
         title = attrs.get('title', '').strip()
 
         if settings.ALLOWED_SECOND_FACTORS and 'google_authenticator' not in settings.ALLOWED_SECOND_FACTORS:
-            # TODO replace with SERVER_NOT_SUPPORT_GA
-            msg = _('The server does not allow Google Authenticator.')
+            msg = 'SERVER_NOT_SUPPORT_GA'
             raise exceptions.ValidationError(msg)
 
         attrs['title'] = title

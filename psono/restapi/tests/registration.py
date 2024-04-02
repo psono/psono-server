@@ -436,7 +436,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('email'), [u'INVALID_EMAIL_FORMAT'])
+        self.assertEqual(response.data.get('email'), ['INVALID_EMAIL_FORMAT'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -471,7 +471,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
+        self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -506,7 +506,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'The provided domain in your username is not allowed for the registration on this server.'])
+        self.assertEqual(response.data.get('username'), ['PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -541,7 +541,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may only contain letters, numbers, periods and dashes.'])
+        self.assertEqual(response.data.get('username'), ['USERNAME_VALIDATION_NAME_CONTAINS_INVALID_CHARS'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -577,7 +577,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
+        self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -613,7 +613,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not start with a dash.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not start with a dash.'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -648,7 +648,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
+        self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -683,7 +683,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'INVALID_USERNAME_FORMAT'])
+        self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -718,7 +718,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not contain consecutive dashes.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not contain consecutive dashes.'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -753,7 +753,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not contain dashes followed by periods.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not contain dashes followed by periods.'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -788,7 +788,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not contain periods followed by dashes.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not contain periods followed by dashes.'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -823,7 +823,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not end with a dash.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not end with a dash.'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -858,7 +858,7 @@ class RegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('username'), [u'Usernames may not be shorter than 2 chars.'])
+        self.assertEqual(response.data.get('username'), ['Usernames may not be shorter than 2 chars.'])
 
 
     @patch('restapi.views.register.settings', ALLOW_REGISTRATION=False)

@@ -59,9 +59,9 @@ class DuoVerifySerializer(serializers.Serializer):
             if 'result' not in duo_auth_return or duo_auth_return['result'] != 'allow':
 
                 if 'status_msg' in duo_auth_return:
-                    msg = _(duo_auth_return['status_msg'])
+                    msg = duo_auth_return['status_msg']
                 elif 'error' in duo_auth_return:
-                    msg = _(duo_auth_return['error'])
+                    msg = duo_auth_return['error']
                 else:
                     msg = _('Validation failed.')
                 raise exceptions.ValidationError(msg)

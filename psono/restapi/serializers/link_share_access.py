@@ -41,7 +41,7 @@ class LinkShareAccessSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if link_share.passphrase is not None and not passphrase:
-            msg = _("PASSPHRASE_REQUIRED")
+            msg = "PASSPHRASE_REQUIRED"
             raise exceptions.ValidationError(msg)
 
         if link_share.passphrase is not None and not check_password(passphrase, link_share.passphrase):
@@ -49,7 +49,7 @@ class LinkShareAccessSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not link_share.secret_id and not link_share.file_id:
-            msg = _("EITHER_SECRET_OR_FILE_REQUIRED")
+            msg = "EITHER_SECRET_OR_FILE_REQUIRED"
             raise exceptions.ValidationError(msg)
 
 
@@ -101,7 +101,7 @@ class LinkShareAccessSerializer(serializers.Serializer):
                     })
 
                 if len(shards) < 1:
-                    msg = _("NO_FILESERVER_AVAILABLE")
+                    msg = "NO_FILESERVER_AVAILABLE"
                     raise exceptions.ValidationError(msg)
 
                 # calculate the required credits and check if the user has those
@@ -109,7 +109,7 @@ class LinkShareAccessSerializer(serializers.Serializer):
                     credit = settings.SHARD_CREDIT_COSTS_DOWNLOAD * link_share.file.size / 1024 / 1024 / 1024
 
                 if credit > 0 and link_share.user.credit < credit:
-                    msg = _("INSUFFICIENT_FUNDS")
+                    msg = "INSUFFICIENT_FUNDS"
                     raise exceptions.ValidationError(msg)
 
 

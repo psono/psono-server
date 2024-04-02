@@ -46,7 +46,7 @@ class ReadFileSerializer(serializers.Serializer):
                     break
 
             if not cmsl_available:
-                msg = _("NO_FILESERVER_AVAILABLE")
+                msg = "NO_FILESERVER_AVAILABLE"
                 raise exceptions.ValidationError(msg)
 
             # calculate the required credits and check if the user has those

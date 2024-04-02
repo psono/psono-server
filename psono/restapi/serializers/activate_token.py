@@ -1,7 +1,5 @@
 from django.utils.crypto import constant_time_compare
 
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 import nacl.utils
 from nacl.exceptions import CryptoError
@@ -21,23 +19,19 @@ class ActivateTokenSerializer(serializers.Serializer):
         token = self.context['request'].auth
 
         if token.active:
-            # TODO Replace with TOKEN_INCORRECT
-            msg = _('Token incorrect.')
+            msg = 'TOKEN_INCORRECT'
             raise exceptions.ValidationError(msg)
 
         if token.google_authenticator_2fa:
-            # TODO Replace with GA_CHALLENGE_UNSOLVED
-            msg = _('GA challenge unsolved.')
+            msg = 'GA_CHALLENGE_UNSOLVED'
             raise exceptions.ValidationError(msg)
 
         if token.duo_2fa:
-            # TODO Replace with DUO_CHALLENGE_UNSOLVED
-            msg = _('Duo challenge unsolved.')
+            msg = 'DUO_CHALLENGE_UNSOLVED'
             raise exceptions.ValidationError(msg)
 
         if token.yubikey_otp_2fa:
-            # TODO Replace with YUBIKEY_CHALLENGE_UNSOLVED
-            msg = _('YubiKey challenge unsolved.')
+            msg = 'YUBIKEY_CHALLENGE_UNSOLVED'
             raise exceptions.ValidationError(msg)
 
         if token.webauthn_2fa:
@@ -49,14 +43,12 @@ class ActivateTokenSerializer(serializers.Serializer):
         try:
             decrypted = crypto_box.decrypt(verification, verification_nonce).decode()
         except CryptoError:
-            # TODO Replace with VERIFICATION_CODE_INCORRECT
-            msg = _('Verification code incorrect.')
+            msg = 'VERIFICATION_CODE_INCORRECT'
             raise exceptions.ValidationError(msg)
 
 
         if not constant_time_compare(token.user_validator, decrypted):
-            # TODO Replace with VERIFICATION_CODE_INCORRECT
-            msg = _('Verification code incorrect.')
+            msg = 'VERIFICATION_CODE_INCORRECT'
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

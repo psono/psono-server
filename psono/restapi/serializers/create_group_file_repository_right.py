@@ -1,5 +1,3 @@
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..models import User_Group_Membership
@@ -38,7 +36,7 @@ class CreateGroupFileRepositoryRightSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if Group_File_Repository_Right.objects.filter(file_repository_id=file_repository_id, group_id=group_id).exists():
-            msg = _("GROUP_HAS_ALREADY_RIGHTS_FOR_FILE_REPOSITORY")
+            msg = "GROUP_HAS_ALREADY_RIGHTS_FOR_FILE_REPOSITORY"
             raise exceptions.ValidationError(msg)
 
         return attrs

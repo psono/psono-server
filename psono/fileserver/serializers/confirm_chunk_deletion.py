@@ -1,5 +1,4 @@
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
 
@@ -23,12 +22,12 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
                     .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
                         shard__active=True, member=self.context['request'].user, shard_id=c['shard_id'], delete_capability=True, member__write=True) \
                     .exists():
-                msg = _('Permission denied.')
+                msg = 'Permission denied.'
                 raise exceptions.ValidationError(msg)
 
             if File_Chunk.objects.only('id').filter(hash_checksum__in=c['chunks']).exclude(file__shard_id=c['shard_id']) \
                     .exists():
-                msg = _('Permission denied.')
+                msg = 'Permission denied.'
                 raise exceptions.ValidationError(msg)
 
             hash_checksums = hash_checksums + c['chunks']
