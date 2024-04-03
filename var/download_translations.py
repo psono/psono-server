@@ -21,6 +21,12 @@ LANGUAGE_CODES = [
     "ji", "zu", "ar", "bn", "zh-hant"
 ]
 
+FOLDER_MAPPING = {
+    "zh-cn": ["zh-cn", "zh"],
+}
+
+
+
 def download_language(lang):
     data = [
         ('api_token', POEDITOR_API_KEY),
@@ -41,14 +47,18 @@ def download_language(lang):
 
     r = requests.get(result['item'], stream=True, timeout=20.0)
 
-
     if r.status_code == 200:
-        folder_path = os.path.join('psono', 'locale', lang, 'LC_MESSAGES')
-        os.makedirs(folder_path, exist_ok=True)
-        path = os.path.join(folder_path, 'django.mo')
-        with open(path, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+        folder_paths = [os.path.join('psono', 'locale', lang, 'LC_MESSAGES')]
+        if lang in FOLDER_MAPPING:
+            folder_paths = []
+            for folder in FOLDER_MAPPING[lang]:
+                folder_paths.append(os.path.join('psono', 'locale', folder, 'LC_MESSAGES'))
+        for folder_path in folder_paths:
+            os.makedirs(folder_path, exist_ok=True)
+            path = os.path.join(folder_path, 'django.mo')
+            with open(path, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
 
     print("Success: download_language " + lang)
 
