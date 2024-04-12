@@ -7,6 +7,7 @@ from .stats_device import *
 from .stats_os import *
 from .stats_two_factor import *
 from .group import *
+from .group_share_right import *
 from .info import *
 from .link_share import *
 from .membership import *

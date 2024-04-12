@@ -12,6 +12,7 @@ from .ga import GaView
 from .webauthn import WebAuthnView
 from .yubikey import YubikeyOTPView
 from .group import GroupView
+from .group_share_right import GroupShareRightView
 from .membership import MembershipView
 from .recovery_code import RecoveryCodeView
 from .emergency_code import EmergencyCodeView

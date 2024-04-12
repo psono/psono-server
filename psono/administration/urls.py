@@ -39,6 +39,8 @@ if settings.MANAGEMENT_ENABLED:
         re_path(r'^security-report/$', views.SecurityReportView.as_view(), name='admin_security_report'),
         re_path(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='admin_group'),
         re_path(r'^group/$', views.GroupView.as_view(), name='admin_group'),
+        re_path(r'^group/(?P<group_id>[^/]+)/$', views.GroupView.as_view(), name='admin_group'),
+        re_path(r'^group-share-right/$', views.GroupShareRightView.as_view(), name='admin_group_share_right'),
         re_path(r'^link-share/$', views.LinkShareView.as_view(), name='admin_link_share'),
         re_path(r'^membership/$', views.MembershipView.as_view(), name='admin_membership'),
         re_path(r'^stats/browser/$', views.StatsBrowserView.as_view(), name='stats_browser'),
