@@ -6,7 +6,7 @@ from rest_framework import status
 
 from restapi import models
 from restapi.authentication import TokenAuthentication
-from restapi.renderers import encrypt
+from restapi.utils.various import encrypt_symmetric
 from restapi.utils import encrypt_with_db_secret
 
 from restapi.tests.base import APITestCaseExtended
@@ -181,7 +181,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         chunk_size = self.file_size
 
@@ -217,7 +217,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             # 'file_transfer_id': self.file_transfer.id,
@@ -242,7 +242,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': 'abc',
@@ -267,7 +267,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
 
         self.file_transfer.secret_key = binascii.hexlify(os.urandom(32)).decode()
@@ -296,7 +296,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             # 'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -321,7 +321,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': '8beab082-c802-4622-b9c1-2dcbef4f188b',
@@ -349,7 +349,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -376,7 +376,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -401,7 +401,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': 'abcdef',
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -429,7 +429,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -457,7 +457,7 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,

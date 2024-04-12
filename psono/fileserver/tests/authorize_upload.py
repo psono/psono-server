@@ -6,7 +6,7 @@ from rest_framework import status
 
 from restapi import models
 from restapi.authentication import TokenAuthentication
-from restapi.renderers import encrypt
+from restapi.renderers import encrypt_symmetric
 from restapi.utils import encrypt_with_db_secret
 
 from restapi.tests.base import APITestCaseExtended
@@ -175,7 +175,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         chunk_size = self.file_size
 
@@ -215,7 +215,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             # 'file_transfer_id': self.file_transfer.id,
@@ -244,7 +244,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': 'abc',
@@ -273,7 +273,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         self.file_transfer.secret_key = binascii.hexlify(os.urandom(32)).decode()
         self.file_transfer.save()
@@ -305,7 +305,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -334,7 +334,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             # 'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -363,7 +363,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -392,7 +392,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -423,7 +423,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -452,7 +452,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': '76f4cc5a-b20d-494c-b922-81e7eaacea66',
@@ -484,7 +484,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -515,7 +515,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -547,7 +547,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -579,7 +579,7 @@ class AuthorizeUploadTests(APITestCaseExtended):
             'hash_checksum': hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
