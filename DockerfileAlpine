@@ -28,7 +28,7 @@ RUN apk upgrade && \
     if [ "$TARGETARCH" = "amd64" ]; then \
     pip3 install -r requirements-amd64.txt ; \
     fi; \
-    pip3 install uwsgi && \
+    pip3 install uwsgi==2.0.24 && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i /root/.psono_server/settings.yaml \
