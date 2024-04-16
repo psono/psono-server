@@ -592,6 +592,38 @@ def delete_share_link(link_id):
     Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
 
 
+
+def encrypt_symmetric(secret_key, msg):
+    """
+    Encrypts a message with a secret hex encoded key and an automatically generated random nonce
+
+    :param secret_key: hex encoded secret key
+    :type secret_key: str or bytearray
+    :param msg: The message to encrypt
+    :type msg: bytearray
+
+    :return: The encrypted value
+    :rtype: dict
+    """
+    # generate random nonce
+    nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+
+    # open crypto box with session secret
+    secret_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+
+    # encrypt msg with crypto box and nonce
+    encrypted = secret_box.encrypt(msg, nonce)
+
+    # cut away the nonce
+    text = encrypted[len(nonce):]
+
+    # convert nonce and encrypted msg to hex
+    nonce_hex = nacl.encoding.HexEncoder.encode(nonce)
+    text_hex = nacl.encoding.HexEncoder.encode(text)
+
+    return {'text': text_hex, 'nonce': nonce_hex}
+
+
 def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, bytes]:
     """
     Encrypts a secret with a password and a random static user specific key we call "user_sauce"

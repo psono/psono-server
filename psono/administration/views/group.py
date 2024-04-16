@@ -48,6 +48,8 @@ class GroupView(GenericAPIView):
                 'write': m.write,
                 'grant': m.grant,
                 'share_id': m.share_id,
+                'share_title': '',
+                'share_type': '',
             })
 
         return {

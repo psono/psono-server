@@ -78,7 +78,7 @@ djangorestframework==3.14.0
     #   django-rest-auth
 duo-client==4.2.3
     # via -r requirements.in
-idna==3.3
+idna==3.7
     # via requests
 isodate==0.6.1
     # via msrest

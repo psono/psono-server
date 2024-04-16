@@ -21,6 +21,8 @@ from .serializers import (
     DeleteRecoveryCodeSerializer as DefaultDeleteRecoveryCodeSerializer,
     DeleteEmergencyCodeSerializer as DefaultDeleteEmergencyCodeSerializer,
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
+    UpdateGroupShareRightSerializer as DefaultUpdateGroupShareRightSerializer,
+    DeleteGroupShareRightSerializer as DefaultDeleteGroupShareRightSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -102,5 +104,13 @@ DeleteEmergencyCodeSerializer = import_callable(
 
 DeleteLinkShareSerializer = import_callable(
     serializers.get('DELETE_LINK_SHARE_SERIALIZER', DefaultDeleteLinkShareSerializer)
+)
+
+UpdateGroupShareRightSerializer = import_callable(
+    serializers.get('UPDATE_GROUP_SHARE_RIGHT_SERIALIZER', DefaultUpdateGroupShareRightSerializer)
+)
+
+DeleteGroupShareRightSerializer = import_callable(
+    serializers.get('DELETE_GROUP_SHARE_RIGHT_SERIALIZER', DefaultDeleteGroupShareRightSerializer)
 )
 

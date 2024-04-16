@@ -1,5 +1,3 @@
-configs/apache
-configs/nginx
 examples
 demo
 .coverage

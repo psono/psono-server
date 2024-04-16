@@ -6,7 +6,7 @@ from rest_framework import status
 
 from restapi import models
 from restapi.authentication import TokenAuthentication
-from restapi.renderers import encrypt
+from restapi.utils import encrypt_symmetric
 from restapi.utils import encrypt_with_db_secret
 
 from restapi.tests.base import APITestCaseExtended
@@ -181,7 +181,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         chunk_size = self.file_size
 
@@ -213,7 +213,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             # 'file_transfer_id': self.file_transfer.id,
@@ -238,7 +238,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': 'abc',
@@ -263,7 +263,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         self.file_transfer.secret_key = binascii.hexlify(os.urandom(32)).decode()
         self.file_transfer.save()
@@ -291,7 +291,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             # 'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -316,7 +316,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': '6e92cf15-f1ad-4047-a504-39ff2e2ef4f1',
@@ -344,7 +344,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -371,7 +371,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': self.hash_checksum,
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
@@ -396,7 +396,7 @@ class RevokeDownloadTests(APITestCaseExtended):
             'hash_checksum': 'abcdef',
         }
 
-        ticket_encrypted = encrypt(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
+        ticket_encrypted = encrypt_symmetric(self.file_transfer.secret_key, json.dumps(ticket_decrypted).encode())
 
         data = {
             'file_transfer_id': self.file_transfer.id,
