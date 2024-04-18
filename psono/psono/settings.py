@@ -544,6 +544,19 @@ ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX = config_get('ALLOWED_OTHER_S3_ENDPOINT_URL
 if isinstance(ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX, str):
     ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX = [allowed_prefix.strip() for allowed_prefix in ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX.split(',')]
 
+AVATAR_STORAGE = config_get('AVATAR_STORAGE', None)
+AVATAR_STORAGE_PREFIX = config_get('AVATAR_STORAGE_PREFIX', '')
+AVAILABLE_AVATAR_STORAGES = {
+    'local': 'django.core.files.storage.FileSystemStorage',
+    'amazon_s3': 'storages.backends.s3boto3.S3Boto3Storage',
+    'digital_ocean': 'storages.backends.s3boto3.S3Boto3Storage',
+    'azure': 'storages.backends.azure_storage.AzureStorage',
+    'dropbox': 'storages.backends.dropbox.DropBoxStorage',
+    'google_cloud': 'storages.backends.gcloud.GoogleCloudStorage',
+}
+AVATAR_DIMENSION_X = int(config_get('AVATAR_DIMENSION_X', 256))
+AVATAR_DIMENSION_Y = int(config_get('AVATAR_DIMENSION_Y', 256))
+AVATAR_MAX_SIZE_KB = int(config_get('AVATAR_MAX_SIZE_KB', 100))
 
 FILESERVER_ALIVE_TIMEOUT = int(config_get('FILESERVER_ALIVE_TIMEOUT', 30))
 AUTH_KEY_LENGTH_BYTES = int(config_get('AUTH_KEY_LENGTH_BYTES', 64))
@@ -684,6 +697,9 @@ def generate_signature():
         'credit_costs_upload': str(SHARD_CREDIT_COSTS_UPLOAD),
         'credit_costs_download': str(SHARD_CREDIT_COSTS_DOWNLOAD),
         'credit_costs_storage': str(SHARD_CREDIT_COSTS_STORAGE),
+        'avatar_dimension_x': AVATAR_DIMENSION_X,
+        'avatar_dimension_y': AVATAR_DIMENSION_Y,
+        'avatar_max_size_kb': AVATAR_MAX_SIZE_KB,
     }
 
     info = json.dumps(info)

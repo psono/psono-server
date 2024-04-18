@@ -1,8 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from ..permissions import IsAuthenticated
 
+from ..permissions import IsAuthenticated
+from ..utils.avatar import delete_avatar_storage_of_user
 from ..app_settings import (
     UserDeleteSerializer
 )
@@ -49,6 +50,8 @@ class UserDelete(GenericAPIView):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
+
+        delete_avatar_storage_of_user(request.user.id)
 
         # delete it
         request.user.delete()

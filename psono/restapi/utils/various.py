@@ -11,6 +11,7 @@ import bcrypt
 import time
 from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
 from ..models import File_Repository_Right
+from .avatar import delete_avatar_storage_of_user
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -719,6 +720,8 @@ def delete_user(username: str) -> dict:
         return {
             'error': 'User does not exist'
         }
+
+    delete_avatar_storage_of_user(user.id)
 
     user.delete()
 

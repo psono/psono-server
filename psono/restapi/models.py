@@ -149,6 +149,21 @@ class User(models.Model):
         return True
 
 
+class Avatar(models.Model):
+    """
+    Avatar images
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='avatar')
+    data = models.BinaryField(null=True)
+    mime_type = models.CharField(max_length=255)
+
+    class Meta:
+        abstract = False
+
+
 class Old_Credential(models.Model):
     """
     Old Credentials

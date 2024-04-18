@@ -23,6 +23,7 @@ from .serializers import (
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
     UpdateGroupShareRightSerializer as DefaultUpdateGroupShareRightSerializer,
     DeleteGroupShareRightSerializer as DefaultDeleteGroupShareRightSerializer,
+    ReadSecurityReportSerializer as DefaultReadSecurityReportSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -112,5 +113,9 @@ UpdateGroupShareRightSerializer = import_callable(
 
 DeleteGroupShareRightSerializer = import_callable(
     serializers.get('DELETE_GROUP_SHARE_RIGHT_SERIALIZER', DefaultDeleteGroupShareRightSerializer)
+)
+
+ReadSecurityReportSerializer = import_callable(
+    serializers.get('READ_SECURITY_REPORT_SERIALIZER', DefaultReadSecurityReportSerializer)
 )
 

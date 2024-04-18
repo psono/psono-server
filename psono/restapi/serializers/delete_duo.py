@@ -20,8 +20,6 @@ class DeleteDuoSerializer(serializers.Serializer):
 
         duo_count = Duo.objects.filter(user=self.context['request'].user, active=True).count()
 
-
-
         attrs['duo'] = duo
         attrs['duo_count'] = duo_count
 

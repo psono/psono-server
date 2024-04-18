@@ -36,6 +36,7 @@ from .user import *
 from .utils import *
 from .info import *
 from .authentication import *
+from .avatar import *
 from .api_key import *
 from .api_key_secret import *
 from .api_key_access_inspect import *

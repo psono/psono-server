@@ -9,11 +9,12 @@ class ReadGroupSerializer(serializers.Serializer):
 
         if group_id:
             try:
-                Group.objects.get(pk=group_id)
+                group = Group.objects.get(pk=group_id)
             except Group.DoesNotExist:
                 field = 'group_id'
                 msg = 'NO_PERMISSION_OR_NOT_EXIST'
                 raise exceptions.ValidationError({field: msg})
+            attrs['group'] = group
 
         page = self.context['request'].query_params.get('page', False)
         if page and not page.isdigit():

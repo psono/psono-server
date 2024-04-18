@@ -50,6 +50,7 @@ from .api_key_login import APIKeyLoginView
 from .api_key_secret import APIKeySecretView
 from .api_key_access_inspect import APIKeyAccessInspectView
 from .api_key_access_secret import APIKeyAccessSecretView
+from .avatar import AvatarView
 from .bulk_secret import BulkSecretView
 from .shard import ShardView
 from .link_share import LinkShareView

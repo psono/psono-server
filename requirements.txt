@@ -4,6 +4,10 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
+apache-libcloud==3.8.0
+    # via
+    #   -r requirements.in
+    #   django-storages
 asgiref==3.7.2
     # via django
 asn1crypto==1.5.1
@@ -11,17 +15,27 @@ asn1crypto==1.5.1
 async-timeout==4.0.2
     # via redis
 azure-core==1.24.2
-    # via azure-storage-blob
+    # via
+    #   azure-storage-blob
+    #   django-storages
 azure-storage-blob==12.13.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   django-storages
 bcrypt==3.2.2
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   paramiko
 boto3==1.34.39
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   django-storages
 botocore==1.34.39
     # via
     #   boto3
     #   s3transfer
+cachetools==5.3.3
+    # via google-auth
 cbor2==5.4.3
     # via webauthn
 certifi==2023.7.22
@@ -39,6 +53,7 @@ charset-normalizer==2.0.11
 cryptography==42.0.4
     # via
     #   azure-storage-blob
+    #   paramiko
     #   pyjwt
     #   pyopenssl
     #   webauthn
@@ -57,6 +72,7 @@ django==4.2.11
     #   django-postgrespool2
     #   django-redis
     #   django-rest-auth
+    #   django-storages
     #   djangorestframework
 django-allauth==0.47.0
     # via -r requirements.in
@@ -72,12 +88,37 @@ django-redis==5.2.0
     # via -r requirements.in
 django-rest-auth==0.9.5
     # via -r requirements.in
+django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
+    # via -r requirements.in
 djangorestframework==3.14.0
     # via
     #   -r requirements.in
     #   django-rest-auth
 duo-client==4.2.3
     # via -r requirements.in
+google-api-core==2.18.0
+    # via
+    #   google-cloud-core
+    #   google-cloud-storage
+google-auth==2.29.0
+    # via
+    #   google-api-core
+    #   google-cloud-core
+    #   google-cloud-storage
+google-cloud-core==2.4.1
+    # via google-cloud-storage
+google-cloud-storage==2.14.0
+    # via
+    #   -r requirements.in
+    #   django-storages
+google-crc32c==1.5.0
+    # via
+    #   google-cloud-storage
+    #   google-resumable-media
+google-resumable-media==2.7.0
+    # via google-cloud-storage
+googleapis-common-protos==1.63.0
+    # via google-api-core
 idna==3.7
     # via requests
 isodate==0.6.1
@@ -96,10 +137,29 @@ ntplib==0.3.4
     # via -r requirements.in
 oauthlib==3.1.0
     # via requests-oauthlib
+paramiko==3.4.0
+    # via
+    #   -r requirements.in
+    #   django-storages
+pillow==10.3.0
+    # via -r requirements.in
+proto-plus==1.23.0
+    # via google-api-core
+protobuf==4.25.3
+    # via
+    #   google-api-core
+    #   googleapis-common-protos
+    #   proto-plus
 psycopg[binary]==3.1.18
     # via -r requirements.in
 psycopg-binary==3.1.18
     # via psycopg
+pyasn1==0.6.0
+    # via
+    #   pyasn1-modules
+    #   rsa
+pyasn1-modules==0.4.0
+    # via google-auth
 pycparser==2.21
     # via cffi
 pycryptodomex==3.19.1
@@ -109,7 +169,9 @@ pydantic==1.10.15
 pyjwt[crypto]==2.7.0
     # via django-allauth
 pynacl==1.5.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   paramiko
 pyopenssl==24.0.0
     # via webauthn
 pyotp==2.3.0
@@ -131,9 +193,12 @@ redis==4.5.4
 requests==2.31.0
     # via
     #   -r requirements.in
+    #   apache-libcloud
     #   azure-core
     #   django-allauth
     #   django-anymail
+    #   google-api-core
+    #   google-cloud-storage
     #   msrest
     #   requests-oauthlib
     #   yubico-client
@@ -141,6 +206,8 @@ requests-oauthlib==1.3.1
     # via
     #   django-allauth
     #   msrest
+rsa==4.9
+    # via google-auth
 s3transfer==0.10.0
     # via boto3
 scrypt==0.8.19
