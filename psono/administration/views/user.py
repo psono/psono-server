@@ -332,7 +332,7 @@ class UserView(GenericAPIView):
 
         user = serializer.validated_data.get('user')
 
-        delete_avatar_storage_of_user(request.user.id)
+        delete_avatar_storage_of_user(user.id)
 
         # delete it
         user.delete()
