@@ -76,7 +76,7 @@ class AvatarView(GenericAPIView):
                 avatars.append({
                     'id': str(avatar.id)
                 })
-            except:
+            except Avatar.DoesNotExist:
                 pass
 
             return Response({
