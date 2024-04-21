@@ -484,75 +484,12 @@ class ReadAvatarTest(APITestCaseExtended):
 
         self.assertEqual(len(response.data['avatars']), 0)
 
-
-    def test_read_specific_successful(self):
-        """
-        Tests to read a specific avatar
-        """
-
-        url = reverse('avatar', kwargs={'avatar_id': self.avatar.id, 'user_id': self.test_user_obj.id})
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], str(self.avatar.id))
-        self.assertEqual(response.data['mime_type'], self.avatar.mime_type)
-        self.assertEqual(response.data['data_base64'], self.avatar_data_base64)
-    def test_read_specific_with_wrong_user_id(self):
-        """
-        Tests to read a specific avatar with wrong user id that doesn't exist
-        """
-
-        url = reverse('avatar', kwargs={'avatar_id': self.avatar.id, 'user_id': '1bcc5b2d-3eca-496a-98b1-a86734fd0d02'})
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'], ['NO_PERMISSION_OR_NOT_EXIST'])
-    def test_read_specific_with_wrong_avatar_id(self):
-        """
-        Tests to read a specific avatar with wrong avatar id that doesn't exist
-        """
-
-        url = reverse('avatar', kwargs={'avatar_id': '1bcc5b2d-3eca-496a-98b1-a86734fd0d02', 'user_id': self.test_user_obj.id})
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'], ['NO_PERMISSION_OR_NOT_EXIST'])
-
-    def test_read_specific_other_user(self):
-        """
-        Tests to read a specific avatar of a different user (which should work)
-        """
-
-        url = reverse('avatar', kwargs={'avatar_id': self.avatar.id, 'user_id': self.test_user_obj.id})
-
-        data = {}
-
-        self.client.force_authenticate(user=self.test_user_obj2)
-        response = self.client.get(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], str(self.avatar.id))
-        self.assertEqual(response.data['mime_type'], self.avatar.mime_type)
-        self.assertEqual(response.data['data_base64'], self.avatar_data_base64)
-
     def test_read_unauthenticated(self):
         """
         Tests to read unauthetnicated
         """
 
-        url = reverse('avatar', kwargs={'avatar_id': self.avatar.id, 'user_id': self.test_user_obj.id})
+        url = reverse('avatar')
 
         data = {}
 

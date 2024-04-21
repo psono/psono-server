@@ -26,7 +26,7 @@ class AvatarView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get(self, request, user_id=None, avatar_id=None, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
         Returns the avatar of a user
 
@@ -50,38 +50,18 @@ class AvatarView(GenericAPIView):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if avatar_id:
-            avatar = serializer.validated_data.get('avatar')
+        avatars = []
+        try:
+            avatar = Avatar.objects.only('id').get(user=self.request.user)
+            avatars.append({
+                'id': str(avatar.id)
+            })
+        except Avatar.DoesNotExist:
+            pass
 
-            storage = get_avatar_storage()
-            data = None
-            if storage:
-                try:
-                    with storage.open(f"{settings.AVATAR_STORAGE_PREFIX}{user_id}/{avatar.id}".lower(), 'rb') as file:
-                        data = file.read()
-                except FileNotFoundError:
-                    pass
-            if not data:
-                data = avatar.data
-
-            return Response({
-                'id': str(avatar.id),
-                'data_base64': base64.b64encode(data).decode() if data else None,
-                'mime_type': avatar.mime_type,
-            }, status=status.HTTP_200_OK)
-        else:
-            avatars = []
-            try:
-                avatar = Avatar.objects.only('id').get(user=self.request.user)
-                avatars.append({
-                    'id': str(avatar.id)
-                })
-            except Avatar.DoesNotExist:
-                pass
-
-            return Response({
-                'avatars': avatars,
-            }, status=status.HTTP_200_OK)
+        return Response({
+            'avatars': avatars,
+        }, status=status.HTTP_200_OK)
 
 
     def put(self, *args, **kwargs):

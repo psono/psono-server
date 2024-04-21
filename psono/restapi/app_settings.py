@@ -105,6 +105,7 @@ from .serializers import (
     CreateAvatarSerializer as DefaultCreateAvatarSerializer,
     DeleteAvatarSerializer as DefaultDeleteAvatarSerializer,
     ReadAvatarSerializer as DefaultReadAvatarSerializer,
+    ReadAvatarImageSerializer as DefaultReadAvatarImageSerializer,
     ManagementCommandSerializer as DefaultManagementCommandSerializer,
     ReadShareRightsSerializer as DefaultReadShareRightsSerializer,
 )
@@ -819,6 +820,13 @@ ReadAvatarSerializer = import_callable(
     serializers.get(
         'READ_AVATAR_SERIALIZER',
         DefaultReadAvatarSerializer
+    )
+)
+
+ReadAvatarImageSerializer = import_callable(
+    serializers.get(
+        'READ_AVATAR_IMAGE_SERIALIZER',
+        DefaultReadAvatarImageSerializer
     )
 )
 
