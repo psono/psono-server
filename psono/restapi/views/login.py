@@ -14,7 +14,7 @@ from datetime import timedelta
 import json
 
 from ..models import (
-    Token
+    Token, Ivalt
 )
 from ..app_settings import (
     LoginSerializer
@@ -109,6 +109,7 @@ class LoginView(GenericAPIView):
         #     login(self.request, user)
 
         required_multifactors = []
+        ivalt = []
 
         if user.google_authenticator_enabled:
             required_multifactors.append('google_authenticator_2fa')
@@ -121,6 +122,16 @@ class LoginView(GenericAPIView):
 
         if user.webauthn_enabled:
             required_multifactors.append('webauthn_2fa')
+
+        if user.ivalt_enabled:
+            required_multifactors.append('ivalt_2fa')
+            # add ivalt mobile and secret when ivalt mfa enabled
+            for ivalt_obj in Ivalt.objects.filter(user=user).all():
+                ivalt.append({
+                    'mobile': ivalt_obj.mobile,
+                    'secret': settings.IVALT_SECRET_KEY,
+                })
+
 
         response = {
             "token": token.clear_text_key,
@@ -141,6 +152,7 @@ class LoginView(GenericAPIView):
                 "authentication": user.authentication,
                 'hashing_algorithm': user.hashing_algorithm,
                 'hashing_parameters': user.hashing_parameters,
+                'ivalt': ivalt,
             }
         }
 
