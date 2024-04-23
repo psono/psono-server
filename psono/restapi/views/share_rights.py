@@ -8,6 +8,9 @@ from ..permissions import IsAuthenticated
 from ..models import (
     Share
 )
+from ..app_settings import (
+    ReadShareRightsSerializer,
+)
 
 from rest_framework.exceptions import PermissionDenied
 
@@ -25,7 +28,7 @@ class ShareRightsView(GenericAPIView):
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def get(self, request, share_id = None, *args, **kwargs):
+    def get(self, request, share_id, *args, **kwargs):
         """
         Returns all share rights of a specified share. Including the share rights of other people as long as the user
         who requests it has the "grant" right, and is allowed to see them.
@@ -42,32 +45,19 @@ class ShareRightsView(GenericAPIView):
         :rtype:
         """
 
-        if not share_id:
+        serializer = ReadShareRightsSerializer(data=request.data, context=self.get_serializer_context())
 
-            return Response({"message": "UUID for share not specified."}, status=status.HTTP_404_NOT_FOUND)
+        if not serializer.is_valid():
 
-        try:
-            UUID(share_id, version=4)
-        except ValueError:
-            return Response({"message":"SHARE_ID_IS_NO_VALID_UUID"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Returns the specified share rights if the user has any rights for it and joins the user_share objects
-        try:
-            share = Share.objects.get(pk=share_id)
-        except Share.DoesNotExist:
-
-            return Response({"message":"NO_PERMISSION_OR_NOT_EXIST"}, status=status.HTTP_403_FORBIDDEN)
-
-
-        own_share_rights = calculate_user_rights_on_share(request.user.id, share_id)
-
-        if not any([own_share_rights['read'], own_share_rights['write'], own_share_rights['grant']]):
-
-            raise PermissionDenied({"message":"NO_PERMISSION_OR_NOT_EXIST"})
+        share = serializer.validated_data.get('share')
+        own_share_rights = serializer.validated_data.get('own_share_rights')
 
         user_share_rights = []
         group_share_rights = []
-
 
         for u in share.user_share_rights.exclude(creator__isnull=True, accepted__isnull=True).exclude(creator__isnull=True, accepted=False).all():
 

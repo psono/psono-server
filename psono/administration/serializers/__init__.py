@@ -7,6 +7,7 @@ from .delete_webauthn import DeleteWebAuthnSerializer
 from .delete_yubikey import DeleteYubikeySerializer
 from .read_session import ReadSessionSerializer
 from .read_group import ReadGroupSerializer
+from .read_security_report import ReadSecurityReportSerializer
 from .delete_group import DeleteGroupSerializer
 from .delete_link_share import DeleteLinkShareSerializer
 from .delete_membership import DeleteMembershipSerializer

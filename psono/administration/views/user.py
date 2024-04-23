@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Q, Exists, OuterRef
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from restapi.authentication import TokenAuthentication
 from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right, Webauthn
 from restapi.models import Link_Share
 from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
+from restapi.utils.avatar import delete_avatar_storage_of_user
 
 import secrets
 import string
@@ -25,12 +27,7 @@ class UserView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
-    def get_user_info(self, user_id):
-
-        try:
-            user = User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            return None
+    def get_user_info(self, user):
 
         memberships = []
         for m in User_Group_Membership.objects.filter(user=user).select_related('group').only("id", "accepted", "group_admin", "share_admin", "create_date", "group__id", "group__name", "group__create_date", "group__public_key"):
@@ -179,11 +176,8 @@ class UserView(GenericAPIView):
             )
 
         if user_id:
-
-            user_info = self.get_user_info(user_id)
-
-            if not user_info:
-                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            user = serializer.validated_data.get('user')
+            user_info = self.get_user_info(user)
 
             return Response(user_info,
                 status=status.HTTP_200_OK)
@@ -337,6 +331,8 @@ class UserView(GenericAPIView):
             )
 
         user = serializer.validated_data.get('user')
+
+        delete_avatar_storage_of_user(user.id)
 
         # delete it
         user.delete()

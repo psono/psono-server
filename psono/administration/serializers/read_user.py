@@ -9,11 +9,13 @@ class ReadUserSerializer(serializers.Serializer):
 
         if user_id:
             try:
-                User.objects.get(pk=user_id)
+                user = User.objects.get(pk=user_id)
             except User.DoesNotExist:
                 field = 'user_id'
                 msg = 'NO_PERMISSION_OR_NOT_EXIST'
                 raise exceptions.ValidationError({field: msg})
+
+            attrs['user'] = user
 
         page = self.context['request'].query_params.get('page', False)
         if page and not page.isdigit():

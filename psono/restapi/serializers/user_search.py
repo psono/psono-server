@@ -1,5 +1,5 @@
+from django.db.models import F
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from rest_framework import serializers, exceptions
 from typing import Dict
@@ -27,7 +27,7 @@ class UserSearchSerializer(serializers.Serializer):
 
         if user_id:
             try:
-                user = User.objects.get(pk=str(user_id))
+                user = User.objects.annotate(avatar_id=F('avatar__id')).only('id', 'public_key', 'username', 'yubikey_otp_enabled', 'google_authenticator_enabled', 'duo_enabled', 'webauthn_enabled').get(pk=str(user_id))
                 if user.id not in user_index:
                     users.append(user)
                     user_index[user.id] = True
@@ -36,7 +36,7 @@ class UserSearchSerializer(serializers.Serializer):
 
         if user_username and not settings.ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL:
             try:
-                user = User.objects.get(username=str(user_username))
+                user = User.objects.annotate(avatar_id=F('avatar__id')).only('id', 'public_key', 'username', 'yubikey_otp_enabled', 'google_authenticator_enabled', 'duo_enabled', 'webauthn_enabled').get(username=str(user_username))
                 if user.id not in user_index:
                     users.append(user)
                     user_index[user.id] = True
@@ -44,7 +44,7 @@ class UserSearchSerializer(serializers.Serializer):
                 pass
         elif user_username and settings.ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL:
             user_split = user_username.split('@', 1)
-            for user in User.objects.filter(Q(username__contains=str(user_split[0])) | Q(display_name__icontains=user_username)).all():
+            for user in User.objects.annotate(avatar_id=F('avatar__id')).only('id', 'public_key', 'username', 'yubikey_otp_enabled', 'google_authenticator_enabled', 'duo_enabled', 'webauthn_enabled').filter(Q(username__contains=str(user_split[0])) | Q(display_name__icontains=user_username)).all():
                 if user.id not in user_index:
                     users.append(user)
                     user_index[user.id] = True
@@ -53,7 +53,7 @@ class UserSearchSerializer(serializers.Serializer):
         if settings.ALLOW_USER_SEARCH_BY_EMAIL and user_email:
             email_bcrypt_full = bcrypt.hashpw(user_email.encode(), settings.EMAIL_SECRET_SALT.encode())
             email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-            for user in User.objects.filter(email_bcrypt=email_bcrypt).all():
+            for user in User.objects.annotate(avatar_id=F('avatar__id')).only('id', 'public_key', 'username', 'yubikey_otp_enabled', 'google_authenticator_enabled', 'duo_enabled', 'webauthn_enabled').filter(email_bcrypt=email_bcrypt).all():
                 if user.id not in user_index:
                     users.append(user)
                     user_index[user.id] = True

@@ -20,7 +20,7 @@ class SecretHistoryView(GenericAPIView):
 
     def get(self, request, secret_id, *args, **kwargs):
         """
-        Lists a the history of a specific secret
+        Lists the history of a specific secret
 
         Necessary Rights:
             - read on secret

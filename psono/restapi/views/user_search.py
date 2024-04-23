@@ -57,7 +57,8 @@ class UserSearch(GenericAPIView):
             user_details = {
                 'id': user.id,
                 'public_key': user.public_key,
-                'username': user.username
+                'username': user.username,
+                'avatar_id': user.avatar_id,
             }
 
             if user.id == request.user.id:

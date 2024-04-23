@@ -20,12 +20,7 @@ class GroupView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
-    def get_group_info(self, group_id):
-
-        try:
-            group = Group.objects.get(pk=group_id)
-        except Group.DoesNotExist:
-            return None
+    def get_group_info(self, group):
 
         memberships = []
         for m in User_Group_Membership.objects.filter(group=group).select_related('user').only("id", "accepted", "group_admin", "share_admin", "create_date", "user__id", "user__username", "user__public_key"):
@@ -85,15 +80,10 @@ class GroupView(GenericAPIView):
             )
 
         if group_id:
+            group = serializer.validated_data.get('group')
+            group_info = self.get_group_info(group)
 
-
-            user_info = self.get_group_info(group_id)
-
-            if not user_info:
-                return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
-
-            return Response(user_info,
-                status=status.HTTP_200_OK)
+            return Response(group_info, status=status.HTTP_200_OK)
 
         else:
             page = serializer.validated_data.get('page')

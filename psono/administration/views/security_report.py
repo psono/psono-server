@@ -7,6 +7,10 @@ from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import SecurityReport, User
 
+from ..app_settings import (
+    ReadSecurityReportSerializer
+)
+
 
 class SecurityReportView(GenericAPIView):
 
@@ -14,12 +18,7 @@ class SecurityReportView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
-    def get_security_report_info(self, security_report_id):
-
-        try:
-            security_report = SecurityReport.objects.select_related('user').prefetch_related('security_report_entries').get(pk=security_report_id)
-        except SecurityReport.DoesNotExist:
-            return None
+    def get_security_report_info(self, security_report):
 
         entries = []
         for entry in security_report.security_report_entries.all():
@@ -63,21 +62,26 @@ class SecurityReportView(GenericAPIView):
         :return:
         :rtype:
         """
+
+        serializer = ReadSecurityReportSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
         if security_report_id:
 
+            security_report = serializer.validated_data.get('security_report')
+            security_report_info = self.get_security_report_info(security_report)
 
-            security_report_info = self.get_security_report_info(security_report_id)
-
-            if not security_report_info:
-                return Response({"error": "SECURITY_REPORT_NOT_FOUND."}, status=status.HTTP_404_NOT_FOUND)
-
-            return Response(security_report_info,
-                status=status.HTTP_200_OK)
+            return Response(security_report_info, status=status.HTTP_200_OK)
 
         else:
 
             security_reports = []
-            for security_report in  SecurityReport.objects.select_related('user').filter(user__is_active=True, user__is_email_active=True).order_by('user__username', '-create_date').distinct('user__username'):
+            for security_report in SecurityReport.objects.select_related('user').filter(user__is_active=True, user__is_email_active=True).order_by('user__username', '-create_date').distinct('user__username'):
                 security_reports.append({
                     'id': security_report.id,
                     'create_date': security_report.create_date,

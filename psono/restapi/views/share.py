@@ -123,7 +123,7 @@ class ShareView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         :rtype:
         """
 
@@ -160,7 +160,7 @@ class ShareView(GenericAPIView):
         :type args:
         :param kwargs:
         :type kwargs:
-        :return: 201 / 400 / 403 / 404
+        :return: 201 / 400
         :rtype:
         """
 

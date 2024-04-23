@@ -102,7 +102,12 @@ from .serializers import (
     CreateSecurityReportSerializer as DefaultCreateSecurityReportSerializer,
     ReadMetadataDatastoreSerializer as DefaultReadMetadataDatastoreSerializer,
     ReadMetadataShareSerializer as DefaultReadMetadataShareSerializer,
+    CreateAvatarSerializer as DefaultCreateAvatarSerializer,
+    DeleteAvatarSerializer as DefaultDeleteAvatarSerializer,
+    ReadAvatarSerializer as DefaultReadAvatarSerializer,
+    ReadAvatarImageSerializer as DefaultReadAvatarImageSerializer,
     ManagementCommandSerializer as DefaultManagementCommandSerializer,
+    ReadShareRightsSerializer as DefaultReadShareRightsSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -797,10 +802,45 @@ ReadMetadataShareSerializer = import_callable(
     )
 )
 
+CreateAvatarSerializer = import_callable(
+    serializers.get(
+        'CREATE_AVATAR_SERIALIZER',
+        DefaultCreateAvatarSerializer
+    )
+)
+
+DeleteAvatarSerializer = import_callable(
+    serializers.get(
+        'DELETE_AVATAR_SERIALIZER',
+        DefaultDeleteAvatarSerializer
+    )
+)
+
+ReadAvatarSerializer = import_callable(
+    serializers.get(
+        'READ_AVATAR_SERIALIZER',
+        DefaultReadAvatarSerializer
+    )
+)
+
+ReadAvatarImageSerializer = import_callable(
+    serializers.get(
+        'READ_AVATAR_IMAGE_SERIALIZER',
+        DefaultReadAvatarImageSerializer
+    )
+)
+
 ManagementCommandSerializer = import_callable(
     serializers.get(
         'MANAGEMENT_COMMAND_SERIALIZER',
         DefaultManagementCommandSerializer
+    )
+)
+
+ReadShareRightsSerializer = import_callable(
+    serializers.get(
+        'READ_SHARE_RIGHTS_SERIALIZER',
+        DefaultReadShareRightsSerializer
     )
 )
 
