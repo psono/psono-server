@@ -72,7 +72,6 @@ django==4.2.11
     #   django-filter
     #   django-postgrespool2
     #   django-redis
-    #   django-rest-auth
     #   django-storages
     #   djangorestframework
     #   sentry-sdk
@@ -88,14 +87,10 @@ django-postgrespool2==1.0.1
     # via -r requirements.in
 django-redis==5.2.0
     # via -r requirements.in
-django-rest-auth==0.9.5
-    # via -r requirements.in
 django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
     # via -r requirements.in
 djangorestframework==3.14.0
-    # via
-    #   -r requirements.in
-    #   django-rest-auth
+    # via -r requirements.in
 duo-client==4.2.3
     # via -r requirements.in
 google-api-core==2.18.0
@@ -217,7 +212,6 @@ sentry-sdk[django]==1.45.0
 six==1.16.0
     # via
     #   azure-core
-    #   django-rest-auth
     #   duo-client
     #   isodate
     #   python-dateutil
