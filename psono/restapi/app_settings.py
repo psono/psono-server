@@ -108,6 +108,8 @@ from .serializers import (
     ReadAvatarImageSerializer as DefaultReadAvatarImageSerializer,
     ManagementCommandSerializer as DefaultManagementCommandSerializer,
     ReadShareRightsSerializer as DefaultReadShareRightsSerializer,
+    CreateIvaltSerializer as DefaultCreateIvaltSerializer,
+    DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -844,5 +846,18 @@ ReadShareRightsSerializer = import_callable(
     )
 )
 
+CreateIvaltSerializer = import_callable(
+    serializers.get(
+        'CREATE_IVALT_SERIALIZER',
+        DefaultCreateIvaltSerializer
+    )
+)
+
+DeleteIvaltSerializer = import_callable(
+    serializers.get(
+        'DELETE_IVALT_SERIALIZER',
+        DefaultDeleteIvaltSerializer
+    )
+)
 
 EMAIL_VERIFICATION = 'mandatory'

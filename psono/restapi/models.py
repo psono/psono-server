@@ -70,6 +70,8 @@ class User(models.Model):
         help_text='True once yubikey 2fa is enabled')
     webauthn_enabled = models.BooleanField('Webauthn 2FA enabled', default=False,
         help_text='True once webauthn 2fa is enabled')
+    ivalt_enabled = models.BooleanField('iValt 2FA enabled', default=False,
+        help_text='True once ivalt 2fa is enabled')
     display_name = models.CharField('display name', max_length=512, default='')
     last_login = models.DateTimeField(default=timezone.now)
     hashing_algorithm = models.CharField('hashing algorithm', max_length=32, default=DEFAULT_HASHING_ALGORITHM, choices=HASHING_ALGORITHMS,)
@@ -138,7 +140,7 @@ class User(models.Model):
         return settings.DEFAULT_TOKEN_TIME_VALID
 
     def any_2fa_active(self):
-        return self.yubikey_otp_enabled or self.google_authenticator_enabled or self.duo_enabled or self.webauthn_enabled
+        return self.yubikey_otp_enabled or self.google_authenticator_enabled or self.duo_enabled or self.webauthn_enabled or self.ivalt_enabled
 
     @staticmethod
     def is_authenticated():
@@ -320,6 +322,20 @@ class Duo(models.Model):
     class Meta:
         abstract = False
 
+class Ivalt(models.Model):
+    """
+    The iValt 2FA model
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ivalt')
+    mobile = models.CharField('Mobile', max_length=256)
+    active = models.BooleanField('Is Active?', default=True,
+                                 help_text='Designates whether this 2FA is active or not.')
+
+    class Meta:
+        abstract = False
 
 class Recovery_Code(models.Model):
     """
