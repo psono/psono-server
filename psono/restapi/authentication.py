@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework import HTTP_HEADER_ENCODING, exceptions
-from raven.contrib.django.raven_compat.models import client
 
 from hashlib import sha512
 import json
@@ -111,10 +110,6 @@ class TokenAuthentication(BaseAuthentication):
 
         request.user = user
         user.session_secret_key = token.secret_key
-
-        client.context.merge({'user': {
-            'username': request.user.username
-        }})
 
         if settings.AUTO_PROLONGATION_TOKEN_TIME_VALID and request.path.lower() not in settings.AUTO_PROLONGATION_URL_EXCEPTIONS:
             token.valid_till = timezone.now() + timedelta(seconds=settings.AUTO_PROLONGATION_TOKEN_TIME_VALID)
@@ -234,10 +229,6 @@ class FileTransferAuthentication(BaseAuthentication):
         request.user = file_transfer.user
         file_transfer.session_secret_key = file_transfer.secret_key
         file_transfer.write = True
-
-        client.context.merge({'user': {
-            'username': request.user.username
-        }})
 
         return file_transfer.user, file_transfer
 

@@ -659,13 +659,11 @@ with open(os.path.join(BASE_DIR, 'SHA.txt')) as f:
 # Add Sentry logging
 SENTRY_DSN = config_get('SENTRY_DSN', '')
 if SENTRY_DSN:
-    RAVEN_CONFIG = {
-        'dsn': SENTRY_DSN,
-        'environment': config_get('SENTRY_ENVIRONMENT', 'development'),
-        'release': VERSION,
-        'site': PUBLIC_KEY,
-    }
-    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+    )
 
 def generate_signature():
 
