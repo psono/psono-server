@@ -663,6 +663,8 @@ if SENTRY_DSN:
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
+        environment=config_get('SENTRY_ENVIRONMENT', 'development'),
+        release=VERSION,
     )
 
 def generate_signature():
