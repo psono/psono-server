@@ -31,6 +31,6 @@ class ReadAvatarImageSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         attrs['mime_type'] = avatar.mime_type
-        attrs['data'] = avatar.data
+        attrs['data'] = data
 
         return attrs
