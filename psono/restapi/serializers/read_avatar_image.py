@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..models import Avatar
 from ..utils.avatar import get_avatar_storage
