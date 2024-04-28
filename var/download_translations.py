@@ -48,6 +48,8 @@ def download_language(lang):
     r = requests.get(result['item'], stream=True, timeout=20.0)
 
     if r.status_code == 200:
+        r.raw.decode_content = True
+        content = r.raw.read()  # Read the entire content once
         folder_paths = [os.path.join('psono', 'locale', lang, 'LC_MESSAGES')]
         if lang in FOLDER_MAPPING:
             folder_paths = []
@@ -57,8 +59,7 @@ def download_language(lang):
             os.makedirs(folder_path, exist_ok=True)
             path = os.path.join(folder_path, 'django.mo')
             with open(path, 'wb') as f:
-                r.raw.decode_content = True
-                shutil.copyfileobj(r.raw, f)
+                f.write(content)
 
     print("Success: download_language " + lang)
 
