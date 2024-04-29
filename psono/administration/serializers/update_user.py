@@ -47,7 +47,7 @@ class UpdateUserSerializer(serializers.Serializer):
             email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
 
             if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=user_id).exists():
-                msg = 'E-Mail already exists.'
+                msg = 'USER_WITH_EMAIL_ALREADY_EXISTS'
                 raise exceptions.ValidationError(msg)
 
             attrs['email_bcrypt'] = email_bcrypt
