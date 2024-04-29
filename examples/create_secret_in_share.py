@@ -12,9 +12,9 @@ from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
 
-api_key_id = '1794337d-de80-4aa0-8509-7070448221e6'
-api_key_private_key = '5c315e95703afd125d59bd26e5d7013683707a7671957b997b6cf11bb5670999'
-api_key_secret_key = '06f97520b4462565713851435c297ae8f70ee87fa6a8a4072bad87ccdb6d8d89'
+api_key_id = '973d9dea-0550-43c4-a058-fd2d057ebd1f'
+api_key_private_key = '8244826e8285cbd5fd0128376ea0458c3a918d7da01a589de185aee336a53721'
+api_key_secret_key = '5e76e89817441dae8cac990fbcbe0b4bb15881bdf048fae7f3a3be0406c87216'
 server_url = 'https://psonoclient.chickahoona.com/server'
 server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
 server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
@@ -270,16 +270,36 @@ def api_read_datastore(token, session_secret_key, datastore_id):
     return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
 
 
-def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data, encrypted_data_nonce):
+def api_read_share(token, session_secret_key, share_id):
     """
-    Updates a datastore
+    Reads the content of a specific share
 
     :param token:
     :type token:
     :param session_secret_key:
     :type session_secret_key:
-    :param datastore_id:
-    :type datastore_id:
+    :param share_id:
+    :type share_id:
+    :return:
+    :rtype:
+    """
+
+    method = 'GET'
+    endpoint = '/share/' + share_id + '/'
+
+    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+
+
+def api_write_share(token, session_secret_key, share_id, encrypted_data, encrypted_data_nonce):
+    """
+    Updates a share
+
+    :param token:
+    :type token:
+    :param session_secret_key:
+    :type session_secret_key:
+    :param share_id:
+    :type share_id:
     :param encrypted_data:
     :type encrypted_data:
     :param encrypted_data_nonce:
@@ -288,10 +308,10 @@ def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data,
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/datastore/'
+    method = 'PUT'
+    endpoint = '/share/'
     data = json.dumps({
-        'datastore_id': datastore_id,
+        'share_id': share_id,
         'data': encrypted_data,
         'data_nonce': encrypted_data_nonce,
     })
@@ -299,7 +319,7 @@ def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data,
     return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
 
 
-def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_nonce, link_id, parent_datastore_id, callback_url, callback_user, callback_pass):
+def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_nonce, link_id, parent_share_id, callback_url, callback_user, callback_pass):
     """
     Creates a secret
 
@@ -308,7 +328,6 @@ def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_
     :param encrypted_data:
     :param encrypted_data_nonce:
     :param link_id:
-    :param parent_datastore_id:
     :param parent_share_id:
     :param callback_url:
     :param callback_user:
@@ -322,7 +341,7 @@ def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_
         'data': encrypted_data,
         'data_nonce': encrypted_data_nonce,
         'link_id': link_id,
-        'parent_datastore_id': parent_datastore_id,
+        'parent_share_id': parent_share_id,
         'callback_url': callback_url,
         'callback_user': callback_user,
         'callback_pass': callback_pass,
@@ -364,7 +383,7 @@ def create_secret(
         urlfilter,
         content,
         folder,
-        datastore_id,
+        share_id,
 ):
     """
     Creates a new secret and adds it to the folder
@@ -387,7 +406,7 @@ def create_secret(
     link_id = str(uuid.uuid4())
 
     result = api_create_secret(
-        token, session_secret_key, encrypted_secret['text'], encrypted_secret['nonce'], link_id, datastore_id,
+        token, session_secret_key, encrypted_secret['text'], encrypted_secret['nonce'], link_id, share_id,
         '', '', ''
     )
 
@@ -458,8 +477,26 @@ def main():
         print("No password datastore yet found, please create one for the user first with the webclient.")
         return
 
-    # 7. Create a folder
-    folder = create_folder_if_not_exist('My Folder', datastore_content)
+    # 7. Search datastore for shared folder
+    share_id = None
+    share_secret_key = None
+    share_content = None
+    if 'folders' not in datastore_content:
+        datastore_content['folders'] = []
+    for folder in datastore_content['folders']:
+        # skip deleted folders
+        if 'deleted' in folder and folder['deleted']:
+            continue
+        share_id = folder['share_id']
+        share_secret_key = folder['share_secret_key']
+        # read first shared folder
+        if 'share_id' in folder and 'share_secret_key' in folder:
+            share_read_result = api_read_share(token, session_secret_key, share_id)
+            share_content = json.loads(decrypt_symmetric(share_read_result['data'], share_read_result['data_nonce'], share_secret_key))
+            break
+
+    # 7. create a folder
+    folder = create_folder_if_not_exist('My Folder', share_content)
 
     # 8. Create secret
     create_secret(
@@ -478,15 +515,15 @@ def main():
             'website_password_url_filter': 'www.example.com',
         },
         folder=folder,
-        datastore_id=datastore_id,
+        share_id=share_id,
     )
 
 
-    # 9. Encrypt Datastore
-    encrypted_datastore = encrypt_symmetric(json.dumps(datastore_content), datastore_secret)
+    # 9. Encrypt Share
+    encrypted_share = encrypt_symmetric(json.dumps(share_content), share_secret_key)
 
     # 10. Save new datastore content
-    api_write_datastore(token, session_secret_key, datastore_id, encrypted_datastore['text'], encrypted_datastore['nonce'])
+    api_write_share(token, session_secret_key, share_id, encrypted_share['text'], encrypted_share['nonce'])
 
     # 11. Logout
     api_logout(token, session_secret_key)
