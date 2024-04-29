@@ -1,5 +1,5 @@
 """
-A small demo script that shows how to export the datastore (unrestricted API key)
+A small demo script that shows how to create a secret in a shared folder (unrestricted API key)
 """
 import uuid
 import requests
@@ -495,10 +495,10 @@ def main():
             share_content = json.loads(decrypt_symmetric(share_read_result['data'], share_read_result['data_nonce'], share_secret_key))
             break
 
-    # 7. create a folder
+    # 8. create a folder
     folder = create_folder_if_not_exist('My Folder', share_content)
 
-    # 8. Create secret
+    # 9. Create secret
     create_secret(
         token,
         session_secret_key,
@@ -519,13 +519,13 @@ def main():
     )
 
 
-    # 9. Encrypt Share
+    # 10. Encrypt Share
     encrypted_share = encrypt_symmetric(json.dumps(share_content), share_secret_key)
 
-    # 10. Save new datastore content
+    # 11. Save new share content
     api_write_share(token, session_secret_key, share_id, encrypted_share['text'], encrypted_share['nonce'])
 
-    # 11. Logout
+    # 12. Logout
     api_logout(token, session_secret_key)
 
 

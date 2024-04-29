@@ -1,5 +1,5 @@
 """
-A small demo script that shows how to export the datastore (unrestricted API key)
+A small demo script that shows how to create a secret in a datastore (unrestricted API key)
 """
 import uuid
 import requests
