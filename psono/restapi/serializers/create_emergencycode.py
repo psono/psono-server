@@ -21,7 +21,7 @@ class CreateEmergencycodeSerializer(serializers.Serializer):
 
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Emergency data must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -31,7 +31,7 @@ class CreateEmergencycodeSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('Emergency data nonce must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
