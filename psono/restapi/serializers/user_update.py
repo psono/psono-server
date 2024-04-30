@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
 import re
@@ -64,7 +63,7 @@ class UserUpdateSerializer(serializers.Serializer):
         if authkey and settings.DISABLE_LAST_PASSWORDS > 0:
             user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))
             if user:
-                msg = _("You cannot use your old passwords again.")
+                msg = "CANNOT_REUSE_OLD_PASSWORD"
                 raise exceptions.ValidationError(msg)
 
             if settings.DISABLE_LAST_PASSWORDS > 1:
@@ -72,7 +71,7 @@ class UserUpdateSerializer(serializers.Serializer):
 
                 for old_cred in old_credentials:
                     if check_password(authkey, old_cred.authkey):
-                        msg = _("You cannot use your old passwords again.")
+                        msg = "CANNOT_REUSE_OLD_PASSWORD"
                         raise exceptions.ValidationError(msg)
 
 

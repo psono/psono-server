@@ -755,7 +755,7 @@ class UserModificationTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {'non_field_errors': ['You cannot use your old passwords again.']})
+        self.assertEqual(response.data, {'non_field_errors': ['CANNOT_REUSE_OLD_PASSWORD']})
 
         self.reset()
 
@@ -828,7 +828,7 @@ class UserModificationTests(APITestCaseExtended):
         response = self.client.put(url, data2)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {'non_field_errors': ['You cannot use your old passwords again.']})
+        self.assertEqual(response.data, {'non_field_errors': ['CANNOT_REUSE_OLD_PASSWORD']})
 
         self.reset()
 
