@@ -182,7 +182,7 @@ pyyaml==6.0.1
     # via -r requirements.in
 redis==4.5.4
     # via django-redis
-requests==2.31.0
+requests==2.32.1
     # via
     #   -r requirements.in
     #   apache-libcloud
