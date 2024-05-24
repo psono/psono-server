@@ -6,7 +6,6 @@ boto3==1.34.39
 paramiko==3.4.0
 django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
 djangorestframework==3.14.0
-django-allauth==0.47.0
 django-cors-headers==3.10.1
 Markdown==3.5.2
 django-filter==2.4.0
@@ -25,7 +24,7 @@ python-dateutil==2.8.0
 duo-client==4.2.3
 scrypt==0.8.19
 sentry-sdk[django]==1.45.0
-requests==2.31.0
+requests==2.32.1
 pycryptodomex==3.19.1
 boto3==1.34.39
 dj-database-url==2.1.0

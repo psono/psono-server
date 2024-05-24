@@ -20,7 +20,7 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('secret_key must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -29,7 +29,7 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('secret_key_nonce must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -38,7 +38,7 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('private_key must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -47,7 +47,7 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('private_key_nonce must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -56,7 +56,7 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = _('public_key must be in hex representation')
+            msg = 'NO_VALID_HEX'
             raise exceptions.ValidationError(msg)
 
         return value

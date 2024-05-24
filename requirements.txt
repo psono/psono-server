@@ -55,18 +55,14 @@ cryptography==42.0.4
     # via
     #   azure-storage-blob
     #   paramiko
-    #   pyjwt
     #   pyopenssl
     #   webauthn
-defusedxml==0.6.0
-    # via python3-openid
 dj-database-url==2.1.0
     # via -r requirements.in
 django==4.2.11
     # via
     #   -r requirements.in
     #   dj-database-url
-    #   django-allauth
     #   django-anymail
     #   django-cors-headers
     #   django-filter
@@ -74,8 +70,6 @@ django==4.2.11
     #   django-storages
     #   djangorestframework
     #   sentry-sdk
-django-allauth==0.47.0
-    # via -r requirements.in
 django-anymail==8.5
     # via -r requirements.in
 django-cors-headers==3.10.1
@@ -160,8 +154,6 @@ pycryptodomex==3.19.1
     # via -r requirements.in
 pydantic==1.10.15
     # via webauthn
-pyjwt[crypto]==2.7.0
-    # via django-allauth
 pynacl==1.5.0
     # via
     #   -r requirements.in
@@ -174,20 +166,17 @@ python-dateutil==2.8.0
     # via
     #   -r requirements.in
     #   botocore
-python3-openid==3.1.0
-    # via django-allauth
 pytz==2022.1
     # via djangorestframework
 pyyaml==6.0.1
     # via -r requirements.in
 redis==4.5.4
     # via django-redis
-requests==2.31.0
+requests==2.32.1
     # via
     #   -r requirements.in
     #   apache-libcloud
     #   azure-core
-    #   django-allauth
     #   django-anymail
     #   google-api-core
     #   google-cloud-storage
@@ -195,9 +184,7 @@ requests==2.31.0
     #   requests-oauthlib
     #   yubico-client
 requests-oauthlib==1.3.1
-    # via
-    #   django-allauth
-    #   msrest
+    # via msrest
 rsa==4.9
     # via google-auth
 s3transfer==0.10.0
