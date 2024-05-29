@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..models import Avatar
 from ..utils.avatar import get_avatar_storage
@@ -30,6 +31,6 @@ class ReadAvatarImageSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         attrs['mime_type'] = avatar.mime_type
-        attrs['data'] = avatar.data
+        attrs['data'] = data
 
         return attrs

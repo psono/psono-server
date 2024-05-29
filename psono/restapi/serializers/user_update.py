@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
 import re
@@ -50,7 +49,7 @@ class UserUpdateSerializer(serializers.Serializer):
             email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
                 settings.EMAIL_SECRET_SALT, '', 1)
             if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=self.context['request'].user.pk).exists():
-                msg = _('E-Mail already exists.')
+                msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
                 raise exceptions.ValidationError(msg)
             attrs['email'] = email
 
@@ -64,7 +63,7 @@ class UserUpdateSerializer(serializers.Serializer):
         if authkey and settings.DISABLE_LAST_PASSWORDS > 0:
             user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))
             if user:
-                msg = _("You cannot use your old passwords again.")
+                msg = "CANNOT_REUSE_OLD_PASSWORD"
                 raise exceptions.ValidationError(msg)
 
             if settings.DISABLE_LAST_PASSWORDS > 1:
@@ -72,7 +71,7 @@ class UserUpdateSerializer(serializers.Serializer):
 
                 for old_cred in old_credentials:
                     if check_password(authkey, old_cred.authkey):
-                        msg = _("You cannot use your old passwords again.")
+                        msg = "CANNOT_REUSE_OLD_PASSWORD"
                         raise exceptions.ValidationError(msg)
 
 
@@ -110,7 +109,7 @@ class UserUpdateSerializer(serializers.Serializer):
             value = value.strip()
 
             if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-                msg = _('private_key must be in hex representation')
+                msg = 'NO_VALID_HEX'
                 raise exceptions.ValidationError(msg)
 
         return value
@@ -121,7 +120,7 @@ class UserUpdateSerializer(serializers.Serializer):
             value = value.strip()
 
             if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-                msg = _('secret_key_nonce must be in hex representation')
+                msg = 'NO_VALID_HEX'
                 raise exceptions.ValidationError(msg)
 
         return value
@@ -132,7 +131,7 @@ class UserUpdateSerializer(serializers.Serializer):
             value = value.strip()
 
             if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-                msg = _('secret_key must be in hex representation')
+                msg = 'NO_VALID_HEX'
                 raise exceptions.ValidationError(msg)
 
         return value
@@ -143,7 +142,7 @@ class UserUpdateSerializer(serializers.Serializer):
             value = value.strip()
 
             if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-                msg = _('private_key_nonce must be in hex representation')
+                msg = 'NO_VALID_HEX'
                 raise exceptions.ValidationError(msg)
 
         return value

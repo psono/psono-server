@@ -842,10 +842,10 @@ def encrypt_with_db_secret(plain_text: str) -> str:
     """
     secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_email = crypto_box.encrypt(plain_text.encode(),
+    encrypted_data = crypto_box.encrypt(plain_text.encode(),
                                          nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
 
-    return nacl.encoding.HexEncoder.encode(encrypted_email).decode()
+    return nacl.encoding.HexEncoder.encode(encrypted_data).decode()
 
 def decrypt_with_db_secret(encrypted_text: str) -> str:
     """

@@ -22,10 +22,6 @@ router = routers.DefaultRouter()
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    #re_path(r'^', include(router.urls)),
-    #re_path(r'^accounts/', include('allauth.urls')),
-    #re_path(r'^rest-auth/', include('rest_auth.urls')),
-    #re_path(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
     re_path(r'^', include('restapi.urls')),
     re_path(r'^admin/', include('administration.urls')),
     re_path(r'^fileserver/', include('fileserver.urls')),
