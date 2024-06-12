@@ -100,6 +100,7 @@ class WebauthnVerifyView(GenericAPIView):
             token.yubikey_otp_2fa = False
             token.duo_2fa = False
             token.webauthn_2fa = False
+            token.ivalt_2fa = False
 
         token.save()
 

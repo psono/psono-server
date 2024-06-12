@@ -1091,6 +1091,9 @@ class Token(models.Model):
 
     webauthn_2fa = models.BooleanField('Webauthn Required', default=False,
         help_text='Specifies if Webauthn is required or not')
+    
+    ivalt_2fa = models.BooleanField('ivalt Required', default=False,
+        help_text='Specifies if ivalt is required or not')
 
     client_date = models.DateTimeField(null=True)
 

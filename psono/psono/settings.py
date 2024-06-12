@@ -288,6 +288,7 @@ REST_FRAMEWORK = {
         'ga_verify': config_get('THROTTLE_RATE_GA_VERIFY', '6/minute'),
         'duo_verify': config_get('THROTTLE_RATE_DUO_VERIFY', '6/minute'),
         'yubikey_otp_verify': config_get('THROTTLE_RATE_YUBIKEY_OTP_VERIFY', '6/minute'),
+        'ivalt_verify': config_get('THROTTLE_RATE_IVALT_VERIFY', '15/minute'),
         'registration': config_get('THROTTLE_RATE_REGISTRATION', '20/day'),
         'user_delete': config_get('THROTTLE_RATE_USER_DELETE', '20/day'),
         'user_update': config_get('THROTTLE_RATE_USER_UPDATE', '20/day'),

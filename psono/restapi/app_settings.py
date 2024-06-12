@@ -109,7 +109,9 @@ from .serializers import (
     ManagementCommandSerializer as DefaultManagementCommandSerializer,
     ReadShareRightsSerializer as DefaultReadShareRightsSerializer,
     CreateIvaltSerializer as DefaultCreateIvaltSerializer,
+    ActivateIvaltSerializer as DefaultActivateIvaltSerializer,
     DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
+    IvaltVerifySerializer as DefaultIvaltVerifySerializer,
 )
 
 def import_callable(path_or_callable):
@@ -853,10 +855,24 @@ CreateIvaltSerializer = import_callable(
     )
 )
 
+ActivateIvaltSerializer = import_callable(
+    serializers.get(
+        'ACTIVATE_IVALT_SERIALIZER',
+        DefaultActivateIvaltSerializer
+    )
+)
+
 DeleteIvaltSerializer = import_callable(
     serializers.get(
         'DELETE_IVALT_SERIALIZER',
         DefaultDeleteIvaltSerializer
+    )
+)
+
+IvaltVerifySerializer = import_callable(
+    serializers.get(
+        'IVALT_VERIFY_SERIALIZER',
+        DefaultIvaltVerifySerializer
     )
 )
 

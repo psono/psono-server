@@ -70,6 +70,7 @@ class LoginView(GenericAPIView):
             duo_2fa=user.duo_enabled,
             webauthn_2fa=user.webauthn_enabled,
             yubikey_otp_2fa=user.yubikey_otp_enabled,
+            ivalt_2fa=user.ivalt_enabled,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),
@@ -109,7 +110,6 @@ class LoginView(GenericAPIView):
         #     login(self.request, user)
 
         required_multifactors = []
-        ivalt = []
 
         if user.google_authenticator_enabled:
             required_multifactors.append('google_authenticator_2fa')
@@ -125,12 +125,7 @@ class LoginView(GenericAPIView):
 
         if user.ivalt_enabled:
             required_multifactors.append('ivalt_2fa')
-            # add ivalt mobile and secret when ivalt mfa enabled
-            for ivalt_obj in Ivalt.objects.filter(user=user).all():
-                ivalt.append({
-                    'mobile': ivalt_obj.mobile,
-                    'secret': settings.IVALT_SECRET_KEY,
-                })
+            
 
 
         response = {
@@ -152,7 +147,6 @@ class LoginView(GenericAPIView):
                 "authentication": user.authentication,
                 'hashing_algorithm': user.hashing_algorithm,
                 'hashing_parameters': user.hashing_parameters,
-                'ivalt': ivalt,
             }
         }
 

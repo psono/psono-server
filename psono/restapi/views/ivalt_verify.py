@@ -1,5 +1,5 @@
-from django.conf import settings
 from rest_framework import status
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from ..permissions import IsAuthenticated
@@ -8,18 +8,17 @@ from ..models import (
 )
 
 from ..app_settings import (
-    DuoVerifySerializer
+    IvaltVerifySerializer
 )
 from ..authentication import TokenAuthenticationAllowInactive
 
-class DuoVerifyView(GenericAPIView):
-
+class IvaltVerifyView(GenericAPIView):
     authentication_classes = (TokenAuthenticationAllowInactive, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = DuoVerifySerializer
+    serializer_class = IvaltVerifySerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'duo_verify'
+    throttle_scope = 'ivalt_verify'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -29,7 +28,7 @@ class DuoVerifyView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Validates a Duo Token (if provided) or returns once the push message on the phone has been confirmed
+        Validates a Google Authenticator based OATH-TOTP
 
         :param request:
         :type request:
@@ -44,25 +43,25 @@ class DuoVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            if isinstance(serializer.errors, dict):
+                errors = {key: value[0] for key, value in serializer.errors.items()}
+            else:
+                errors = serializer.errors
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Duo challenge has been solved, so lets update the token
-        token = serializer.validated_data['token']
-        token.duo_2fa = False
-
-        if settings.MULTIFACTOR_ENABLED:
-            # only mark duo challenge as solved and the others potentially open
-            token.duo_2fa = False
-        else:
+        
+        request_type = serializer.validated_data['request_type']
+        if request_type == 'verification':
+            token = serializer.validated_data['token']
+            # iVALT challenge has been solved, so lets update the token
+            token.ivalt_2fa = False
             token.google_authenticator_2fa = False
             token.yubikey_otp_2fa = False
             token.duo_2fa = False
             token.webauthn_2fa = False
-            token.ivalt_2fa = False
+            token.google_authenticator_2fa = False
 
-        token.save()
+            token.save()
 
         return Response({}, status=status.HTTP_200_OK)
 

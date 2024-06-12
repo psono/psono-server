@@ -1,15 +1,17 @@
 from rest_framework import serializers, exceptions
 from django.conf import settings
+from ..utils import decrypt_with_db_secret, ivalt_auth_request_verify
 from ..models import Ivalt
-from ..utils import ivalt_auth_request_sent
 
-
-class CreateIvaltSerializer(serializers.Serializer):
-    mobile = serializers.CharField(max_length=256, required=True)
+class ActivateIvaltSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        mobile = attrs.get('mobile', '').strip()
+        try:
+            ivalt = Ivalt.objects.get(user=self.context['request'].user, active=False)
+        except Ivalt.DoesNotExist:
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
 
         if not settings.IVALT_SECRET_KEY or settings.IVALT_SECRET_KEY == '':
             msg = 'IVALT_SECRET_KEY_NOT_EXIST'
@@ -18,17 +20,12 @@ class CreateIvaltSerializer(serializers.Serializer):
         if settings.ALLOWED_SECOND_FACTORS and 'ivalt' not in settings.ALLOWED_SECOND_FACTORS:
             msg = 'SERVER_NOT_SUPPORT_IVALT'
             raise exceptions.ValidationError(msg)
-
-        if Ivalt.objects.filter(user=self.context['request'].user).count() > 0:
-            msg = 'ONLY_ONE_IVALT_MOBILE_ALLOWED'
-            raise exceptions.ValidationError(msg)
         
-        response = ivalt_auth_request_sent(mobile)
+        response = ivalt_auth_request_verify(decrypt_with_db_secret(ivalt.mobile))
         data = response.get("data")
         error = response.get("error")
         if data and data["status"]:
-            attrs['mobile'] = mobile
+            attrs['ivalt'] = ivalt
             return attrs
         else:
             raise exceptions.ValidationError(error)
-        
