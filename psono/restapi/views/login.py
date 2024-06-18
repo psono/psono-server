@@ -110,7 +110,6 @@ class LoginView(GenericAPIView):
         #     login(self.request, user)
 
         required_multifactors = []
-        ivalt = []
 
         if user.google_authenticator_enabled:
             required_multifactors.append('google_authenticator_2fa')
@@ -146,7 +145,6 @@ class LoginView(GenericAPIView):
                 "authentication": user.authentication,
                 'hashing_algorithm': user.hashing_algorithm,
                 'hashing_parameters': user.hashing_parameters,
-                'ivalt': ivalt,
             }
         }
 

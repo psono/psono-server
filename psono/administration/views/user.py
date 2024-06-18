@@ -12,7 +12,7 @@ from ..app_settings import (
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
-from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right, Webauthn
+from restapi.models import User, User_Group_Membership, Duo, Google_Authenticator, Yubikey_OTP, Recovery_Code, Emergency_Code, Token, User_Share_Right, Webauthn, Ivalt
 from restapi.models import Link_Share
 from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
 from restapi.utils.avatar import delete_avatar_storage_of_user
@@ -75,6 +75,15 @@ class UserView(GenericAPIView):
                 'title': y.title,
                 'create_date': y.create_date,
                 'active': y.active,
+            })
+
+        ivalts = []
+        for i in Ivalt.objects.filter(user=user).only("id", "mobile", "create_date", "active"):
+            ivalts.append({
+                'id': i.id,
+                'mobile': decrypt_with_db_secret(i.mobile),
+                'create_date': i.create_date,
+                'active': i.active,
             })
 
         recovery_codes = []
