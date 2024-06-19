@@ -211,7 +211,7 @@ typing-extensions==4.3.0
     #   pydantic
 tzdata==2023.4
     # via -r requirements.in
-urllib3==1.26.18
+urllib3==1.26.19
     # via
     #   botocore
     #   requests
