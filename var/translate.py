@@ -34,7 +34,7 @@ def translate_text(text, lang):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"Translate the following text to language code '{lang}': {text}"}
+            {"role": "user", "content": f"Translate the following text to language code '{lang}' and provide only the translated text with no additional commentary or explanations: {text}"}
         ]
     )
     translated_text = response.choices[0].message.content.strip()
@@ -71,14 +71,14 @@ def translate_language(lang):
     content = r.raw.read()
 
     if not content:
-        # no untrunslated terms
+        # no untranslated terms
         print(f"Success: nothing to translate for {lang}")
         return
 
     data = json.loads(content)
 
     if not data:
-        # no untrunslated terms
+        # no untranslated terms
         print(f"Success: nothing to translate for {lang}")
         return
 
@@ -99,7 +99,7 @@ def translate_language(lang):
         'api_token': POEDITOR_API_KEY,
         'updating': 'translations',
         'language': lang,
-        'sync_terms ': 0,
+        'sync_terms': 0,
     }
     with open(path, 'rb') as file:
         r = requests.post('https://api.poeditor.com/v2/projects/upload', data=data, files={'file': file}, timeout=20.0)
@@ -116,11 +116,10 @@ def translate_language(lang):
 
     return path
 
-
 def get_languages():
     data = [
-      ('api_token', POEDITOR_API_KEY),
-      ('id', POEDITOR_PROJECT_ID),
+        ('api_token', POEDITOR_API_KEY),
+        ('id', POEDITOR_PROJECT_ID),
     ]
 
     r = requests.post('https://api.poeditor.com/v2/languages/list', data=data, timeout=20.0)
@@ -132,10 +131,7 @@ def get_languages():
     print(result['result']['languages'])
     return result['result']['languages']
 
-
-
 def main():
-
     # Download
     languages = get_languages()
     for lang in languages:
