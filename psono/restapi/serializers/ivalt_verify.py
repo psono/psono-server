@@ -17,7 +17,7 @@ class IvaltVerifySerializer(serializers.Serializer):
         token = self.context['request'].auth
 
         try:
-            ivalt = Ivalt.objects.get(user=self.context['request'].user, active=True).only('mobile')
+            ivalt = Ivalt.objects.get(user=self.context['request'].user, active=True)
         except Ivalt.DoesNotExist:
             msg = "NO_IVALT_2FA_FOUND"
             raise exceptions.ValidationError(msg)

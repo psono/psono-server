@@ -157,6 +157,7 @@ class UserView(GenericAPIView):
             'google_authenticators': google_authenticators,
             'yubikey_otps': yubikey_otps,
             'webauthns': webauthns,
+            'ivalts':ivalts,
             'recovery_codes': recovery_codes,
             'emergency_codes': emergency_codes,
             'link_shares': link_shares,
