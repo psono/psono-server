@@ -114,12 +114,14 @@ def translate_language(lang):
         print(r.text)
         exit(1)
 
+    sleep(30)
+
     return path
 
 def get_languages():
     data = [
-        ('api_token', POEDITOR_API_KEY),
-        ('id', POEDITOR_PROJECT_ID),
+      ('api_token', POEDITOR_API_KEY),
+      ('id', POEDITOR_PROJECT_ID),
     ]
 
     r = requests.post('https://api.poeditor.com/v2/languages/list', data=data, timeout=20.0)
