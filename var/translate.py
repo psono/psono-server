@@ -2,6 +2,7 @@ import requests
 import json
 from openai import OpenAI
 import os
+from time import sleep
 
 POEDITOR_API_KEY = os.environ['POEDITOR_API_KEY']
 POEDITOR_PROJECT_ID = os.environ['POEDITOR_PROJECT_ID']
