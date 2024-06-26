@@ -14,7 +14,13 @@ def ivalt_auth_request_sent(mobile: str) -> dict:
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return response.json()
+        response = response.json()
+        message = response.get("message")
+        if message:
+            return {
+                'error': 'Invalid secret key'
+            }
+        return response
     except requests.exceptions.RequestException as e:
         return {
                 'error': str(e)
@@ -33,7 +39,13 @@ def ivalt_auth_request_verify(mobile: str) -> dict:
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return response.json()
+        response = response.json()
+        message = response.get("message")
+        if message:
+            return {
+                'error': 'Invalid secret key'
+            }
+        return response
     except requests.exceptions.RequestException as e:
         return {
                 'error': str(e)

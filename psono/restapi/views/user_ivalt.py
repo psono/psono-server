@@ -79,7 +79,7 @@ class UserIvalt(GenericAPIView):
             active=False
         )
        
-        return Response({'message': 'BIOMETRIC_AUTH_REQUEST_SUCCESSFULLY_SENT'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'BIOMETRIC_AUTH_REQUEST_SUCCESSFULLY_SENT', 'id': new_ivalt.id}, status=status.HTTP_201_CREATED)
             
 
     def post(self, request, *args, **kwargs):
@@ -107,7 +107,7 @@ class UserIvalt(GenericAPIView):
         request.user.save()
         ivalt.active = True
         ivalt.save()
-        return Response({'message': 'BIOMETRIC_AUTHENTICATION_SUCCESSFULLY_DONE'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'BIOMETRIC_AUTHENTICATION_SUCCESSFULLY_DONE'}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         """
