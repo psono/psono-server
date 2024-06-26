@@ -3,6 +3,8 @@ import datetime
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import JSONParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework import status
 from django.http import HttpResponse
 
@@ -11,6 +13,7 @@ from ..app_settings import (
 )
 class AvatarImageView(GenericAPIView):
     permission_classes = (AllowAny,)
+    parser_classes = [JSONParser]
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
     throttle_scope = 'avatar_image'
 

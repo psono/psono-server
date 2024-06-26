@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import JSONParser
+from rest_framework.parsers import MultiPartParser
 from django.conf import settings
 from django.db.models import F
 
@@ -26,6 +28,7 @@ class APIKeyAccessSecretView(GenericAPIView):
 
     renderer_classes = (PlainJSONRenderer,)
     permission_classes = (AllowAny,)
+    parser_classes = [JSONParser]
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, *args, **kwargs):

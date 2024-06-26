@@ -397,7 +397,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -444,7 +444,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -486,7 +486,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -528,7 +528,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -570,7 +570,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -609,7 +609,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -647,7 +647,7 @@ class UserModificationTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

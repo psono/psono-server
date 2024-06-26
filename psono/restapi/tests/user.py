@@ -630,7 +630,7 @@ class UserActivateTokenTests(APITestCaseExtended):
         data = {
             'token': self.request_data.get('token'),
             'verification': nacl.encoding.HexEncoder.encode(verification).decode(),
-            'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'.encode("utf-8")),
+            'verification_nonce': nacl.encoding.HexEncoder.encode('asdf'.encode("utf-8")).decode(),
         }
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.request_data.get('token'), HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator)

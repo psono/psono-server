@@ -870,7 +870,7 @@ class DeleteUserShareRightTest(APITestCaseExtended):
         url = reverse('share_right')
 
         data = {
-            'group_share_right_id ': str(self.test_group_share_right_obj.id)
+            'group_share_right_id': str(self.test_group_share_right_obj.id)
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -889,7 +889,7 @@ class DeleteUserShareRightTest(APITestCaseExtended):
         url = reverse('share_right')
 
         data = {
-            'user_share_right_id ': "d198cac6-e287-4873-bd29-7d45237058f4"
+            'user_share_right_id': "d198cac6-e287-4873-bd29-7d45237058f4"
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -905,7 +905,7 @@ class DeleteUserShareRightTest(APITestCaseExtended):
         url = reverse('share_right')
 
         data = {
-            'group_share_right_id ': "cfd8460a-2d01-44f6-a02c-c843162558f4"
+            'group_share_right_id': "cfd8460a-2d01-44f6-a02c-c843162558f4"
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -922,7 +922,7 @@ class DeleteUserShareRightTest(APITestCaseExtended):
 
         data = {
             'user_share_right_id': str(self.test_user_share_right2.id),
-            'group_share_right_id ': str(self.test_group_share_right_obj.id)
+            'group_share_right_id': str(self.test_group_share_right_obj.id)
         }
 
         self.client.force_authenticate(user=self.test_user_obj)

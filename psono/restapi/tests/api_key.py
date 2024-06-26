@@ -5,6 +5,7 @@ from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
 
+import json
 import random
 import string
 import binascii

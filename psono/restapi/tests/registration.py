@@ -149,7 +149,7 @@ class RegistrationTests(APITestCaseExtended):
             },
         }
 
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(models.User.objects.count(), 1)
@@ -197,7 +197,7 @@ class RegistrationTests(APITestCaseExtended):
             },
         }
 
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
@@ -238,7 +238,7 @@ class RegistrationTests(APITestCaseExtended):
             },
         }
 
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
@@ -279,7 +279,7 @@ class RegistrationTests(APITestCaseExtended):
             },
         }
 
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
@@ -320,7 +320,7 @@ class RegistrationTests(APITestCaseExtended):
             },
         }
 
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)

@@ -249,7 +249,7 @@ class UpdateMembershipTests(APITestCaseExtended):
         url = reverse('admin_membership')
 
         data = {
-            'membership_id': str(self.test_membership_obj.id),
+            'membership_id': self.test_membership_obj.id,
             'group_admin': False,
         }
 
@@ -269,7 +269,7 @@ class UpdateMembershipTests(APITestCaseExtended):
         url = reverse('admin_membership')
 
         data = {
-            'membership_id': str(self.test_membership_obj.id),
+            'membership_id': self.test_membership_obj.id,
             'share_admin': False,
         }
 
@@ -306,7 +306,7 @@ class UpdateMembershipTests(APITestCaseExtended):
         url = reverse('admin_membership')
 
         data = {
-            # 'membership_id': str(self.test_membership_obj.id),
+            # 'membership_id': self.test_membership_obj.id,
             'share_admin': False,
         }
 

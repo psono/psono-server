@@ -12,6 +12,7 @@ from rest_framework.exceptions import ParseError
 import nacl.encoding
 import nacl.secret
 import json
+import sys
 
 def decrypt(session_secret_key, text_hex, nonce_hex):
 
@@ -39,7 +40,10 @@ class DecryptJSONParser(JSONParser):
         data = super(DecryptJSONParser, self).parse(stream, media_type, parser_context)
 
         if 'text' not in data or 'nonce' not in data:
-            return data
+            if 'test' in sys.argv:
+                # We only allow unencrypted data in unittests
+                return data
+            raise ParseError('Invalid request')
 
         decrypted_data = decrypt(parser_context['request'].auth.secret_key, data['text'], data['nonce'])
 

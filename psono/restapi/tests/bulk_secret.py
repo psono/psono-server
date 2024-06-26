@@ -144,7 +144,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -166,7 +166,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -191,7 +191,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -216,7 +216,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -241,7 +241,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -263,7 +263,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, first_secret, format='json')
+        response = self.client.put(url, first_secret)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -277,7 +277,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, second_secret, format='json')
+        response = self.client.put(url, second_secret)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -299,7 +299,7 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, first_secret, format='json')
+        response = self.client.put(url, first_secret)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -313,6 +313,6 @@ class BulkCreateSecretTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, second_secret, format='json')
+        response = self.client.put(url, second_secret)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
