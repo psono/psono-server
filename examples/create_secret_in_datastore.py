@@ -185,6 +185,8 @@ def api_request(method, endpoint, data = None, token = None, session_secret_key 
     else:
         headers = {'content-type': 'application/json'}
 
+    if session_secret_key and data:
+        data = json.dumps(encrypt_symmetric(data, session_secret_key))
 
     r = requests.request(method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY)
 

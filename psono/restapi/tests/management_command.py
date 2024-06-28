@@ -1,3 +1,5 @@
+import json
+
 from django.urls import reverse
 
 from rest_framework import status
@@ -30,7 +32,7 @@ class ManagementCommandTest(APITestCaseExtended):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY)
 
-        response = client.post(url, data)
+        response = client.post(url, json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -48,7 +50,7 @@ class ManagementCommandTest(APITestCaseExtended):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY + 'abcd')
 
-        response = client.post(url, data)
+        response = client.post(url, json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -66,7 +68,7 @@ class ManagementCommandTest(APITestCaseExtended):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token ' + '')
 
-        response = client.post(url, data)
+        response = client.post(url, json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -88,7 +90,7 @@ class ManagementCommandTest(APITestCaseExtended):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY)
 
-        response = client.post(url, data)
+        response = client.post(url, json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

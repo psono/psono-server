@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import JSONParser
+from rest_framework.parsers import MultiPartParser
 
 import nacl.encoding
 import nacl.utils
@@ -24,6 +26,7 @@ from ..app_settings import (
 
 class APIKeyLoginView(GenericAPIView):
     permission_classes = (AllowAny,)
+    parser_classes = [JSONParser]
     serializer_class = APIKeyLoginSerializer
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'login'

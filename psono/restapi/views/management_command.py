@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import JSONParser
+from rest_framework.parsers import MultiPartParser
 from django.core.management import call_command
 from ..authentication import ManagementCommandAuthentication
 
@@ -14,6 +16,7 @@ from ..app_settings import (
 class ManagementCommandView(GenericAPIView):
     authentication_classes = (ManagementCommandAuthentication, )
     permission_classes = (AllowAny,)
+    parser_classes = [JSONParser]
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
     def get(self, request, *args, **kwargs):

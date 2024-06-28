@@ -116,7 +116,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '',
             'recovery_data': '123456678',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -135,7 +135,7 @@ class RecoveryCodeTests(APITestCaseExtended):
 
         data = {
             'recovery_data': '123456678',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -155,7 +155,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -174,7 +174,7 @@ class RecoveryCodeTests(APITestCaseExtended):
 
         data = {
             'recovery_authkey': '123456678',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -194,7 +194,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '123456788X',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -214,7 +214,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '123456788',
-            'recovery_data_nonce ': '',
+            'recovery_data_nonce': '',
             'recovery_sauce': '123456788',
         }
 
@@ -253,7 +253,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '123456788',
-            'recovery_data_nonce ': '123456788X',
+            'recovery_data_nonce': '123456788X',
             'recovery_sauce': '123456788',
         }
 
@@ -273,7 +273,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '123456788',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '',
         }
 
@@ -293,7 +293,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': '123456678',
             'recovery_data': '123456788',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -312,7 +312,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': 'asdf',
             'recovery_data': '123456678',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -330,7 +330,7 @@ class RecoveryCodeTests(APITestCaseExtended):
         data = {
             'recovery_authkey': 'asdf',
             'recovery_data': '123456678',
-            'recovery_data_nonce ': '123456788',
+            'recovery_data_nonce': '123456788',
             'recovery_sauce': '123456788',
         }
 
@@ -1025,7 +1025,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -1075,7 +1075,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1120,7 +1120,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1170,7 +1170,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1220,7 +1220,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1270,7 +1270,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1320,7 +1320,7 @@ class PasswordTests(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        response = self.client.put(url, data, format='json')
+        response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

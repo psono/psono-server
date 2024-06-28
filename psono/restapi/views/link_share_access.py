@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import JSONParser
+from rest_framework.parsers import MultiPartParser
 
 from decimal import Decimal
 
@@ -22,6 +24,7 @@ class LinkShareAccessView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'link_share_secret'
+    parser_classes = [JSONParser]
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

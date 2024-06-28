@@ -264,7 +264,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': (
         'restapi.parsers.DecryptJSONParser',
         # 'rest_framework.parsers.FormParser', # default for Form Parsing
-        'rest_framework.parsers.MultiPartParser', # default for UnitTest Parsing
+        # 'rest_framework.parsers.MultiPartParser', # default for UnitTest Parsing
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'restapi.renderers.EncryptJSONRenderer',

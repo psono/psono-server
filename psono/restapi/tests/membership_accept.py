@@ -5,6 +5,7 @@ from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
 
+import json
 import random
 import string
 import binascii
@@ -202,7 +203,7 @@ class AcceptMembershipTest(APITestCaseExtended):
         url = reverse('membership_accept')
 
         data = {
-            'membership_id': self.test_membership_obj3.id,
+            'membership_id': str(self.test_membership_obj3.id),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -218,7 +219,7 @@ class AcceptMembershipTest(APITestCaseExtended):
         url = reverse('membership_accept')
 
         data = {
-            'membership_id': self.test_membership_obj4.id,
+            'membership_id': str(self.test_membership_obj4.id),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -234,12 +235,11 @@ class AcceptMembershipTest(APITestCaseExtended):
         url = reverse('membership_accept')
 
         data = {
-            'membership_id': self.test_membership_obj5.id,
+            'membership_id': str(self.test_membership_obj5.id),
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_accept_membership(self):
