@@ -39,6 +39,18 @@ upload-translations:
   only:
     - develop@psono/psono-server
 
+create-translations:
+  except:
+    - schedules
+  stage: translate
+  image: psono-docker.jfrog.io/ubuntu:22.04
+  script:
+    - apt-get update && apt-get install -y python3 python3-pip
+    - pip3 install requests openai==1.34.0
+    - python3 var/translate.py
+  only:
+    - master@psono/psono-server
+
 build-container-alpine:
   except:
     - schedules

@@ -21,10 +21,10 @@ class CreateAvatarSerializer(serializers.Serializer):
 
         try:
             # Load the image and verify it's not corrupted
-            image = Image.open(file)
+            image = Image.open(file, formats=['JPEG', 'PNG'])
             image.verify()  # Verify the image (checks integrity but not decoded)
             file.seek(0)
-            image = Image.open(file)
+            image = Image.open(file, formats=['JPEG', 'PNG'])
             image.load()
             mime_type = Image.MIME.get(image.format)
         except Exception as exc:

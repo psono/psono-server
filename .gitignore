@@ -12,3 +12,4 @@ psono/static/rest_framework
 .venv*
 .vscode
 locale
+untranslated
