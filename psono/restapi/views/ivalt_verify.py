@@ -28,7 +28,7 @@ class IvaltVerifyView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Validates a Google Authenticator based OATH-TOTP
+        Validates a Ivalt 2fa based on mobile auth validation
 
         :param request:
         :type request:
@@ -53,13 +53,15 @@ class IvaltVerifyView(GenericAPIView):
         request_type = serializer.validated_data['request_type']
         if request_type == 'verification':
             token = serializer.validated_data['token']
-            # iVALT challenge has been solved, so lets update the token
-            token.ivalt_2fa = False
-            token.google_authenticator_2fa = False
-            token.yubikey_otp_2fa = False
-            token.duo_2fa = False
-            token.webauthn_2fa = False
-            token.google_authenticator_2fa = False
+            if settings.MULTIFACTOR_ENABLED:
+                # only mark iVALT challenge as solved and the others potentially open
+                token.ivalt_2fa = False
+            else:
+                token.ivalt_2fa = False
+                token.google_authenticator_2fa = False
+                token.yubikey_otp_2fa = False
+                token.duo_2fa = False
+                token.webauthn_2fa = False
 
             token.save()
 

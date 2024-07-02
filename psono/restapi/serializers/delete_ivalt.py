@@ -17,7 +17,7 @@ class DeleteIvaltSerializer(serializers.Serializer):
         try:
             ivalt = Ivalt.objects.get(pk=ivalt_id, user=self.context['request'].user)
         except Ivalt.DoesNotExist:
-            msg = _("Ivalt Mobile No does not exist.")
+            msg = 'NO_PERMISSION_OR_NOT_EXIST'
             raise exceptions.ValidationError(msg)
 
         attrs['ivalt'] = ivalt

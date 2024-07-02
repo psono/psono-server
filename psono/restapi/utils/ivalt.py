@@ -13,7 +13,7 @@ def ivalt_auth_request_sent(mobile: str) -> dict:
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=300)
         response = response.json()
         message = response.get("message")
         if message:
@@ -21,6 +21,10 @@ def ivalt_auth_request_sent(mobile: str) -> dict:
                 'error': 'Invalid secret key'
             }
         return response
+    except requests.exceptions.Timeout:
+        return {
+                'error': 'Request timed out'
+            }
     except requests.exceptions.RequestException as e:
         return {
                 'error': str(e)
@@ -38,7 +42,7 @@ def ivalt_auth_request_verify(mobile: str) -> dict:
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=300)
         response = response.json()
         message = response.get("message")
         if message:
@@ -46,6 +50,10 @@ def ivalt_auth_request_verify(mobile: str) -> dict:
                 'error': 'Invalid secret key'
             }
         return response
+    except requests.exceptions.Timeout:
+        return {
+                'error': 'Request timed out'
+            }
     except requests.exceptions.RequestException as e:
         return {
                 'error': str(e)

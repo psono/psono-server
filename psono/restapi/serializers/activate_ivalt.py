@@ -13,7 +13,7 @@ class ActivateIvaltSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if not settings.IVALT_SECRET_KEY or settings.IVALT_SECRET_KEY == '':
+        if not settings.IVALT_SECRET_KEY:
             msg = 'IVALT_SECRET_KEY_NOT_EXIST'
             raise exceptions.ValidationError(msg)
         

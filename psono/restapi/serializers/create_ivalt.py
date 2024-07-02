@@ -19,7 +19,7 @@ class CreateIvaltSerializer(serializers.Serializer):
             msg = 'SERVER_NOT_SUPPORT_IVALT'
             raise exceptions.ValidationError(msg)
 
-        if Ivalt.objects.filter(user=self.context['request'].user).count() > 0:
+        if Ivalt.objects.filter(user=self.context['request'].user).exists():
             msg = 'ONLY_ONE_IVALT_MOBILE_ALLOWED'
             raise exceptions.ValidationError(msg)
         
