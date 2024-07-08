@@ -67,11 +67,7 @@ class UserIvalt(GenericAPIView):
         serializer = CreateIvaltSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-            if isinstance(serializer.errors, dict):
-                errors = {key: value[0] for key, value in serializer.errors.items()}
-            else:
-                errors = serializer.errors
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         new_ivalt = Ivalt.objects.create(
             user=request.user,
@@ -96,11 +92,7 @@ class UserIvalt(GenericAPIView):
         serializer = ActivateIvaltSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
-            if isinstance(serializer.errors, dict):
-                errors = {key: value[0] for key, value in serializer.errors.items()}
-            else:
-                errors = serializer.errors
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         ivalt = serializer.validated_data.get('ivalt')
         request.user.ivalt_enabled = True

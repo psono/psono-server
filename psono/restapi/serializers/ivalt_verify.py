@@ -23,14 +23,16 @@ class IvaltVerifySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if request_type == 'notification':
-            response = ivalt_auth_request_sent(decrypt_with_db_secret(ivalt.mobile))
+            is_success = ivalt_auth_request_sent(decrypt_with_db_secret(ivalt.mobile))
+            if not is_success:
+                msg = 'AUTHENTICATION_FAILED'
+                raise exceptions.ValidationError(msg)
         else:
-            response = ivalt_auth_request_verify(decrypt_with_db_secret(ivalt.mobile))
-        data = response.get("data")
-        error = response.get("error")
-        if data and data["status"]:
-            attrs['request_type'] = request_type
-            attrs['token'] = token
-            return attrs
-        else:
-            raise exceptions.ValidationError(error)
+            is_success, error_msg = ivalt_auth_request_verify(decrypt_with_db_secret(ivalt.mobile))
+            if not is_success:
+                msg = error_msg if error_msg else 'AUTHENTICATION_FAILED'
+                raise exceptions.ValidationError(msg)
+ 
+        attrs['request_type'] = request_type
+        attrs['token'] = token
+        return attrs

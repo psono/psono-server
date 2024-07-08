@@ -23,12 +23,14 @@ class CreateIvaltSerializer(serializers.Serializer):
             msg = 'ONLY_ONE_IVALT_MOBILE_ALLOWED'
             raise exceptions.ValidationError(msg)
         
-        response = ivalt_auth_request_sent(mobile)
-        data = response.get("data")
-        error = response.get("error")
-        if data and data["status"]:
-            attrs['mobile'] = mobile
-            return attrs
-        else:
-            raise exceptions.ValidationError(error)
+        is_success = ivalt_auth_request_sent(mobile)
+        
+        if not is_success:
+            msg = 'AUTHENTICATION_FAILED'
+            raise exceptions.ValidationError(msg)
+        
+        attrs['mobile'] = mobile
+        return attrs
+
+
         

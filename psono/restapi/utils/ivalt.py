@@ -14,21 +14,13 @@ def ivalt_auth_request_sent(mobile: str) -> dict:
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=300)
-        response = response.json()
-        message = response.get("message")
-        if message:
-            return {
-                'error': 'Invalid secret key'
-            }
-        return response
-    except requests.exceptions.Timeout:
-        return {
-                'error': 'Request timed out'
-            }
-    except requests.exceptions.RequestException as e:
-        return {
-                'error': str(e)
-            }
+    except:
+        return False
+    
+    if response.status_code != 200:
+        return False
+    
+    return True
 
 def ivalt_auth_request_verify(mobile: str) -> dict:
      # verify user's mobile to authenticate
@@ -43,18 +35,15 @@ def ivalt_auth_request_verify(mobile: str) -> dict:
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=300)
+    except:
+        return False, None
+    
+    if response.status_code != 200:
         response = response.json()
-        message = response.get("message")
-        if message:
-            return {
-                'error': 'Invalid secret key'
-            }
-        return response
-    except requests.exceptions.Timeout:
-        return {
-                'error': 'Request timed out'
-            }
-    except requests.exceptions.RequestException as e:
-        return {
-                'error': str(e)
-            }
+        if 'timezone' in response.get('error', {}).get('detail', ''):
+            return False, 'INVALID_TIMEZONE'
+        if 'geofencing' in response.get('error', {}).get('detail', ''):
+            return False, 'INVALID_GEOFENCE'
+        return False, None
+
+    return True, None

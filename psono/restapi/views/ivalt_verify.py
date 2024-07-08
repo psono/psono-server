@@ -43,11 +43,7 @@ class IvaltVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-            if isinstance(serializer.errors, dict):
-                errors = {key: value[0] for key, value in serializer.errors.items()}
-            else:
-                errors = serializer.errors
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
         request_type = serializer.validated_data['request_type']

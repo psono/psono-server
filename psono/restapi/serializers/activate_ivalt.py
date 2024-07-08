@@ -21,11 +21,10 @@ class ActivateIvaltSerializer(serializers.Serializer):
             msg = 'SERVER_NOT_SUPPORT_IVALT'
             raise exceptions.ValidationError(msg)
         
-        response = ivalt_auth_request_verify(decrypt_with_db_secret(ivalt.mobile))
-        data = response.get("data")
-        error = response.get("error")
-        if data and data["status"]:
-            attrs['ivalt'] = ivalt
-            return attrs
-        else:
-            raise exceptions.ValidationError(error)
+        is_success, error_msg = ivalt_auth_request_verify(decrypt_with_db_secret(ivalt.mobile))
+        if not is_success:
+                msg = error_msg if error_msg else 'AUTHENTICATION_FAILED'
+                raise exceptions.ValidationError(msg)
+        
+        attrs['ivalt'] = ivalt
+        return attrs
