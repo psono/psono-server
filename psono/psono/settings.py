@@ -176,7 +176,7 @@ ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'tru
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 
-ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo'])
+ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo', 'ivalt'])
 if isinstance(ALLOWED_SECOND_FACTORS, str) and ALLOWED_SECOND_FACTORS:
     ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
 elif isinstance(ALLOWED_SECOND_FACTORS, str):
@@ -288,6 +288,7 @@ REST_FRAMEWORK = {
         'ga_verify': config_get('THROTTLE_RATE_GA_VERIFY', '6/minute'),
         'duo_verify': config_get('THROTTLE_RATE_DUO_VERIFY', '6/minute'),
         'yubikey_otp_verify': config_get('THROTTLE_RATE_YUBIKEY_OTP_VERIFY', '6/minute'),
+        'ivalt_verify': config_get('THROTTLE_RATE_IVALT_VERIFY', '6/minute'),
         'registration': config_get('THROTTLE_RATE_REGISTRATION', '20/day'),
         'user_delete': config_get('THROTTLE_RATE_USER_DELETE', '20/day'),
         'user_update': config_get('THROTTLE_RATE_USER_UPDATE', '20/day'),
@@ -438,6 +439,8 @@ YUBIKEY_SECRET_KEY = config_get('YUBIKEY_SECRET_KEY', None)
 YUBICO_API_URLS = config_get('YUBICO_API_URLS', DEFAULT_YUBICO_API_URLS)
 if isinstance(YUBICO_API_URLS, str) and YUBICO_API_URLS:
     YUBICO_API_URLS = [yubico_api_url.strip() for yubico_api_url in YUBICO_API_URLS.split(',')]
+
+IVALT_SECRET_KEY = config_get('IVALT_SECRET_KEY', None)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 

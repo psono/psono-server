@@ -33,6 +33,7 @@ if settings.MANAGEMENT_ENABLED:
         re_path(r'^recovery-code/$', views.RecoveryCodeView.as_view(), name='admin_recovery_code'),
         re_path(r'^emergency-code/$', views.EmergencyCodeView.as_view(), name='admin_emergency_code'),
         re_path(r'^duo/$', views.DuoView.as_view(), name='admin_duo'),
+        re_path(r'^ivalt/$', views.IvaltView.as_view(), name='admin_ivalt'),
         re_path(r'^session/(?P<session_id>[^/]+)/$', views.SessionView.as_view(), name='admin_session'),
         re_path(r'^session/$', views.SessionView.as_view(), name='admin_session'),
         re_path(r'^security-report/(?P<security_report_id>[^/]+)/', views.SecurityReportView.as_view(), name='admin_security_report'),

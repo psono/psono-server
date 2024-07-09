@@ -37,6 +37,10 @@ class ActivateTokenSerializer(serializers.Serializer):
         if token.webauthn_2fa:
             msg = 'WEBAUTHN_CHALLENGE_UNSOLVED'
             raise exceptions.ValidationError(msg)
+        
+        if token.ivalt_2fa:
+            msg = 'IVALT_CHALLENGE_UNSOLVED'
+            raise exceptions.ValidationError(msg)
 
         crypto_box = nacl.secret.SecretBox(token.secret_key, encoder=nacl.encoding.HexEncoder)
 
