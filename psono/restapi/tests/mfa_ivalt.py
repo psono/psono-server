@@ -163,7 +163,7 @@ class IvaltVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors')[0], 'INAVLID_VALUE_FOR_REQUEST_TYPE')
+        self.assertEqual(response.data.get('non_field_errors')[0], 'INVALID_VALUE_FOR_REQUEST_TYPE')
 
     def mock_verify_verification_success(self, url=None, json=None, headers=None, timeout=None):
         mock_response = Mock()

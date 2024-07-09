@@ -11,7 +11,7 @@ class IvaltVerifySerializer(serializers.Serializer):
         request_type = attrs.get('request_type', '').lower().strip()
 
         if request_type not in ['notification', 'verification']:
-            msg = 'INAVLID_VALUE_FOR_REQUEST_TYPE'
+            msg = 'INVALID_VALUE_FOR_REQUEST_TYPE'
             raise exceptions.ValidationError(msg)
 
         token = self.context['request'].auth
