@@ -56,7 +56,7 @@ EMAIL_TIMEOUT:
 # YUBIKEY_SECRET_KEY: '8I65IA6ASDFIUHGIH5021FKJA='
 
 # If you are using Ivalt MFA the Please add secret key here
-IVALT_SECRET_KEY: 'HP6Rrj4RhQ7FPTZIBZo5E1itGQIc6f9g5ImWXJnO'
+# IVALT_SECRET_KEY: 'HP6Rrj4RhQ7FPTZIBZo5E1itGQIc6f9g5ImWXJnO'
 
 
 # In case one wants to use mailgun, replace email backend with

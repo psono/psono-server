@@ -1,9 +1,7 @@
 from django.urls import reverse
 from django.conf import settings
-from django.utils import timezone
 from rest_framework import status
 
-from datetime import timedelta
 import random
 import string
 import binascii
