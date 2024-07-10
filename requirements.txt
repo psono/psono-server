@@ -38,7 +38,7 @@ cachetools==5.3.3
     # via google-auth
 cbor2==5.4.3
     # via webauthn
-certifi==2023.7.22
+certifi==2024.7.4
     # via
     #   msrest
     #   requests

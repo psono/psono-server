@@ -19,3 +19,4 @@ from .update_membership import UpdateMembershipSerializer
 from .update_user import UpdateUserSerializer
 from .delete_group_share_right import DeleteGroupShareRightSerializer
 from .update_group_share_right import UpdateGroupShareRightSerializer
+from .delete_ivalt import DeleteIvaltSerializer

@@ -16,7 +16,7 @@ from datetime import timedelta
 import json
 
 from ..models import (
-    Token
+    Token, Ivalt
 )
 from ..app_settings import (
     LoginSerializer
@@ -73,6 +73,7 @@ class LoginView(GenericAPIView):
             duo_2fa=user.duo_enabled,
             webauthn_2fa=user.webauthn_enabled,
             yubikey_otp_2fa=user.yubikey_otp_enabled,
+            ivalt_2fa=user.ivalt_enabled,
             device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
             device_description=serializer.validated_data.get('device_description', ''),
             client_date=serializer.validated_data.get('device_time'),
@@ -124,6 +125,9 @@ class LoginView(GenericAPIView):
 
         if user.webauthn_enabled:
             required_multifactors.append('webauthn_2fa')
+
+        if user.ivalt_enabled:
+            required_multifactors.append('ivalt_2fa')
 
         response = {
             "token": token.clear_text_key,

@@ -24,6 +24,7 @@ from .serializers import (
     UpdateGroupShareRightSerializer as DefaultUpdateGroupShareRightSerializer,
     DeleteGroupShareRightSerializer as DefaultDeleteGroupShareRightSerializer,
     ReadSecurityReportSerializer as DefaultReadSecurityReportSerializer,
+    DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -119,3 +120,6 @@ ReadSecurityReportSerializer = import_callable(
     serializers.get('READ_SECURITY_REPORT_SERIALIZER', DefaultReadSecurityReportSerializer)
 )
 
+DeleteIvaltSerializer = import_callable(
+    serializers.get('DELETE_IVALT_SERIALIZER', DefaultDeleteIvaltSerializer)
+)

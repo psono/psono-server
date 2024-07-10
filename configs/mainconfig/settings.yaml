@@ -55,6 +55,9 @@ EMAIL_TIMEOUT:
 # YUBIKEY_CLIENT_ID: '123456'
 # YUBIKEY_SECRET_KEY: '8I65IA6ASDFIUHGIH5021FKJA='
 
+# If you are using Ivalt MFA the Please add secret key here
+# IVALT_SECRET_KEY: 'HP6Rrj4RhQ7FPTZIBZo5E1itGQIc6f9g5ImWXJnO'
+
 
 # In case one wants to use mailgun, replace email backend with
 # 'django_mailgun.MailgunBackend' and provide the mailgun access key and server name

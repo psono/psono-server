@@ -32,6 +32,7 @@ urlpatterns = [
     re_path(r'^authentication/duo-verify/$', views.DuoVerifyView.as_view(), name='authentication_duo_verify'),
     re_path(r'^authentication/webauthn-verify/$', views.WebauthnVerifyView.as_view(), name='authentication_webauthn_verify'),
     re_path(r'^authentication/yubikey-otp-verify/$', views.YubikeyOTPVerifyView.as_view(), name='authentication_yubikey_otp_verify'),
+    re_path(r'^authentication/ivalt-verify/$', views.IvaltVerifyView.as_view(), name='authentication_ivalt_verify'),
     re_path(r'^authentication/activate-token/$', views.ActivateTokenView.as_view(), name='authentication_activate_token'),
     re_path(r'^authentication/sessions/$', views.SessionView.as_view(), name='authentication_session'),
 
@@ -43,6 +44,7 @@ urlpatterns = [
     re_path(r'^user/duo/$', views.UserDuo.as_view(), name='user_duo'),
     re_path(r'^user/webauthn/$', views.UserWebauthn.as_view(), name='user_webauthn'),
     re_path(r'^user/yubikey-otp/$', views.UserYubikeyOTP.as_view(), name='user_yubikey_otp'),
+    re_path(r'^user/ivalt/$', views.UserIvalt.as_view(), name='user_ivalt'),
     re_path(r'^user/search/$', views.UserSearch.as_view(), name='user_search'),
     re_path(r'^user/policy/$', views.UserPolicyView.as_view(), name='user_policy'),
     re_path(r'^user/delete/$', views.UserDelete.as_view(), name='user_delete'),
