@@ -63,6 +63,8 @@ class ShareRightsView(GenericAPIView):
 
             right = {
                 'id': u.id,
+                'create_date': u.create_date.isoformat(),
+                'write_date': u.write_date.isoformat(),
                 'accepted': u.accepted,
                 'read': u.read,
                 'write': u.write,
@@ -78,6 +80,8 @@ class ShareRightsView(GenericAPIView):
 
             right = {
                 'id': u.id,
+                'create_date': u.create_date.isoformat(),
+                'write_date': u.write_date.isoformat(),
                 'accepted': True,
                 'read': u.read,
                 'write': u.write,
