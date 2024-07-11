@@ -11,7 +11,7 @@ class CreateIvaltSerializer(serializers.Serializer):
 
         mobile = attrs.get('mobile', '').strip()
 
-        if not settings.IVALT_SECRET_KEY or settings.IVALT_SECRET_KEY == '':
+        if not settings.IVALT_SECRET_KEY or settings.IVALT_SECRET_KEY == '':  #nosec -- not [B105:hardcoded_password_string]
             msg = 'IVALT_SECRET_KEY_NOT_EXIST'
             raise exceptions.ValidationError(msg)
         
