@@ -1000,7 +1000,8 @@ class Link_Share(models.Model):
     secret = models.ForeignKey(Secret, on_delete=models.CASCADE, related_name='link_shares', null=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='link_shares', null=True)
     public_title = models.CharField('Public Title', max_length=256)
-    allowed_reads = models.IntegerField('File size limit', blank=True, null=True,
+    allow_write = models.BooleanField('Allow write', default=False, help_text='Do we allow people to update a secret')
+    allowed_reads = models.IntegerField('Allowed reads or writes', blank=True, null=True,
                                         help_text='The remaining amount of allowed reads. Null if no restriction applies.')
     node = models.BinaryField()
     node_nonce = models.CharField('Node nonce', max_length=64)

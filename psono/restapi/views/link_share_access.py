@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.parsers import JSONParser
-from rest_framework.parsers import MultiPartParser
 
 from decimal import Decimal
 
@@ -13,7 +12,8 @@ from ..models import (
     File_Transfer,
 )
 from ..app_settings import (
-    LinkShareAccessSerializer,
+    ReadLinkShareAccessSerializer,
+    UpdateLinkShareAccessSerializer,
 )
 
 class LinkShareAccessView(GenericAPIView):
@@ -22,15 +22,53 @@ class LinkShareAccessView(GenericAPIView):
     """
 
     permission_classes = (AllowAny,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ('PUT', 'POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'link_share_secret'
     parser_classes = [JSONParser]
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def put(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def put(self, request, *args, **kwargs):
+        """
+        Use a link share to update a secret.
+
+        :param request:
+        :type request:
+        :param args:
+        :type args:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+
+        serializer = UpdateLinkShareAccessSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        link_share = serializer.validated_data.get('link_share')
+        secret = serializer.validated_data.get('secret')
+        secret_data = serializer.validated_data.get('secret_data')
+        secret_data_nonce = serializer.validated_data.get('secret_data_nonce')
+
+        delete_link_share = link_share.allowed_reads is not None and link_share.allowed_reads <= 1
+
+        if delete_link_share:
+            link_share.delete()
+        elif link_share.allowed_reads is not None:
+            link_share.allowed_reads = link_share.allowed_reads - 1
+            link_share.save()
+
+        secret.data = secret_data.encode()
+        secret.data_nonce = secret_data_nonce
+        secret.save()
+
+        return Response({}, status=status.HTTP_200_OK)
+
 
     def post(self, request, *args, **kwargs):
         """
@@ -46,7 +84,7 @@ class LinkShareAccessView(GenericAPIView):
         :rtype:
         """
 
-        serializer = LinkShareAccessSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadLinkShareAccessSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
             return Response(
@@ -63,13 +101,14 @@ class LinkShareAccessView(GenericAPIView):
         node_nonce = link_share.node_nonce
         user = link_share.user
 
-        delete_link_share = link_share.allowed_reads is not None and link_share.allowed_reads <= 1
+        delete_link_share = not link_share.allow_write and link_share.allowed_reads is not None and link_share.allowed_reads <= 1
 
         if delete_link_share:
             link_share.delete()
         elif link_share.allowed_reads is not None:
-            link_share.allowed_reads = link_share.allowed_reads - 1
-            link_share.save()
+            if not link_share.allow_write:
+                link_share.allowed_reads = link_share.allowed_reads - 1
+                link_share.save()
 
         if secret:
             read_count = secret.read_count
@@ -82,6 +121,7 @@ class LinkShareAccessView(GenericAPIView):
                 'secret_data': secret.data.decode(),
                 'secret_data_nonce': secret.data_nonce,
                 'secret_read_count': read_count + 1,
+                'allow_write': link_share.allow_write,
             }, status=status.HTTP_200_OK)
 
         if file:
@@ -110,6 +150,7 @@ class LinkShareAccessView(GenericAPIView):
                 "shards": shards,
                 'node': node,
                 'node_nonce': node_nonce,
+                'allow_write': False,
             }, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):

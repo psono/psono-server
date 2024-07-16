@@ -98,7 +98,8 @@ from .serializers import (
     CreateLinkShareSerializer as DefaultCreateLinkShareSerializer,
     UpdateLinkShareSerializer as DefaultUpdateLinkShareSerializer,
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
-    LinkShareAccessSerializer as DefaultLinkShareAccessSerializer,
+    ReadLinkShareAccessSerializer as DefaultReadLinkShareAccessSerializer,
+    UpdateLinkShareAccessSerializer as DefaultUpdateLinkShareAccessSerializer,
     CreateSecurityReportSerializer as DefaultCreateSecurityReportSerializer,
     ReadMetadataDatastoreSerializer as DefaultReadMetadataDatastoreSerializer,
     ReadMetadataShareSerializer as DefaultReadMetadataShareSerializer,
@@ -778,10 +779,17 @@ DeleteLinkShareSerializer = import_callable(
     )
 )
 
-LinkShareAccessSerializer = import_callable(
+ReadLinkShareAccessSerializer = import_callable(
     serializers.get(
-        'LINK_SHARE_ACCESS_SERIALIZER',
-        DefaultLinkShareAccessSerializer
+        'READ_LINK_SHARE_ACCESS_SERIALIZER',
+        DefaultReadLinkShareAccessSerializer
+    )
+)
+
+UpdateLinkShareAccessSerializer = import_callable(
+    serializers.get(
+        'UPDATE_LINK_SHARE_ACCESS_SERIALIZER',
+        DefaultUpdateLinkShareAccessSerializer
     )
 )
 
