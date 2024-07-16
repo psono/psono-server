@@ -104,6 +104,7 @@ class LinkShareView(GenericAPIView):
         node_nonce = serializer.validated_data.get('node_nonce')
         passphrase = serializer.validated_data.get('passphrase')
         valid_till = serializer.validated_data.get('valid_till')
+        allow_write = serializer.validated_data.get('allow_write')
 
         link_share = Link_Share.objects.create(
             user = request.user,
@@ -115,6 +116,7 @@ class LinkShareView(GenericAPIView):
             node_nonce = node_nonce,
             passphrase = passphrase,
             valid_till = valid_till,
+            allow_write = allow_write,
         )
 
         return Response({

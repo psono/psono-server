@@ -29,6 +29,8 @@ class CreateLinkShareSerializer(serializers.Serializer):
     # else => set restriciton
     valid_till = serializers.DateTimeField(required=False, allow_null=True)
 
+    allow_write = serializers.BooleanField(required=False, default=False)
+
     def validate(self, attrs: dict) -> dict:
 
         secret_id = attrs.get('secret_id', None)
@@ -36,6 +38,7 @@ class CreateLinkShareSerializer(serializers.Serializer):
         allowed_reads = attrs.get('allowed_reads', None)
         passphrase = attrs.get('passphrase', None)
         valid_till = attrs.get('valid_till', None)
+        allow_write = attrs.get('allow_write', False)
 
         if not secret_id and not file_id:
             msg = "EITHER_SECRET_OR_FILE_REQUIRED"
@@ -68,5 +71,6 @@ class CreateLinkShareSerializer(serializers.Serializer):
         attrs['allowed_reads'] = allowed_reads
         attrs['passphrase'] = passphrase
         attrs['valid_till'] = valid_till
+        attrs['allow_write'] = allow_write if secret_id else False  # Files don't support write / updates with link shares
 
         return attrs

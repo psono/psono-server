@@ -195,17 +195,276 @@ class LinkShareAccess(APITestCaseExtended):
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put(self):
         """
-        Tests PUT on link share access
+        Tests PUT on link share access to update a secret
         """
+
+        self.link_share.allow_write = True
+        self.link_share.save()
 
         url = reverse('link_share_access')
 
-        data = {}
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        secret = models.Secret.objects.get(pk=self.test_secret_obj.id)
+
+        self.assertEqual(secret.data.decode(), data['secret_data'])
+        self.assertEqual(secret.data_nonce, data['secret_data_nonce'])
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_allowed_reads_being_decremented(self):
+        """
+        Tests PUT on link share access to update a secret and check that the allowed reads counter is decremented
+        """
+
+        self.link_share.allowed_reads = 2
+        self.link_share.allow_write = True
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # ... should first decrement things
+        self.assertTrue(models.Link_Share.objects.filter(pk=self.link_share.id, allowed_reads=1).exists())
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # ... and then delete it
+        self.assertFalse(models.Link_Share.objects.filter(pk=self.link_share.id).exists())
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_not_valid_anymore(self):
+        """
+        Tests PUT on link share access that is not valid anymore
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.valid_till = timezone.now() - timedelta(seconds=1)
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_with_user_not_active_anymore(self):
+        """
+        Tests PUT on link share access where the creating user is not active anymore
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.save()
+        self.link_share.user.is_active = False
+        self.link_share.user.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_with_user_that_has_no_rights_anymore(self):
+        """
+        Tests PUT on link share access where the creating user is not active anymore
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.save()
+
+        self.secret_link_obj.delete()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_no_operations_anymore(self):
+        """
+        Tests PUT on link share access that allows no further ops anymore
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.allowed_reads = 0  # This is the counter that handles writes when writes are enabled
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_with_passphrase(self):
+        """
+        Tests PUT on link share access successfully with a passphrase
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.passphrase = make_password("gbnfalasd")
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'passphrase': 'gbnfalasd',
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_no_passphrase(self):
+        """
+        Tests PUT on link share access without passphrase
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.passphrase = make_password("gbnfalasd")
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            #'passphrase': 'gbnfalasd',
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_wrong_passphrase(self):
+        """
+        Tests PUT on link share with the wrong passphrase
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.passphrase = make_password("gbnfalasd")
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'passphrase': 'asdfg',
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_link_share_id_not_exist(self):
+        """
+        Tests PUT on link share access that does not exist
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': "3ab39f54-57f9-4b5d-a813-beb32a833ab3",
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_without_allow_write(self):
+        """
+        Tests PUT on link share access to update a secret
+        """
+
+        # self.link_share.allow_write = True
+        # self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+            'secret_data': '12345',
+            'secret_data_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -233,6 +492,45 @@ class LinkShareAccess(APITestCaseExtended):
         """
 
         self.link_share.allowed_reads = 2
+        self.link_share.save()
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 1)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=1).exists())
+
+        # try again a second time
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['secret_read_count'], 2)
+
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=2).exists())
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_success_check_read_count_with_allow_write(self):
+        """
+        Tests POST on link share access with a secret and check that the read counter is incremented even with allow write
+        """
+
+        self.link_share.allow_write = True
+        self.link_share.allowed_reads = 1
         self.link_share.save()
 
         self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id, read_count=0).exists())
@@ -334,6 +632,28 @@ class LinkShareAccess(APITestCaseExtended):
         Tests POST on link share access with allowed reads already being used
         """
 
+        self.link_share.allowed_reads = 0
+        self.link_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share.id),
+
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_with_allowed_reads_already_used_but_allow_write(self):
+        """
+        Tests POST on link share access with allowed reads already being used but allow read being true so reads are prevented if a write did happen for example
+        """
+
+        self.link_share.allow_write = True
         self.link_share.allowed_reads = 0
         self.link_share.save()
 

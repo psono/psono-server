@@ -1,5 +1,4 @@
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 from django.conf import settings
 from rest_framework import serializers, exceptions
@@ -11,9 +10,11 @@ from ..fields import UUIDField
 from ..models import Link_Share, Fileserver_Cluster_Member_Shard_Link
 from ..utils import user_has_rights_on_secret, user_has_rights_on_file, fileserver_access, get_ip
 
-class LinkShareAccessSerializer(serializers.Serializer):
+class UpdateLinkShareAccessSerializer(serializers.Serializer):
 
     link_share_id = UUIDField(required=True)
+    secret_data = serializers.CharField(required=True)
+    secret_data_nonce = serializers.CharField(required=True, max_length=64)
     passphrase = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -32,11 +33,15 @@ class LinkShareAccessSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if link_share.valid_till is not None and link_share.valid_till<timezone.now():
+        if not link_share.allow_write:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if link_share.allowed_reads is not None and link_share.allowed_reads<=0:
+        if link_share.valid_till is not None and link_share.valid_till < timezone.now():
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
+        if link_share.allowed_reads is not None and link_share.allowed_reads <= 0:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
