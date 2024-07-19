@@ -469,13 +469,14 @@ ANYMAIL = {
     "SPARKPOST_API_URL": config_get('SPARKPOST_API_URL', 'https://api.sparkpost.com/api/v1'),  # For EU: https://api.eu.sparkpost.com/api/v1
 
     "IGNORE_UNSUPPORTED_FEATURES": str(config_get('IGNORE_UNSUPPORTED_FEATURES', False)).lower() == 'true',
+}
 
-    "AMAZON_SES_CLIENT_PARAMS": {
+if config_get('AMAZON_SES_CLIENT_PARAMS_ACCESS_KEY_ID', ''):
+    ANYMAIL["AMAZON_SES_CLIENT_PARAMS"] = {
         "aws_access_key_id": config_get('AMAZON_SES_CLIENT_PARAMS_ACCESS_KEY_ID', ''),
         "aws_secret_access_key": config_get('AMAZON_SES_CLIENT_PARAMS_SECRET_ACCESS_KEY', ''),
         "region_name": config_get('AMAZON_SES_CLIENT_PARAMS_REGION_NAME', "us-west-2"),
-    },
-}
+    }
 
 DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
 
