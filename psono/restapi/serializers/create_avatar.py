@@ -3,6 +3,7 @@ from PIL import Image
 import io
 import base64
 from rest_framework import serializers, exceptions
+from restapi.utils.images import crop_to_aspect
 
 
 class CreateAvatarSerializer(serializers.Serializer):
@@ -26,21 +27,22 @@ class CreateAvatarSerializer(serializers.Serializer):
             file.seek(0)
             image = Image.open(file, formats=['JPEG', 'PNG'])
             image.load()
-            mime_type = Image.MIME.get(image.format)
+            format = image.format
+            mime_type = Image.MIME.get(format)
         except Exception as exc:
             raise exceptions.ValidationError('DATA_NO_IMAGE')
-
-        # Check image dimensions
-        if image.width != settings.AVATAR_DIMENSION_Y or image.height != settings.AVATAR_DIMENSION_Y:
-            raise exceptions.ValidationError("INVALID_IMAGE_DIMENSIONS")
 
         # Calculate the size of image data in bytes to check against the 100KB limit
         if len(img_data) > settings.AVATAR_MAX_SIZE_KB * 1024:
             raise exceptions.ValidationError('SIZE_EXCEEDED')
 
+        # Check image dimensions
+        if image.width != settings.AVATAR_DIMENSION_X or image.height != settings.AVATAR_DIMENSION_Y:
+            image = crop_to_aspect(image, target_width=settings.AVATAR_DIMENSION_X, target_height=settings.AVATAR_DIMENSION_Y)
+
         # Cleanse the image by saving it to a buffer
         buffer = io.BytesIO()
-        image.save(buffer, format=image.format)
+        image.save(buffer, format=format)
 
         # Update the attrs dictionary
         attrs['data'] = buffer.getvalue()
