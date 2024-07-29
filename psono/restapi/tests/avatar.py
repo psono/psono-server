@@ -124,7 +124,7 @@ class CreateAvatarTest(APITestCaseExtended):
     @override_settings(AVATAR_DIMENSION_X=2, AVATAR_DIMENSION_Y=2)
     def test_create_invalid_image_dimension(self):
         """
-        Tests to create an avatar with invalid dimension
+        Tests to create an avatar with invalid dimension (should be cropped)
         """
 
         url = reverse('avatar')
@@ -136,8 +136,7 @@ class CreateAvatarTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'], ['INVALID_IMAGE_DIMENSIONS'])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     @override_settings(AVATAR_DIMENSION_X=1, AVATAR_DIMENSION_Y=1, AVATAR_MAX_SIZE_KB=0)
     def test_create_invalid_image_size(self):

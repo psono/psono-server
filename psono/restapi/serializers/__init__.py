@@ -83,6 +83,8 @@ from .read_secret_with_api_key import *
 from .update_secret_with_api_key import *
 from .api_key_login import *
 from .bulk_create_secret import *
+from .bulk_delete_secret_link import *
+from .bulk_move_secret_link import *
 from .read_shard import *
 from .read_share import *
 from .read_share_rights import *
