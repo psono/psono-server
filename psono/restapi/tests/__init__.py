@@ -1,6 +1,7 @@
 from .accept_share import *
 from .commands import *
 from .bulk_secret import *
+from .bulk_secret_link import *
 from .datastore import *
 from .decline_share import *
 from .email_verification import *

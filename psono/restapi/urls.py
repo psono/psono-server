@@ -93,6 +93,7 @@ urlpatterns = [
     re_path(r'^file-repository/(?P<file_repository_id>[^/]+)/$', views.FileRepositoryView.as_view(), name='file_repository'),
     re_path(r'^file-repository/$', views.FileRepositoryView.as_view(), name='file_repository'),
 
+    re_path(r'^bulk-secret/link/$', views.BulkSecretLinkView.as_view(), name='bulk_secret_link'),
     re_path(r'^secret/link/$', views.SecretLinkView.as_view(), name='secret_link'),
 
     re_path(r'^bulk-secret/$', views.BulkSecretView.as_view(), name='bulk_secret'),
