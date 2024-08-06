@@ -432,6 +432,8 @@ EMAIL_USE_SSL = str(config_get('EMAIL_USE_SSL', False)).lower() == 'true'
 EMAIL_SSL_CERTFILE = config_get('EMAIL_SSL_CERTFILE', None)
 EMAIL_SSL_KEYFILE = config_get('EMAIL_SSL_KEYFILE', None)
 EMAIL_TIMEOUT = int(config_get('EMAIL_TIMEOUT', 0)) if config_get('EMAIL_TIMEOUT', 0) else None
+# CUSTOM
+EMAIL_VERIFY_CA_FILE = config_get('EMAIL_VERIFY_CA_FILE', '') if config_get('EMAIL_VERIFY_CA_FILE', '') else None
 
 TOTP_VALID_WINDOW = int(config_get('TOTP_VALID_WINDOW', 0))
 YUBIKEY_CLIENT_ID = config_get('YUBIKEY_CLIENT_ID', None)
