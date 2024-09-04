@@ -76,6 +76,7 @@ class IvaltVerifyTests(APITestCaseExtended):
             'nonce': authorization_validator_nonce_hex.decode(),
         })
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     def test_get_authentication_ivalt_verify(self):
         """
         Tests GET method on authentication_ivalt_verify
@@ -90,6 +91,7 @@ class IvaltVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     def test_put_authentication_ivalt_verify(self):
         """
         Tests PUT method on authentication_ivalt_verify
@@ -105,6 +107,7 @@ class IvaltVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     def test_post_authentication_ivalt_verify_invalid_token(self):
         """
         Tests POST method on authentication_ivalt_verify with invalid token
@@ -129,6 +132,7 @@ class IvaltVerifyTests(APITestCaseExtended):
         mock_response.json.return_value = {"data": {"status": True, "message": "Biometric Auth Request successfully sent.", "details": None }}
         return mock_response
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_notification_success)
     def test_authentication_ivalt_verify_notification_sent_success(self):
         """
@@ -147,6 +151,7 @@ class IvaltVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     def test_authentication_ivalt_verify_notification_sent_invalid_request_type(self):
         """
         Tests POST method on authentication_ivalt_verify
@@ -189,6 +194,7 @@ class IvaltVerifyTests(APITestCaseExtended):
         mock_response.json.return_value = {"error": { "type": "https://httpstatuses.com/403", "title": "Invalid details", "status": 403, "detail": "You are not within the geofencing location."}}
         return mock_response
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_success)
     def test_authentication_ivalt_verify_verification_success(self):
         """
@@ -207,6 +213,7 @@ class IvaltVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_pending)
     def test_authentication_ivalt_verify_verification_pending(self):
         """
@@ -226,7 +233,8 @@ class IvaltVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    
+
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_invalid_time_window)
     def test_authentication_ivalt_verify_verification_failed_invalid_time_window(self):
         """
@@ -247,6 +255,7 @@ class IvaltVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_invalid_geo_fance)
     def test_authentication_ivalt_verify_verification_failed_invalid_geo_fance(self):
         """
@@ -267,6 +276,7 @@ class IvaltVerifyTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     def test_delete_authentication_ivalt_verify(self):
         """
         Tests DELETE method on authentication_ivalt_verify
@@ -310,6 +320,7 @@ class IvaltTests(APITestCaseExtended):
             is_email_active=True
         )
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_get_user_ivalt(self):
         """
@@ -344,6 +355,7 @@ class IvaltTests(APITestCaseExtended):
         mock_response.json.return_value = {"data": {"status": True, "message": "Biometric Auth Request successfully sent.", "details": None }}
         return mock_response
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     @patch('restapi.utils.ivalt.requests.post', mock_verify_notification_success)
     def test_put_user_ivalt(self):
@@ -363,6 +375,7 @@ class IvaltTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get('id', False), False)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_put_user_ivalt_error_already_exists(self):
         """
@@ -386,6 +399,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_put_user_ivalt_no_parameters(self):
         """
@@ -426,6 +440,7 @@ class IvaltTests(APITestCaseExtended):
         return mock_response
 
     @override_settings(IVALT_SECRET_KEY="abc")
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_success)
     def test_activate_ivalt_verification_success(self):
         """
@@ -444,13 +459,12 @@ class IvaltTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(url, data)
 
-        print(response.data)
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         db_ivalt = models.Ivalt.objects.get(pk=ivalt.id)
         self.assertTrue(db_ivalt.active)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_pending)
     def test_activate_ivalt_verification_pending(self):
@@ -476,6 +490,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_invalid_time_window)
     def test_activate_ivalt_verification_failed_invalid_time_window(self):
@@ -500,6 +515,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     @patch('restapi.utils.ivalt.requests.post', mock_verify_verification_invalid_geo_fance)
     def test_activate_ivalt_verification_failed_invalid_geo_fance(self):
@@ -523,6 +539,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_post_user_ivalt_not_exist(self):
         """
@@ -539,6 +556,7 @@ class IvaltTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('non_field_errors')[0], 'NO_PERMISSION_OR_NOT_EXIST')
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_delete_user_ivalt(self):
         """
@@ -572,6 +590,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_delete_user_ivalt_no_ivalt_id (self):
         """
@@ -588,6 +607,7 @@ class IvaltTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_delete_user_ivalt_ivalt_id_no_uuid(self):
         """
@@ -606,6 +626,7 @@ class IvaltTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(ALLOWED_SECOND_FACTORS=['ivalt',])
     @override_settings(IVALT_SECRET_KEY="abc")
     def test_delete_user_ivalt_ivalt_id_not_exist(self):
         """

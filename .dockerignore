@@ -2,6 +2,7 @@ examples
 demo
 .coverage
 .htmlcov
+*.deb
 .docs
 .dockerignore
 .git

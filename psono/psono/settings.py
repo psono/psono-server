@@ -176,7 +176,7 @@ ALLOW_REGISTRATION = str(config_get('ALLOW_REGISTRATION', True)).lower() == 'tru
 ALLOW_LOST_PASSWORD = str(config_get('ALLOW_LOST_PASSWORD', True)).lower() == 'true'
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = str(config_get('ENFORCE_MATCHING_USERNAME_AND_EMAIL', False)).lower() == 'true'
 
-ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo', 'ivalt'])
+ALLOWED_SECOND_FACTORS = config_get('ALLOWED_SECOND_FACTORS', ['yubikey_otp', 'webauthn', 'google_authenticator', 'duo'])
 if isinstance(ALLOWED_SECOND_FACTORS, str) and ALLOWED_SECOND_FACTORS:
     ALLOWED_SECOND_FACTORS = [second_factor.strip() for second_factor in ALLOWED_SECOND_FACTORS.split(',')]
 elif isinstance(ALLOWED_SECOND_FACTORS, str):

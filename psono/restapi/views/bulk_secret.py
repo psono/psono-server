@@ -2,17 +2,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from django.db import IntegrityError
+
 from ..permissions import IsAuthenticated
 from ..utils import encrypt_with_db_secret
-from ..models import (
-    Secret,
-    Secret_Link,
-)
-
-from ..app_settings import (
-    BulkCreateSecretSerializer,
-)
-
+from ..models import Secret
+from ..models import Secret_Link
+from ..app_settings import BulkCreateSecretSerializer
 from ..authentication import TokenAuthentication
 
 class BulkSecretView(GenericAPIView):

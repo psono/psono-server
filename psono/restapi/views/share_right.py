@@ -160,7 +160,8 @@ class ShareRightView(GenericAPIView):
         if serializer.validated_data.get('user_id', False):
             # lets check if the user has already a path to access the share. if yes automatically approve rights
             accepted = None
-            if len(list(get_all_inherited_rights(serializer.validated_data['user_id'], serializer.validated_data['share_id']))) > 0:
+
+            if get_all_inherited_rights(serializer.validated_data['user_id'], serializer.validated_data['share_id']) is not None:
                 accepted = True
 
             share_right = User_Share_Right.objects.create(

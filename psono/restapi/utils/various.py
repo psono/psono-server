@@ -4,14 +4,19 @@ from django.core.cache import cache
 from django.db import connection
 from urllib.parse import urlparse
 
+from typing import Union
 from typing import Optional
-import os
+from typing import Tuple
+from typing import List
+from typing import Set
+from typing import Dict
 
+import os
 import bcrypt
 import time
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
-from ..models import File_Repository_Right
-from .avatar import delete_avatar_storage_of_user
+from uuid import UUID
+import scrypt
+import json
 
 from nacl.public import PrivateKey
 import nacl.secret
@@ -21,13 +26,9 @@ import hashlib
 import binascii
 import ipaddress
 
-from uuid import UUID
-
-import scrypt
-from typing import Tuple, List
-
-import json
-
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
+from ..models import File_Repository_Right
+from .avatar import delete_avatar_storage_of_user
 
 def generate_activation_code(email: str) -> str:
     """
@@ -134,64 +135,142 @@ def authenticate(username: str = "", user: User = None, authkey: str = "", passw
     return False, error_code
 
 
-def get_all_inherited_rights(user_id: str, share_id: str) -> User_Share_Right:
+def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
 
-    return User_Share_Right.objects.raw("""SELECT DISTINCT ON (id) *
-        FROM (
-            SELECT DISTINCT ON(t.path)
-                ur.id, ur.read, ur.write, ur.grant
-            FROM restapi_share_tree t
-                JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
-                JOIN restapi_user_share_right ur ON t2.share_id = ur.share_id
-            WHERE t.share_id = %(share_id)s
-                AND ur.user_id = %(user_id)s
-                AND ur.accepted = true
-            ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
-        ) a
-        UNION
-        SELECT DISTINCT ON (id) *
-        FROM (
-            SELECT DISTINCT ON(t.path)
-                gr.id, gr.read, gr.write, gr.grant
-            FROM restapi_share_tree t
-                JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
-                JOIN restapi_group_share_right gr ON t2.share_id = gr.share_id
-                JOIN restapi_user_group_membership gm ON gr.group_id = gm.group_id
-            WHERE t.share_id = %(share_id)s
-                AND gm.user_id = %(user_id)s
-                AND gm.accepted = true
-            ORDER BY t.path, nlevel(t.path) - nlevel(t2.path) ASC
-        ) b
-        """, {
-        'share_id': share_id,
-        'user_id': user_id,
-    })
+    if isinstance(share_id, list):
+        if len(share_id) == 0:
+            return []
+        share_ids = [str(s) for s in share_id]
+    else:
+        if not share_id:
+            return None
+        share_ids = [str(share_id)]
+
+    user_share_rights = User_Share_Right.objects.raw("""SELECT DISTINCT ON (share_id, id) *
+            FROM (
+                SELECT DISTINCT ON(t.share_id, t.path)
+                    ur.id, t.share_id, ur.read, ur.write, ur.grant
+                FROM restapi_share_tree t
+                    JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
+                    JOIN restapi_user_share_right ur ON t2.share_id = ur.share_id
+                WHERE t.share_id = ANY(%(share_ids)s)
+                    AND ur.user_id = %(user_id)s
+                    AND ur.accepted = true
+                ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
+            ) a
+            UNION
+            SELECT DISTINCT ON (share_id, id) *
+            FROM (
+                SELECT DISTINCT ON(t.share_id, t.path)
+                    gr.id, t.share_id, gr.read, gr.write, gr.grant
+                FROM restapi_share_tree t
+                    JOIN restapi_share_tree t2 ON t2.path @> t.path AND t2.path != t.path
+                    JOIN restapi_group_share_right gr ON t2.share_id = gr.share_id
+                    JOIN restapi_user_group_membership gm ON gr.group_id = gm.group_id
+                WHERE t.share_id = ANY(%(share_ids)s)
+                    AND gm.user_id = %(user_id)s
+                    AND gm.accepted = true
+                ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
+            ) b
+            """, {
+            'share_ids': share_ids,
+            'user_id': user_id,
+        })
 
 
-def get_all_direct_user_rights(user_id: str, share_id: str) -> User_Share_Right:
+    user_share_rights_dict = {}
+    for usr in user_share_rights:
+        if str(usr.share_id) not in user_share_rights_dict:
+            user_share_rights_dict[str(usr.share_id)] = []
+        user_share_rights_dict[str(usr.share_id)].append(usr)
 
-    try:
-        user_share_rights = User_Share_Right.objects.only("read", "write", "grant").filter(user_id=user_id, share_id=share_id, accepted=True)
-    except User_Share_Right.DoesNotExist:
-        user_share_rights = []
+    sorted_user_share_rights = []
+    for sh_id in share_ids:
+        if sh_id in user_share_rights_dict:
+            sorted_user_share_rights.append(user_share_rights_dict[sh_id])
+        else:
+            sorted_user_share_rights.append(None)
 
-    return user_share_rights
+    if isinstance(share_id, list):
+        return sorted_user_share_rights
+
+    return sorted_user_share_rights[0]
 
 
-def get_all_direct_group_rights(user_id: str, share_id: str) -> Group_Share_Right:
+def get_all_direct_user_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
 
-    return Group_Share_Right.objects.raw("""SELECT gr.id, gr.read, gr.write, gr.grant
+    if isinstance(share_id, list):
+        if len(share_id) == 0:
+            return []
+        share_ids = [str(s) for s in share_id]
+    else:
+        if not share_id:
+            return None
+        share_ids = [str(share_id)]
+
+    user_share_rights = User_Share_Right.objects.only("share_id", "read", "write", "grant").filter(
+        user_id=user_id, share_id__in=share_ids, accepted=True
+    )
+    user_share_rights_dict = {}
+    for usr in user_share_rights:
+        if str(usr.share_id) not in user_share_rights_dict:
+            user_share_rights_dict[str(usr.share_id)] = []
+        user_share_rights_dict[str(usr.share_id)].append(usr)
+
+    sorted_user_share_rights = []
+    for sh_id in share_ids:
+        if sh_id in user_share_rights_dict:
+            sorted_user_share_rights.append(user_share_rights_dict[sh_id])
+        else:
+            sorted_user_share_rights.append(None)
+
+    if isinstance(share_id, list):
+        return sorted_user_share_rights
+
+    return sorted_user_share_rights[0]
+
+
+def get_all_direct_group_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[Group_Share_Right, None, List[Union[Group_Share_Right, None]]]:
+
+    if isinstance(share_id, list):
+        if len(share_id) == 0:
+            return []
+        share_ids = [str(s) for s in share_id]
+    else:
+        if not share_id:
+            return None
+        share_ids = [str(share_id)]
+
+    group_share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.share_id, gr.read, gr.write, gr.grant
         FROM restapi_group_share_right gr
             JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
-        WHERE gr.share_id = %(share_id)s
+        WHERE gr.share_id = ANY(%(share_ids)s) 
             AND ms.user_id = %(user_id)s
             AND ms.accepted = true""", {
-        'share_id': share_id,
+        'share_ids': share_ids,
         'user_id': user_id,
     })
 
+    group_share_rights_dict = {}
+    for grp in group_share_rights:
+        if str(grp.share_id) not in group_share_rights_dict:
+            group_share_rights_dict[str(grp.share_id)] = []
+        group_share_rights_dict[str(grp.share_id)].append(grp)
 
-def calculate_user_rights_on_share(user_id: str = "", share_id: str = "") -> dict:
+    sorted_group_share_rights = []
+    for sh_id in share_ids:
+        if sh_id in group_share_rights_dict:
+            sorted_group_share_rights.append(group_share_rights_dict[sh_id])
+        else:
+            sorted_group_share_rights.append(None)
+
+    if isinstance(share_id, list):
+        return sorted_group_share_rights
+
+    return sorted_group_share_rights[0]
+
+
+def calculate_user_rights_on_share(user_id: str, share_id: Union[str, List[str]]) -> Union[dict, List[dict], None]:
     """
     Calculates the user's rights on a share
 
@@ -202,50 +281,87 @@ def calculate_user_rights_on_share(user_id: str = "", share_id: str = "") -> dic
     :return:
     :rtype:
     """
+    if isinstance(share_id, list):
+        if len(share_id) == 0:
+            return []
+        share_ids = [str(s) for s in share_id]
+    else:
+        if not share_id:
+            return None
+        share_ids = [str(share_id)]
 
-    grouped_read = False
-    grouped_write = False
-    grouped_grant = False
+    user_rights = get_all_direct_user_rights(user_id=user_id, share_id=share_ids)
+    group_rights = get_all_direct_group_rights(user_id=user_id, share_id=share_ids)
 
-    has_direct_user_share_rights = False
-    has_direct_group_share_rights = False
+    grouped_rights = [{
+        "read": False,
+        "write": False,
+        "grant": False,
+        "has_direct_user_share_rights": False,
+        "has_direct_group_share_rights": False,
+    } for s in share_ids]
 
-    user_rights = get_all_direct_user_rights(user_id=user_id, share_id=share_id)
-
-    for user_right in user_rights:
-        has_direct_user_share_rights = True
-        grouped_read = grouped_read or user_right.read
-        grouped_write = grouped_write or user_right.write
-        grouped_grant = grouped_grant or user_right.grant
-
-
-    group_rights = get_all_direct_group_rights(user_id, share_id)
-
-    for s in group_rights:
-        has_direct_group_share_rights = True
-        grouped_read = grouped_read or s.read
-        grouped_write = grouped_write or s.write
-        grouped_grant = grouped_grant or s.grant
+    for index, user_right in enumerate(user_rights):
+        if user_right is None:
+            continue
+        for u in user_right:
+            grouped_rights[index]['has_direct_user_share_rights'] = True
+            grouped_rights[index]['read'] = grouped_rights[index]['read'] or u.read
+            grouped_rights[index]['write'] = grouped_rights[index]['write'] or u.write
+            grouped_rights[index]['grant'] = grouped_rights[index]['grant'] or u.grant
 
 
-    if has_direct_user_share_rights == False and has_direct_group_share_rights == False:
+    for index, group_right in enumerate(group_rights):
+        if group_right is None:
+            continue
+        for s in group_right:
+            grouped_rights[index]['has_direct_group_share_rights'] = True
+            grouped_rights[index]['read'] = grouped_rights[index]['read'] or s.read
+            grouped_rights[index]['write'] = grouped_rights[index]['write'] or s.write
+            grouped_rights[index]['grant'] = grouped_rights[index]['grant'] or s.grant
+
+
+    need_inherited_rights_share_id_index = {}
+    for index, sh_id in enumerate(share_ids):
+        if grouped_rights[index]['has_direct_user_share_rights']:
+            continue
+        if grouped_rights[index]['has_direct_group_share_rights']:
+            continue
+
+        if sh_id not in need_inherited_rights_share_id_index:
+            need_inherited_rights_share_id_index[sh_id] = []
+        need_inherited_rights_share_id_index[sh_id].append(grouped_rights[index])
+
+    need_inherited_rights_share_ids = list(need_inherited_rights_share_id_index.keys())
+    if len(need_inherited_rights_share_ids) > 0:
 
         # maybe the user has inherited rights
-        user_share_rights = get_all_inherited_rights(user_id, share_id)
+        user_share_rights = get_all_inherited_rights(user_id, need_inherited_rights_share_ids)
 
-        for s in user_share_rights:
-            grouped_read = grouped_read or s.read
-            grouped_write = grouped_write or s.write
-            grouped_grant = grouped_grant or s.grant
+        for index, user_share_right in enumerate(user_share_rights):
+            if user_share_right is None:
+                continue
+            for s in user_share_right:
+                for grouped_right in need_inherited_rights_share_id_index[need_inherited_rights_share_ids[index]]:
+                    grouped_right['read'] = grouped_right['read'] or s.read
+                    grouped_right['write'] = grouped_right['write'] or s.write
+                    grouped_right['grant'] = grouped_right['grant'] or s.grant
+
+    if isinstance(share_id, list):
+        return [{
+                "read": g["read"],
+                "write": g["write"],
+                "grant": g["grant"],
+        } for g in grouped_rights]
 
     return {
-        'read': grouped_read,
-        'write': grouped_write,
-        'grant': grouped_grant,
+        "read": grouped_rights[0]["read"],
+        "write": grouped_rights[0]["write"],
+        "grant": grouped_rights[0]["grant"],
     }
 
 
-def user_has_rights_on_share(user_id: str = "", share_id: str = "", read: bool = None, write: bool = None, grant: bool = None) -> bool:
+def user_has_rights_on_share(user_id: str, share_id: Union[str, List[str]], read: bool = None, write: bool = None, grant: bool = None) -> Union[None, bool, List[bool]]:
     """
     Checks if the given user has the requested rights for the given share.
     User_share_rights and all Group_share_rights be checked first.
@@ -265,54 +381,127 @@ def user_has_rights_on_share(user_id: str = "", share_id: str = "", read: bool =
     :param grant:
     :return:
     """
+    if isinstance(share_id, list):
+        if len(share_id) == 0:
+            return []
+        share_ids = share_id
+    else:
+        if not share_id:
+            raise Exception
+        share_ids = [share_id]
 
-    rights = calculate_user_rights_on_share(user_id, share_id)
-
-    return (read is None or read == rights['read']) \
-           and (write is None or write == rights['write']) \
-           and (grant is None or grant == rights['grant'])
 
 
-def user_has_rights_on_secret(user_id: str = "", secret_id: str = "", read: bool = None, write: bool = None) -> bool:  #nosec B105, B107
+    rights = calculate_user_rights_on_share(user_id, share_ids)
+
+    result = []
+    for right in rights:
+        result.append(
+            (read is None or read == right['read']) \
+            and (write is None or write == right['write']) \
+            and (grant is None or grant == right['grant'])
+        )
+
+    if isinstance(share_id, list):
+        return result
+
+    return result[0]
+
+
+def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], read: bool = None, write: bool = None) -> Union[bool, List[bool]]:  #nosec B105, B107
     """
     Checks if the given user has the requested rights for the given secret
 
     :param user_id:
-    :param secret_id:
+    :param secret_id: can be a string or a list of strings
     :param read:
     :param write:
     :return:
     """
 
     datastores_loaded = False
-    datastores = []  # type: List[str]
+    datastores = set()  # type: Set[str]
 
-    try:
-        # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
-        secret_links = Secret_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(secret_id=secret_id).order_by('parent_datastore_id')
-    except Secret_Link.DoesNotExist:
-        return False
+    if isinstance(secret_id, list):
+        secret_ids = secret_id
+    else:
+        secret_ids = [secret_id]
 
+    # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
+    secret_links = Secret_Link.objects.only('parent_datastore_id', 'parent_share_id', 'secret_id').filter(secret_id__in=secret_ids).order_by('secret_id', 'parent_datastore_id')
+
+    secret_links_dict = {}
     for link in secret_links:
+        if link.secret_id not in secret_links_dict:
+            secret_links_dict[link.secret_id] = []
+        secret_links_dict[link.secret_id].append(link)
 
-        if link.parent_datastore_id is not None:
-            if not datastores_loaded:
-                try:
-                    datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
-                except Data_Store.DoesNotExist:
-                    datastores = []
-                datastores_loaded = True
+    user_rights = {}
 
-            if link.parent_datastore_id in datastores:
-                return True
+    for db_secret_id in set(secret_ids):
+        if db_secret_id in user_rights:
+            continue
+        if db_secret_id not in secret_links_dict:
+            user_rights[db_secret_id] = False
+            continue
 
-        elif link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
-            return True
+        for link in secret_links_dict[db_secret_id]:
 
-    return False
+            if link.parent_datastore_id is not None:
+                if not datastores_loaded:
+                    try:
+                        datastores = set(Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all())
+                    except Data_Store.DoesNotExist:
+                        datastores = set()
+                    datastores_loaded = True
+
+                if link.parent_datastore_id in datastores:
+                    user_rights[db_secret_id] = True # A user has always all permissions for secrets in his datastore
+                    break
+
+    share_ids = []
+    for db_secret_id in set(secret_ids):
+        if db_secret_id in user_rights:
+            continue
+        for link in secret_links_dict[db_secret_id]:
+            if link.parent_share_id is None:
+                continue
+            share_ids.append(str(link.parent_share_id))
+
+    share_ids = list(set(share_ids))
+
+    share_rights = user_has_rights_on_share(user_id, share_ids, read, write)
+    cached_user_share_rights={}
+    for index, share_id in enumerate(share_ids):
+        cached_user_share_rights[share_id] = share_rights[index]
+
+    for db_secret_id in set(secret_ids):
+        if db_secret_id in user_rights:
+            continue
+        for link in secret_links_dict[db_secret_id]:
+            if link.parent_share_id is None:
+                continue
+            if cached_user_share_rights[str(link.parent_share_id)]:
+                user_rights[db_secret_id] = True
+                break
+        if db_secret_id not in user_rights:
+            user_rights[db_secret_id] = False
 
 
-def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_id: str = ""):
+    sorted_user_rights = []
+    for sec_id in secret_ids:
+        if sec_id in user_rights:
+            sorted_user_rights.append(user_rights[sec_id])
+        else:
+            sorted_user_rights.append(None)
+
+    if isinstance(secret_id, list):
+        return sorted_user_rights
+
+    return sorted_user_rights[0]
+
+
+def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_id: str = "") -> Dict:
     grouped_shared = False
     grouped_read = False
     grouped_write = False
