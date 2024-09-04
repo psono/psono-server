@@ -51,7 +51,7 @@ cffi==1.15.0
     #   pynacl
 charset-normalizer==2.0.11
     # via requests
-cryptography==42.0.4
+cryptography==43.0.1
     # via
     #   azure-storage-blob
     #   paramiko
@@ -158,7 +158,7 @@ pynacl==1.5.0
     # via
     #   -r requirements.in
     #   paramiko
-pyopenssl==24.0.0
+pyopenssl==24.2.1
     # via webauthn
 pyotp==2.3.0
     # via -r requirements.in
