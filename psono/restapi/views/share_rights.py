@@ -1,18 +1,11 @@
-from ..utils import calculate_user_rights_on_share
-from uuid import UUID
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from ..permissions import IsAuthenticated
 
-from ..models import (
-    Share
-)
 from ..app_settings import (
     ReadShareRightsSerializer,
 )
-
-from rest_framework.exceptions import PermissionDenied
 
 from ..authentication import TokenAuthentication
 

@@ -65,6 +65,7 @@ from .serializers import (
     ReadGroupRightsSerializer as DefaultReadGroupRightsSerializer,
     CreateSecretSerializer as DefaultCreateSecretSerializer,
     BulkCreateSecretSerializer as DefaultBulkCreateSecretSerializer,
+    BulkReadSecretSerializer as DefaultBulkReadSecretSerializer,
     BulkMoveSecretLinkSerializer as DefaultBulkMoveSecretLinkSerializer,
     BulkDeleteSecretLinkSerializer as DefaultBulkDeleteSecretLinkSerializer,
     ReadSecretSerializer as DefaultReadSecretSerializer,
@@ -544,6 +545,13 @@ BulkCreateSecretSerializer = import_callable(
     serializers.get(
         'BULK_CREATE_SECRET_SERIALIZER',
         DefaultBulkCreateSecretSerializer
+    )
+)
+
+BulkReadSecretSerializer = import_callable(
+    serializers.get(
+        'BULK_READ_SECRET_SERIALIZER',
+        DefaultBulkReadSecretSerializer
     )
 )
 

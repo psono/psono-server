@@ -7,6 +7,7 @@ from .api_key_secret import APIKeySecretView
 from .avatar import AvatarView
 from .avatar_image import AvatarImageView
 from .bulk_secret import BulkSecretView
+from .bulk_secret_read import BulkSecretReadView
 from .bulk_secret_link import BulkSecretLinkView
 from .datastore import DatastoreView
 from .duo_verify import DuoVerifyView
