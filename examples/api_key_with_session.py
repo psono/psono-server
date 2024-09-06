@@ -356,8 +356,8 @@ def main():
         if datastore['type'] != 'password':
             continue
         datastore_read_result = api_read_datastore(token, session_secret_key, datastore['id'])
-        datastore_secret = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
-        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_secret))
+        datastore_content_encrypted = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
+        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_content_encrypted))
         # print(datastore_content)
         # {
         #     "datastore_id": "73229adf-14bc-4370-8e8c-755732322558",
