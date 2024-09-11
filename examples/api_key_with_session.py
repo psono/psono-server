@@ -184,6 +184,8 @@ def api_request(method, endpoint, data = None, token = None, session_secret_key 
     else:
         headers = {'content-type': 'application/json'}
 
+    if session_secret_key and data:
+        data = json.dumps(encrypt_symmetric(data, session_secret_key))
 
     r = requests.request(method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY)
 
@@ -354,8 +356,8 @@ def main():
         if datastore['type'] != 'password':
             continue
         datastore_read_result = api_read_datastore(token, session_secret_key, datastore['id'])
-        datastore_secret = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
-        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_secret))
+        datastore_content_encrypted = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
+        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_content_encrypted))
         # print(datastore_content)
         # {
         #     "datastore_id": "73229adf-14bc-4370-8e8c-755732322558",

@@ -15,6 +15,10 @@ class IsAuthenticated(BasePermission):
         if path == '/authentication/logout/' and request.method == 'POST':
             return request.user and request.user.is_authenticated
 
+        # bulk-secret-read uses a POST request to read the data
+        if path == '/bulk-secret-read/' and request.auth and not request.auth.read:
+            return False
+
         if request.method == 'GET' and request.auth and not request.auth.read:
             return False
         if request.method != 'GET' and request.auth and not request.auth.write:
