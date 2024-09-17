@@ -59,7 +59,7 @@ cryptography==43.0.1
     #   webauthn
 dj-database-url==2.1.0
     # via -r requirements.in
-django==4.2.15
+django==4.2.16
     # via
     #   -r requirements.in
     #   dj-database-url
