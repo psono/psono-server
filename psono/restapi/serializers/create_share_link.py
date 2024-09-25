@@ -1,7 +1,5 @@
 from ..utils import user_has_rights_on_share
 
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..models import Data_Store
@@ -34,15 +32,20 @@ class CreateShareLinkSerializer(serializers.Serializer):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
-        # check permissions on parent share (and if it exists)
-        if parent_share_id is not None and not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
-            msg = "NO_PERMISSION_OR_NOT_EXIST"
-            raise exceptions.ValidationError(msg)
+            # check permissions on share (and if it exists)
+            if not user_has_rights_on_share(self.context['request'].user.id, share_id, read=True) and not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+        else:
+            # check permissions on parent share (and if it exists)
+            if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
 
-        # check permissions on share (and if it exists)
-        if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
-            msg = "NO_PERMISSION_OR_NOT_EXIST"
-            raise exceptions.ValidationError(msg)
+            # check permissions on share (and if it exists)
+            if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
 
         attrs['link_id'] = link_id
         attrs['share_id'] = share_id
