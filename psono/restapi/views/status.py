@@ -57,6 +57,7 @@ class StatusView(GenericAPIView):
             user_status = {
                 'unaccepted_shares_count': unaccepted_shares_count,
                 'unaccepted_groups_count': unaccepted_groups_count,
+                'unaccepted_forced_groups_count': 0,
                 'last_security_report_created': last_security_report_created,
             }
 
