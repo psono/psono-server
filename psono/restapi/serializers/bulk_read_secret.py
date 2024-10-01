@@ -5,7 +5,7 @@ from ..utils import user_has_rights_on_secret
 from ..models import Secret
 
 class BulkReadSecretSerializer(serializers.Serializer):
-    secret_ids = serializers.ListField(child=UUIDField(), min_length=1)
+    secret_ids = serializers.ListField(child=UUIDField())
 
     def validate(self, attrs: dict) -> dict:
         secret_ids = attrs.get('secret_ids')

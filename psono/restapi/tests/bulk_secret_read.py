@@ -294,12 +294,12 @@ class BulkReadSecretTest(APITestCaseExtended):
 
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response_data = json.loads(response.content)
 
-        self.assertTrue('secret_ids' in response_data)
-        self.assertEqual(response_data['secret_ids'][0], 'Ensure this field has at least 1 elements.')
+        self.assertTrue('secrets' in response_data)
+        self.assertEqual(len(response_data['secrets']), 0)
 
 
     def test_read_secrets_not_exist(self):
