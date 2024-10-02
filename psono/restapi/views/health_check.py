@@ -82,19 +82,20 @@ class HealthCheckView(GenericAPIView):
             unhealthy = True
             time_sync = False
 
-        if unhealthy:
-            health_status = status.HTTP_400_BAD_REQUEST
-
-        else:
-            health_status = status.HTTP_200_OK
-
-
-        return Response({
+        result = {
             'db_read': { 'healthy': db_read },
             'db_sync': { 'healthy': db_sync },
             'time_sync': { 'healthy': time_sync },
             '_info': { 'ip': get_ip(request) },
-        }, status=health_status)
+        }
+
+        if unhealthy:
+            health_status = status.HTTP_400_BAD_REQUEST
+            print(result)
+        else:
+            health_status = status.HTTP_200_OK
+
+        return Response(result, status=health_status)
 
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
