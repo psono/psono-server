@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktrans %}New entry shared with your group{% endblocktrans %}
