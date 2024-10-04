@@ -1,6 +1,8 @@
 from django.urls import reverse
+from django.core.mail import EmailMultiAlternatives
 
 from rest_framework import status
+from mock import patch
 
 from restapi import models
 from .base import APITestCaseExtended
@@ -565,6 +567,49 @@ class CreateUserShareRightTest(APITestCaseExtended):
         response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch.object(EmailMultiAlternatives, 'send')
+    def test_grant_share_right_email(self, mocked_send):
+        """
+        Tests to insert the share right for a group twice
+        """
+
+        self.test_membership_obj = models.User_Group_Membership.objects.create(
+            user = self.test_user2_obj,
+            group = self.test_group_obj,
+            creator = self.test_user_obj,
+            secret_key = 'secret-key',
+            secret_key_nonce = 'secret-key-nonce',
+            secret_key_type = 'symmetric',
+            private_key = 'private-key',
+            private_key_nonce = 'private-key-nonce',
+            private_key_type = 'symmetric',
+            group_admin = True,
+            accepted = True,
+        )
+
+        url = reverse('share_right')
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': str(self.test_group_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        mocked_send.assert_called_once()
 
     def test_grant_share_right_failure_user_and_group_specified(self):
         """
