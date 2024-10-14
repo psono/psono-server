@@ -39,6 +39,7 @@ class APIKeyLoginSerializer(serializers.Serializer):
         device_time = info.get('device_time', None)
 
         session_duration = min(session_duration, settings.MAX_API_KEY_TOKEN_TIME_VALID)
+        session_duration = max(session_duration, settings.MIN_API_KEY_TOKEN_TIME_VALID)
 
         # check Permissions on group
         try:

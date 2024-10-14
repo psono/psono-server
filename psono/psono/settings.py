@@ -582,6 +582,9 @@ DEFAULT_TOKEN_TIME_VALID = int(config_get('DEFAULT_TOKEN_TIME_VALID', 86400)) # 
 MAX_WEB_TOKEN_TIME_VALID = int(config_get('MAX_WEB_TOKEN_TIME_VALID', 2592000)) # 30d in seconds
 MAX_APP_TOKEN_TIME_VALID = int(config_get('MAX_APP_TOKEN_TIME_VALID', 31536000)) # 365d in seconds
 MAX_API_KEY_TOKEN_TIME_VALID = int(config_get('MAX_API_KEY_TOKEN_TIME_VALID', 600)) # 10 min in seconds
+MIN_WEB_TOKEN_TIME_VALID = int(config_get('MIN_WEB_TOKEN_TIME_VALID', 0)) # in seconds
+MIN_APP_TOKEN_TIME_VALID = int(config_get('MIN_APP_TOKEN_TIME_VALID', 0)) # in seconds
+MIN_API_KEY_TOKEN_TIME_VALID = int(config_get('MIN_API_KEY_TOKEN_TIME_VALID', 0)) # in seconds
 RECOVERY_VERIFIER_TIME_VALID = int(config_get('RECOVERY_VERIFIER_TIME_VALID', 600)) # in seconds
 REPLAY_PROTECTION_DISABLED = str(config_get('REPLAY_PROTECTION_DISABLED', False)).lower() == 'true' # disables the replay protection
 DEVICE_PROTECTION_DISABLED = str(config_get('DEVICE_PROTECTION_DISABLED', False)).lower() == 'true' # disables the device fingerprint protection
