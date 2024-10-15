@@ -1,5 +1,5 @@
 # PSONO Dockerfile for Alpine
-FROM psono-docker.jfrog.io/python:3.11.3-alpine3.16
+FROM psono-docker.jfrog.io/python:3.11.10-alpine3.20
 
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -28,7 +28,6 @@ RUN apk upgrade && \
     if [ "$TARGETARCH" = "amd64" ]; then \
     pip3 install -r requirements-amd64.txt ; \
     fi; \
-    pip3 install uwsgi && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i /root/.psono_server/settings.yaml \
