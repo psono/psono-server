@@ -189,7 +189,7 @@ s3transfer==0.10.0
     # via boto3
 scrypt==0.8.19
     # via -r requirements.in
-sentry-sdk[django]==1.45.0
+sentry-sdk[django]==2.16.0
     # via -r requirements.in
 six==1.16.0
     # via
