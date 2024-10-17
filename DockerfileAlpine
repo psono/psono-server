@@ -23,7 +23,7 @@ RUN apk upgrade && \
         build-base \
         libffi-dev \
         linux-headers && \
-    pip3 install --upgrade pip && \
+    pip3 install --upgrade setuptools pip && \
     pip3 install -r requirements.txt && \
     if [ "$TARGETARCH" = "amd64" ]; then \
     pip3 install -r requirements-amd64.txt ; \
