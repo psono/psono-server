@@ -337,8 +337,13 @@ for key, value in config_get('DEFAULT_THROTTLE_RATES', {}).items():
 ROOT_URLCONF = 'psono.urls'
 SITE_ID = 1
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = str(config_get('CORS_ALLOW_ALL_ORIGINS', True)).lower() == 'true'
+CORS_ALLOW_CREDENTIALS = str(config_get('CORS_ALLOW_CREDENTIALS', True)).lower() == 'true'
+CORS_ALLOWED_ORIGINS = config_get('CORS_ALLOWED_ORIGINS', ())
+
+if isinstance(CORS_ALLOWED_ORIGINS, str):
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGINS.split(',')]
+
 CORS_ALLOW_METHODS = (
         'GET',
         'POST',
