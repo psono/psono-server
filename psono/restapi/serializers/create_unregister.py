@@ -6,8 +6,8 @@ from ..models import User
 
 
 class CreateUnregisterSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
-    email = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
+    username = serializers.EmailField(required=False, allow_blank=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
+    email = serializers.EmailField(required=False, allow_blank=True, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
 
     def validate(self, attrs: dict) -> dict:
 

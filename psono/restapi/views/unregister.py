@@ -139,10 +139,8 @@ class UnregisterView(GenericAPIView):
         try:
             msg.send()
         except AnymailUnsupportedFeature:
-            user.delete()
             raise
         except:
-            user.delete()
             return Response({"non_field_errors": ["UNREGISTRATION_EMAIL_DELIVERY_FAILED"]},
                             status=status.HTTP_400_BAD_REQUEST)
 

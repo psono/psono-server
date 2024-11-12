@@ -1,17 +1,13 @@
 from django.urls import reverse
 from django.conf import settings
 from django.test.utils import override_settings
-from django.contrib.auth.hashers import check_password
-from django.core.mail import EmailMultiAlternatives
 from rest_framework import status
 
 from restapi import models
 from .base import APITestCaseExtended
 from ..utils import encrypt_with_db_secret
 from ..utils import generate_unregistration_code
-from ..utils import decrypt_with_db_secret, get_static_bcrypt_hash_from_email
 
-from mock import patch
 import bcrypt
 import binascii
 import random
