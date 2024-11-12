@@ -7,6 +7,7 @@ from .create_recoverycode import *
 from .create_security_report import *
 from .create_share import *
 from .create_share_right import *
+from .create_unregister import *
 from .create_emergencycode import *
 from .delete_emergencycode import *
 from .delete_datastore import *
@@ -20,6 +21,7 @@ from .update_group import *
 from .update_membership import *
 from .read_group_rights import *
 from .update_share_right import *
+from .update_unregister import *
 from .delete_share_right import *
 from .delete_group import *
 from .update_secret import *

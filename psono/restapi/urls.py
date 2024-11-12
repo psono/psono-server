@@ -37,6 +37,7 @@ urlpatterns = [
     re_path(r'^authentication/sessions/$', views.SessionView.as_view(), name='authentication_session'),
 
     re_path(r'^authentication/register/$', views.RegisterView.as_view(), name='authentication_register'),
+    re_path(r'^authentication/unregister/$', views.UnregisterView.as_view(), name='authentication_unregister'),
     re_path(r'^authentication/verify-email/$', views.VerifyEmailView.as_view(), name='authentication_verify_email'),
 
     re_path(r'^user/update/$', views.UserUpdate.as_view(), name='user_update'),

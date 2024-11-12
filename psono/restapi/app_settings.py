@@ -13,7 +13,7 @@ from .serializers import (
     YubikeyOTPVerifySerializer as DefaultYubikeyOTPVerifySerializer,
     ActivateTokenSerializer as DefaultActivateTokenSerializer,
     LogoutSerializer as DefaultLogoutSerializer,
-    VerifyEmailSerializeras as DefaultVerifyEmailSerializer,
+    VerifyEmailSerializer as DefaultVerifyEmailSerializer,
     RegisterSerializer as DefaultRegisterSerializer,
     UserSearchSerializer as DefaultUserSearchSerializer,
     ReadSecretHistorySerializer as DefaultReadSecretHistorySerializer,
@@ -116,6 +116,8 @@ from .serializers import (
     ActivateIvaltSerializer as DefaultActivateIvaltSerializer,
     DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
     IvaltVerifySerializer as DefaultIvaltVerifySerializer,
+    CreateUnregisterSerializer as DefaultCreateUnregisterSerializer,
+    UpdateUnregisterSerializer as DefaultUpdateUnregisterSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -905,6 +907,20 @@ IvaltVerifySerializer = import_callable(
     serializers.get(
         'IVALT_VERIFY_SERIALIZER',
         DefaultIvaltVerifySerializer
+    )
+)
+
+CreateUnregisterSerializer = import_callable(
+    serializers.get(
+        'CREATE_UNREGISTER_SERIALIZER',
+        DefaultCreateUnregisterSerializer
+    )
+)
+
+UpdateUnregisterSerializer = import_callable(
+    serializers.get(
+        'UPDATE_UNREGISTER_SERIALIZER',
+        DefaultUpdateUnregisterSerializer
     )
 )
 

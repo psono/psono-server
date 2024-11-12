@@ -30,6 +30,29 @@ from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, Fil
 from ..models import File_Repository_Right
 from .avatar import delete_avatar_storage_of_user
 
+def generate_verification_code(email: str, verification_secret: str) -> str:
+    """
+    Takes email address and combines it with a timestamp before encrypting everything with the specifified verification secret
+    No database storage required for this action
+
+    :param email: email
+    :type email: unicode
+    :param verification_secret: verification_secret
+    :type verification_secret: str
+    :return: activation_code
+    :rtype: str
+    """
+
+    email = str(email).lower().strip()
+    time_stamp = str(int(time.time()))
+
+    # normally encrypt emails, so they are not stored in plaintext with a random nonce
+    secret_key = hashlib.sha256(verification_secret.encode()).hexdigest()
+    crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+    validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
+                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    return nacl.encoding.HexEncoder.encode(validation_secret).decode()
+
 def generate_activation_code(email: str) -> str:
     """
     Takes email address and combines it with a timestamp before encrypting everything with the ACTIVATION_LINK_SECRET
@@ -41,15 +64,20 @@ def generate_activation_code(email: str) -> str:
     :rtype: str
     """
 
-    email = str(email).lower().strip()
-    time_stamp = str(int(time.time()))
+    return generate_verification_code(email, settings.ACTIVATION_LINK_SECRET)
 
-    # normally encrypt emails, so they are not stored in plaintext with a random nonce
-    secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
-    crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
-                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
-    return nacl.encoding.HexEncoder.encode(validation_secret).decode()
+def generate_unregistration_code(email: str) -> str:
+    """
+    Takes email address and combines it with a timestamp before encrypting everything
+    No database storage required for this action
+
+    :param email: email
+    :type email: unicode
+    :return: activation_code
+    :rtype: str
+    """
+
+    return generate_verification_code(email, settings.ACTIVATION_LINK_SECRET + 'unregister')
 
 
 def get_static_bcrypt_hash_from_email(email):
@@ -70,19 +98,21 @@ def get_static_bcrypt_hash_from_email(email):
     return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, '', 1)
 
 
-def validate_activation_code(activation_code: str) -> Optional[User]:
+def validate_verification_code(activation_code: str, verification_secret: str) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure
 
     :param activation_code: activation_code
     :type activation_code: str
+    :param verification_secret: verification_secret
+    :type verification_secret: str
     :return: user
     :rtype: User or None
     """
 
     try:
-        secret_key = hashlib.sha256(settings.ACTIVATION_LINK_SECRET.encode()).hexdigest()
+        secret_key = hashlib.sha256(verification_secret.encode()).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
         validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code)).decode()
 
@@ -97,6 +127,33 @@ def validate_activation_code(activation_code: str) -> Optional[User]:
         pass
 
     return None
+
+
+def validate_activation_code(activation_code: str) -> Optional[User]:
+    """
+    Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
+    without database reference, based on salsa20. Returns the user or False in case of a failure
+
+    :param activation_code: activation_code
+    :type activation_code: str
+    :return: user
+    :rtype: User or None
+    """
+
+    return validate_verification_code(activation_code, settings.ACTIVATION_LINK_SECRET)
+
+def validate_unregister_code(unregistration_code: str) -> Optional[User]:
+    """
+    Validate unregistration codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
+    without database reference, based on salsa20. Returns the user or False in case of a failure
+
+    :param unregistration_code: unregistration_code
+    :type unregistration_code: str
+    :return: user
+    :rtype: User or None
+    """
+
+    return validate_verification_code(unregistration_code, settings.ACTIVATION_LINK_SECRET+'unregister')
 
 def authenticate(username: str = "", user: User = None, authkey: str = "", password: str = "") -> Tuple: # nosec
     """

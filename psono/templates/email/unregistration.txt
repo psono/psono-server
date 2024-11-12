@@ -1,0 +1,14 @@
+{% load i18n %}
+{% trans "Hello," %}
+{% trans "You have requested the deletion of your account associated with the following username:" %}
+{{ username }}
+
+{% trans "Please click the link below to confirm that you want to delete the associated account:" %}
+{{ unregistration_link }}
+
+{% trans "If you used a browser extension to request the account deletion, please ensure you open the link in the same browser with the extension enabled." %}</p>
+
+{% trans "Should the link not work, then please copy / paste the link into your browser." %}
+
+{% trans "Best regards" %}
+{% trans "Your Psono Team" %}

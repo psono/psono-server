@@ -3,7 +3,7 @@ from ..utils import validate_activation_code
 from rest_framework import serializers, exceptions
 
 
-class VerifyEmailSerializeras(serializers.Serializer):
+class VerifyEmailSerializer(serializers.Serializer):
     activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )
 
     def validate(self, attrs: dict) -> dict:
