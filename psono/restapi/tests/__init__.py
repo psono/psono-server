@@ -51,6 +51,7 @@ from .share import *
 from .share_link import *
 from .share_right import *
 from .share_rights import *
+from .unregister import *
 from .user import *
 from .utils import *
 from .secret_history import *
