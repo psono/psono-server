@@ -57,7 +57,7 @@ class ActivateTokenView(GenericAPIView):
             "user": {
                 "id": request.user.id,
                 "authentication": 'AUTHKEY',
-                "email": decrypt_with_db_secret(request.user.email),
+                "email": decrypt_with_db_secret(request.user.email) if request.user.email else '',
                 "secret_key": request.user.secret_key,
                 "secret_key_nonce": request.user.secret_key_nonce
             }
