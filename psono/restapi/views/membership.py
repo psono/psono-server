@@ -73,7 +73,7 @@ class MembershipView(GenericAPIView):
             share_admin = serializer.validated_data['share_admin'],
         )
 
-        if not settings.DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED:
+        if not settings.DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED and serializer.validated_data['user'].email:
             # send email
             if settings.WEB_CLIENT_URL:
                 groups_link = settings.WEB_CLIENT_URL + '/index.html#!/groups'

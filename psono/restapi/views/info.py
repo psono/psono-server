@@ -9,7 +9,7 @@ from django.conf import settings
 class InfoView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
-    throttle_scope = 'health_check'
+    throttle_scope = 'info'
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):

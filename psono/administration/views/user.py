@@ -142,7 +142,7 @@ class UserView(GenericAPIView):
             'id': user.id,
             'username': user.username,
             'is_managed': False,
-            'email': decrypt_with_db_secret(user.email),
+            'email': decrypt_with_db_secret(user.email) if user.email else '',
             'create_date': user.create_date,
             'last_login': user.last_login,
             'public_key': user.public_key,

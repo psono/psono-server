@@ -38,6 +38,10 @@ class CreateUnregisterSerializer(serializers.Serializer):
                 msg = 'USER_WITH_EMAIL_DOESNT_EXIST'
                 raise exceptions.ValidationError(msg)
 
+        if not user.email:
+            msg = 'USER_HAS_NO_EMAIL_ADDRESS_ASSOCIATED'
+            raise exceptions.ValidationError(msg)
+
         attrs['user'] = user
 
         return attrs

@@ -92,7 +92,7 @@ class EmergencyLoginView(GenericAPIView):
             "session_valid_till": token.valid_till.isoformat(),
             "session_secret_key": token.secret_key,
             "user_public_key": user.public_key,
-            "user_email": decrypt_with_db_secret(user.email),
+            "user_email": decrypt_with_db_secret(user.email) if user.email else '',
             'user_id': str(user.id)
         }
 
@@ -136,7 +136,7 @@ class EmergencyLoginView(GenericAPIView):
         user = serializer.validated_data['user']
         emergency_code = serializer.validated_data['emergency_code']
 
-        if not emergency_code.activation_date:
+        if not emergency_code.activation_date and user.email:
             emergency_code.activation_date = timezone.now()
             emergency_code.save()
 

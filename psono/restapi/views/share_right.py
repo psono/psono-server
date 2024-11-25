@@ -184,7 +184,7 @@ class ShareRightView(GenericAPIView):
                 cache.delete(cache_key)
 
 
-            if not settings.DISABLE_EMAIL_NEW_SHARE_CREATED:
+            if not settings.DISABLE_EMAIL_NEW_SHARE_CREATED and serializer.validated_data['user'].email:
                 # send email
                 if settings.WEB_CLIENT_URL:
                     pending_share_link = settings.WEB_CLIENT_URL + '/index.html#!/share/pendingshares'
@@ -254,6 +254,8 @@ class ShareRightView(GenericAPIView):
                 users = User.objects.filter(group_memberships__group=serializer.validated_data['group']).exclude(id=request.user.id).values('language', 'email')
                 emails_by_language = defaultdict(list)
                 for user in users:
+                    if not user['email']:
+                        continue
                     emails_by_language[user['language']].append(decrypt_with_db_secret(user['email']))
 
                 # send email
