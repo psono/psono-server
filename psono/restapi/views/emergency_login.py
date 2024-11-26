@@ -167,7 +167,7 @@ class EmergencyLoginView(GenericAPIView):
                 })
 
 
-            if settings.EMAIL_BACKEND in ['anymail.backends.sendinblue.EmailBackend']:
+            if settings.EMAIL_BACKEND in ['anymail.backends.brevo.EmailBackend']:
                 # SenndInBlue does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
@@ -177,7 +177,7 @@ class EmergencyLoginView(GenericAPIView):
             msg.attach_alternative(msg_html, "text/html")
             msg.mixed_subtype = 'related'
 
-            if settings.EMAIL_BACKEND not in ['anymail.backends.sendinblue.EmailBackend']:
+            if settings.EMAIL_BACKEND not in ['anymail.backends.brevo.EmailBackend']:
                 for f in ['logo.png']:
                     fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
 
