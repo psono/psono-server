@@ -452,6 +452,8 @@ if isinstance(YUBICO_API_URLS, str) and YUBICO_API_URLS:
 IVALT_SECRET_KEY = config_get('IVALT_SECRET_KEY', None)
 
 EMAIL_BACKEND = config_get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+if EMAIL_BACKEND == 'anymail.backends.sendinblue.EmailBackend':
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
 
 ANYMAIL = {
     "MAILGUN_API_URL": config_get('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),  # For EU: https://api.eu.mailgun.net/v3
@@ -460,7 +462,7 @@ ANYMAIL = {
 
     "MAILJET_API_KEY": config_get('MAILJET_API_KEY', ''),
     "MAILJET_SECRET_KEY": config_get('MAILJET_SECRET_KEY', ''),
-    "MAILJET_API_URL": config_get('MAILJET_API_URL', 'https://api.mailjet.com/v3'),
+    "MAILJET_API_URL": config_get('MAILJET_API_URL', 'https://api.mailjet.com/v3.1/'),
 
     "MANDRILL_API_KEY": config_get('MANDRILL_API_KEY', ''),
     "MANDRILL_API_URL": config_get('MANDRILL_API_URL', 'https://mandrillapp.com/api/1.0'),
@@ -471,8 +473,8 @@ ANYMAIL = {
     "SENDGRID_API_KEY": config_get('SENDGRID_API_KEY', ''),
     "SENDGRID_API_URL": config_get('SENDGRID_API_URL', 'https://api.sendgrid.com/v3/'),
 
-    "SENDINBLUE_API_KEY": config_get('SENDINBLUE_API_KEY', ''),
-    "SENDINBLUE_API_URL": config_get('SENDINBLUE_API_URL', 'https://api.sendinblue.com/v3/'),
+    "BREVO_API_KEY": config_get('BREVO_API_KEY', config_get('SENDINBLUE_API_KEY', '')),
+    "BREVO_API_URL": config_get('BREVO_API_URL', config_get('SENDINBLUE_API_URL', 'https://api.brevo.com/v3/')),
 
     "SPARKPOST_API_KEY": config_get('SPARKPOST_API_KEY', ''),
     "SPARKPOST_API_URL": config_get('SPARKPOST_API_URL', 'https://api.sparkpost.com/api/v1'),  # For EU: https://api.eu.sparkpost.com/api/v1

@@ -86,7 +86,7 @@ django==4.2.16
     #   django-storages
     #   djangorestframework
     #   sentry-sdk
-django-anymail==8.5
+django-anymail==12.0
     # via -r requirements.in
 django-cors-headers==3.10.1
     # via -r requirements.in
@@ -249,6 +249,7 @@ tzdata==2023.4
 urllib3==1.26.19
     # via
     #   botocore
+    #   django-anymail
     #   requests
     #   sentry-sdk
 webauthn==1.8.1
