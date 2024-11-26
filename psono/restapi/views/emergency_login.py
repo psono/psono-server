@@ -184,6 +184,7 @@ class EmergencyLoginView(GenericAPIView):
                     msg_img = MIMEImage(fp.read())
                     fp.close()
                     msg_img.add_header('Content-ID', '<{}>'.format(f))
+                    msg_img.add_header('Content-Disposition', 'inline', filename='logo.png')
                     msg.attach(msg_img)
 
             msg.send()
