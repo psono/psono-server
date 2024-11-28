@@ -23,7 +23,7 @@ ntplib==0.3.4
 yubico-client==1.12.0
 python-dateutil==2.8.0
 duo-client==4.2.3
-scrypt==0.8.19
+scrypt==0.8.27
 sentry-sdk[django]==2.16.0
 requests==2.32.3
 pycryptodomex==3.19.1
