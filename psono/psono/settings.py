@@ -276,7 +276,7 @@ REST_FRAMEWORK = {
         'restapi.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': config_get('THROTTLE_RATE_ANON', '1440/day'),
+        'anon': config_get('THROTTLE_RATE_ANON', '14400/day'),
         'avatar_image': config_get('THROTTLE_RATE_AVATAR_IMAGE', '100/day'),
         'prelogin': config_get('THROTTLE_RATE_PRE_LOGIN', '48/day'),
         'login': config_get('THROTTLE_RATE_LOGIN', '48/day'),
