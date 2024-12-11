@@ -21,6 +21,7 @@ RUN apk upgrade && \
         postgresql-dev && \
     apk add --virtual .build-deps \
         build-base \
+        openssl-dev \
         libffi-dev \
         linux-headers && \
     pip3 install --upgrade setuptools pip && \
