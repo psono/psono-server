@@ -92,7 +92,7 @@ django-cors-headers==3.10.1
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
-django-redis==5.2.0
+django-redis==5.4.0
     # via -r requirements.in
 django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
     # via -r requirements.in
