@@ -129,12 +129,12 @@ class FileLinkView(GenericAPIView):
 
             # Check if links to the files still exist. If not mark the files for deletion.
 
-            file_ids_with_links = File_Link.objects.filter(file_id__in=file_ids).values_list('file_id', flat=True)
+            file_ids_with_links = File_Link.objects.using('default').filter(file_id__in=file_ids).values_list('file_id', flat=True)
             file_ids_with_links = list(unique_everseen(file_ids_with_links))
             file_ids_deletable = list(set(file_ids).difference(set(file_ids_with_links)))
 
             File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=True).update(delete_date=timezone.now())
-            for file in File.objects.filter(pk__in=file_ids_deletable, file_repository__isnull=False):
+            for file in File.objects.using('default').filter(pk__in=file_ids_deletable, file_repository__isnull=False):
 
                 data = json.loads(decrypt_with_db_secret(file.file_repository.data))
 
