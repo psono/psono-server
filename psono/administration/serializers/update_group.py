@@ -5,12 +5,12 @@ from restapi.models import Group
 
 class UpdateGroupSerializer(serializers.Serializer):
     group_id = UUIDField(required=True)
-    name = serializers.CharField(max_length=64)
+    name = serializers.CharField(max_length=64, required=True)
 
     def validate(self, attrs: dict) -> dict:
 
         group_id = attrs.get('group_id')
-        name = attrs.get('name', False)
+        name = attrs.get('name')
 
         try:
             group = Group.objects.get(id=group_id)

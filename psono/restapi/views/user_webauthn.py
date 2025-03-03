@@ -79,7 +79,7 @@ class UserWebauthn(GenericAPIView):
             rp_id=rp_id,
             rp_name=settings.SERVICE_NAME,
             timeout=90000,
-            user_id=str(request.user.id),
+            user_id=str(request.user.id).encode("utf-8"),
             user_name=request.user.username,
             # attestation=AttestationConveyancePreference.DIRECT, # so we get the model back
             authenticator_selection=AuthenticatorSelectionCriteria(

@@ -85,7 +85,7 @@ def translate_language(lang):
 
     translated_data = {}
     for key, value in data.items():
-        translated_data[key] = translate_text(value, lang)
+        translated_data[key] = translate_text(value or key, lang)
 
     folder_path = os.path.join('untranslated')
     os.makedirs(folder_path, exist_ok=True)
