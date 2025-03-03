@@ -31,5 +31,5 @@ boto3==1.34.39
 dj-database-url==2.1.0
 toml==0.10.2
 azure-storage-blob==12.13.0
-webauthn==1.8.1
+webauthn==2.5.1
 tzdata==2023.4

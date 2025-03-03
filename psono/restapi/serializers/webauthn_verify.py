@@ -1,7 +1,9 @@
+import json
+
 from rest_framework import serializers, exceptions
 import nacl.encoding
 from webauthn import verify_authentication_response
-from webauthn.helpers.structs import AuthenticationCredential
+from webauthn import base64url_to_bytes
 from webauthn.helpers.exceptions import InvalidAuthenticationResponse
 
 from ..models import Webauthn
@@ -15,12 +17,9 @@ class WebauthnVerifySerializer(serializers.Serializer):
         credential = attrs.get('credential', '').strip()
 
         token = self.context['request'].auth
+        parsed_credential = json.loads(credential)
 
-        parsed_credential = AuthenticationCredential.parse_raw(
-            credential
-        )
-
-        credential_id = nacl.encoding.HexEncoder.encode(parsed_credential.raw_id).decode()
+        credential_id = nacl.encoding.HexEncoder.encode(base64url_to_bytes(parsed_credential['rawId'])).decode()
 
         try:
             webauthn = Webauthn.objects.get(credential_id=credential_id, user=self.context['request'].user)
@@ -43,7 +42,7 @@ class WebauthnVerifySerializer(serializers.Serializer):
 
         try:
             verify_authentication_response(
-                credential=parsed_credential,
+                credential=credential,
                 expected_challenge=decrypt_with_db_secret(webauthn.challenge).encode(),
                 expected_rp_id=expected_rp_id,
                 expected_origin=expected_origin,

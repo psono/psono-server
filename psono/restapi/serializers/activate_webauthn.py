@@ -39,7 +39,7 @@ class ActivateWebauthnSerializer(serializers.Serializer):
 
         try:
             registration_verification = verify_registration_response(
-                credential=RegistrationCredential.parse_raw(credential),
+                credential=credential,
                 expected_challenge=decrypt_with_db_secret(webauthn.challenge).encode(),
                 expected_origin=expected_origin,
                 expected_rp_id=expected_rp_id,
