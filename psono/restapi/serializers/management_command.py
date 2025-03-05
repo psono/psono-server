@@ -12,7 +12,7 @@ class ManagementCommandSerializer(serializers.Serializer):
 
         attrs['command_name'] = command_name
 
-        if command_name not in settings.MANAGEMENT_COMMANDS:
+        if command_name not in settings.ALLOWED_MANAGEMENT_COMMANDS:
             msg = 'MANAGEMENT_COMMAND_NOT_ALLOWED'
             raise exceptions.ValidationError(msg)
 
