@@ -207,6 +207,9 @@ for index in range(len(ALLOWED_SECOND_FACTORS)):
     ALLOWED_SECOND_FACTORS[index] = ALLOWED_SECOND_FACTORS[index].lower().strip()
 
 MANAGEMENT_COMMAND_ACCESS_KEY = config_get('MANAGEMENT_COMMAND_ACCESS_KEY', '')
+ALLOWED_MANAGEMENT_COMMANDS = config_get('ALLOWED_MANAGEMENT_COMMANDS', ['cleanup', 'clearcache', 'cleartoken', 'createuser', 'deleteuser', 'disableinactiveusers', 'disableuser', 'enableuser', 'promoteuser', 'reset2fa', 'verifyuseremail'])
+if isinstance(ALLOWED_MANAGEMENT_COMMANDS, str) and ALLOWED_MANAGEMENT_COMMANDS:
+    ALLOWED_MANAGEMENT_COMMANDS = [c.strip() for c in ALLOWED_MANAGEMENT_COMMANDS.split(',')]
 
 HOST_URL = config_get('HOST_URL')
 
