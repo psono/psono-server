@@ -63,7 +63,7 @@ charset-normalizer==2.0.11
     # via requests
 constantly==23.10.4
     # via twisted
-cryptography==43.0.3
+cryptography==44.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -184,7 +184,7 @@ pynacl==1.5.0
     # via
     #   -r requirements.in
     #   paramiko
-pyopenssl==24.2.1
+pyopenssl==25.0.0
     # via
     #   twisted
     #   webauthn
@@ -240,6 +240,7 @@ typing-extensions==4.12.2
     #   azure-core
     #   dj-database-url
     #   psycopg
+    #   pyopenssl
     #   twisted
 tzdata==2023.4
     # via -r requirements.in
@@ -249,7 +250,7 @@ urllib3==1.26.19
     #   django-anymail
     #   requests
     #   sentry-sdk
-webauthn==2.5.1
+webauthn==2.5.2
     # via -r requirements.in
 yubico-client==1.12.0
     # via -r requirements.in
