@@ -401,6 +401,7 @@ else:
             'PASSWORD': 'YourPostgresPassword',
             'HOST': 'YourPostgresHost',
             'PORT': 'YourPostgresPort',
+            'OPTIONS': {},
         }
     })
 
