@@ -42,6 +42,7 @@ class UnegistrationTests(APITestCaseExtended):
             is_email_active=False
         )
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_authentication_unregister(self):
         """
@@ -56,6 +57,7 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_authentication_unregister(self):
         """
@@ -70,6 +72,7 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_username(self):
         """
@@ -86,6 +89,7 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_invalid_username(self):
         """
@@ -103,6 +107,7 @@ class UnegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('non_field_errors'), ['USER_WITH_USERNAME_DOESNT_EXIST'])
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_email(self):
         """
@@ -119,6 +124,24 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    # @override_settings(WEB_CLIENT_URL='https://psono.pw')
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_authentication_unregister_missing_webclient_url(self):
+        """
+        Tests POST method on authentication_unregister yet without configuring a WEB_CLIENT_URL
+        """
+
+        url = reverse('authentication_unregister')
+
+        data = {
+            'email': self.test_email
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_invalid_email(self):
         """
@@ -136,6 +159,7 @@ class UnegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('non_field_errors'), ['USER_WITH_EMAIL_DOESNT_EXIST'])
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_email_and_username(self):
         """
@@ -154,6 +178,7 @@ class UnegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('non_field_errors'), ['EITHER_USERNAME_OR_EMAIL_NEED_TO_BE_DEFINED_NOT_BOTH'])
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_without_email_and_username(self):
         """
@@ -172,6 +197,7 @@ class UnegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('non_field_errors'), ['EITHER_USERNAME_OR_EMAIL_NEED_TO_BE_DEFINED'])
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_authentication_unregister(self):
         """
@@ -192,6 +218,7 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertFalse(models.User.objects.filter(pk=self.test_user_obj.pk).exists())
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_authentication_unregister_invalid_unregistration_code(self):
         """

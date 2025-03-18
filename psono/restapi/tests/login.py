@@ -26,7 +26,9 @@ from nacl.public import PrivateKey, PublicKey, Box
 
 
 class LoginTests(APITestCaseExtended):
+
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     def setUp(self):
 
         # our public / private key box

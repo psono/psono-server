@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
+from django.test.utils import override_settings
 from rest_framework import status
 
 from restapi import models
@@ -19,6 +20,7 @@ from nacl.public import PrivateKey
 
 
 class PreLoginTests(APITestCaseExtended):
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     def setUp(self):
 
         # our public / private key box

@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
+from django.test.utils import override_settings
 from ..authentication import TokenAuthentication
 from rest_framework import status
 
@@ -17,6 +18,8 @@ import nacl.secret
 from nacl.public import PrivateKey, PublicKey, Box
 
 class LogoutTests(APITestCaseExtended):
+
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     def setUp(self):
 
         # our public / private key box
