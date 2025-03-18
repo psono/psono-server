@@ -87,7 +87,7 @@ class UnregisterView(GenericAPIView):
         if settings.WEB_CLIENT_URL:
             unregistration_link = settings.WEB_CLIENT_URL + '/delete-user-confirm.html#!/unregistration-code/' + unregistration_code
         else:
-            unregistration_link = self.request.data.get('base_url', '') + 'delete-user-confirm.html#!/unregistration-code/' + unregistration_code
+            return None
 
         with translation.override(request.LANGUAGE_CODE):
             subject = render_to_string('email/unregistration_subject.txt', {

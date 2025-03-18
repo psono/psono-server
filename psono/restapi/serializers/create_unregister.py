@@ -14,6 +14,10 @@ class CreateUnregisterSerializer(serializers.Serializer):
         username = attrs.get('username', '').lower().strip()
         email = attrs.get('email', '').lower().strip()
 
+        if not settings.WEB_CLIENT_URL:
+            msg = "UNREGISTRATION_HAS_BEEN_DISABLED"
+            raise exceptions.ValidationError(msg)
+
         if not username and not email:
             msg = "EITHER_USERNAME_OR_EMAIL_NEED_TO_BE_DEFINED"
             raise exceptions.ValidationError(msg)
