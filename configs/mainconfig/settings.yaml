@@ -97,6 +97,7 @@ DATABASES:
         'PASSWORD': 'YourPostgresPassword'
         'HOST': 'YourPostgresHost'
         'PORT': 'YourPostgresPort'
+        'OPTIONS': {}
 # for master / slave replication setup comment in the following (all reads will be redirected to the slave
 #    slave:
 #        'ENGINE': 'django.db.backends.postgresql'
@@ -105,6 +106,7 @@ DATABASES:
 #        'PASSWORD': 'YourPostgresPassword'
 #        'HOST': 'YourPostgresHost'
 #        'PORT': 'YourPostgresPort'
+#        'OPTIONS': {}
 
 # Your path to your templates folder
 TEMPLATES: [

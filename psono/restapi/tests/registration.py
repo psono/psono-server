@@ -18,6 +18,7 @@ import os
 
 class RegistrationTests(APITestCaseExtended):
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get_authentication_register(self):
         """
@@ -32,6 +33,7 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_put_authentication_register(self):
         """
@@ -46,6 +48,7 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_delete_authentication_register(self):
         """
@@ -61,6 +64,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account(self):
         """
@@ -114,6 +118,41 @@ class RegistrationTests(APITestCaseExtended):
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_create_account_without_webclient_url(self):
+        """
+        Tries to create an account without webclient url which should fail
+        """
+        url = reverse('authentication_register')
+
+        email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@example.com'
+        username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+        authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
+        public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
+        private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
+        private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
+        secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
+        user_sauce = 'd25e29d812386431ec8f75ce4dce44464b57a9b742e7caeea78c9d984297c8f1'
+
+        data = {
+            'username': username,
+            'email': email,
+            'authkey': authkey,
+            'public_key': public_key,
+            'private_key': private_key,
+            'private_key_nonce': private_key_nonce,
+            'secret_key': secret_key,
+            'secret_key_nonce': secret_key_nonce,
+            'user_sauce': user_sauce,
+        }
+
+        response = self.client.post(url, data, headers={"ACCEPT_LANGUAGE": 'de,en-US;q=0.9,en;q=0.8'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_custom_hashing_params(self):
         """
         Ensure we can create a new user with custom hashing parameters
@@ -161,6 +200,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(user.hashing_parameters['p'], 2)
         self.assertEqual(user.hashing_parameters['l'], 65)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_u(self):
         """
@@ -202,6 +242,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_r(self):
         """
@@ -243,6 +284,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_p(self):
         """
@@ -284,6 +326,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_invalid_hashing_params_l(self):
         """
@@ -325,6 +368,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 0)
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_not_same_email(self):
         """
@@ -370,6 +414,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertTrue(response.data.get('email', False),
                         'E-Mail in error message does not exist in registration response')
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_no_authoritative_email(self):
         """
@@ -404,6 +449,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_email_no_email_syntax(self):
         """
@@ -439,6 +485,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('email'), ['INVALID_EMAIL_FORMAT'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_no_email_syntax(self):
         """
@@ -474,6 +521,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_in_allowed_domains(self):
         """
@@ -509,6 +557,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_with_not_allowed_chars(self):
         """
@@ -544,6 +593,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['USERNAME_VALIDATION_NAME_CONTAINS_INVALID_CHARS'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_start_with_a_period(self):
         """
@@ -580,6 +630,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_start_with_a_dash(self):
         """
@@ -616,6 +667,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not start with a dash.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_end_with_a_period(self):
         """
@@ -651,6 +703,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_contain_consecutive_periods(self):
         """
@@ -686,6 +739,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['INVALID_USERNAME_FORMAT'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_not_contain_consecutive_dashes(self):
         """
@@ -721,6 +775,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not contain consecutive dashes.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_periods_following_dashes(self):
         """
@@ -756,6 +811,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not contain dashes followed by periods.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_dashes_following_periods(self):
         """
@@ -791,6 +847,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not contain periods followed by dashes.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_end_with_a_dash(self):
         """
@@ -826,6 +883,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not end with a dash.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_username_with_only_one_chars(self):
         """
@@ -861,6 +919,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.data.get('username'), ['Usernames may not be shorter than 2 chars.'])
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @patch('restapi.views.register.settings', ALLOW_REGISTRATION=False)
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_with_disabled_registration(self, patched_allow_registration):
@@ -896,6 +955,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @patch('restapi.views.register.settings', ENFORCE_MATCHING_USERNAME_AND_EMAIL=True)
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_with_enforced_matching_usernanme_and_email(self, patched_force_matched_username_and_email):
@@ -931,6 +991,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @patch.object(EmailMultiAlternatives, 'send')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_sends_mail(self, mocked_send):

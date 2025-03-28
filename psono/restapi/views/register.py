@@ -50,7 +50,7 @@ class RegisterView(GenericAPIView):
             for i in range(0, len(w), n):
                 yield w[i:i + n]
 
-        if not settings.ALLOW_REGISTRATION:
+        if not settings.ALLOW_REGISTRATION or not settings.WEB_CLIENT_URL:
             return Response({"custom": ["REGISTRATION_HAS_BEEN_DISABLED"]},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -75,7 +75,7 @@ class RegisterView(GenericAPIView):
         if settings.WEB_CLIENT_URL:
             activation_link = settings.WEB_CLIENT_URL + '/activate.html#!/activation-code/' + activation_code
         else:
-            activation_link = self.request.data.get('base_url', '') + 'activate.html#!/activation-code/' + activation_code
+            return None
 
         with translation.override(request.LANGUAGE_CODE):
             subject = render_to_string('email/registration_successful_subject.txt', {

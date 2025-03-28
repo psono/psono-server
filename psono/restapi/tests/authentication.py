@@ -104,6 +104,7 @@ class AuthenticationTests(APITestCaseExtended):
 class AuthenticateTests(APITestCaseExtended):
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
     def setUp(self):
 
 
