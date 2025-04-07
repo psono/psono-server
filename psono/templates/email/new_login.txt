@@ -1,0 +1,17 @@
+{% load i18n %}
+{% load l10n %}
+{% trans "Hello," %}
+{% trans "We noticed a new login to your Psono account:" %}
+
+{% trans "Date & Time:" %} {{ login_datetime|localize }}
+{% trans "IP Address:" %} {{ ip_address }}
+{% trans "Username:" %} {{ username }}
+
+{% trans "If this was you, no further action is needed." %}
+{% trans "If you don’t recognize this activity, please secure your account immediately by resetting your password:" %}
+{{ webclient_url }}
+
+{% trans "Should the link not work, then please copy / paste the link into your browser." %}
+
+{% trans "Best regards" %}
+{% trans "Your Psono Team" %}

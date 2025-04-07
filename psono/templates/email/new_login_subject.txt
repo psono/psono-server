@@ -1,0 +1,1 @@
+{% load i18n %}{% load l10n %}{% blocktrans %}New login{% endblocktrans %}

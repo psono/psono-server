@@ -427,6 +427,7 @@ DATABASE_POOL_ARGS = {
     'recycle': int(config_get('DATABASE_POOL_ARGS_RECYLCE', 300))
 }
 
+DISABLE_EMAIL_NEW_LOGIN = str(config_get('DISABLE_EMAIL_NEW_LOGIN', False)).lower() == 'true'
 DISABLE_EMAIL_NEW_SHARE_CREATED = str(config_get('DISABLE_EMAIL_NEW_SHARE_CREATED', False)).lower() == 'true'
 DISABLE_EMAIL_NEW_GROUP_SHARE_CREATED = str(config_get('DISABLE_EMAIL_NEW_GROUP_SHARE_CREATED', False)).lower() == 'true'
 DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED = str(config_get('DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED', False)).lower() == 'true'

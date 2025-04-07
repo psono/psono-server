@@ -92,7 +92,7 @@ class MembershipView(GenericAPIView):
                 })
 
             if settings.EMAIL_BACKEND in ['anymail.backends.brevo.EmailBackend']:
-                # SenndInBlue does not support inline attachments
+                # Brevo does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
             msg = EmailMultiAlternatives(subject, msg_plain,
@@ -115,7 +115,7 @@ class MembershipView(GenericAPIView):
             try:
                 msg.send()
             except:  # nosec
-                # Lets not fail group invitation for failing emails e.g. due to a completely missing email config
+                # Let's not fail group invitation for failing emails e.g. due to a completely missing email config
                 pass
 
         if settings.CACHE_ENABLE:
