@@ -105,7 +105,7 @@ class RegisterView(GenericAPIView):
 
 
         if settings.EMAIL_BACKEND in ['anymail.backends.brevo.EmailBackend']:
-            # SenndInBlue does not support inline attachments
+            # Brevo does not support inline attachments
             msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
         msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM,
@@ -115,7 +115,7 @@ class RegisterView(GenericAPIView):
         msg.mixed_subtype = 'related'
 
         if settings.EMAIL_BACKEND not in ['anymail.backends.brevo.EmailBackend']:
-            # SenndInBlue does not support inline attachments
+            # Brevo does not support inline attachments
             for f in ['logo.png']:
                 fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
 
