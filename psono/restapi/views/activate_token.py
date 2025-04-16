@@ -1,4 +1,3 @@
-from anymail.exceptions import AnymailUnsupportedFeature
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -7,6 +6,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import translation
+from django.utils.formats import date_format
 
 import os
 from email.mime.image import MIMEImage
@@ -54,6 +54,7 @@ class ActivateTokenView(GenericAPIView):
             )
 
         token = serializer.validated_data['token']
+        zoneinfo = serializer.validated_data['zoneinfo']
 
         token.active = True
         token.user_validator = None
@@ -62,6 +63,8 @@ class ActivateTokenView(GenericAPIView):
         ip_address = get_ip(request)
         login_datetime = timezone.now()
 
+        if not request.user.zoneinfo and zoneinfo:
+            request.user.zoneinfo = zoneinfo
         request.user.last_login = login_datetime
         request.user.save()
 
@@ -74,8 +77,16 @@ class ActivateTokenView(GenericAPIView):
             email = decrypt_with_db_secret(request.user.email)
 
             with translation.override(request.LANGUAGE_CODE):
+
+                if request.user.zoneinfo:
+                    login_datetime_timezone = login_datetime.astimezone(request.user.zoneinfo)
+                    login_datetime_timezone_str = date_format(login_datetime_timezone, format='DATETIME_FORMAT') + ' ' + login_datetime_timezone.tzname()
+                else:
+                    login_datetime_timezone_str = date_format(login_datetime, format='DATETIME_FORMAT') + ' UTC'
+
                 subject = render_to_string('email/new_login_subject.txt', {
                     'ip_address': ip_address,
+                    'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
                     'email': email,
                     'username': request.user.username,
@@ -85,6 +96,7 @@ class ActivateTokenView(GenericAPIView):
                 }).replace('\n', ' ').replace('\r', '')
                 msg_plain = render_to_string('email/new_login.txt', {
                     'ip_address': ip_address,
+                    'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
                     'email': email,
                     'username': request.user.username,
@@ -94,6 +106,7 @@ class ActivateTokenView(GenericAPIView):
                 })
                 msg_html = render_to_string('email/new_login.html', {
                     'ip_address': ip_address,
+                    'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
                     'email': email,
                     'username': request.user.username,

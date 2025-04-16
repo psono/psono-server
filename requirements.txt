@@ -84,6 +84,7 @@ django==4.2.20
     #   django-filter
     #   django-redis
     #   django-storages
+    #   django-timezone-field
     #   djangorestframework
     #   sentry-sdk
 django-anymail==12.0
@@ -95,6 +96,8 @@ django-filter==2.4.0
 django-redis==5.4.0
     # via -r requirements.in
 django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
+    # via -r requirements.in
+django-timezone-field==7.1
     # via -r requirements.in
 djangorestframework==3.15.2
     # via -r requirements.in

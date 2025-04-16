@@ -3,7 +3,7 @@
 {% trans "Hello," %}
 {% trans "We noticed a new login to your Psono account:" %}
 
-{% trans "Date & Time:" %} {{ login_datetime|localize }}
+{% trans "Date & Time:" %} {{ login_datetime_timezone }}
 {% trans "IP Address:" %} {{ ip_address }}
 {% trans "Username:" %} {{ username }}
 

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from rest_framework import serializers, exceptions
+from timezone_field.backends import TimeZoneNotFoundError, get_tz_backend
 
 import re
 import bcrypt
@@ -28,8 +29,10 @@ class UserUpdateSerializer(serializers.Serializer):
     hashing_parameters = serializers.DictField(required=False, )
 
     language = serializers.CharField(max_length=16, required=False, allow_null=True)
+    zoneinfo = serializers.CharField(required=False, default=None, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
+        zoneinfo = attrs.get('zoneinfo', None)
         email = attrs.get('email')
         authkey_old = attrs.get('authkey_old')
         authkey = attrs.get('authkey', False)
@@ -97,6 +100,14 @@ class UserUpdateSerializer(serializers.Serializer):
             if 'l' not in hashing_parameters or hashing_parameters['l'] < 64:
                 msg = 'INVALID_HASHING_PARAMETER'
                 raise exceptions.ValidationError(msg)
+
+        tz_backend = get_tz_backend(use_pytz=None)
+        try:
+            zoneinfo = tz_backend.to_tzobj(zoneinfo)
+        except TimeZoneNotFoundError:
+            zoneinfo = None
+
+        attrs['zoneinfo'] = zoneinfo
 
         attrs['hashing_algorithm'] = hashing_algorithm
         attrs['hashing_parameters'] = hashing_parameters

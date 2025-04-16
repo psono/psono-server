@@ -62,6 +62,9 @@ class UserUpdate(GenericAPIView):
         if 'language' in request.data and request.data['language'] is not None:
             request.user.language = str(request.data['language'])
 
+        if serializer.validated_data['zoneinfo'] is not None:
+            request.user.zoneinfo = serializer.validated_data['zoneinfo']
+
         # Password Change
         if 'authkey' in request.data and request.data['authkey'] is not None:
             request.user.authkey = make_password(str(request.data['authkey']))
