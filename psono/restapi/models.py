@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
+from timezone_field import TimeZoneField
 
 from decimal import Decimal
 import binascii
@@ -76,6 +77,7 @@ class User(models.Model):
     last_login = models.DateTimeField(default=timezone.now)
     hashing_algorithm = models.CharField('hashing algorithm', max_length=32, default=DEFAULT_HASHING_ALGORITHM, choices=HASHING_ALGORITHMS,)
     hashing_parameters = models.JSONField('hashing parameters', default=default_hashing_parameters)
+    zoneinfo = TimeZoneField(null=True)
 
     credit = models.DecimalField(max_digits=24, decimal_places=16, default=Decimal(str(0)))
 

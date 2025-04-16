@@ -301,8 +301,8 @@ build-sbom:
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker pull $CONTAINER_TEST_IMAGE
     - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-    - syft scan psono/psono-combo-enterprise:latest -o cyclonedx-json > sbom.json
-    - mv /builds/psono/psono-server/sbom.json ../
+    - syft scan $CONTAINER_TEST_IMAGE -o cyclonedx-json > sbom.json
+    - mv ./sbom.json ../
     - rm -Rf *
     - rm -Rf .* 2> /dev/null || true
     - mv ../sbom.json ./

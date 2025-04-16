@@ -1,5 +1,5 @@
 from django.utils.crypto import constant_time_compare
-
+from timezone_field.backends import TimeZoneNotFoundError, get_tz_backend
 from rest_framework import serializers, exceptions
 import nacl.utils
 from nacl.exceptions import CryptoError
@@ -9,8 +9,10 @@ import nacl.encoding
 class ActivateTokenSerializer(serializers.Serializer):
     verification = serializers.CharField(required=True)
     verification_nonce = serializers.CharField(max_length=64, required=True)
+    zoneinfo = serializers.CharField(required=False, default=None, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
+        zoneinfo = attrs.get('zoneinfo', None)
         verification_hex = attrs.get('verification', '')
         verification = nacl.encoding.HexEncoder.decode(verification_hex)
         verification_nonce_hex = attrs.get('verification_nonce', '')
@@ -55,5 +57,12 @@ class ActivateTokenSerializer(serializers.Serializer):
             msg = 'VERIFICATION_CODE_INCORRECT'
             raise exceptions.ValidationError(msg)
 
+        tz_backend = get_tz_backend(use_pytz=None)
+        try:
+            zoneinfo = tz_backend.to_tzobj(zoneinfo)
+        except TimeZoneNotFoundError:
+            zoneinfo = None
+
+        attrs['zoneinfo'] = zoneinfo
         attrs['token'] = token
         return attrs
