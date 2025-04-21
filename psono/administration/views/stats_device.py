@@ -35,6 +35,7 @@ class StatsDeviceView(GenericAPIView):
         mac = 0
         android = 0
         iphone = 0
+        ipad = 0
 
         for device in devices:
             if 'windows' in device['device_description'].lower():
@@ -43,10 +44,18 @@ class StatsDeviceView(GenericAPIView):
                 linux = linux + device['total']
             elif 'android' in device['device_description'].lower():
                 android = android + device['total']
+            elif device['device_description'].lower().startswith('sm-'):
+                android = android + device['total']
+            elif device['device_description'].lower().startswith('pixel '):
+                android = android + device['total']
+            elif device['device_description'].lower().startswith('oneplus'):
+                android = android + device['total']
             elif 'iphone' in device['device_description'].lower():
                 iphone = iphone + device['total']
             elif 'mac' in device['device_description'].lower():
                 mac = mac + device['total']
+            elif 'ipad' in device['device_description'].lower():
+                ipad = ipad + device['total']
             else:
                 other = other + device['total']
 
@@ -57,6 +66,7 @@ class StatsDeviceView(GenericAPIView):
             'mac': mac,
             'android': android,
             'iphone': iphone,
+            'ipad': ipad,
         }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):

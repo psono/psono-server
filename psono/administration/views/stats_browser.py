@@ -34,6 +34,9 @@ class StatsBrowserView(GenericAPIView):
         chrome = 0
         safari = 0
         vivaldi = 0
+        edge = 0
+        brave = 0
+        opera = 0
 
         for browser in browsers:
             if 'chrome' in browser['device_description'].lower():
@@ -42,8 +45,14 @@ class StatsBrowserView(GenericAPIView):
                 firefox = firefox + browser['total']
             elif 'safari' in browser['device_description'].lower():
                 safari = safari + browser['total']
-            elif 'firefox' in browser['device_description'].lower():
+            elif 'edge' in browser['device_description'].lower():
+                edge = edge + browser['total']
+            elif 'vivaldi' in browser['device_description'].lower():
                 vivaldi = vivaldi + browser['total']
+            elif 'brave' in browser['device_description'].lower():
+                brave = brave + browser['total']
+            elif 'opera' in browser['device_description'].lower():
+                opera = opera + browser['total']
             else:
                 other = other + browser['total']
 
@@ -53,6 +62,9 @@ class StatsBrowserView(GenericAPIView):
             'chrome': chrome,
             'safari': safari,
             'vivaldi': vivaldi,
+            'edge': edge,
+            'brave': brave,
+            'opera': opera,
         }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
