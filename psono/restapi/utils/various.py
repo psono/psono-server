@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from django_countries import countries
 from urllib.parse import urlparse
 
 from typing import Union
@@ -1308,7 +1309,10 @@ def get_ip(request):
 
 def get_country(request):
     if settings.TRUSTED_COUNTRY_HEADER:
-        return request.META.get(settings.TRUSTED_COUNTRY_HEADER, None)
+        header_country = request.META.get(settings.TRUSTED_COUNTRY_HEADER, None)
+        if header_country:
+            header_country = countries.alpha2(header_country) or None
+        return header_country
     return None
 
 def in_networks(ip_address, networks):

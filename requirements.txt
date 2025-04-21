@@ -12,6 +12,7 @@ asgiref==3.7.2
     # via
     #   daphne
     #   django
+    #   django-countries
 asn1crypto==1.5.1
     # via webauthn
 async-timeout==4.0.2
@@ -90,6 +91,8 @@ django==4.2.20
 django-anymail==12.0
     # via -r requirements.in
 django-cors-headers==3.10.1
+    # via -r requirements.in
+django-countries==7.6.1
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
@@ -242,6 +245,7 @@ typing-extensions==4.12.2
     # via
     #   azure-core
     #   dj-database-url
+    #   django-countries
     #   psycopg
     #   pyopenssl
     #   twisted

@@ -17,6 +17,7 @@ from ..app_settings import ActivateTokenSerializer
 from ..authentication import TokenAuthenticationAllowInactive
 from ..utils import decrypt_with_db_secret
 from ..utils import get_ip
+from ..utils import get_country
 
 class ActivateTokenView(GenericAPIView):
 
@@ -61,10 +62,13 @@ class ActivateTokenView(GenericAPIView):
         token.save()
 
         ip_address = get_ip(request)
+        country = get_country(request)
         login_datetime = timezone.now()
 
         if not request.user.zoneinfo and zoneinfo:
             request.user.zoneinfo = zoneinfo
+
+        request.user.country = country
         request.user.last_login = login_datetime
         request.user.save()
 
@@ -78,6 +82,10 @@ class ActivateTokenView(GenericAPIView):
 
             with translation.override(request.LANGUAGE_CODE):
 
+                country_name = None
+                if country:
+                    country_name = country.name
+
                 if request.user.zoneinfo:
                     login_datetime_timezone = login_datetime.astimezone(request.user.zoneinfo)
                     login_datetime_timezone_str = date_format(login_datetime_timezone, format='DATETIME_FORMAT') + ' ' + login_datetime_timezone.tzname()
@@ -85,6 +93,7 @@ class ActivateTokenView(GenericAPIView):
                     login_datetime_timezone_str = date_format(login_datetime, format='DATETIME_FORMAT') + ' UTC'
 
                 subject = render_to_string('email/new_login_subject.txt', {
+                    'country_name': country_name,
                     'ip_address': ip_address,
                     'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
@@ -95,6 +104,7 @@ class ActivateTokenView(GenericAPIView):
                     'host_url': settings.HOST_URL,
                 }).replace('\n', ' ').replace('\r', '')
                 msg_plain = render_to_string('email/new_login.txt', {
+                    'country_name': country_name,
                     'ip_address': ip_address,
                     'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
@@ -105,6 +115,7 @@ class ActivateTokenView(GenericAPIView):
                     'host_url': settings.HOST_URL,
                 })
                 msg_html = render_to_string('email/new_login.html', {
+                    'country_name': country_name,
                     'ip_address': ip_address,
                     'login_datetime_timezone': login_datetime_timezone_str,
                     'login_datetime': login_datetime,
