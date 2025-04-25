@@ -84,7 +84,7 @@ class ActivateTokenView(GenericAPIView):
 
                 country_name = None
                 if country:
-                    country_name = country.name
+                    country_name = country
 
                 if request.user.zoneinfo:
                     login_datetime_timezone = login_datetime.astimezone(request.user.zoneinfo)
