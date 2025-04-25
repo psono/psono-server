@@ -5,6 +5,7 @@
 
 {% trans "Date & Time:" %} {{ login_datetime_timezone }}
 {% trans "IP Address:" %} {{ ip_address }}
+{% if country_name %}{% trans "Country:" %} {{ country_name }}{% endif %}
 {% trans "Username:" %} {{ username }}
 
 {% trans "If this was you, no further action is needed." %}

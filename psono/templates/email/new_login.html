@@ -101,6 +101,10 @@
                                             <b>{% trans "Date & Time:" %}</b> {{ login_datetime_timezone }}</p>
                                         <p style="font-family:sans-serif;font-size:14px;font-weight:normal;margin: 0 0 15px;">
                                             <b>{% trans "IP Address:" %}</b> {{ ip_address }}</p>
+                                        {% if country_name %}
+                                        <p style="font-family:sans-serif;font-size:14px;font-weight:normal;margin: 0 0 15px;">
+                                            <b>{% trans "Country:" %}</b> {{ country_name }}</p>
+                                        {% endif %}
                                         <p style="font-family:sans-serif;font-size:14px;font-weight:normal;margin: 0 0 15px;">
                                             <b>{% trans "Username:" %}</b> {{ username }}</p>
                                         <p style="font-family:sans-serif;font-size:14px;font-weight:normal;margin: 0 0 15px;">

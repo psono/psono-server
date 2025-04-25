@@ -35,6 +35,7 @@ class StatsOsView(GenericAPIView):
         mac_os = 0
         android = 0
         ios = 0
+        ipados = 0
 
         for operation_system in operations_systems:
             if 'windows' in operation_system['device_description'].lower():
@@ -45,8 +46,16 @@ class StatsOsView(GenericAPIView):
                 mac_os = mac_os + operation_system['total']
             elif 'android' in operation_system['device_description'].lower():
                 android = android + operation_system['total']
+            elif operation_system['device_description'].lower().startswith('sm-'):
+                android = android + operation_system['total']
+            elif operation_system['device_description'].lower().startswith('pixel '):
+                android = android + operation_system['total']
+            elif operation_system['device_description'].lower().startswith('oneplus'):
+                android = android + operation_system['total']
             elif 'ios' in operation_system['device_description'].lower():
                 ios = ios + operation_system['total']
+            elif 'ipad' in operation_system['device_description'].lower():
+                ipados = ipados + operation_system['total']
             else:
                 other = other + operation_system['total']
 
@@ -57,6 +66,7 @@ class StatsOsView(GenericAPIView):
             'mac_os': mac_os,
             'android': android,
             'ios': ios,
+            'ipados': ipados,
         }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
