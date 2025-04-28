@@ -1,11 +1,11 @@
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import serializers, exceptions
 
 from ..fields import UUIDField
-from ..utils import user_has_rights_on_secret, user_has_rights_on_file
+from ..utils import user_has_rights_on_secret
+from ..utils import user_has_rights_on_file
 
 class CreateLinkShareSerializer(serializers.Serializer):
 
@@ -48,7 +48,12 @@ class CreateLinkShareSerializer(serializers.Serializer):
             msg = "EITHER_SECRET_OR_FILE_REQUIRED_NOT_BOTH"
             raise exceptions.ValidationError(msg)
 
-        if secret_id and not user_has_rights_on_secret(self.context['request'].user.id, secret_id):
+        write_required = None
+
+        if allow_write:
+            write_required = True
+
+        if secret_id and not user_has_rights_on_secret(self.context['request'].user.id, secret_id, write=write_required):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 

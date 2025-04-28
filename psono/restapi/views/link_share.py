@@ -152,12 +152,16 @@ class LinkShareView(GenericAPIView):
         public_title = serializer.validated_data.get('public_title')
         passphrase = serializer.validated_data.get('passphrase')
         valid_till = serializer.validated_data.get('valid_till')
+        allow_write = serializer.validated_data.get('allow_write')
 
         # Update the object
         link_share.public_title = public_title
         link_share.allowed_reads = allowed_reads
         link_share.passphrase = passphrase
         link_share.valid_till = valid_till
+
+        if allow_write is not None:
+            link_share.allow_write = allow_write
 
         link_share.save()
 
