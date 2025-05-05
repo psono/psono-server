@@ -124,7 +124,7 @@ class UnegistrationTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    # @override_settings(WEB_CLIENT_URL='https://psono.pw')
+    @override_settings(WEB_CLIENT_URL='')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_missing_webclient_url(self):
         """

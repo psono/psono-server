@@ -19,10 +19,11 @@ import nacl.encoding
 import nacl.utils
 import nacl.secret
 
+class SessionKeyTests(APITestCaseExtended):
+    """
+    Tests session key
+    """
 
-
-
-class SessionTests(APITestCaseExtended):
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "asd"
@@ -121,12 +122,57 @@ class SessionTests(APITestCaseExtended):
         })
 
 
-    def test_sessions_successful(self):
+    def test_put(self):
         """
-        Tests to retrieve all active sessions
+        Tests PUT on session key
         """
 
-        url = reverse('authentication_session')
+        url = reverse('session_key')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+    def test_post(self):
+        """
+        Tests POST on session key
+        """
+
+        url = reverse('session_key')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+    def test_delete(self):
+        """
+        Tests DELETE on session key
+        """
+
+        url = reverse('session_key')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+    def test_read_session_key(self):
+        """
+        Tests to read the session key
+        """
+
+        url = reverse('session_key')
 
         data = {}
 
@@ -134,28 +180,8 @@ class SessionTests(APITestCaseExtended):
         response = self.client.get(url, data, user=self.test_user_obj)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotEqual(response.data.get('sessions', False), False)
-
-        sessions = response.data.get('sessions', [])
-        self.assertEqual(len(sessions), 2)
-
-        found_device1 = False
-        found_device2 = False
-        for session in response.data.get('sessions', []):
-            if session['device_description'] == "Device 1":
-                found_device1 = True
-                self.assertEqual(session['current_session'], True)
-                continue
-            if session['device_description'] == "Device 2":
-                found_device2 = True
-                self.assertEqual(session['current_session'], False)
-                continue
-
-        self.assertTrue(found_device1)
-        self.assertTrue(found_device2)
-
-
-
-
+        self.assertEqual(response.data, {
+            'session_key': response.data['session_key'],
+        })
 
 
