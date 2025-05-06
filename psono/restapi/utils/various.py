@@ -122,7 +122,7 @@ def validate_verification_code(activation_code: str, verification_secret: str) -
 
             email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
-            return User.objects.filter(email_bcrypt=email_bcrypt, is_email_active=False)[0]
+            return User.objects.filter(email_bcrypt=email_bcrypt)[0]
     except:  # nosec
         #wrong format or whatever could happen
         pass
@@ -141,7 +141,12 @@ def validate_activation_code(activation_code: str) -> Optional[User]:
     :rtype: User or None
     """
 
-    return validate_verification_code(activation_code, settings.ACTIVATION_LINK_SECRET)
+    user =  validate_verification_code(activation_code, settings.ACTIVATION_LINK_SECRET)
+
+    if user is None or user.is_email_active:
+        return None
+
+    return user
 
 def validate_unregister_code(unregistration_code: str) -> Optional[User]:
     """

@@ -199,11 +199,34 @@ class UnegistrationTests(APITestCaseExtended):
 
     @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
-    def test_put_authentication_unregister(self):
+    def test_put_authentication_unregister_email_unverified(self):
         """
-        Tests PUT method on authentication_unregister
+        Tests PUT method on authentication_unregister with user who has not yet verified his email address
         """
-        self.assertTrue(models.User.objects.filter(pk=self.test_user_obj.pk).exists())
+        self.test_user_obj.is_email_active = False
+        self.test_user_obj.save()
+
+        url = reverse('authentication_unregister')
+        unregister_code = generate_unregistration_code(self.test_email)
+
+        data = {
+            'unregister_code': unregister_code,
+        }
+
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertFalse(models.User.objects.filter(pk=self.test_user_obj.pk).exists())
+
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_put_authentication_unregister_email_verified(self):
+        """
+        Tests PUT method on authentication_unregister with user who has already verified his email address
+        """
+        self.test_user_obj.is_email_active = True
+        self.test_user_obj.save()
 
         url = reverse('authentication_unregister')
         unregister_code = generate_unregistration_code(self.test_email)
