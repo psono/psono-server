@@ -1074,6 +1074,7 @@ class Token(models.Model):
     write_date = models.DateTimeField(auto_now=True)
     valid_till = models.DateTimeField(default=timezone.now)
     key = models.CharField(max_length=128, primary_key=True)
+    session_key = models.CharField(max_length=64, null=True)
     secret_key = models.CharField(max_length=64)
     user_validator = models.CharField(max_length=64, null=True)
     device_fingerprint = models.CharField(max_length=128, null=True)
@@ -1122,6 +1123,7 @@ class Token(models.Model):
 
         self.secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
         self.user_validator = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
+        self.session_key = binascii.hexlify(os.urandom(32)).decode()
 
     def __str__(self):
         return self.key

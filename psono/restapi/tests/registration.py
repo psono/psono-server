@@ -117,6 +117,7 @@ class RegistrationTests(APITestCaseExtended):
         self.assertFalse(user.is_email_active)
 
 
+    @override_settings(WEB_CLIENT_URL='')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_create_account_without_webclient_url(self):
         """

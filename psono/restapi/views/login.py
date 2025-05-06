@@ -131,6 +131,7 @@ class LoginView(GenericAPIView):
 
         response = {
             "token": token.clear_text_key,
+            "session_key": token.session_key,
             "session_valid_till": token.valid_till.isoformat(),
             "required_multifactors": required_multifactors,
             "session_public_key": server_session_public_key_hex.decode('utf-8'),

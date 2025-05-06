@@ -176,10 +176,57 @@ class LinkShareAccess(APITestCaseExtended):
         )
 
 
+
+        # Lets first insert our first dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345"
+        )
+
+        self.user_share_right1 = models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            read=True,
+            write=False,
+            grant=False,
+            accepted=True
+        )
+
+        self.test_secret_in_share_obj = models.Secret.objects.create(
+            user_id=self.test_user2_obj.id,
+            data=b'12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        self.secret_link_in_share_obj = models.Secret_Link.objects.create(
+            link_id = 'fa38056e-08a2-44d6-ad3e-59a146fe9dc0',
+            secret_id = self.test_secret_in_share_obj.id,
+            parent_datastore_id = None,
+            parent_share_id = self.test_share1_obj.id
+        )
+
+        self.link_share_in_share = models.Link_Share.objects.create(
+            user=self.test_user_obj,
+            secret=self.test_secret_in_share_obj,
+            file_id=None,
+            allowed_reads=True,
+            public_title='A public title',
+            node=b'kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi',
+            node_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            passphrase=None,
+            valid_till=None,
+        )
+
+
+
+
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_get(self):
         """
-        Tests PUT on link share access
+        Tests GET on link share access
         """
 
         url = reverse('link_share_access')
@@ -483,6 +530,85 @@ class LinkShareAccess(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_success_with_secret_in_share_with_allow_write_false(self):
+        """
+        Tests POST on link share access with a secret that is being shared with allow_write being set to false
+        """
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share_in_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+
+        self.assertFalse(response_data['allow_write'])
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_success_with_secret_in_share_with_allow_write_true(self):
+        """
+        Tests POST on link share access with a secret that is being shared with allow_write being set to true
+        """
+
+        self.user_share_right1.write = True
+        self.user_share_right1.save()
+
+        self.link_share_in_share.allow_write = True
+        self.link_share_in_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share_in_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+
+        self.assertTrue(response_data['allow_write'])
+
+
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_success_with_secret_in_share_with_forced_allow_write_false(self):
+        """
+        Tests POST on link share access with a secret that is being shared with allow_write being set to true but forced to false
+        due to missing share right permission
+        """
+
+        self.user_share_right1.write = False
+        self.user_share_right1.save()
+
+        self.link_share_in_share.allow_write = True
+        self.link_share_in_share.save()
+
+        url = reverse('link_share_access')
+
+        data = {
+            'link_share_id': str(self.link_share_in_share.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = json.loads(response.content)
+
+        self.assertFalse(response_data['allow_write'])
 
 
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))

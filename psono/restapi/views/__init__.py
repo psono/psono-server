@@ -34,6 +34,7 @@ from .metadata_datastore import MetadataDatastoreView
 from .metadata_share import MetadataShareView
 from .health_check import HealthCheckView
 from .status import StatusView
+from .session_key import SessionKeyView
 from .unregister import UnregisterView
 from .secret_history import SecretHistoryView
 from .login import LoginView

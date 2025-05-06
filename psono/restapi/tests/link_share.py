@@ -119,6 +119,37 @@ class UserCreateLinkShareTest(APITestCaseExtended):
             type="dummy"
         )
 
+        # Lets first insert our first dummy share
+        self.test_share1_obj = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345"
+        )
+
+        self.user_share_right1 = models.User_Share_Right.objects.create(
+            share_id=self.test_share1_obj.id,
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user_obj.id,
+            read=True,
+            write=False,
+            grant=False,
+            accepted=True
+        )
+
+        self.test_secret_in_share_obj = models.Secret.objects.create(
+            user_id=self.test_user2_obj.id,
+            data=b'12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        self.secret_link_obj = models.Secret_Link.objects.create(
+            link_id = 'fa38056e-08a2-44d6-ad3e-59a146fe9dc0',
+            secret_id = self.test_secret_in_share_obj.id,
+            parent_datastore_id = None,
+            parent_share_id = self.test_share1_obj.id
+        )
+
 
     def test_create_link_share(self):
         """
@@ -142,6 +173,97 @@ class UserCreateLinkShareTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertEqual(models.Link_Share.objects.count(), 1)
+
+        link_share = models.Link_Share.objects.first()
+
+        self.assertFalse(link_share.allow_write)
+
+
+    def test_create_link_share_with_allow_write(self):
+        """
+        Tests to create a link share with allow_write
+        """
+
+        url = reverse('link_share')
+
+        data = {
+            'secret_id': str(self.test_secret_obj.id),
+            'node': '12345',
+            'node_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'public_title': 'A public title',
+            'allowed_reads': 1,
+            'passphrase': '',
+            'allow_write': True,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(models.Link_Share.objects.count(), 1)
+
+        link_share = models.Link_Share.objects.first()
+
+        self.assertTrue(link_share.allow_write)
+
+
+    def test_create_link_share_with_allow_write_and_write_permission(self):
+        """
+        Tests to create a link share with allow_write
+        """
+
+        self.user_share_right1.write = True
+        self.user_share_right1.save()
+
+        url = reverse('link_share')
+
+        data = {
+            'secret_id': str(self.test_secret_in_share_obj.id),
+            'node': '12345',
+            'node_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'public_title': 'A public title',
+            'allowed_reads': 1,
+            'passphrase': '',
+            'allow_write': True,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(models.Link_Share.objects.count(), 1)
+
+        link_share = models.Link_Share.objects.first()
+
+        self.assertTrue(link_share.allow_write)
+
+
+    def test_create_link_share_with_allow_write_without_write_permssion(self):
+        """
+        Tests to create a link share with allow_write but only read permission for the secret
+        """
+
+        self.user_share_right1.write = False
+        self.user_share_right1.save()
+
+        url = reverse('link_share')
+
+        data = {
+            'secret_id': str(self.test_secret_in_share_obj.id),
+            'node': '12345',
+            'node_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'public_title': 'A public title',
+            'allowed_reads': 1,
+            'passphrase': '',
+            'allow_write': True,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_link_share_without_secret_and_file(self):
         """

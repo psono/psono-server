@@ -62,7 +62,11 @@ class UpdateLinkShareAccessSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if link_share.secret_id and not user_has_rights_on_secret(link_share.user_id, link_share.secret_id, read=True):
+        write_required = None
+        if link_share.allow_write:
+            write_required = True
+
+        if link_share.secret_id and not user_has_rights_on_secret(link_share.user_id, link_share.secret_id, read=True, write=write_required):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 

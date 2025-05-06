@@ -55,6 +55,7 @@ urlpatterns = [
 
     re_path(r'^avatar-image/(?P<user_id>[^/]+)/(?P<avatar_id>[^/]+)/$', views.AvatarImageView.as_view(), name='avatar_image'),
     re_path(r'^avatar/$', views.AvatarView.as_view(), name='avatar'),
+    re_path(r'^session-key/$', views.SessionKeyView.as_view(), name='session_key'),
     re_path(r'^password/$', views.PasswordView.as_view(), name='password'),
     re_path(r'^recoverycode/$', views.RecoveryCodeView.as_view(), name='recoverycode'),
 
