@@ -6,7 +6,9 @@ from django.conf import settings
 class AnonRateThrottle(OrigAnonRateThrottle):
 
     def get_ident(self, request):
-        if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+        if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None):
+            remote_addr = request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None)
+        elif settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
             remote_addr = request.META.get(settings.TRUSTED_IP_HEADER, None)
         else:
             remote_addr = super().get_ident(request)
@@ -16,7 +18,9 @@ class AnonRateThrottle(OrigAnonRateThrottle):
 class UserRateThrottle(OrigUserRateThrottle):
 
     def get_ident(self, request):
-        if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+        if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None):
+            remote_addr = request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None)
+        elif settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
             remote_addr = request.META.get(settings.TRUSTED_IP_HEADER, None)
         else:
             remote_addr = super().get_ident(request)
@@ -26,7 +30,9 @@ class UserRateThrottle(OrigUserRateThrottle):
 class ScopedRateThrottle(OrigScopedRateThrottle):
 
     def get_ident(self, request):
-        if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+        if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None):
+            remote_addr = request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None)
+        elif settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
             remote_addr = request.META.get(settings.TRUSTED_IP_HEADER, None)
         else:
             remote_addr = super().get_ident(request)

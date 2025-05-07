@@ -1296,7 +1296,9 @@ def get_ip(request):
     :param request:
     :return:
     """
-    if settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+    if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None):
+        return request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None)
+    elif settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
         return request.META.get(settings.TRUSTED_IP_HEADER, None)
     else:
         xff = request.META.get('HTTP_X_FORWARDED_FOR')
