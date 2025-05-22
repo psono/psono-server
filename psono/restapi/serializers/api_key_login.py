@@ -9,8 +9,6 @@ from  nacl.exceptions import BadSignatureError
 import json
 import binascii
 
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 
 from ..models import API_Key
@@ -28,7 +26,7 @@ class APIKeyLoginSerializer(serializers.Serializer):
         try:
             info = json.loads(info_json)
         except:
-            msg = _('Login info no valid json')
+            msg = 'Login info no valid json'
             raise exceptions.ValidationError(msg)
 
         api_key_id = info['api_key_id']
@@ -49,11 +47,11 @@ class APIKeyLoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if not api_key.user.is_active:
-            msg = _('User account has been disabled.')
+            msg = 'User account has been disabled.'
             raise exceptions.ValidationError(msg)
 
         if not api_key.user.is_email_active:
-            msg = _('E-mail is not yet verified.')
+            msg = 'E-mail is not yet verified.'
             raise exceptions.ValidationError(msg)
 
 
@@ -62,7 +60,7 @@ class APIKeyLoginSerializer(serializers.Serializer):
         try:
             verify_key.verify(info_json.encode(), binascii.unhexlify(signature.encode()))
         except BadSignatureError:
-            msg = _('Signature invalid.')
+            msg = 'Signature invalid.'
             raise exceptions.ValidationError(msg)
 
         attrs['api_key'] = api_key

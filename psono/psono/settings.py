@@ -287,6 +287,7 @@ REST_FRAMEWORK = {
         'avatar_image': config_get('THROTTLE_RATE_AVATAR_IMAGE', '100/day'),
         'prelogin': config_get('THROTTLE_RATE_PRE_LOGIN', '48/day'),
         'login': config_get('THROTTLE_RATE_LOGIN', '48/day'),
+        'api_key_login': config_get('THROTTLE_RATE_API_KEY_LOGIN', '60/hour'),
         'link_share_secret': config_get('THROTTLE_RATE_LINK_SHARE_SECRET', '60/hour'),
         'password': config_get('THROTTLE_RATE_PASSWORD', '24/day'),
         'user': config_get('THROTTLE_RATE_USER', '86400/day'),

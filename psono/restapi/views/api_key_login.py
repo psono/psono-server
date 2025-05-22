@@ -29,7 +29,7 @@ class APIKeyLoginView(GenericAPIView):
     parser_classes = [JSONParser]
     serializer_class = APIKeyLoginSerializer
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'login'
+    throttle_scope = 'api_key_login'
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
