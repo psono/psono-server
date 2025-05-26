@@ -2,6 +2,7 @@ from .share_link import create_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..models import (
@@ -21,6 +22,15 @@ class ShareView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadShareSerializer
+        if self.request.method == 'PUT':
+            return CreateShareSerializer
+        if self.request.method == 'POST':
+            return UpdateShareSerializer
+        return Serializer
 
     def get_shares(self, user):
 
@@ -72,12 +82,6 @@ class ShareView(GenericAPIView):
         """
         Returns a list of all shares with all own share rights on that share or
         returns a share with all rights existing on the share
-
-        :param request:
-        :param share_id:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
         if not share_id:
 
@@ -116,15 +120,6 @@ class ShareView(GenericAPIView):
 
         Necessary Rights:
             - write on share
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = UpdateShareSerializer(data=request.data, context=self.get_serializer_context())
@@ -153,15 +148,6 @@ class ShareView(GenericAPIView):
         Necessary Rights:
             - write on new_parent_share
             - write on new_parent_datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateShareSerializer(data=request.data, context=self.get_serializer_context())

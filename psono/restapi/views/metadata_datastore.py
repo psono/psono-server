@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -17,18 +18,14 @@ class MetadataDatastoreView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadMetadataDatastoreSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the metadata info for a specific datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadMetadataDatastoreSerializer(data=request.data, context=self.get_serializer_context())

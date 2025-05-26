@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 
@@ -38,6 +39,13 @@ class EmergencyLoginView(GenericAPIView):
     allowed_methods = ('PUT', 'POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'password'
     parser_classes = [JSONParser]
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return ActivateEmergencyLoginSerializer
+        if self.request.method == 'POST':
+            return EmergencyLoginSerializer
+        return Serializer
 
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -114,15 +122,6 @@ class EmergencyLoginView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         First step of the login with an emergency code
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400/ 403
-        :rtype:
         """
 
         serializer = EmergencyLoginSerializer(data=request.data, context=self.get_serializer_context())

@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 
 from decimal import Decimal
@@ -28,21 +29,19 @@ class LinkShareAccessView(GenericAPIView):
     throttle_scope = 'link_share_secret'
     parser_classes = [JSONParser]
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return ReadLinkShareAccessSerializer
+        if self.request.method == 'POST':
+            return UpdateLinkShareAccessSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Use a link share to update a secret.
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateLinkShareAccessSerializer(data=request.data, context=self.get_serializer_context())
@@ -75,15 +74,6 @@ class LinkShareAccessView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Use a link share to access a secret.
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadLinkShareAccessSerializer(data=request.data, context=self.get_serializer_context())

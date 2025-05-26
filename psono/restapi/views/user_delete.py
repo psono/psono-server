@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import IsAuthenticated
 from ..utils.avatar import delete_avatar_storage_of_user
@@ -16,9 +17,13 @@ class UserDelete(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserDeleteSerializer
     allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
     throttle_scope = 'user_delete'
+
+    def get_serializer_class(self):
+        if self.request.method == 'DELETE':
+            return UserDeleteSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -32,15 +37,6 @@ class UserDelete(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Checks the REST Token and deletes the current user
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype: 200 / 400 / 403
         """
 
         serializer = UserDeleteSerializer(data=request.data, context=self.get_serializer_context())

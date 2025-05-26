@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..authentication import TokenAuthentication
@@ -21,18 +22,17 @@ class EmergencyCodeView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateEmergencycodeSerializer
+        return Serializer
+
     def put(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get(self, request, *args, **kwargs):
         """
         Returns the list of emergency codes of the user
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         emegency_codes = []
@@ -52,15 +52,6 @@ class EmergencyCodeView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Stores a new emergency code
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = CreateEmergencycodeSerializer(data=request.data, context=self.get_serializer_context())

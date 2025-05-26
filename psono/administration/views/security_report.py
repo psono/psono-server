@@ -2,6 +2,7 @@ from django.utils.duration import duration_string
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -17,6 +18,11 @@ class SecurityReportView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadSecurityReportSerializer
+        return Serializer
 
     def get_security_report_info(self, security_report):
 
@@ -54,13 +60,6 @@ class SecurityReportView(GenericAPIView):
     def get(self, request, security_report_id = None, *args, **kwargs):
         """
         Returns a list of all security reports
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadSecurityReportSerializer(data=request.data, context=self.get_serializer_context())

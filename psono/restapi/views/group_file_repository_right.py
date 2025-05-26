@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -23,21 +24,21 @@ class GroupFileRepositoryRightView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateGroupFileRepositoryRightSerializer
+        if self.request.method == 'POST':
+            return UpdateGroupFileRepositoryRightSerializer
+        if self.request.method == 'DELETE':
+            return DeleteGroupFileRepositoryRightSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Creates a new group file repository right
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateGroupFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())
@@ -61,15 +62,6 @@ class GroupFileRepositoryRightView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a file repository right
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = UpdateGroupFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())

@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
@@ -24,6 +25,11 @@ class RegisterView(GenericAPIView):
     throttle_scope = 'registration'
     parser_classes = [JSONParser]
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RegisterSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -34,15 +40,6 @@ class RegisterView(GenericAPIView):
         """
         Accepts the username, email and authkey and creates a new user
         if the username (and email address) do not already exist
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype: 201 / 400
         """
 
         def splitAt(w, n):

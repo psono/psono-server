@@ -5,6 +5,7 @@ import base64
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..utils.avatar import get_avatar_storage
 from ..utils.avatar import delete_avatar_storage_of_user
 from ..permissions import IsAuthenticated
@@ -26,20 +27,18 @@ class AvatarView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadAvatarSerializer
+        if self.request.method == 'POST':
+            return CreateAvatarSerializer
+        if self.request.method == 'DELETE':
+            return DeleteAvatarSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the avatar of a user
-
-        :param request:
-        :type request:
-        :param avatar_id:
-        :type avatar_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = ReadAvatarSerializer(data=request.data, context=self.get_serializer_context())
@@ -71,15 +70,6 @@ class AvatarView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Creates a new avatar (and potentially deletes any existing ones)
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateAvatarSerializer(data=request.data, context=self.get_serializer_context())

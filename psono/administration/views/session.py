@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     ReadSessionSerializer,
@@ -21,16 +22,16 @@ class SessionView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadSessionSerializer
+        elif self.request.method == 'DELETE':
+            return DeleteSessionSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns a list of all sessions
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadSessionSerializer(data=request.data, context=self.get_serializer_context())
@@ -88,15 +89,6 @@ class SessionView(GenericAPIView):
         # to be provided
         #
         # Return the user's public key
-        #
-        # :param request:
-        # :type request:
-        # :param args:
-        # :type args:
-        # :param kwargs:
-        # :type kwargs:
-        # :return: 200 / 400
-        # :rtype:
         # """
         #
         # serializer = self.get_serializer(data=request.data)
@@ -124,11 +116,6 @@ class SessionView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a session
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteSessionSerializer(data=request.data, context=self.get_serializer_context())

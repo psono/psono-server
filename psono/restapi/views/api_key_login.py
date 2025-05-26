@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 
@@ -27,9 +28,13 @@ from ..app_settings import (
 class APIKeyLoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
-    serializer_class = APIKeyLoginSerializer
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'api_key_login'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return APIKeyLoginSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -45,15 +50,6 @@ class APIKeyLoginView(GenericAPIView):
         HTTP header, prepended with the string "Token ". For example:
 
             Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
         serializer = self.get_serializer(data=self.request.data)
 

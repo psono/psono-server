@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -23,6 +24,15 @@ class FileRepositoryRightView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateFileRepositoryRightSerializer
+        if self.request.method == 'POST':
+            return UpdateFileRepositoryRightSerializer
+        if self.request.method == 'DELETE':
+            return DeleteFileRepositoryRightSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -31,15 +41,6 @@ class FileRepositoryRightView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates a new file repository right
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())

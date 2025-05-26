@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.serializers import Serializer
 
 from decimal import Decimal
 
@@ -25,18 +26,16 @@ class FileView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadFileSerializer
+        if self.request.method == 'PUT':
+            return CreateFileSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Indirectly reads a file by providing a filetransfer id for download
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = ReadFileSerializer(data=request.data, context=self.get_serializer_context())
@@ -77,15 +76,6 @@ class FileView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Indirectly creates a file by providing a filetransfer id for upload
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateFileSerializer(data=request.data, context=self.get_serializer_context())

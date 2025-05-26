@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from ..models import (
     Token
@@ -16,9 +17,13 @@ from ..authentication import TokenAuthentication
 class LogoutView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = LogoutSerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return LogoutSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -31,11 +36,6 @@ class LogoutView(GenericAPIView):
         Delete the current used token object.
 
         Accepts/Returns nothing.
-
-        :param request:
-        :type request:
-        :return:
-        :rtype:
         """
 
 

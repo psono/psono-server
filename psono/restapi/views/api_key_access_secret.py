@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from django.conf import settings
@@ -28,6 +29,13 @@ class APIKeyAccessSecretView(GenericAPIView):
 
     renderer_classes = (PlainJSONRenderer,)
     permission_classes = (AllowAny,)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadSecretWithAPIKeySerializer
+        if self.request.method == 'POST':
+            return UpdateSecretWithAPIKeySerializer
+        return Serializer
     parser_classes = [JSONParser]
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
@@ -37,15 +45,6 @@ class APIKeyAccessSecretView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Updates a secret.
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateSecretWithAPIKeySerializer(data=request.data, context=self.get_serializer_context())
@@ -112,15 +111,6 @@ class APIKeyAccessSecretView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Returns a secret and decrypts it for the client.
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadSecretWithAPIKeySerializer(data=request.data, context=self.get_serializer_context())

@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -15,6 +16,11 @@ class ShareRightsView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadShareRightsSerializer
+        return Serializer
+
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -25,17 +31,6 @@ class ShareRightsView(GenericAPIView):
         """
         Returns all share rights of a specified share. Including the share rights of other people as long as the user
         who requests it has the "grant" right, and is allowed to see them.
-
-        :param request:
-        :type request:
-        :param share_id:
-        :type share_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadShareRightsSerializer(data=request.data, context=self.get_serializer_context())

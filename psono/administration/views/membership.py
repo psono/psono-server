@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     UpdateMembershipSerializer,
@@ -17,16 +18,16 @@ class MembershipView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return UpdateMembershipSerializer
+        elif self.request.method == 'DELETE':
+            return DeleteMembershipSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         """
         Returns a list of all memberships
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         memberships = []
@@ -76,11 +77,6 @@ class MembershipView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a membership
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())

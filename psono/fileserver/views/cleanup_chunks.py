@@ -3,6 +3,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from datetime import timedelta
 
@@ -19,18 +20,14 @@ class CleanupChunksView(GenericAPIView):
     allowed_methods = ('GET', 'POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'fileserver_upload'
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return FileserverConfirmChunkDeletionSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the chunks that should be cleaned up by this fileserver
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 401
-        :rtype:
         """
 
         # Get a list of all shards that are handled by this particular fileserver

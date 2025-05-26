@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -23,21 +24,17 @@ class APIKeySecretView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return AddSecretToAPIKeySerializer
+        if self.request.method == 'DELETE':
+            return RemoveSecretFromAPIKeySerializer
+        return Serializer
+
 
     def get(self, request, api_key_id=None, *args, **kwargs):
         """
         Returns a list of all api key secrets of an API key
-        
-        :param request:
-        :type request:
-        :param api_key_id:
-        :type api_key_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         # Returns the specified api_key if the user has any rights for it
@@ -65,15 +62,6 @@ class APIKeySecretView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Adds a secret to an api_key
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = AddSecretToAPIKeySerializer(data=request.data, context=self.get_serializer_context())

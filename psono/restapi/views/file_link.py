@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from  more_itertools import unique_everseen
 
@@ -63,6 +64,13 @@ class FileLinkView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return MoveFileLinkSerializer
+        if self.request.method == 'DELETE':
+            return DeleteFileLinkSerializer
+        return Serializer
+
     def post(self, request, *args, **kwargs):
         """
         Move File_Link obj
@@ -72,12 +80,6 @@ class FileLinkView(GenericAPIView):
             - write on old_datastore
             - write on new_parent_share
             - write on new_datastore
-
-        :param request:
-        :param uuid:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = MoveFileLinkSerializer(data=request.data, context=self.get_serializer_context())
@@ -108,11 +110,6 @@ class FileLinkView(GenericAPIView):
         Necessary Rights:
             - write on parent_share
             - write on parent_datastore
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteFileLinkSerializer(data=request.data, context=self.get_serializer_context())

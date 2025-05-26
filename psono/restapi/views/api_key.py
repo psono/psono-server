@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -23,21 +24,20 @@ class APIKeyView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateAPIKeySerializer
+        if self.request.method == 'POST':
+            return UpdateAPIKeySerializer
+        if self.request.method == 'DELETE':
+            return DeleteAPIKeySerializer
+        if self.request.method == 'GET':
+            return Serializer
+
 
     def get(self, request, api_key_id = None, *args, **kwargs):
         """
         Returns either a list of all api_keys with own access privileges or the members specified api_key
-        
-        :param request:
-        :type request:
-        :param api_key_id:
-        :type api_key_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 403
-        :rtype:
         """
 
         if not api_key_id:
@@ -87,15 +87,6 @@ class APIKeyView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates an api_key
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateAPIKeySerializer(data=request.data, context=self.get_serializer_context())
@@ -132,15 +123,6 @@ class APIKeyView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a api_key
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateAPIKeySerializer(data=request.data, context=self.get_serializer_context())
@@ -186,11 +168,6 @@ class APIKeyView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes an api_key
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteAPIKeySerializer(data=request.data, context=self.get_serializer_context())

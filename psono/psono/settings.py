@@ -229,6 +229,7 @@ INSTALLED_APPS = [
     'anymail',
     'corsheaders',
     'rest_framework',
+    'drf_spectacular',
     'restapi',
     'administration',
     'fileserver',
@@ -255,6 +256,14 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher'
 )
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Psono API',
+    'DESCRIPTION': 'Documentation of Psono\'s API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': 'server',
+}
 
 TRUSTED_COUNTRY_HEADER = config_get('TRUSTED_COUNTRY_HEADER', None)  # e.g. HTTP_CF_IPCOUNTRY
 TRUSTED_IP_HEADER = config_get('TRUSTED_IP_HEADER', None)  # e.g. HTTP_CF_CONNECTING_IP
@@ -305,7 +314,8 @@ REST_FRAMEWORK = {
         'fileserver_upload': config_get('THROTTLE_RATE_FILESERVER_UPLOAD', '10000/minute'),
         'fileserver_download': config_get('THROTTLE_RATE_RATE_FILESERVER_DOWNLOAD', '10000/minute'),
     },
-    'NUM_PROXIES': NUM_PROXIES
+    'NUM_PROXIES': NUM_PROXIES,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 

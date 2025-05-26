@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 import datetime
 
@@ -19,21 +20,17 @@ class AliveView(GenericAPIView):
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
     throttle_scope = 'fileserver_alive'
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return FileserverAliveSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Updates the "alive" value in the database
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = FileserverAliveSerializer(data=request.data, context=self.get_serializer_context())

@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     DeleteLinkShareSerializer
@@ -17,6 +18,11 @@ class LinkShareView(GenericAPIView):
     serializer_class = DeleteLinkShareSerializer
     allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'DELETE':
+            return DeleteLinkShareSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -29,11 +35,6 @@ class LinkShareView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a Link Share
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteLinkShareSerializer(data=request.data, context=self.get_serializer_context())

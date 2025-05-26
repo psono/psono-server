@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 
@@ -15,7 +16,10 @@ class VerifyEmailView(GenericAPIView):
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     parser_classes = [JSONParser]
 
-    serializer_class = VerifyEmailSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return VerifyEmailSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -26,15 +30,6 @@ class VerifyEmailView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Verifies the activation code sent via email and updates the user
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = self.get_serializer(data=request.data)

@@ -3,6 +3,7 @@ from datetime import timedelta
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..models import Duo
@@ -14,21 +15,20 @@ class UserDuo(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = NewDuoSerializer
-    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ActivateDuoSerializer
+        if self.request.method == 'PUT':
+            return NewDuoSerializer
+        if self.request.method == 'DELETE':
+            return DeleteDuoSerializer
+        return Serializer
 
     def get(self, request, *args, **kwargs):
         """
         Checks the REST Token and returns a list of all duo
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200
-        :rtype:
         """
 
         duos = []
@@ -48,15 +48,6 @@ class UserDuo(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Checks the REST Token and sets a new duo for multifactor authentication
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = NewDuoSerializer(data=request.data, context=self.get_serializer_context())
@@ -108,15 +99,6 @@ class UserDuo(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Validates a duo and activates it
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ActivateDuoSerializer(data=request.data, context=self.get_serializer_context())
@@ -141,11 +123,6 @@ class UserDuo(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a duo
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteDuoSerializer(data=request.data, context=self.get_serializer_context())

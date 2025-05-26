@@ -2,6 +2,7 @@ from rest_framework import status
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import IsAuthenticated
 from ..utils import decrypt_with_db_secret
@@ -15,23 +16,17 @@ class BulkSecretReadView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return BulkReadSecretSerializer
+        return Serializer
+
     def post(self, request, *args, **kwargs):
         """
         Lists multiple secrets
 
         Necessary Rights:
             - read on secret
-
-        :param request:
-        :type request:
-        :param secret_id:
-        :type secret_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400 / 403
-        :rtype:
         """
 
         serializer = BulkReadSecretSerializer(data=request.data, context=self.get_serializer_context())

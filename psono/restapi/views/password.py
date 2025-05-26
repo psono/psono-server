@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 
@@ -28,6 +29,13 @@ class PasswordView(GenericAPIView):
     permission_classes = (AllowAny,)
     allowed_methods = ('PUT', 'POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'password'
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return EnableNewPasswordSerializer
+        if self.request.method == 'POST':
+            return SetNewPasswordSerializer
+        return Serializer
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
@@ -37,15 +45,6 @@ class PasswordView(GenericAPIView):
         """
         Second step of the recovery code password reset.
         Validates the code and sets the new password.
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400 / 403
-        :rtype:
         """
 
         serializer = SetNewPasswordSerializer(data=request.data, context=self.get_serializer_context())
@@ -105,15 +104,6 @@ class PasswordView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         First step of the password reset with a recovery code
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400/ 403
-        :rtype:
         """
 
         serializer = EnableNewPasswordSerializer(data=request.data, context=self.get_serializer_context())

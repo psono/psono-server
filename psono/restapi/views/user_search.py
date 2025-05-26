@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from ..models import (
     Recovery_Code
@@ -18,8 +19,12 @@ class UserSearch(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserSearchSerializer
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserSearchSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -33,15 +38,6 @@ class UserSearch(GenericAPIView):
         to be provided
 
         Return the user's public key
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = self.get_serializer(data=request.data)

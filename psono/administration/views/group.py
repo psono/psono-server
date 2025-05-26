@@ -2,6 +2,7 @@ from django.db.models import Q, Count
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.core.paginator import Paginator
 
 from ..app_settings import (
@@ -19,6 +20,15 @@ class GroupView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadGroupSerializer
+        elif self.request.method == 'PUT':
+            return UpdateGroupSerializer
+        elif self.request.method == 'DELETE':
+            return DeleteGroupSerializer
+        return Serializer
 
     def get_group_info(self, group):
 
@@ -62,13 +72,6 @@ class GroupView(GenericAPIView):
     def get(self, request, group_id = None, *args, **kwargs):
         """
         Returns a list of all groups
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadGroupSerializer(data=request.data, context=self.get_serializer_context())
@@ -123,11 +126,6 @@ class GroupView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Updates a group
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = UpdateGroupSerializer(data=request.data, context=self.get_serializer_context())
@@ -153,11 +151,6 @@ class GroupView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a group
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteGroupSerializer(data=request.data, context=self.get_serializer_context())

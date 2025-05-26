@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -15,16 +16,12 @@ class StatsBrowserView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the statistics of used devices
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         browsers = Token.objects.filter(valid_till__gt=timezone.now()).values('device_description').annotate(total=Count('device_description')).order_by()

@@ -3,6 +3,7 @@ from email.mime.image import MIMEImage
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.core.cache import cache
@@ -32,6 +33,15 @@ class MembershipView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateMembershipSerializer
+        if self.request.method == 'POST':
+            return UpdateMembershipSerializer
+        if self.request.method == 'DELETE':
+            return DeleteMembershipSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -40,15 +50,6 @@ class MembershipView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates a new group membership
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateMembershipSerializer(data=request.data, context=self.get_serializer_context())
@@ -127,15 +128,6 @@ class MembershipView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a group membership
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = UpdateMembershipSerializer(data=request.data, context=self.get_serializer_context())
@@ -156,11 +148,6 @@ class MembershipView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a group membership
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())

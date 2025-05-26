@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.db.models import F
 from django.conf import settings
 from ..permissions import IsAuthenticated
@@ -29,23 +30,21 @@ class SecretView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadSecretSerializer
+        if self.request.method == 'PUT':
+            return CreateSecretSerializer
+        if self.request.method == 'POST':
+            return UpdateSecretSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Lists a specific secret
 
         Necessary Rights:
             - read on secret
-
-        :param request:
-        :type request:
-        :param secret_id:
-        :type secret_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400 / 403
-        :rtype:
         """
 
         serializer = ReadSecretSerializer(data=request.data, context=self.get_serializer_context())
@@ -86,15 +85,6 @@ class SecretView(GenericAPIView):
         Necessary Rights:
             - write on parent_share
             - write on parent_datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateSecretSerializer(data=request.data, context=self.get_serializer_context())
@@ -135,15 +125,6 @@ class SecretView(GenericAPIView):
 
         Necessary Rights:
             - write on secret
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = UpdateSecretSerializer(data=request.data, context=self.get_serializer_context())

@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from django.db import connection
@@ -20,18 +21,12 @@ class HealthCheckView(GenericAPIView):
     throttle_scope = 'health_check'
     parser_classes = [JSONParser]
 
+    def get_serializer_class(self):
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Check the health of the application
-        
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         unhealthy = False

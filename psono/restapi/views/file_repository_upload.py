@@ -3,6 +3,7 @@ from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 import json
 import urllib
@@ -33,21 +34,17 @@ class FileRepositoryUploadView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return FileRepositoryUploadSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Prepares a chunk upload to a file repository
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = FileRepositoryUploadSerializer(data=request.data, context=self.get_serializer_context())

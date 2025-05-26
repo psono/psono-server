@@ -2,6 +2,7 @@ from ..utils import create_share_link, delete_share_link
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 
@@ -28,6 +29,15 @@ class ShareLinkView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateShareLinkSerializer
+        if self.request.method == 'POST':
+            return UpdateShareLinkSerializer
+        if self.request.method == 'DELETE':
+            return DeleteShareLinkSerializer
+        return Serializer
 
 
     def put(self, request, *args, **kwargs):

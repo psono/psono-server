@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 import nacl.encoding
 import json
@@ -29,10 +30,16 @@ class WebauthnVerifyView(GenericAPIView):
 
     authentication_classes = (TokenAuthenticationAllowInactive, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = WebauthnVerifySerializer
     token_model = Token
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ('POST', 'PUT', 'OPTIONS', 'HEAD')
     throttle_scope = 'duo_verify'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return WebauthnVerifySerializer
+        if self.request.method == 'PUT':
+            return WebauthnVerifyInitSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

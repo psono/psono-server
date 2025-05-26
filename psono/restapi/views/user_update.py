@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -17,9 +18,13 @@ class UserUpdate(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserUpdateSerializer
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
     throttle_scope = 'user_update'
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return UserUpdateSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -27,15 +32,6 @@ class UserUpdate(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Checks the REST Token and updates the users email / authkey / secret and private key
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype: 200 / 400 / 403
         """
 
         serializer = self.get_serializer(data=request.data)
