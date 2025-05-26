@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..authentication import TokenAuthentication
@@ -15,6 +16,11 @@ class FileRepositoryRightAcceptView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return FileRepositoryRightAcceptSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -24,11 +30,6 @@ class FileRepositoryRightAcceptView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Marks a FileRepositoryRight as accepted.
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = FileRepositoryRightAcceptSerializer(data=request.data, context=self.get_serializer_context())

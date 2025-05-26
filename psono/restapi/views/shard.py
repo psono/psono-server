@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     ReadShardSerializer,
@@ -15,6 +16,11 @@ class ShardView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadShardSerializer
+        return Serializer
 
     def get(self, request, *args, **kwargs):
 

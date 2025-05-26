@@ -2,6 +2,7 @@ import json
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.conf import settings
 import nacl.encoding
 
@@ -21,8 +22,16 @@ class UserWebauthn(GenericAPIView):
 
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = NewWebauthnSerializer
-    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return NewWebauthnSerializer
+        if self.request.method == 'POST':
+            return ActivateWebauthnSerializer
+        if self.request.method == 'DELETE':
+            return DeleteWebauthnSerializer
+        return Serializer
 
     def get(self, request, *args, **kwargs):
         """

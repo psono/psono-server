@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -26,6 +27,13 @@ class BulkSecretLinkView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return BulkMoveSecretLinkSerializer
+        if self.request.method == 'DELETE':
+            return BulkDeleteSecretLinkSerializer
+        return Serializer
+
     def post(self, request, *args, **kwargs):
         """
         Move Secret_Link obj
@@ -35,12 +43,6 @@ class BulkSecretLinkView(GenericAPIView):
             - write on old_datastore
             - write on new_parent_share
             - write on new_datastore
-
-        :param request:
-        :param uuid:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = BulkMoveSecretLinkSerializer(data=request.data, context=self.get_serializer_context())
@@ -79,11 +81,6 @@ class BulkSecretLinkView(GenericAPIView):
         Necessary Rights:
             - write on parent_share
             - write on parent_datastore
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = BulkDeleteSecretLinkSerializer(data=request.data, context=self.get_serializer_context())

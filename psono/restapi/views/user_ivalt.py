@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from django.conf import settings
 from ..utils import encrypt_with_db_secret, decrypt_with_db_secret
@@ -23,18 +24,18 @@ class UserIvalt(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateIvaltSerializer
+        if self.request.method == 'POST':
+            return ActivateIvaltSerializer
+        if self.request.method == 'DELETE':
+            return DeleteIvaltSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Lists all Ivalt mobile numbers
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         ivalt = []
@@ -53,15 +54,6 @@ class UserIvalt(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         sets a new ivalt 2FA
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateIvaltSerializer(data=request.data, context=self.get_serializer_context())
@@ -81,13 +73,6 @@ class UserIvalt(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         sets a new ivalt 2FA
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :return: 201 / 400
-        :rtype:
         """
         serializer = ActivateIvaltSerializer(data=request.data, context=self.get_serializer_context())
 
@@ -104,11 +89,6 @@ class UserIvalt(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes an Ivalt 2FA
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400 / 403
         """
 
         serializer = DeleteIvaltSerializer(data=request.data, context=self.get_serializer_context())

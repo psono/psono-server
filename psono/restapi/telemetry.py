@@ -20,8 +20,8 @@ def setup_telemetry():
     if not is_opentelemetry_enabled():
         return
     trace_provider = TracerProvider(resource=Resource.create({
-        ResourceAttributes.SERVICE_NAME: "psono-server",
-        ResourceAttributes.SERVICE_VERSION: settings.VERSION,
+        ResourceAttributes.SERVICE_NAME: os.getenv("PSONO_OTEL_RESOURCE_SERVICE_NAME", "psono-server"),
+        ResourceAttributes.SERVICE_VERSION: os.getenv("PSONO_OTEL_RESOURCE_SERVICE_VERSION", settings.VERSION),
     }))
     trace.set_tracer_provider(trace_provider)
     trace.get_tracer_provider().add_span_processor(

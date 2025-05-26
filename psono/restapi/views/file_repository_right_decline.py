@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..authentication import TokenAuthentication
@@ -16,6 +17,11 @@ class FileRepositoryRightDeclineView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return FileRepositoryRightDeclineSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -25,12 +31,6 @@ class FileRepositoryRightDeclineView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         It deletes a users own FileRepositoryRight.
-
-        :param request:
-        :param uuid: share_right_id
-        :param args:
-        :param kwargs:
-        :return: 200 / 403
         """
 
         serializer = FileRepositoryRightDeclineSerializer(data=request.data, context=self.get_serializer_context())

@@ -35,3 +35,4 @@ webauthn==2.5.2
 tzdata==2023.4
 django-timezone-field==7.1.0
 django-countries==7.6.1
+drf-spectacular==0.28.0

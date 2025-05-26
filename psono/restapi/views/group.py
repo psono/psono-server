@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from django.core.cache import cache
 from django.conf import settings
@@ -24,6 +25,16 @@ class GroupView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UpdateGroupSerializer
+        if self.request.method == 'PUT':
+            return CreateGroupSerializer
+        if self.request.method == 'DELETE':
+            return DeleteGroupSerializer
+        if self.request.method == 'GET':
+            return Serializer
 
 
     def get_groups(self, request):
@@ -133,17 +144,6 @@ class GroupView(GenericAPIView):
     def get(self, request, group_id = None, *args, **kwargs):
         """
         Returns either a list of all groups with own access privileges or the members specified group
-        
-        :param request:
-        :type request:
-        :param group_id:
-        :type group_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 403
-        :rtype:
         """
 
         if not group_id:
@@ -166,15 +166,6 @@ class GroupView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates a group
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateGroupSerializer(data=request.data, context=self.get_serializer_context())
@@ -223,15 +214,6 @@ class GroupView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a group
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateGroupSerializer(data=request.data, context=self.get_serializer_context())
@@ -254,11 +236,6 @@ class GroupView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a group
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteGroupSerializer(data=request.data, context=self.get_serializer_context())

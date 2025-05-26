@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -13,16 +14,12 @@ class StatsTwoFactorView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the statistics of used two factors
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         user_count = User.objects.count()

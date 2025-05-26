@@ -6,17 +6,17 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
-from rest_framework.parsers import MultiPartParser
+from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
 from django.utils import translation
 
 import os
 from email.mime.image import MIMEImage
 
-from ..app_settings import (
-    RegisterSerializer,
-)
+from ..models import User
+from ..app_settings import RegisterSerializer
 from ..utils import generate_activation_code
 
 class RegisterView(GenericAPIView):
@@ -24,6 +24,11 @@ class RegisterView(GenericAPIView):
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'registration'
     parser_classes = [JSONParser]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RegisterSerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -35,15 +40,6 @@ class RegisterView(GenericAPIView):
         """
         Accepts the username, email and authkey and creates a new user
         if the username (and email address) do not already exist
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype: 201 / 400
         """
 
         def splitAt(w, n):
@@ -64,10 +60,39 @@ class RegisterView(GenericAPIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        activation_code = generate_activation_code(serializer.validated_data['email'])
+        username = serializer.validated_data['username']
+        authkey = serializer.validated_data['authkey']
+        public_key = serializer.validated_data['public_key']
+        private_key = serializer.validated_data['private_key']
+        private_key_nonce = serializer.validated_data['private_key_nonce']
+        secret_key = serializer.validated_data['secret_key']
+        secret_key_nonce = serializer.validated_data['secret_key_nonce']
+        user_sauce = serializer.validated_data['user_sauce']
+        email = serializer.validated_data['email']
+        email_bcrypt = serializer.validated_data['email_bcrypt']
+        hashing_algorithm = serializer.validated_data['hashing_algorithm']
+        hashing_parameters = serializer.validated_data['hashing_parameters']
+        credit = serializer.validated_data['credit']
+
+        activation_code = generate_activation_code(email)
 
         try:
-            user = serializer.save()
+            user = User.objects.create(
+                username=username,
+                authkey=make_password(authkey),
+                public_key=public_key,
+                private_key=private_key,
+                private_key_nonce=private_key_nonce,
+                secret_key=secret_key,
+                secret_key_nonce=secret_key_nonce,
+                user_sauce=user_sauce,
+                email=email,
+                email_bcrypt=email_bcrypt,
+                hashing_algorithm=hashing_algorithm,
+                hashing_parameters=hashing_parameters,
+                language=request.LANGUAGE_CODE,
+                credit=credit,
+            )
         except IntegrityError:
             return Response({"custom": ["REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS"]},
                             status=status.HTTP_400_BAD_REQUEST)

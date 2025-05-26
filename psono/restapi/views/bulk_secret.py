@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.db import IntegrityError
 
 from ..permissions import IsAuthenticated
@@ -16,6 +17,11 @@ class BulkSecretView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return BulkCreateSecretSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -26,15 +32,6 @@ class BulkSecretView(GenericAPIView):
         Necessary Rights:
             - write on parent_share
             - write on parent_datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = BulkCreateSecretSerializer(data=request.data, context=self.get_serializer_context())

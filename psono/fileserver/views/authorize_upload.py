@@ -3,6 +3,7 @@ from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
@@ -16,21 +17,17 @@ class AuthorizeUploadView(GenericAPIView):
     allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
     throttle_scope = 'fileserver_upload'
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return FileserverAuthorizeUploadSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Unpacks the authorization information. Checks the user permission (e.g. quota).
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = FileserverAuthorizeUploadSerializer(data=request.data, context=self.get_serializer_context())

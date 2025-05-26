@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     DeleteRecoveryCodeSerializer
@@ -18,16 +19,14 @@ class RecoveryCodeView(GenericAPIView):
     serializer_class = DeleteRecoveryCodeSerializer
     allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'DELETE':
+            return DeleteRecoveryCodeSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         """
         Returns a list of all recovery codes
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         recovery_codes = []
@@ -51,11 +50,6 @@ class RecoveryCodeView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a Recovery Code
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteRecoveryCodeSerializer(data=request.data, context=self.get_serializer_context())

@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from ..models import (
     Token
@@ -17,10 +18,14 @@ class YubikeyOTPVerifyView(GenericAPIView):
 
     authentication_classes = (TokenAuthenticationAllowInactive, )
     permission_classes = (IsAuthenticated,)
-    serializer_class = YubikeyOTPVerifySerializer
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'yubikey_otp_verify'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return YubikeyOTPVerifySerializer
+        return Serializer
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

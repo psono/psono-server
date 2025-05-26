@@ -3,6 +3,7 @@ from django.db.models import Q, Exists, OuterRef
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.core.paginator import Paginator
 
 from ..app_settings import (
@@ -26,6 +27,17 @@ class UserView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadUserSerializer
+        elif self.request.method == 'POST':
+            return CreateUserSerializer
+        elif self.request.method == 'PUT':
+            return UpdateUserSerializer
+        elif self.request.method == 'DELETE':
+            return DeleteUserSerializer
+        return Serializer
 
     def get_user_info(self, user):
 
@@ -168,13 +180,6 @@ class UserView(GenericAPIView):
     def get(self, request, user_id = None, *args, **kwargs):
         """
         Returns a list of all users or a the infos of a single user
-
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = ReadUserSerializer(data=request.data, context=self.get_serializer_context())
@@ -241,11 +246,6 @@ class UserView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Updates a user
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = UpdateUserSerializer(data=request.data, context=self.get_serializer_context())
@@ -283,15 +283,6 @@ class UserView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Creates a user
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateUserSerializer(data=request.data, context=self.get_serializer_context())
@@ -325,11 +316,6 @@ class UserView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a user
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteUserSerializer(data=request.data, context=self.get_serializer_context())

@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from ..models import (
     Token
@@ -21,6 +22,11 @@ class DuoVerifyView(GenericAPIView):
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
     throttle_scope = 'duo_verify'
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return DuoVerifySerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -30,15 +36,6 @@ class DuoVerifyView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Validates a Duo Token (if provided) or returns once the push message on the phone has been confirmed
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = self.get_serializer(data=self.request.data)

@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 from ..models import (
     Data_Store,
@@ -25,20 +26,20 @@ class DatastoreView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateDatastoreSerializer
+        if self.request.method == 'POST':
+            return UpdateDatastoreSerializer
+        if self.request.method == 'DELETE':
+            return DeleteDatastoreSerializer
+        if self.request.method == 'GET':
+            return Serializer
+        return Serializer
+
     def get(self, request, datastore_id = None, *args, **kwargs):
         """
         Lists all datastores of the user or returns a specific datastore with content
-
-        :param request:
-        :type request:
-        :param datastore_id: PK of the datastore
-        :type datastore_id: uuid
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         if not datastore_id:
@@ -75,15 +76,6 @@ class DatastoreView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates a new datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateDatastoreSerializer(data=request.data, context=self.get_serializer_context())
@@ -120,15 +112,6 @@ class DatastoreView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a specific datastore
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = UpdateDatastoreSerializer(data=request.data, context=self.get_serializer_context())

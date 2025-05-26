@@ -2,6 +2,7 @@ from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 import json
 
@@ -32,6 +33,15 @@ class FileRepositoryView(GenericAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateFileRepositorySerializer
+        if self.request.method == 'POST':
+            return UpdateFileRepositorySerializer
+        if self.request.method == 'DELETE':
+            return DeleteFileRepositorySerializer
+        return Serializer
 
     def get(self, request, file_repository_id=None, *args, **kwargs):
         """
@@ -185,15 +195,6 @@ class FileRepositoryView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Creates an file_repository
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
         """
 
         serializer = CreateFileRepositorySerializer(data=request.data, context=self.get_serializer_context())
@@ -226,15 +227,6 @@ class FileRepositoryView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a file_repository
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateFileRepositorySerializer(data=request.data, context=self.get_serializer_context())

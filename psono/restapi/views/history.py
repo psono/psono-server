@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..permissions import IsAuthenticated
 from ..utils import decrypt_with_db_secret
@@ -17,23 +18,17 @@ class HistoryView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReadHistorySerializer
+        return Serializer
+
     def get(self, request, secret_history_id, *args, **kwargs):
         """
         Returns a specific history item
 
         Necessary Rights:
             - read on secret
-
-        :param request:
-        :type request:
-        :param secret_id:
-        :type secret_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
 
         serializer = ReadHistorySerializer(data=request.data, context=self.get_serializer_context())

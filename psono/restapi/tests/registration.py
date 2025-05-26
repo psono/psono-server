@@ -408,12 +408,13 @@ class RegistrationTests(APITestCaseExtended):
 
         self.assertEqual(decrypt_with_db_secret(user.email), email)
 
+        data['username'] = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + '@' + settings.ALLOWED_DOMAINS[0]
+
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(models.User.objects.count(), 1)
-        self.assertTrue(response.data.get('email', False),
-                        'E-Mail in error message does not exist in registration response')
+        self.assertEqual(response.data.get('non_field_errors'), ['USER_WITH_EMAIL_ALREADY_EXISTS'])
 
     @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))

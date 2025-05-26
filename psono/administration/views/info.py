@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.conf import settings
 from django.db.models import Count
 from django.db.models.functions import TruncMonth, TruncDay
@@ -17,18 +18,12 @@ class InfoView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('GET', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         """
         Returns the Server's signed information and some additional data for a nice dashboard
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         info = settings.SIGNATURE.copy()

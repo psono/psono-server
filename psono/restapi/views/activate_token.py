@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 from django.conf import settings
@@ -27,6 +28,11 @@ class ActivateTokenView(GenericAPIView):
     token_model = Token
     allowed_methods = ('POST', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ActivateTokenSerializer
+        return Serializer
+
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -36,15 +42,6 @@ class ActivateTokenView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Activates a token
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 400
-        :rtype:
         """
         serializer = self.get_serializer(data=self.request.data)
 

@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 
 from ..app_settings import (
     UpdateGroupShareRightSerializer,
@@ -18,17 +19,19 @@ class GroupShareRightView(GenericAPIView):
     permission_classes = (AdminPermission,)
     allowed_methods = ('PUT', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return UpdateGroupShareRightSerializer
+        elif self.request.method == 'DELETE':
+            return DeleteGroupShareRightSerializer
+        return Serializer
+
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def put(self, request, *args, **kwargs):
         """
         Updates a group share right
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = UpdateGroupShareRightSerializer(data=request.data, context=self.get_serializer_context())
@@ -67,11 +70,6 @@ class GroupShareRightView(GenericAPIView):
     def delete(self, request, *args, **kwargs):
         """
         Deletes a group share right
-
-        :param request:
-        :param args:
-        :param kwargs:
-        :return: 200 / 400
         """
 
         serializer = DeleteGroupShareRightSerializer(data=request.data, context=self.get_serializer_context())

@@ -1,4 +1,3 @@
-from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from rest_framework import serializers, exceptions
 import re
@@ -28,30 +27,6 @@ class RegisterSerializer(serializers.Serializer):
     user_sauce = serializers.CharField(required=True, )
     hashing_algorithm = serializers.ChoiceField(choices=HASHING_ALGORITHMS, required=False, )
     hashing_parameters = serializers.DictField(required=False, )
-
-    def validate_email(self, value):
-
-        value = value.lower().strip()
-
-        if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
-            email_prefix, domain = value.split("@")
-            if domain not in settings.REGISTRATION_EMAIL_FILTER:
-                msg = 'EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER'
-                raise exceptions.ValidationError(msg)
-
-        # generate bcrypt with static salt.
-        # I know its bad to use static salts, but its the best solution I could come up with,
-        # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
-        # Im aware that this allows attackers with this fix salt to "mass" attack all emails.
-        # if you have a better solution, please let me know.
-        email_bcrypt_full = bcrypt.hashpw(value.encode(), settings.EMAIL_SECRET_SALT.encode())
-        email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-
-        if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-            msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
-            raise exceptions.ValidationError(msg)
-
-        return value
 
     def validate_username(self, value):
 
@@ -118,15 +93,35 @@ class RegisterSerializer(serializers.Serializer):
 
         return value
 
-    def validate_authkey(self, value):
-        return make_password(value.strip())
-
     def validate(self, attrs: dict) -> dict:
+
+        email = attrs.get('email')
+        hashing_algorithm = attrs.get('hashing_algorithm', 'scrypt')
+        hashing_parameters = attrs.get('hashing_parameters', {})
+
+        email = email.lower().strip()
+
+        if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
+            email_prefix, domain = email.split("@")
+            if domain not in settings.REGISTRATION_EMAIL_FILTER:
+                msg = 'EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER'
+                raise exceptions.ValidationError(msg)
+
+        # generate bcrypt with static salt.
+        # I know its bad to use static salts, but its the best solution I could come up with,
+        # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
+        # Im aware that this allows attackers with this fix salt to "mass" attack all emails.
+        # if you have a better solution, please let me know.
+        email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
+        email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+
+        if User.objects.filter(email_bcrypt=email_bcrypt).exists():
+            msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
+            raise exceptions.ValidationError(msg)
+
 
         # We hardcode the settings for scrypt and the hashing parameters, as every client that is not providing them
         # is using those parameters below internally
-        hashing_algorithm = attrs.get('hashing_algorithm', 'scrypt')
-        hashing_parameters = attrs.get('hashing_parameters', {})
         if not hashing_parameters:
             hashing_parameters = {
                 "u": 14,
@@ -149,19 +144,13 @@ class RegisterSerializer(serializers.Serializer):
                 msg = 'INVALID_HASHING_PARAMETER'
                 raise exceptions.ValidationError(msg)
 
+        email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
+
         attrs['hashing_algorithm'] = hashing_algorithm
         attrs['hashing_parameters'] = hashing_parameters
-        attrs['language'] = self.context['request'].LANGUAGE_CODE
+        attrs['email_bcrypt'] = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        # normally encrypt emails, so they are not stored in plaintext with a random nonce
+        attrs['email'] = encrypt_with_db_secret(email)
+        attrs['credit'] = settings.SHARD_CREDIT_DEFAULT_NEW_USER
 
         return attrs
-
-    def create(self, validated_data):
-
-        email_bcrypt_full = bcrypt.hashpw(validated_data['email'].encode(), settings.EMAIL_SECRET_SALT.encode())
-        validated_data['email_bcrypt'] = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
-
-        # normally encrypt emails, so they are not stored in plaintext with a random nonce
-        validated_data['email'] = encrypt_with_db_secret(validated_data['email'])
-        validated_data['credit'] = settings.SHARD_CREDIT_DEFAULT_NEW_USER
-
-        return User.objects.create(**validated_data)

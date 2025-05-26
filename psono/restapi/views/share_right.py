@@ -4,6 +4,7 @@ from collections import defaultdict
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.core.cache import cache
@@ -37,6 +38,15 @@ class ShareRightView(GenericAPIView):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateShareRightSerializer
+        if self.request.method == 'POST':
+            return UpdateShareRightSerializer
+        if self.request.method == 'DELETE':
+            return DeleteShareRightSerializer
+        return Serializer
 
     def get(self, request, user_share_right_id = None, *args, **kwargs):
         """

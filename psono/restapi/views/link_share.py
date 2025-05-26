@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -24,21 +25,19 @@ class LinkShareView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
 
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return CreateLinkShareSerializer
+        if self.request.method == 'POST':
+            return UpdateLinkShareSerializer
+        if self.request.method == 'DELETE':
+            return DeleteLinkShareSerializer
+        return Serializer
+
 
     def get(self, request, link_share_id = None, *args, **kwargs):
         """
         Returns either a list of all link_shares with own access privileges or the members specified link_share
-        
-        :param request:
-        :type request:
-        :param link_share_id:
-        :type link_share_id:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 200 / 403
-        :rtype:
         """
 
         if not link_share_id:
@@ -78,16 +77,7 @@ class LinkShareView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
         """
-        Creates an link_share
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return: 201 / 400
-        :rtype:
+        Creates a link_share
         """
 
         serializer = CreateLinkShareSerializer(data=request.data, context=self.get_serializer_context())
@@ -128,15 +118,6 @@ class LinkShareView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         """
         Updates a link_share
-
-        :param request:
-        :type request:
-        :param args:
-        :type args:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
         """
 
         serializer = UpdateLinkShareSerializer(data=request.data, context=self.get_serializer_context())
