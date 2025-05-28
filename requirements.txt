@@ -15,8 +15,6 @@ asgiref==3.7.2
     #   django-countries
 asn1crypto==1.5.1
     # via webauthn
-async-timeout==4.0.2
-    # via redis
 attrs==24.2.0
     # via
     #   jsonschema
@@ -217,7 +215,7 @@ pyyaml==6.0.1
     # via
     #   -r requirements.in
     #   drf-spectacular
-redis==4.5.4
+redis==6.2.0
     # via django-redis
 referencing==0.36.2
     # via
