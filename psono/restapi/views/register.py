@@ -69,12 +69,13 @@ class RegisterView(GenericAPIView):
         secret_key_nonce = serializer.validated_data['secret_key_nonce']
         user_sauce = serializer.validated_data['user_sauce']
         email = serializer.validated_data['email']
+        email_decrypted = serializer.validated_data['email_decrypted']
         email_bcrypt = serializer.validated_data['email_bcrypt']
         hashing_algorithm = serializer.validated_data['hashing_algorithm']
         hashing_parameters = serializer.validated_data['hashing_parameters']
         credit = serializer.validated_data['credit']
 
-        activation_code = generate_activation_code(email)
+        activation_code = generate_activation_code(email_decrypted)
 
         try:
             user = User.objects.create(

@@ -144,13 +144,12 @@ class RegisterSerializer(serializers.Serializer):
                 msg = 'INVALID_HASHING_PARAMETER'
                 raise exceptions.ValidationError(msg)
 
-        email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
-
         attrs['hashing_algorithm'] = hashing_algorithm
         attrs['hashing_parameters'] = hashing_parameters
-        attrs['email_bcrypt'] = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+        attrs['email_bcrypt'] = email_bcrypt
         # normally encrypt emails, so they are not stored in plaintext with a random nonce
         attrs['email'] = encrypt_with_db_secret(email)
+        attrs['email_decrypted'] = email
         attrs['credit'] = settings.SHARD_CREDIT_DEFAULT_NEW_USER
 
         return attrs
