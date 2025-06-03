@@ -1,1 +1,1 @@
-5.2.1 (Build b67e1e05)
+5.2.2 (Build afc9b62b)
