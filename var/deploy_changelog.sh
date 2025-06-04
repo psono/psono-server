@@ -6,4 +6,4 @@ curl -fSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-clo
 echo "$GOOGLE_APPLICATION_CREDENTIALS" > "/root/key.json" && \
 ./google-cloud-sdk/bin/gcloud auth activate-service-account --key-file=/root/key.json && \
 curl -H "PRIVATE-TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags" --output changelog.json && \
-./google-cloud-sdk/bin/gsutil cp changelog.json gs://static.psono.com/gitlab.com/$CI_PROJECT_PATH/changelog.json
+./google-cloud-sdk/bin/gsutil cp changelog.json gs://static.psono.com/gitlab.com/psono/psono-server/changelog.json
