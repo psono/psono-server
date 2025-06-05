@@ -37,7 +37,7 @@ upload-translations:
     - pip3 install requests
     - python3 var/upload_translations.py
   only:
-    - develop@psono/psono-server
+    - develop@esaqa/psono/psono-server
 
 create-translations:
   except:
