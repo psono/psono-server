@@ -6,4 +6,4 @@ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /
 apt-get update -y && apt-get install google-cloud-cli -y && \
 echo "$GOOGLE_APPLICATION_CREDENTIALS" > "/root/key.json" && \
 gcloud auth activate-service-account --key-file=/root/key.json && \
-gsutil cp sbom.json gs://get.psono.com/$CI_PROJECT_PATH/nightly/sbom.json
+gsutil cp sbom.json gs://get.psono.com/psono/psono-server/nightly/sbom.json

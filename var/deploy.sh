@@ -10,7 +10,7 @@ skopeo copy --all docker://psono-docker.jfrog.io/psono/psono-server:latest docke
 
 # Deploy to GitHub
 echo "Cloning gitlab.com/psono/psono-server.git"
-git clone https://gitlab.com/psono/psono-server.git
+git clone https://gitlab.com/esaqa/psono/psono-server.git
 cd psono-server
 git branch --track develop origin/develop
 git fetch --all
