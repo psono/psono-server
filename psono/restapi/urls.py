@@ -13,7 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  re_path(r'^blog/', include(blog_urls))
 """
-from django.urls import re_path
+from django.urls import re_path, path
 from django.conf import settings
 from os.path import join, dirname, abspath
 import django
@@ -132,6 +132,18 @@ urlpatterns = [
 
     re_path(r'^management-command/$', views.ManagementCommandView.as_view(), name='management_command'),
     # re_path(r'^$', views.api_root),
+
+    path('device-code/', views.DeviceCodeView.as_view(), name='device_code'),
+    path(
+        'device-code/<uuid:device_code>/token/',
+        views.DeviceCodeTokenView.as_view(),
+        name='device_code_token'
+    ),
+    path(
+        'device-code/<uuid:device_code>/claim/',
+        views.DeviceCodeClaimView.as_view(), 
+        name='device_code_claim'
+    ),
 
     re_path(r'^healthcheck/$', views.HealthCheckView.as_view(), name='healthcheck'),
     re_path(r'^info/$', views.InfoView.as_view(), name='info'),

@@ -313,6 +313,7 @@ REST_FRAMEWORK = {
         'fileserver_alive': config_get('THROTTLE_RATE_FILESERVER_ALIVE', '61/minute'),
         'fileserver_upload': config_get('THROTTLE_RATE_FILESERVER_UPLOAD', '10000/minute'),
         'fileserver_download': config_get('THROTTLE_RATE_RATE_FILESERVER_DOWNLOAD', '10000/minute'),
+        'device_code_token': config_get('THROTTLE_RATE_DEVICE_CODE_TOKEN', '500/day'),
     },
     'NUM_PROXIES': NUM_PROXIES,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
