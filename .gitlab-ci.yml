@@ -49,7 +49,7 @@ create-translations:
     - pip3 install requests openai==1.55.3
     - python3 var/translate.py
   only:
-    - master@psono/psono-server
+    - master@esaqa/psono/psono-server
 
 build-container-alpine:
   except:
@@ -81,8 +81,8 @@ build-container-alpine:
     - docker buildx create builder --use
     - docker buildx build -f DockerfileAlpine --platform linux/amd64,linux/arm64 -t $CONTAINER_TEST_IMAGE --push --pull .
   only:
-    - branches@psono/psono-server
-    - tags@psono/psono-server
+    - branches@esaqa/psono/psono-server
+    - tags@esaqa/psono/psono-server
 
 
 run-unittests-ubuntu:
@@ -142,8 +142,8 @@ run-unittests-alpine:
     - sleep 20
     - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
   only:
-    - branches@psono/psono-server
-    - tags@psono/psono-server
+    - branches@esaqa/psono/psono-server
+    - tags@esaqa/psono/psono-server
 
 run-unittests-alpine-arm64:
   except:
@@ -175,8 +175,8 @@ run-unittests-alpine-arm64:
     - sleep 20
     - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test --parallel=8 restapi.tests administration.tests fileserver.tests"
   only:
-    - branches@psono/psono-server
-    - tags@psono/psono-server
+    - branches@esaqa/psono/psono-server
+    - tags@esaqa/psono/psono-server
 
 run-vulnerability-python-dependencies:
   except:
@@ -223,7 +223,7 @@ scan-docker-image-trivy:
     paths:
       - .trivycache/
   only:
-    - develop@psono/psono-server
+    - develop@esaqa/psono/psono-server
   allow_failure: true
 
 run-vulnerability-scan:
@@ -246,8 +246,8 @@ run-vulnerability-scan:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
   only:
-    - branches@psono/psono-server
-    - tags@psono/psono-server
+    - branches@esaqa/psono/psono-server
+    - tags@esaqa/psono/psono-server
   allow_failure: true
 
 
@@ -311,7 +311,7 @@ build-sbom:
     paths:
       - ./*
   only:
-    - branches@psono/psono-server
+    - branches@esaqa/psono/psono-server
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
 
@@ -416,7 +416,7 @@ deploy-nightlyartifacts:
     name: static.psono.com
     url: https://get.psono.com/psono/psono-server/nightly/sbom.json
   only:
-    - develop@psono/psono-server
+    - develop@esaqa/psono/psono-server
 
 
 deploy-releaseartifacts:
