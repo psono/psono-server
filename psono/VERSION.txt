@@ -1,1 +1,1 @@
-5.2.3 (Build abdc9838)
+5.2.4 (Build 3e229fb1)
