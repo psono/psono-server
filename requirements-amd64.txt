@@ -77,7 +77,7 @@ opentelemetry-util-http==0.43b0
     #   opentelemetry-instrumentation-django
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-wsgi
-protobuf==4.25.3
+protobuf==4.25.8
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
