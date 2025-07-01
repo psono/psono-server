@@ -151,7 +151,7 @@ run-unittests-alpine-arm64:
   stage: test
   image: psono-docker.jfrog.io/docker:25.0.3-git
   tags:
-    - arm64
+    - saas-linux-small-arm64
   services:
     - name: docker:25-dind
       alias: docker

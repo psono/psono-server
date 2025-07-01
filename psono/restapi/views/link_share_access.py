@@ -95,7 +95,7 @@ class LinkShareAccessView(GenericAPIView):
 
         allow_write = link_share.allow_write
 
-        if allow_write and link_share.secret_id is not None and not user_has_rights_on_secret(request.user.id, link_share.secret_id, write=True):
+        if allow_write and link_share.secret_id is not None and not user_has_rights_on_secret(link_share.user_id, link_share.secret_id, write=True):
             allow_write = False
 
         delete_link_share = not allow_write and link_share.allowed_reads is not None and link_share.allowed_reads <= 1
