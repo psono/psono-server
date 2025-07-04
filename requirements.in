@@ -10,7 +10,7 @@ djangorestframework==3.15.2
 django-cors-headers==3.10.1
 Markdown==3.5.2
 django-filter==2.4.0
-pillow==10.3.0
+pillow==11.3.0
 PyYAML==6.0.1
 bcrypt==3.2.2
 psycopg[binary]==3.1.18
