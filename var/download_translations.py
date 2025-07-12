@@ -2,7 +2,7 @@ import requests
 import shutil
 import os
 
-POEDITOR_API_KEY = os.environ['POEDITOR_API_KEY']
+POEDITOR_API_KEY = os.environ['POEDITOR_API_KEY_READ_ONLY']
 POEDITOR_PROJECT_ID = os.environ['POEDITOR_PROJECT_ID']
 
 
