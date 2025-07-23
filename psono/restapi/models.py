@@ -499,6 +499,7 @@ class Group(models.Model):
     public_key = models.CharField('public key', max_length=256)
     forced_membership = models.BooleanField('Forced Membership', default=False,
                                             help_text='Designates whether users can deny or leave this groups membership')
+    is_managed = models.BooleanField('Managed', default=False,)
 
 
     class Meta:
