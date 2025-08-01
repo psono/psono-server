@@ -1,5 +1,4 @@
 from rest_framework import serializers, exceptions
-from django.utils.translation import gettext_lazy as _
 
 from ..models import User_Group_Membership
 

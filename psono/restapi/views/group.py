@@ -40,7 +40,7 @@ class GroupView(GenericAPIView):
     def get_groups(self, request):
         # Generates a list of groups wherever the user has any rights for it
         memberships = User_Group_Membership.objects.select_related('group').filter(user=request.user).exclude(
-            accepted=False).distinct()
+            accepted=False).exclude(private_key__isnull=True).distinct()
 
         response = []
 
@@ -153,7 +153,7 @@ class GroupView(GenericAPIView):
 
             # Returns the specified group if the user has any rights for it
             try:
-                membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id)
+                membership = User_Group_Membership.objects.get(user=request.user, group_id=group_id, private_key__isnull=False)
             except User_Group_Membership.DoesNotExist:
 
                 return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
