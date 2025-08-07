@@ -91,6 +91,9 @@ class User(models.Model):
 
     def save(self, *args, **kwargs):
 
+        if self.is_superuser:
+            self.is_staff = True
+
         try:
             stored_user = User.objects.get(pk=self.id)
 

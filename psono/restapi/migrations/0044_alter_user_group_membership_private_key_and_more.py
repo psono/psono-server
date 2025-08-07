@@ -2,6 +2,10 @@
 
 from django.db import migrations, models
 
+def update_is_staff(apps, schema_editor):
+    User = apps.get_model('restapi', 'User')
+    User.objects.filter(is_staff=False, is_superuser=True).update(is_staff=True)
+
 
 class Migration(migrations.Migration):
 
@@ -40,4 +44,5 @@ class Migration(migrations.Migration):
             name='secret_key_type',
             field=models.CharField(default='asymmetric', help_text='Key type of the secret key, either "symmetric", or "asymmetric"', max_length=16, null=True, verbose_name='Key type'),
         ),
+        migrations.RunPython(update_is_staff),
     ]

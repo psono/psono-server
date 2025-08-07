@@ -989,6 +989,7 @@ def promote_user(username: str, role: str) -> dict:
 
     if role == 'superuser':
         user.is_superuser = True
+        user.is_staff = True
         user.save()
     else:
         return {
@@ -1036,6 +1037,7 @@ def demmote_user(username: str, role: str) -> dict:
 
     if role == 'superuser':
         user.is_superuser = False
+        user.is_staff = False
         user.save()
     else:
         return {

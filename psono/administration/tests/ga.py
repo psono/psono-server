@@ -56,6 +56,7 @@ class ReadGATests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -127,6 +128,7 @@ class UpdateGATests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -198,6 +200,7 @@ class CreateGATests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -269,6 +272,7 @@ class DeleteGATests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 

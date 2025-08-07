@@ -7,4 +7,4 @@ class AdminPermission(BasePermission):
 
     def has_permission(self, request, view):
         # TODO implement logic for "is_staff" users that checks permissions on the endpoint / METHOD to allow / deny access
-        return request.user and request.user.is_superuser
+        return request.user and (request.user.is_superuser or request.user.is_staff)

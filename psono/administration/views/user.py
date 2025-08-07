@@ -161,7 +161,7 @@ class UserView(GenericAPIView):
             'is_active': user.is_active,
             'is_email_active': user.is_email_active,
             'is_superuser': user.is_superuser,
-            'is_staff': user.is_staff or user.is_superuser,
+            'is_staff': user.is_staff,
             'authentication': user.authentication,
 
             'memberships': memberships,
@@ -260,6 +260,7 @@ class UserView(GenericAPIView):
         is_active = serializer.validated_data.get('is_active')
         is_email_active = serializer.validated_data.get('is_email_active')
         is_superuser = serializer.validated_data.get('is_superuser')
+        is_staff = serializer.validated_data.get('is_staff')
         email = serializer.validated_data.get('email')
 
         if is_active is not None:
@@ -270,6 +271,11 @@ class UserView(GenericAPIView):
 
         if is_superuser is not None:
             user.is_superuser = is_superuser
+            if is_staff is None:
+                user.is_staff = is_superuser
+
+        if is_staff is not None:
+            user.is_staff = is_staff
 
         if email is not None:
             user.email = email
