@@ -1,7 +1,6 @@
 from ..utils import user_has_rights_on_share
 from  more_itertools import unique_everseen
 
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
@@ -20,7 +19,7 @@ class MoveSecretLinkSerializer(serializers.Serializer):
         new_parent_datastore_id = attrs.get('new_parent_datastore_id', None)
 
         if new_parent_share_id is None and new_parent_datastore_id is None:
-            msg = _("No parent (share or datastore) has been provided as parent")
+            msg = "NO_PARENT_PROVIDED"
             raise exceptions.ValidationError(msg)
 
         secrets = []

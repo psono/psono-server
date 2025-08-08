@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 
 from rest_framework import serializers, exceptions
@@ -73,7 +72,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
 
         if recovery_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
-            msg = _("Validator expired.")
+            msg = "VALIDATOR_EXPIRED"
             raise exceptions.ValidationError(msg)
 
         # Either both are provided or none

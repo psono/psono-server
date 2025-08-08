@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
@@ -41,7 +40,7 @@ class CreateMembershipSerializer(serializers.Serializer):
         value = value.strip()
 
         if value not in ('symmetric', 'asymmetric'):
-            msg = _('Unknown secret key type')
+            msg = 'UNKNOWN_SECRET_KEY_TYPE'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -68,7 +67,7 @@ class CreateMembershipSerializer(serializers.Serializer):
         value = value.strip()
 
         if value not in ('symmetric', 'asymmetric'):
-            msg = _('Unknown private key type')
+            msg = 'UNKNOWN_PRIVATE_KEY_TYPE'
             raise exceptions.ValidationError(msg)
 
         return value
@@ -88,7 +87,7 @@ class CreateMembershipSerializer(serializers.Serializer):
         group_id = attrs.get('group_id')
 
         if User_Group_Membership.objects.filter(group_id=group_id, user_id=user_id).count() > 0:
-            msg = _("User is already part of the group.")
+            msg = "USER_ALREADY_PART_OF_GROUP"
             raise exceptions.ValidationError(msg)
 
         try:

@@ -1,5 +1,4 @@
 import re
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 
@@ -26,11 +25,11 @@ class FileRepositoryDownloadSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
-            msg = _('Chunk count exceeded.')
+            msg = 'CHUNK_COUNT_EXCEEDED'
             raise exceptions.ValidationError(msg)
 
         if file_transfer.size_transferred + file_chunk.size > file_transfer.size:
-            msg = _('Chunk size exceeded.')
+            msg = 'CHUNK_SIZE_EXCEEDED'
             raise exceptions.ValidationError(msg)
 
         attrs['file_transfer'] = file_transfer

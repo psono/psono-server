@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 
 from urllib.parse import urlencode, quote_plus
@@ -19,7 +18,7 @@ class DuoVerifySerializer(serializers.Serializer):
 
         duos = Duo.objects.filter(user_id=token.user_id).all()
         if len(duos) < 1:
-            msg = _('No duo found.')
+            msg = 'NO_DUO_FOUND'
             raise exceptions.ValidationError(msg)
 
         duo_solved = False
@@ -63,14 +62,14 @@ class DuoVerifySerializer(serializers.Serializer):
                 elif 'error' in duo_auth_return:
                     msg = duo_auth_return['error']
                 else:
-                    msg = _('Validation failed.')
+                    msg = 'VALIDATION_FAILED'
                 raise exceptions.ValidationError(msg)
             else:
                 duo_solved = True
                 break
 
         if not duo_solved:
-            msg = _('Validation failed.')
+            msg = 'VALIDATION_FAILED'
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

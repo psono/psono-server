@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 
 from rest_framework import serializers, exceptions
@@ -20,7 +19,7 @@ class EmergencyLoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            msg = _("Username or emergency code incorrect.")
+            msg = "USERNAME_OR_EMERGENCY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         emergency_codes = Emergency_Code.objects.filter(user_id=user.id)
@@ -34,7 +33,7 @@ class EmergencyLoginSerializer(serializers.Serializer):
             break
 
         if not valid_emergency_code:
-            msg = _("Username or emergency code incorrect.")
+            msg = "USERNAME_OR_EMERGENCY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         attrs['user'] = user

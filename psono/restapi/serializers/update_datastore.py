@@ -1,5 +1,3 @@
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..utils import get_datastore

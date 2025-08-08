@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 from rest_framework import serializers, exceptions
@@ -54,7 +53,7 @@ class ReadFileSerializer(serializers.Serializer):
                 credit = settings.SHARD_CREDIT_COSTS_DOWNLOAD * file.size / 1024 / 1024 / 1024
 
             if credit > 0 and self.context['request'].user.credit < credit:
-                msg = _("INSUFFICIENT_FUNDS")
+                msg = "INSUFFICIENT_FUNDS"
                 raise exceptions.ValidationError(msg)
 
         attrs['file'] = file

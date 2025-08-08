@@ -1,11 +1,9 @@
 from ..utils import user_has_rights_on_share
 from  more_itertools import unique_everseen
 
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
-from ..models import Data_Store, Share_Tree, Share
+from ..models import Data_Store, Share_Tree
 
 class UpdateShareLinkSerializer(serializers.Serializer):
 

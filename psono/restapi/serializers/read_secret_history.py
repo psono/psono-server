@@ -1,5 +1,4 @@
 from rest_framework import serializers, exceptions
-from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from ..utils import user_has_rights_on_secret
@@ -12,13 +11,13 @@ class ReadSecretHistorySerializer(serializers.Serializer):
         secret_id = self.context['request'].parser_context['kwargs'].get('secret_id', False)
 
         if not secret_id:
-            msg = _('Secret ID has not been provided')
+            msg = 'SECRET_ID_NOT_PROVIDED'
             raise exceptions.ValidationError(msg)
 
         try:
             secret = Secret.objects.get(pk=secret_id)
         except ValidationError:
-            msg = _('Secret ID is badly formed and no secret_id')
+            msg = 'SECRET_ID_BADLY_FORMED'
             raise exceptions.ValidationError(msg)
         except Secret.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"

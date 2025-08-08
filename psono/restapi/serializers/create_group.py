@@ -2,7 +2,6 @@ import re
 
 from django.utils.http import urlsafe_base64_decode as uid_decoder
 
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 
@@ -65,11 +64,11 @@ class CreateGroupSerializer(serializers.Serializer):
         value = value.strip()
 
         if len(value) < 3:
-            msg = _('Name may not be shorter than 3 chars.')
+            msg = 'NAME_MAY_NOT_BE_SHORTER_THAN_3_CHARS'
             raise exceptions.ValidationError(msg)
 
         if '@' in value:
-            msg = _('Name may not contain an "@"')
+            msg = 'NAME_MAY_NOT_CONTAIN_AT'
             raise exceptions.ValidationError(msg)
 
         return value

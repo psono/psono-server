@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import check_password
 
 from rest_framework import serializers, exceptions
@@ -71,12 +70,12 @@ class ActivateEmergencyLoginSerializer(serializers.Serializer):
             break
 
         if not valid_emergency_code:
-            msg = _("Username or emergency code incorrect.")
+            msg = "USERNAME_OR_EMERGENCY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
 
         if valid_emergency_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
-            msg = _("Validator expired.")
+            msg = "VALIDATOR_EXPIRED"
             raise exceptions.ValidationError(msg)
 
         try:
@@ -86,16 +85,16 @@ class ActivateEmergencyLoginSerializer(serializers.Serializer):
             login_info = json.loads(crypto_box.decrypt(update_data, update_data_nonce).decode())
 
         except:
-            msg = _("Validator failed.")
+            msg = "VALIDATOR_FAILED"
             raise exceptions.ValidationError(msg)
 
 
         if not valid_emergency_code.user.is_active:
-            msg = _('User account is disabled.')
+            msg = 'USER_ACCOUNT_IS_DISABLED'
             raise exceptions.ValidationError(msg)
 
         if not valid_emergency_code.user.is_email_active:
-            msg = _('E-mail is not yet verified.')
+            msg = 'EMAIL_NOT_YET_VERIFIED'
             raise exceptions.ValidationError(msg)
 
         attrs['emergency_code'] = valid_emergency_code

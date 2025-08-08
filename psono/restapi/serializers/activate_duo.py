@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
@@ -50,12 +49,12 @@ class ActivateDuoSerializer(serializers.Serializer):
                 if not Duo.objects.filter(active=True).exists():
                     self.context['request'].user.duo_enabled = False
                     self.context['request'].user.save()
-                msg = _("Duo enrollment expired")
+                msg = "DUO_ENROLLMENT_EXPIRED"
                 raise exceptions.ValidationError(msg)
 
             if enrollment_status == 'waiting' and factor == 'push':
                 # Pending activation
-                msg = _("Scan the barcode first")
+                msg = "SCAN_THE_BARCODE_FIRST"
                 raise exceptions.ValidationError(msg)
 
         username, domain = self.context['request'].user.username.split("@")
@@ -73,11 +72,11 @@ class ActivateDuoSerializer(serializers.Serializer):
 
         if 'result' not in duo_auth_return or duo_auth_return['result'] != 'allow':
             if 'status_msg' in duo_auth_return:
-                msg = _(duo_auth_return['status_msg'])
+                msg = duo_auth_return['status_msg']
             elif 'error' in duo_auth_return:
-                msg = _(duo_auth_return['error'])
+                msg = duo_auth_return['error']
             else:
-                msg = _('Validation failed.')
+                msg = 'VALIDATION_FAILED'
             raise exceptions.ValidationError(msg)
 
         attrs['duo'] = duo

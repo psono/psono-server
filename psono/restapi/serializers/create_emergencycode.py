@@ -1,5 +1,4 @@
 import re
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 
@@ -40,7 +39,7 @@ class CreateEmergencycodeSerializer(serializers.Serializer):
     def validate_activation_delay(self, value):
 
         if value < 0:
-            msg = _('Activation delay needs to be a positive integer')
+            msg = 'ACTIVATION_DELAY_NEEDS_TO_BE_A_POSITIVE_INTEGER'
             raise exceptions.ValidationError(msg)
 
         return value

@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 import pyotp
 
@@ -16,7 +15,7 @@ class ActivateGASerializer(serializers.Serializer):
         google_authenticator_token = attrs.get('google_authenticator_token', '').strip()
 
         if not google_authenticator_token.isdigit():
-            msg = _('GA Tokens only contain digits.')
+            msg = 'GA_TOKENS_ONLY_CONTAIN_DIGITS'
             raise exceptions.ValidationError(msg)
 
         try:
@@ -29,7 +28,7 @@ class ActivateGASerializer(serializers.Serializer):
         totp = pyotp.TOTP(decrypted_ga_secret.encode())
 
         if not totp.verify(google_authenticator_token):
-            msg = _("GA Token incorrect.")
+            msg = "GA_TOKEN_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         attrs['google_authenticator'] = google_authenticator

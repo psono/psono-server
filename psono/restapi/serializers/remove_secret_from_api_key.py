@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 
 from ..models import API_Key, API_Key_Secret
 from rest_framework import serializers, exceptions
