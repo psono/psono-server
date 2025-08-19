@@ -17,6 +17,7 @@ from restapi.models import User, User_Group_Membership, Duo, Google_Authenticato
 from restapi.models import Link_Share
 from restapi.utils import decrypt_with_db_secret, create_user, get_static_bcrypt_hash_from_email
 from restapi.utils.avatar import delete_avatar_storage_of_user
+from restapi.utils import get_secret_counts_for_users
 
 import secrets
 import string
@@ -222,7 +223,9 @@ class UserView(GenericAPIView):
                 user_qs = chosen_page.object_list
 
             users = []
+            user_ids = []
             for u in  user_qs:
+                user_ids.append(u.id)
                 users.append({
                     'id': u.id,
                     'create_date': u.create_date,
@@ -237,6 +240,14 @@ class UserView(GenericAPIView):
                     'recovery_code_exist': u.recovery_code_exist,
                     'emergency_code_exist': u.emergency_code_exist,
                 })
+
+            secret_counts_for_users = get_secret_counts_for_users(user_ids)
+
+            for user in users:
+                user['secret_count'] = 0
+                if str(user['id']) not in secret_counts_for_users:
+                    continue
+                user['secret_count'] = secret_counts_for_users[str(user['id'])]
 
             return Response({
                 'count': count,
