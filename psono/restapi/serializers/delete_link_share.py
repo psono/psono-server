@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 
 from ..models import Link_Share
 from rest_framework import serializers, exceptions

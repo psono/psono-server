@@ -10,6 +10,7 @@ class UpdateUserSerializer(serializers.Serializer):
     user_id = UUIDField(required=True)
     is_active = BooleanField(required=False)
     is_email_active = BooleanField(required=False)
+    is_staff = BooleanField(required=False)
     is_superuser = BooleanField(required=False)
     email = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
 
@@ -20,6 +21,7 @@ class UpdateUserSerializer(serializers.Serializer):
         is_active = attrs.get('is_active', None)
         is_email_active = attrs.get('is_email_active', None)
         is_superuser = attrs.get('is_superuser', None)
+        is_staff = attrs.get('is_staff', None)
         email = attrs.get('email')
 
         try:
@@ -61,5 +63,6 @@ class UpdateUserSerializer(serializers.Serializer):
         attrs['is_active'] = is_active
         attrs['is_email_active'] = is_email_active
         attrs['is_superuser'] = is_superuser
+        attrs['is_staff'] = is_staff
 
         return attrs

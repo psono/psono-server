@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 
 from ..models import Data_Store
 from rest_framework import serializers, exceptions
@@ -21,12 +20,12 @@ class DeleteDatastoreSerializer(serializers.Serializer):
         try:
             datastore = Data_Store.objects.get(pk=datastore_id, user=self.context['request'].user)
         except Data_Store.DoesNotExist:
-            msg = _("Datastore does not exist.")
+            msg = "DATASTORE_DOES_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # prevent deletion of the default datastore
         if datastore.is_default:
-            msg = _("Cannot delete default datastore.")
+            msg = "CANNOT_DELETE_DEFAULT_DATASTORE"
             raise exceptions.ValidationError(msg)
 
         attrs['datastore'] = datastore

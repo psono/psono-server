@@ -55,6 +55,7 @@ class CommandPromoteuserTestCase(TestCase):
         user = models.User.objects.get(username=self.test_username)
 
         self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
 
     def test_promoteuser_with_role_that_does_not_exist(self):
         """

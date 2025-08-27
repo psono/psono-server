@@ -45,7 +45,7 @@ class StatusView(GenericAPIView):
 
         if user_status is None:
             unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).exclude(creator__isnull=True).count()
-            unaccepted_groups_count = User_Group_Membership.objects.filter(user=request.user, accepted__isnull=True).count()
+            unaccepted_groups_count = User_Group_Membership.objects.filter(user=request.user, accepted__isnull=True, private_key__isnull=False).count()
 
             try:
                 latest_security_report = SecurityReport.objects.filter(user=request.user).latest('create_date')

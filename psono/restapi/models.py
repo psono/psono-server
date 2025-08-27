@@ -91,6 +91,9 @@ class User(models.Model):
 
     def save(self, *args, **kwargs):
 
+        if self.is_superuser:
+            self.is_staff = True
+
         try:
             stored_user = User.objects.get(pk=self.id)
 
@@ -580,17 +583,17 @@ class User_Group_Membership(models.Model):
     creator = models.ForeignKey(User, on_delete=models.SET_NULL,
                                 help_text='The user who created this share right', null=True)
     secret_key = models.CharField('Secret Key', max_length=256,
-                                  help_text='The secret key encrypted with the (public or secret) key of the user.')
-    secret_key_nonce = models.CharField('Key nonce', max_length=64)
+                                  help_text='The secret key encrypted with the (public or secret) key of the user.', null=True)
+    secret_key_nonce = models.CharField('Key nonce', max_length=64, null=True)
     secret_key_type = models.CharField('Key type', default="asymmetric",
                                        help_text='Key type of the secret key, either "symmetric", or "asymmetric"',
-                                       max_length=16)
+                                       max_length=16, null=True)
     private_key = models.CharField('Private key', max_length=256,
-                                   help_text='The Private Key encrypted with the (public or secret) key of the user.')
-    private_key_nonce = models.CharField('Private Key nonce', max_length=64)
+                                   help_text='The Private Key encrypted with the (public or secret) key of the user.', null=True)
+    private_key_nonce = models.CharField('Private Key nonce', max_length=64, null=True)
     private_key_type = models.CharField('Private Key type', default="asymmetric",
                                         help_text='Key type of the private key, either "symmetric", or "asymmetric"',
-                                        max_length=16)
+                                        max_length=16, null=True)
     group_admin = models.BooleanField('Group admin', default=False,
                                       help_text='Designates whether this user can invite other users to this group, and adjust other user rights.')
     share_admin = models.BooleanField('Share admin', default=True,

@@ -54,6 +54,7 @@ class ReadYubikeyTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -122,6 +123,7 @@ class UpdateYubikeyTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -190,6 +192,7 @@ class CreateYubikeyTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -259,6 +262,7 @@ class DeleteYubikeyOTPTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 

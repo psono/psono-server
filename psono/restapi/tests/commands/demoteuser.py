@@ -39,6 +39,7 @@ class CommandDemoteuserTestCase(TestCase):
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce='082202ea53a9f64459b8217ebbdea19f6cb385d8d529327053f54a9b9861dcf1',
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -56,6 +57,7 @@ class CommandDemoteuserTestCase(TestCase):
         user = models.User.objects.get(username=self.test_username)
 
         self.assertFalse(user.is_superuser)
+        self.assertFalse(user.is_staff)
 
     def test_demoteuser_with_role_that_does_not_exist(self):
         """

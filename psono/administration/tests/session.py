@@ -65,6 +65,7 @@ class ReadSessionTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -129,6 +130,7 @@ class CreateSessionTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -196,6 +198,7 @@ class UpdateSessionTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -264,6 +267,7 @@ class DeleteSessionTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 

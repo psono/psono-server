@@ -6,6 +6,7 @@ from datetime import datetime
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.hashers import BasePasswordHasher
+from django.contrib.auth.hashers import mask_hash
 
 class InsecureUnittestPasswordHasher(BasePasswordHasher):
     """
@@ -36,9 +37,9 @@ class InsecureUnittestPasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         decoded = self.decode(encoded)
         return {
-            _("algorithm"): decoded["algorithm"],
-            _("salt"): mask_hash(decoded["salt"], show=2),
-            _("hash"): mask_hash(decoded["hash"]),
+            "algorithm": decoded["algorithm"],
+            "salt": mask_hash(decoded["salt"], show=2),
+            "hash": mask_hash(decoded["hash"]),
         }
 
     def must_update(self, encoded):

@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from rest_framework import serializers, exceptions
 import pyotp
@@ -15,14 +14,14 @@ class GAVerifySerializer(serializers.Serializer):
         ga_token = attrs.get('ga_token', '').lower().strip()
 
         if not ga_token.isdigit():
-            msg = _('GA Tokens only contain digits.')
+            msg = 'GA_TOKENS_ONLY_CONTAIN_DIGITS'
             raise exceptions.ValidationError(msg)
 
         token = self.context['request'].auth
 
         gas = Google_Authenticator.objects.filter(user_id=token.user_id).all()
         if len(gas) < 1:
-            msg = _('No Google Authenticator found.')
+            msg = 'NO_GOOGLE_AUTHENTICATOR_FOUND'
             raise exceptions.ValidationError(msg)
 
         ga_token_correct = False
@@ -34,7 +33,7 @@ class GAVerifySerializer(serializers.Serializer):
                 break
 
         if not ga_token_correct:
-            msg = _('GA Token incorrect.')
+            msg = 'GA_TOKEN_INCORRECT'
             raise exceptions.ValidationError(msg)
 
         attrs['token'] = token

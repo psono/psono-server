@@ -198,6 +198,74 @@ def authenticate(username: str = "", user: User = None, authkey: str = "", passw
     return False, error_code
 
 
+def get_secret_counts_for_users(user_ids: List[str]):
+    """
+    Get count of secrets each user has access to through shares and datastores in a single query.
+
+    :param user_ids: List of user UUIDs
+    :return: Dict mapping user_id to secret count
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+           WITH user_accessible_shares AS (
+               -- Get all shares each user has direct access to
+               SELECT DISTINCT usr.user_id,
+                               st.share_id
+               FROM restapi_user_share_right usr
+                        JOIN restapi_share_tree parent_st ON usr.share_id = parent_st.share_id
+                        JOIN restapi_share_tree st ON parent_st.path @> st.path
+               WHERE usr.user_id = ANY (%(user_ids)s)
+                 AND usr.accepted = true
+
+               UNION
+
+               -- Get all shares each user has access to through groups
+               SELECT DISTINCT ugm.user_id,
+                               st.share_id
+               FROM restapi_user_group_membership ugm
+                        JOIN restapi_group_share_right gsr ON ugm.group_id = gsr.group_id
+                        JOIN restapi_share_tree parent_st ON gsr.share_id = parent_st.share_id
+                        JOIN restapi_share_tree st ON parent_st.path @> st.path
+               WHERE ugm.user_id = ANY (%(user_ids)s)
+                 AND ugm.accepted = true
+           ),
+           user_accessible_secrets AS (
+               -- Secrets from accessible shares
+               SELECT DISTINCT 
+                   uas.user_id,
+                   sl.secret_id
+               FROM user_accessible_shares uas
+               JOIN restapi_secret_link sl ON sl.parent_share_id = uas.share_id
+               
+               UNION
+               
+               -- Secrets from user's own datastores
+               SELECT DISTINCT 
+                   ds.user_id,
+                   sl.secret_id
+               FROM restapi_data_store ds
+               JOIN restapi_secret_link sl ON sl.parent_datastore_id = ds.id
+               WHERE ds.user_id = ANY (%(user_ids)s)
+           )
+           SELECT u.user_id,
+                  COUNT(uas.secret_id) as secret_count
+           FROM (SELECT unnest(%(user_ids)s::uuid[]) as user_id) u
+                    LEFT JOIN user_accessible_secrets uas ON u.user_id = uas.user_id
+           GROUP BY u.user_id
+           ORDER BY u.user_id
+           """, {
+               'user_ids': user_ids
+           })
+
+        results = {}
+        for row in cursor.fetchall():
+            results[str(row[0])] = row[1]
+
+        return results
+
+
 def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
 
     if isinstance(share_id, list):
@@ -989,6 +1057,7 @@ def promote_user(username: str, role: str) -> dict:
 
     if role == 'superuser':
         user.is_superuser = True
+        user.is_staff = True
         user.save()
     else:
         return {
@@ -1036,6 +1105,7 @@ def demmote_user(username: str, role: str) -> dict:
 
     if role == 'superuser':
         user.is_superuser = False
+        user.is_staff = False
         user.save()
     else:
         return {

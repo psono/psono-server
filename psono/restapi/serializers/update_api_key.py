@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
@@ -31,7 +30,7 @@ class UpdateAPIKeySerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if title is None and read is None and write is None and restrict_to_secrets is None and allow_insecure_access is None:
-            msg = _("Nothing to update")
+            msg = "NOTHING_TO_UPDATE"
             raise exceptions.ValidationError(msg)
 
 

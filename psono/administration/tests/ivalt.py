@@ -55,6 +55,7 @@ class ReadIvaltTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -122,6 +123,7 @@ class UpdateIvaltTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -189,6 +191,7 @@ class CreateIvaltTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 
@@ -257,6 +260,7 @@ class DeleteIvaltTests(APITestCaseExtended):
             secret_key_nonce=self.test_secret_key_nonce2,
             user_sauce=self.test_user_sauce,
             is_email_active=True,
+            is_staff=True,
             is_superuser=True
         )
 

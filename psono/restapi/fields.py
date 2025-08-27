@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy as _
+
 from django.db import models
 from django.db.models import Lookup
 from rest_framework.serializers import UUIDField as InsecureUUIDField
@@ -9,13 +9,13 @@ from rest_framework.serializers import BooleanField as InsecureBooleanField
 class UUIDField(InsecureUUIDField):
     # Minimizes Reflected XSS
     default_error_messages = {
-        'invalid': _('Is not a valid UUID.'),
+        'invalid': 'IS_NOT_A_VALID_UUID',
     }
 
 class BooleanField(InsecureBooleanField):
     # Minimizes Reflected XSS
     default_error_messages = {
-        'invalid': _('Is not a valid boolean.')
+        'invalid': 'IS_NOT_A_VALID_BOOLEAN'
     }
 
 class LtreeField(models.CharField):
