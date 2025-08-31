@@ -217,7 +217,7 @@ class ShareRightView(GenericAPIView):
                     # Brevo does not support inline attachments
                     msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-                msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM,
+                msg = EmailMultiAlternatives("%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subject), msg_plain, settings.EMAIL_FROM,
                                              [decrypt_with_db_secret(serializer.validated_data['user'].email)])
 
                 msg.attach_alternative(msg_html, "text/html")
@@ -292,7 +292,7 @@ class ShareRightView(GenericAPIView):
                         # Brevo does not support inline attachments
                         msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-                    msg = EmailMultiAlternatives(subject, msg_plain, settings.EMAIL_FROM, bcc=email_addresses)
+                    msg = EmailMultiAlternatives("%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subject), msg_plain, settings.EMAIL_FROM, bcc=email_addresses)
 
                     msg.attach_alternative(msg_html, "text/html")
                     msg.mixed_subtype = 'related'
