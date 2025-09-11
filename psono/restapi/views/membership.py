@@ -96,7 +96,7 @@ class MembershipView(GenericAPIView):
                 # Brevo does not support inline attachments
                 msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
 
-            msg = EmailMultiAlternatives(subject, msg_plain,
+            msg = EmailMultiAlternatives("%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subject), msg_plain,
                                          settings.EMAIL_FROM,
                                          [decrypt_with_db_secret(serializer.validated_data['user'].email)])
 
