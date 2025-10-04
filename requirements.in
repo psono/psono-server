@@ -1,6 +1,6 @@
 cffi==1.15.0
 daphne==4.1.2
-django==4.2.24
+django==4.2.25
 google-cloud-storage==2.14.0
 apache-libcloud==3.8.0
 boto3==1.34.39
