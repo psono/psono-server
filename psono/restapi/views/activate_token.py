@@ -99,6 +99,7 @@ class ActivateTokenView(GenericAPIView):
                     'webclient_url': settings.WEB_CLIENT_URL,
                     'webclient_url_with_wbr': "<wbr>".join(splitAt(settings.WEB_CLIENT_URL,40)),
                     'host_url': settings.HOST_URL,
+                    'authentication': request.user.authentication,
                 }).replace('\n', ' ').replace('\r', '')
                 msg_plain = render_to_string('email/new_login.txt', {
                     'country_name': country_name,
@@ -110,6 +111,7 @@ class ActivateTokenView(GenericAPIView):
                     'webclient_url': settings.WEB_CLIENT_URL,
                     'webclient_url_with_wbr': "<wbr>".join(splitAt(settings.WEB_CLIENT_URL,40)),
                     'host_url': settings.HOST_URL,
+                    'authentication': request.user.authentication,
                 })
                 msg_html = render_to_string('email/new_login.html', {
                     'country_name': country_name,
@@ -121,6 +123,7 @@ class ActivateTokenView(GenericAPIView):
                     'webclient_url': settings.WEB_CLIENT_URL,
                     'webclient_url_with_wbr': "<wbr>".join(splitAt(settings.WEB_CLIENT_URL,40)),
                     'host_url': settings.HOST_URL,
+                    'authentication': request.user.authentication,
                 })
 
 
