@@ -10,6 +10,9 @@ from .bulk_secret import BulkSecretView
 from .bulk_secret_read import BulkSecretReadView
 from .bulk_secret_link import BulkSecretLinkView
 from .datastore import DatastoreView
+from .device_code import DeviceCodeView
+from .device_code_claim import DeviceCodeClaimView
+from .device_code_token import DeviceCodeTokenView
 from .duo_verify import DuoVerifyView
 from .emergencycode import EmergencyCodeView
 from .file import FileView

@@ -9,6 +9,7 @@ from restapi.models import Secret_Link
 from restapi.models import Share_Tree
 from restapi.models import Link_Share
 from restapi.models import Share
+from restapi.models import DeviceCode
 
 class Command(BaseCommand):
     help = 'Clears expired token and objects (shares, secrets, ...) without reference'
@@ -16,6 +17,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         Token.objects.filter(valid_till__lt=timezone.now()).delete()
+
+        DeviceCode.objects.filter(valid_till__lt=timezone.now()).delete()
 
         secret_links = Secret_Link.objects.filter(
             secret = OuterRef('pk'),

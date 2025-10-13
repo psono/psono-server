@@ -1068,6 +1068,37 @@ class SecurityReportEntry(models.Model):
     class Meta:
         abstract = False
 
+class DeviceCode(models.Model):
+    """
+    The device code model to handle device authentication
+    """
+
+    class Meta:
+        db_table = 'restapi_device_code'
+        abstract = False
+
+    class DeviceCodeState(models.TextChoices):
+        PENDING = 'pending'
+        CLAIMED = 'claimed'
+        TOKEN_ISSUED = 'token_issued' #nosec B105
+        EXPIRED = 'expired'
+        FAILED = 'failed'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True, null=False, editable=False)
+    write_date = models.DateTimeField(auto_now=True, null=False)
+    valid_till = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
+    state = models.CharField(max_length=16, null=False, choices=DeviceCodeState.choices, default=DeviceCodeState.PENDING)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='device_codes', null=True)
+    device_fingerprint = models.CharField(max_length=128, null=False, editable=False)
+    device_description = models.CharField(max_length=256, null=True, editable=False)
+    device_date = models.DateTimeField(null=True, editable=False)
+    # server_private_key is stored encrypted with the db secret
+    server_private_key = models.CharField(max_length=256, null=False, editable=False)
+    server_public_key = models.CharField(max_length=128, null=False, editable=False)
+    user_public_key = models.CharField(max_length=128, null=False, editable=False)
+    encrypted_credentials = models.BinaryField(null=True, blank=True)
+    encrypted_credentials_nonce = models.CharField(max_length=64, null=True, blank=True)
 
 class Token(models.Model):
     """

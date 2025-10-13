@@ -118,6 +118,9 @@ from .serializers import (
     IvaltVerifySerializer as DefaultIvaltVerifySerializer,
     CreateUnregisterSerializer as DefaultCreateUnregisterSerializer,
     UpdateUnregisterSerializer as DefaultUpdateUnregisterSerializer,
+    CreateDeviceCodeSerializer as DefaultCreateDeviceCodeSerializer,
+    ClaimDeviceCodeSerializer as DefaultClaimDeviceCodeSerializer,
+    PollDeviceCodeTokenSerializer as DefaultPollDeviceCodeTokenSerializer,
 )
 
 def import_callable(path_or_callable):
@@ -921,6 +924,27 @@ UpdateUnregisterSerializer = import_callable(
     serializers.get(
         'UPDATE_UNREGISTER_SERIALIZER',
         DefaultUpdateUnregisterSerializer
+    )
+)
+
+CreateDeviceCodeSerializer = import_callable(
+    serializers.get(
+        'CREATE_DEVICE_CODE_SERIALIZER',
+        DefaultCreateDeviceCodeSerializer
+    )
+)
+
+ClaimDeviceCodeSerializer = import_callable(
+    serializers.get(
+        'CLAIM_DEVICE_CODE_SERIALIZER',
+        DefaultClaimDeviceCodeSerializer
+    )
+)
+
+PollDeviceCodeTokenSerializer = import_callable(
+    serializers.get(
+        'POLL_DEVICE_CODE_TOKEN_SERIALIZER',
+        DefaultPollDeviceCodeTokenSerializer
     )
 )
 
