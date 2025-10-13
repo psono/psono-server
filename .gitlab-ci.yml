@@ -1,6 +1,6 @@
 variables:
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  CONTAINER_TEST_ARTIFACTORY_IMAGE: psono-docker.jfrog.io/psono/psono-server:$CI_COMMIT_REF_NAME
+  CONTAINER_TEST_ARTIFACTORY_IMAGE: psono-docker.jfrog.io/psono/psono-server:$CI_COMMIT_REF_SLUG
   CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
 stages:
@@ -270,8 +270,8 @@ run-vulnerability-scan:
 #    - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
 #    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
 #    - docker pull $CONTAINER_TEST_IMAGE
-#    - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_COMMIT_REF_NAME
-#    - docker push psono/security-scans:psono-server-ce-$CI_COMMIT_REF_NAME
+#    - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_COMMIT_REF_SLUG
+#    - docker push psono/security-scans:psono-server-ce-$CI_COMMIT_REF_SLUG
 
 
 
@@ -307,7 +307,7 @@ build-sbom:
     - rm -Rf .* 2> /dev/null || true
     - mv ../sbom.json ./
   artifacts:
-    name: "sbom_$CI_COMMIT_REF_NAME"
+    name: "sbom_$CI_COMMIT_REF_SLUG"
     paths:
       - ./*
   only:
