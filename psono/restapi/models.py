@@ -1080,7 +1080,7 @@ class DeviceCode(models.Model):
     class DeviceCodeState(models.TextChoices):
         PENDING = 'pending'
         CLAIMED = 'claimed'
-        TOKEN_ISSUED = 'token_issued'
+        TOKEN_ISSUED = 'token_issued' #nosec B105
         EXPIRED = 'expired'
         FAILED = 'failed'
 
