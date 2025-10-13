@@ -116,3 +116,6 @@ from .create_ivalt import *
 from .activate_ivalt import *
 from .delete_ivalt import *
 from .ivalt_verify import *
+from .create_device_code import *
+from .claim_device_code import *
+from .poll_device_code_token import *

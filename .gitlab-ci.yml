@@ -1,5 +1,5 @@
 variables:
-  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_TEST_ARTIFACTORY_IMAGE: psono-docker.jfrog.io/psono/psono-server:$CI_COMMIT_REF_NAME
   CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
