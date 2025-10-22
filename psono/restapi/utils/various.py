@@ -1245,7 +1245,7 @@ def is_allowed_other_s3_endpoint_url(url: str) -> bool:
     return is_allowed_url(url, settings.ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX)
 
 
-def create_user(username, password, email, gen_authkey=True, display_name=''):
+def create_user(username, password, email, gen_authkey=True, display_name='', language='en'):
 
     username = username.strip().lower()
     email = email.strip().lower().encode()
@@ -1313,6 +1313,7 @@ def create_user(username, password, email, gen_authkey=True, display_name=''):
         is_active=True,
         user_sauce=user_sauce.decode(),
         credit=settings.SHARD_CREDIT_DEFAULT_NEW_USER,
+        language=language,
     )
 
     return {
