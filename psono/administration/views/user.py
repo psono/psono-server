@@ -319,6 +319,7 @@ class UserView(GenericAPIView):
             username=username,
             password=password,
             email=email,
+            language=settings.DEFAULT_LANGUAGE,
         )
 
         if 'error' in user_details:
