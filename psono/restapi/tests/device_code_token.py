@@ -173,20 +173,29 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
 
     def test_poll_with_pending_device_code_fails(self):
         """
-        Tests that polling a PENDING code raises an error because the implementation
-        tries to create a token for a non-existent user.
+        Tests that polling a PENDING code returns a proper validation error.
         """
         url = reverse('device_code_token', kwargs={'device_code': str(self.pending_dc.id)})
-        with self.assertRaises(AttributeError):
-            self.client.post(url, {})
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('non_field_errors', response.data)
+        self.assertEqual(response.data['non_field_errors'][0].code, 'invalid')
+        # Verify the error message is DEVICE_CODE_NOT_CLAIMED
+        error_message = str(response.data['non_field_errors'][0])
+        self.assertIn('DEVICE_CODE_NOT_CLAIMED', error_message)
 
     def test_poll_with_failed_device_code_fails(self):
         """
-        Tests that polling a FAILED code raises an error for the same reason as PENDING.
+        Tests that polling a FAILED code returns DEVICE_CODE_INVALID_STATE error.
         """
         url = reverse('device_code_token', kwargs={'device_code': str(self.failed_dc.id)})
-        with self.assertRaises(AttributeError):
-            self.client.post(url, {})
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('non_field_errors', response.data)
+        self.assertEqual(response.data['non_field_errors'][0].code, 'invalid')
+        # Verify the error message is DEVICE_CODE_INVALID_STATE
+        error_message = str(response.data['non_field_errors'][0])
+        self.assertIn('DEVICE_CODE_INVALID_STATE', error_message)
 
     def test_poll_with_expired_device_code_fails(self):
         """
@@ -200,7 +209,9 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
 
     def test_poll_claimed_dc_without_user_fails(self):
         """
-        Tests that polling a CLAIMED code without a user raises an AttributeError.
+        Tests that polling a CLAIMED code without a user returns a data integrity error.
+        This should never happen in normal operation - a CLAIMED code must have a user.
+        The serializer marks it as FAILED to prevent further issues.
         """
         dc_no_user = models.DeviceCode.objects.create(
             device_fingerprint="claimed_no_user_test",
@@ -211,8 +222,17 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
             valid_till=timezone.now() + timedelta(minutes=5)
         )
         url = reverse('device_code_token', kwargs={'device_code': str(dc_no_user.id)})
-        with self.assertRaises(AttributeError):
-            self.client.post(url, {})
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('non_field_errors', response.data)
+        self.assertEqual(response.data['non_field_errors'][0].code, 'invalid')
+        # Verify the error message is DEVICE_CODE_INVALID_STATE (data integrity error)
+        error_message = str(response.data['non_field_errors'][0])
+        self.assertIn('DEVICE_CODE_INVALID_STATE', error_message)
+        
+        # Verify the device code was marked as FAILED
+        dc_no_user.refresh_from_db()
+        self.assertEqual(dc_no_user.state, models.DeviceCode.DeviceCodeState.FAILED)
 
     def test_poll_claimed_dc_with_corrupted_key_fails(self):
         """
@@ -245,6 +265,30 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
         self.assertIsNone(decrypted_payload['encrypted_credentials'])
         self.assertIsNone(decrypted_payload['encrypted_credentials_nonce'])
         self.assertEqual(decrypted_payload['state'], models.DeviceCode.DeviceCodeState.CLAIMED.value)
+
+    def test_poll_pending_dc_without_user_returns_validation_error(self):
+        """
+        Tests that polling a PENDING code without a user returns proper validation error.
+        This specifically tests the bug where user_id is None causing 500 errors.
+        """
+        dc_pending_no_user = models.DeviceCode.objects.create(
+            device_fingerprint="pending_no_user_test",
+            device_description=self.device_description,
+            device_date=timezone.now(),
+            user_public_key=self.device_public_key_hex,
+            server_public_key=self.dc_server_public_key_hex,
+            server_private_key=self.dc_server_private_key_hex_encrypted,
+            state=models.DeviceCode.DeviceCodeState.PENDING,
+            valid_till=timezone.now() + timedelta(minutes=self.default_validity_minutes)
+        )
+        url = reverse('device_code_token', kwargs={'device_code': str(dc_pending_no_user.id)})
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('non_field_errors', response.data)
+        self.assertEqual(response.data['non_field_errors'][0].code, 'invalid')
+        # Verify the error message is DEVICE_CODE_NOT_CLAIMED (because state is PENDING)
+        error_message = str(response.data['non_field_errors'][0])
+        self.assertIn('DEVICE_CODE_NOT_CLAIMED', error_message)
 
     def test_poll_with_non_existent_uuid_fails(self):
         """
