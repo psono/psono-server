@@ -449,7 +449,7 @@ DISABLE_EMAIL_NEW_GROUP_SHARE_CREATED = str(config_get('DISABLE_EMAIL_NEW_GROUP_
 DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED = str(config_get('DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED', False)).lower() == 'true'
 
 
-EMAIL_FROM = config_get('EMAIL_FROM')
+EMAIL_FROM = config_get('EMAIL_FROM', '')
 EMAIL_HOST = config_get('EMAIL_HOST', 'localhost')
 EMAIL_HOST_USER = config_get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = config_get('EMAIL_HOST_PASSWORD', '')
@@ -510,7 +510,7 @@ if config_get('AMAZON_SES_CLIENT_PARAMS_ACCESS_KEY_ID', ''):
         "region_name": config_get('AMAZON_SES_CLIENT_PARAMS_REGION_NAME', "us-west-2"),
     }
 
-DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM')
+DEFAULT_FROM_EMAIL = config_get('EMAIL_FROM', '')
 
 HEALTHCHECK_TIME_SYNC_ENABLED = str(config_get('HEALTHCHECK_TIME_SYNC_ENABLED', True)).lower() == 'true'
 
