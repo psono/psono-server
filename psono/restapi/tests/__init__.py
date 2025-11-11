@@ -16,10 +16,12 @@ from .decline_share import *
 from .email_verification import *
 from .emergencycode import *
 from .file import *
+from .file_link import *
 from .file_repository import *
 from .file_repository_download import *
 from .file_repository_right import *
 from .file_repository_upload import *
+from .file_secret_attachment import *
 from .group import *
 from .group_file_repository_right import *
 from .group_rights import *

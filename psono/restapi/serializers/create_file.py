@@ -7,7 +7,7 @@ from datetime import timedelta
 from ..fields import UUIDField
 from ..models import Fileserver_Shard, Fileserver_Cluster_Member_Shard_Link, File_Repository
 from ..utils import user_has_rights_on_share, get_datastore, fileserver_access, get_ip
-from ..utils import calculate_user_rights_on_file_repository
+from ..utils import calculate_user_rights_on_file_repository, user_has_rights_on_secret
 
 class CreateFileSerializer(serializers.Serializer):
 
@@ -15,9 +15,10 @@ class CreateFileSerializer(serializers.Serializer):
     file_repository_id = UUIDField(required=False)
     chunk_count = serializers.IntegerField(required=True)
     size = serializers.IntegerField(required=False)
-    link_id = UUIDField(required=True)
+    link_id = UUIDField(required=False)
     parent_share_id = UUIDField(required=False)
     parent_datastore_id = UUIDField(required=False)
+    parent_secret_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -25,6 +26,8 @@ class CreateFileSerializer(serializers.Serializer):
         file_repository_id = attrs.get('file_repository_id', None)
         parent_share_id = attrs.get('parent_share_id', None)
         parent_datastore_id = attrs.get('parent_datastore_id', None)
+        parent_secret_id = attrs.get('parent_secret_id', None)
+        link_id = attrs.get('link_id', None)
         size = attrs.get('size', 0)
 
         file_repository = None
@@ -62,25 +65,47 @@ class CreateFileSerializer(serializers.Serializer):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
-        if parent_share_id is None and parent_datastore_id is None:
-            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
+        # Validate parent: must have either (parent_secret_id) OR (link_id + parent_share/datastore)
+        has_secret_parent = parent_secret_id is not None
+        has_link = link_id is not None
+        has_share_or_datastore = parent_share_id is not None or parent_datastore_id is not None
+
+        if has_secret_parent and has_link:
+            msg = "EITHER_PARENT_SECRET_OR_LINK_NOT_BOTH"
             raise exceptions.ValidationError(msg)
 
-        if parent_share_id is not None and parent_datastore_id is not None:
-            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"
+        if not has_secret_parent and not has_link:
+            msg = "EITHER_PARENT_SECRET_OR_LINK_NEED_TO_BE_DEFINED"
             raise exceptions.ValidationError(msg)
 
-        if parent_share_id is not None:
-            # check permissions on parent
-            if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
+        # If using secret attachment, validate write permission on secret
+        if has_secret_parent:
+            if not user_has_rights_on_secret(self.context['request'].user.id, parent_secret_id, write=True):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+            attrs['parent_secret_id'] = parent_secret_id
+
+        # If using link (standalone file), validate parent_share_id OR parent_datastore_id
+        if has_link:
+            if parent_share_id is None and parent_datastore_id is None:
+                msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED"
                 raise exceptions.ValidationError(msg)
 
-        if parent_datastore_id is not None:
-            parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
-            if not parent_datastore:
-                msg = "NO_PERMISSION_OR_NOT_EXIST"
+            if parent_share_id is not None and parent_datastore_id is not None:
+                msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"
                 raise exceptions.ValidationError(msg)
+
+            if parent_share_id is not None:
+                # check permissions on parent
+                if not user_has_rights_on_share(self.context['request'].user.id, parent_share_id, write=True):
+                    msg = "NO_PERMISSION_OR_NOT_EXIST"
+                    raise exceptions.ValidationError(msg)
+
+            if parent_datastore_id is not None:
+                parent_datastore = get_datastore(parent_datastore_id, self.context['request'].user)
+                if not parent_datastore:
+                    msg = "NO_PERMISSION_OR_NOT_EXIST"
+                    raise exceptions.ValidationError(msg)
 
         if shard_id:
             cluster_member_shard_link_objs = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\

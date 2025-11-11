@@ -17,6 +17,7 @@ from ..models import (
 from ..app_settings import (
     CreateFileSerializer,
     ReadFileSerializer,
+    DeleteFileSerializer,
 )
 from ..authentication import TokenAuthentication
 
@@ -31,6 +32,8 @@ class FileView(GenericAPIView):
             return ReadFileSerializer
         if self.request.method == 'PUT':
             return CreateFileSerializer
+        if self.request.method == 'DELETE':
+            return DeleteFileSerializer
         return Serializer
 
     def get(self, request, *args, **kwargs):
@@ -76,6 +79,10 @@ class FileView(GenericAPIView):
     def put(self, request, *args, **kwargs):
         """
         Indirectly creates a file by providing a filetransfer id for upload
+
+        Can create two types of files:
+        1. Standalone file with File_Link (traditional)
+        2. Secret attachment file without File_Link
         """
 
         serializer = CreateFileSerializer(data=request.data, context=self.get_serializer_context())
@@ -88,9 +95,10 @@ class FileView(GenericAPIView):
         file_repository = serializer.validated_data['file_repository']
         chunk_count = serializer.validated_data['chunk_count']
         size = serializer.validated_data['size']
-        link_id = serializer.validated_data['link_id']
-        parent_datastore_id = serializer.validated_data['parent_datastore_id']
-        parent_share_id = serializer.validated_data['parent_share_id']
+        link_id = serializer.validated_data.get('link_id', None)
+        parent_datastore_id = serializer.validated_data.get('parent_datastore_id', None)
+        parent_share_id = serializer.validated_data.get('parent_share_id', None)
+        parent_secret_id = serializer.validated_data.get('parent_secret_id', None)
         credit = serializer.validated_data['credit']
 
         size_transferred = 0
@@ -100,6 +108,7 @@ class FileView(GenericAPIView):
             file = File.objects.create(
                 shard = shard,
                 file_repository = file_repository,
+                secret_id = parent_secret_id,
                 chunk_count = chunk_count,
                 size = size,
                 user_id = request.user.id,
@@ -118,12 +127,14 @@ class FileView(GenericAPIView):
                 type='upload',
             )
 
-            File_Link.objects.create(
-                link_id = link_id,
-                file_id = file.id,
-                parent_datastore_id = parent_datastore_id,
-                parent_share_id = parent_share_id
-            )
+            # Only create File_Link if this is NOT a secret attachment
+            if link_id is not None:
+                File_Link.objects.create(
+                    link_id = link_id,
+                    file_id = file.id,
+                    parent_datastore_id = parent_datastore_id,
+                    parent_share_id = parent_share_id
+                )
 
             if credit != Decimal(str(0)):
                 request.user.credit = F('credit') - credit
@@ -138,5 +149,22 @@ class FileView(GenericAPIView):
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def delete(self, *args, **kwargs):
-        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes a file synchronously, including cloud storage cleanup.
+        For file repository files, deletes all chunks from cloud storage immediately.
+        For shard files, uses soft delete (sets delete_date).
+        Only works for files attached to secrets (not file_link files).
+        """
+
+        serializer = DeleteFileSerializer(data=request.data, context=self.get_serializer_context())
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        file = serializer.validated_data['file']
+
+        # Call file.delete() which handles cloud storage cleanup
+        file.delete()
+
+        return Response({"success": True}, status=status.HTTP_200_OK)

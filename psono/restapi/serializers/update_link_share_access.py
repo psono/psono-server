@@ -72,7 +72,7 @@ class UpdateLinkShareAccessSerializer(serializers.Serializer):
 
         if link_share.file_id:
 
-            if not user_has_rights_on_file(link_share.user_id, link_share.file_id, read=True):
+            if not user_has_rights_on_file(link_share.user_id, link_share.file, read=True):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
