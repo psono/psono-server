@@ -3,13 +3,16 @@ from django.test import TestCase
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from unittest.mock import patch
 
 from restapi import models
+from restapi.utils import encrypt_with_db_secret
 
 import binascii
 import random
 import string
 import os
+import json
 from io import StringIO
 
 import hashlib
@@ -180,6 +183,353 @@ class CommandCleartokenTestCase(TestCase):
         self.assertEqual(models.Secret.objects.count(), 1)
         self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id).exists())
         self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+    @patch('restapi.utils.gcs_delete')
+    def test_inaccessible_secret_with_gcs_file_repository_cleanup(self, mock_gcs_delete):
+        """
+        Tests that cleanup command properly deletes files in GCS file repository
+        when deleting orphaned secrets
+        """
+
+        # Create a GCS file repository
+        file_repository_data = {
+            'gcp_cloud_storage_bucket': 'test-bucket',
+            'gcp_cloud_storage_json_key': '{"key": "value"}',
+        }
+        file_repository = models.File_Repository.objects.create(
+            title='Test GCS Repository',
+            type='gcp_cloud_storage',
+            data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
+            active=True,
+        )
+
+        # Create an orphaned secret (no Secret_Link)
+        inaccessible_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345'.encode(),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the orphaned secret using GCS file repository
+        file = models.File.objects.create(
+            shard=None,
+            file_repository=file_repository,
+            secret=inaccessible_secret_obj,
+            chunk_count=2,
+            size=1024,
+            user=self.test_user_obj,
+        )
+
+        # Create chunks
+        chunk1 = models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum='abcdef123456',
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+        chunk2 = models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum='fedcba654321',
+            position=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify gcs_delete was called for each chunk
+        self.assertEqual(mock_gcs_delete.call_count, 2)
+
+        # Verify secret was deleted
+        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+        # Verify file was deleted
+        self.assertFalse(models.File.objects.filter(pk=file.id).exists())
+
+    def test_inaccessible_secret_with_shard_file_cleanup(self):
+        """
+        Tests that cleanup command properly soft-deletes files on shards
+        when deleting orphaned secrets
+        """
+
+        # Create a shard
+        shard = models.Fileserver_Shard.objects.create(
+            title='Test Shard',
+            description='Test Shard Description',
+        )
+
+        # Create an orphaned secret (no Secret_Link)
+        inaccessible_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345'.encode(),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the orphaned secret using shard
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        # Create chunk
+        chunk = models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum='abcdef123456',
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify secret was deleted
+        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+        # Verify file was soft-deleted (delete_date set)
+        file_after = models.File.objects.get(pk=file.id)
+        self.assertIsNotNone(file_after.delete_date)
+        self.assertLessEqual(file_after.delete_date, timezone.now())
+
+    @patch('restapi.utils.aws_delete')
+    def test_inaccessible_secret_with_aws_s3_file_repository_cleanup(self, mock_aws_delete):
+        """
+        Tests that cleanup command properly deletes files in AWS S3 file repository
+        when deleting orphaned secrets
+        """
+
+        # Create an AWS S3 file repository
+        file_repository_data = {
+            'aws_s3_bucket': 'test-aws-bucket',
+            'aws_s3_region': 'us-east-1',
+            'aws_s3_access_key_id': 'AKIAIOSFODNN7EXAMPLE',
+            'aws_s3_secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+        }
+        file_repository = models.File_Repository.objects.create(
+            title='Test AWS S3 Repository',
+            type='aws_s3',
+            data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
+            active=True,
+        )
+
+        # Create an orphaned secret (no Secret_Link)
+        inaccessible_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345'.encode(),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the orphaned secret
+        file = models.File.objects.create(
+            shard=None,
+            file_repository=file_repository,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        # Create chunk
+        chunk = models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum='abcdef123456',
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify aws_delete was called
+        self.assertEqual(mock_aws_delete.call_count, 1)
+
+        # Verify secret was deleted
+        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+        # Verify file was deleted
+        self.assertFalse(models.File.objects.filter(pk=file.id).exists())
+
+    @patch('restapi.utils.azure_blob_delete')
+    def test_inaccessible_secret_with_azure_blob_file_repository_cleanup(self, mock_azure_delete):
+        """
+        Tests that cleanup command properly deletes files in Azure Blob file repository
+        when deleting orphaned secrets
+        """
+
+        # Create an Azure Blob file repository
+        file_repository_data = {
+            'azure_blob_storage_account_name': 'testaccount',
+            'azure_blob_storage_account_primary_key': 'test-primary-key',
+            'azure_blob_storage_account_container_name': 'test-container',
+        }
+        file_repository = models.File_Repository.objects.create(
+            title='Test Azure Blob Repository',
+            type='azure_blob',
+            data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
+            active=True,
+        )
+
+        # Create an orphaned secret (no Secret_Link)
+        inaccessible_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345'.encode(),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the orphaned secret
+        file = models.File.objects.create(
+            shard=None,
+            file_repository=file_repository,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        # Create chunk
+        chunk = models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum='abcdef123456',
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify azure_blob_delete was called
+        self.assertEqual(mock_azure_delete.call_count, 1)
+
+        # Verify secret was deleted
+        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+        # Verify file was deleted
+        self.assertFalse(models.File.objects.filter(pk=file.id).exists())
+
+    def test_inaccessible_secret_with_multiple_files_cleanup(self):
+        """
+        Tests that cleanup command properly deletes multiple files attached to same orphaned secret
+        """
+
+        # Create a shard
+        shard = models.Fileserver_Shard.objects.create(
+            title='Test Shard',
+            description='Test Shard Description',
+        )
+
+        # Create an orphaned secret (no Secret_Link)
+        inaccessible_secret_obj = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data='12345'.encode(),
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create multiple files attached to the orphaned secret
+        file1 = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        file2 = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=256,
+            user=self.test_user_obj,
+        )
+
+        file3 = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=inaccessible_secret_obj,
+            chunk_count=1,
+            size=128,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify secret was deleted
+        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+
+        # Verify all files were soft-deleted
+        file1_after = models.File.objects.get(pk=file1.id)
+        self.assertIsNotNone(file1_after.delete_date)
+
+        file2_after = models.File.objects.get(pk=file2.id)
+        self.assertIsNotNone(file2_after.delete_date)
+
+        file3_after = models.File.objects.get(pk=file3.id)
+        self.assertIsNotNone(file3_after.delete_date)
+
+    def test_accessible_secret_with_file_not_deleted(self):
+        """
+        Tests that cleanup command does NOT delete files attached to secrets with valid links
+        """
+
+        # Create a shard
+        shard = models.Fileserver_Shard.objects.create(
+            title='Test Shard',
+            description='Test Shard Description',
+        )
+
+        # Create a file attached to the accessible secret (has Secret_Link)
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=self.test_secret_obj,  # This secret has a valid Secret_Link from setUp
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        args = []
+        opts = {}
+
+        out = StringIO()
+        call_command('cleanup', stdout=out, *args, **opts)
+
+        # Verify secret was NOT deleted (has valid link)
+        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id).exists())
+
+        # Verify file was NOT deleted or soft-deleted
+        self.assertTrue(models.File.objects.filter(pk=file.id).exists())
+        file_after = models.File.objects.get(pk=file.id)
+        self.assertIsNone(file_after.delete_date)
 
 
 

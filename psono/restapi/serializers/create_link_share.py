@@ -6,6 +6,7 @@ from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from ..utils import user_has_rights_on_secret
 from ..utils import user_has_rights_on_file
+from ..models import File
 
 class CreateLinkShareSerializer(serializers.Serializer):
 
@@ -58,9 +59,16 @@ class CreateLinkShareSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # check if the user has the necessary rights
-        if file_id and not user_has_rights_on_file(self.context['request'].user.id, file_id, read=True):
-            msg = "NO_PERMISSION_OR_NOT_EXIST"
-            raise exceptions.ValidationError(msg)
+        if file_id:
+            try:
+                file = File.objects.only('id', 'secret_id').get(pk=file_id)
+            except File.DoesNotExist:
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+
+            if not user_has_rights_on_file(self.context['request'].user.id, file, read=True):
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
 
         if valid_till is not None and valid_till < timezone.now():
             msg = "VALID_TILL_CANNOT_BE_IN_THE_PAST"

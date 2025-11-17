@@ -690,23 +690,35 @@ def user_has_rights_on_file_repository(user_id: str = "", file_repository_id: st
            and (write is None or write == rights['write']) \
            and (grant is None or grant == rights['grant'])
 
-def user_has_rights_on_file(user_id: str = "", file_id: str = "", read: bool = None, write: bool = None) -> bool:
+def user_has_rights_on_file(user_id: str = "", file = None, read: bool = None, write: bool = None) -> bool:
     """
     Checks if the given user has the requested rights for the given file
 
+    Two permission paths:
+    1. File is attached to a secret -> delegate to secret permissions
+    2. File has links -> check link permissions (original logic)
+
     :param user_id:
-    :param file_id:
+    :param file: File object (use select_related('secret') when possible for optimal performance)
     :param read:
     :param write:
     :return:
     """
 
+    if file is None:
+        return False
+
+    # If file is attached to a secret, delegate to secret permissions
+    if file.secret_id:
+        return user_has_rights_on_secret(user_id, file.secret_id, read=read, write=write)
+
+    # Otherwise, check via File_Links (original logic for standalone files)
     datastores_loaded = False
     datastores = [] # type: List[str]
 
     try:
         # get all file links. Get the ones with datastores as parents first, as they are less expensive to check later
-        file_links = File_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(file_id=file_id).order_by('parent_datastore_id')
+        file_links = File_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(file_id=file.id).order_by('parent_datastore_id')
     except File_Link.DoesNotExist:
         return False
 

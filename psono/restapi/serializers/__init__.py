@@ -92,6 +92,7 @@ from .read_shard import *
 from .read_share import *
 from .read_share_rights import *
 from .read_file import *
+from .delete_file import *
 from .delete_file_link import *
 from .move_file_link import *
 from .create_file_repository import *

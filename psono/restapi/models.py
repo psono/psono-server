@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_delete
 from django.db import models
 from django.dispatch import receiver
 from django.core.cache import cache
@@ -908,12 +908,71 @@ class File(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='file')
     shard = models.ForeignKey(Fileserver_Shard, on_delete=models.CASCADE, null=True, related_name='file')
     file_repository = models.ForeignKey(File_Repository, on_delete=models.CASCADE, null=True, related_name='file')
+    secret = models.ForeignKey(
+        'Secret',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='attached_files',
+        help_text='The secret this file is attached to (if it is an attachment)'
+    )
     chunk_count = models.IntegerField('Chunk Count',
         help_text='The amount of chunks')
     size = models.BigIntegerField('Size',
         help_text='The size of the files in bytes (including encryption overhead)')
 
     delete_date = models.DateTimeField(null=True)
+
+    def delete(self, *args, **kwargs):
+        """
+        Override delete to ensure proper cleanup of file storage.
+        Handles both file repository (cloud storage) and shard (fileserver) cleanup.
+        """
+        # If file is stored in a file repository, delete all chunks from cloud storage
+        if self.file_repository:
+            from .utils import (
+                decrypt_with_db_secret,
+                gcs_delete,
+                aws_delete,
+                azure_blob_delete,
+                do_delete,
+                backblaze_delete,
+                s3_delete,
+                is_allowed_other_s3_endpoint_url
+            )
+            import json
+
+            try:
+                data = json.loads(decrypt_with_db_secret(self.file_repository.data))
+                file_repository_type = self.file_repository.type
+
+                for chunk in self.file_chunk.all():
+                    try:
+                        if file_repository_type == 'gcp_cloud_storage':
+                            gcs_delete(data['gcp_cloud_storage_bucket'], data['gcp_cloud_storage_json_key'], chunk.hash_checksum)
+                        elif file_repository_type == 'aws_s3':
+                            aws_delete(data['aws_s3_bucket'], data['aws_s3_region'], data['aws_s3_access_key_id'], data['aws_s3_secret_access_key'], chunk.hash_checksum)
+                        elif file_repository_type == 'azure_blob':
+                            azure_blob_delete(data['azure_blob_storage_account_name'], data['azure_blob_storage_account_primary_key'], data['azure_blob_storage_account_container_name'], chunk.hash_checksum)
+                        elif file_repository_type == 'do_spaces':
+                            do_delete(data['do_space'], data['do_region'], data['do_key'], data['do_secret'], chunk.hash_checksum)
+                        elif file_repository_type == 'backblaze':
+                            backblaze_delete(data['backblaze_bucket'], data['backblaze_region'], data['backblaze_access_key_id'], data['backblaze_secret_access_key'], chunk.hash_checksum)
+                        elif file_repository_type == 'other_s3' and is_allowed_other_s3_endpoint_url(data['other_s3_endpoint_url']):
+                            s3_delete(data['other_s3_bucket'], data['other_s3_region'], data['other_s3_access_key_id'], data['other_s3_secret_access_key'], chunk.hash_checksum, endpoint_url=data['other_s3_endpoint_url'])
+                    except: # nosec - Ignore individual chunk deletion failures
+                        pass
+            except: # nosec - Ignore failures to decrypt or parse repository data
+                pass
+
+        # For shard files, use soft delete (consistent with existing File_Link deletion behavior)
+        elif self.shard and not self.delete_date:
+            self.delete_date = timezone.now()
+            self.save(update_fields=['delete_date'])
+            return  # Don't call super().delete() for soft delete
+
+        # Call parent delete to remove from database
+        super().delete(*args, **kwargs)
 
     class Meta:
         abstract = False
@@ -1202,3 +1261,14 @@ def api_key_post_delete_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
         pk = str(kwargs['instance'].pk)
         cache.delete('psono_api_key_' + pk)
+
+@receiver(pre_delete, sender=Secret)
+def secret_pre_delete_receiver(sender, **kwargs):
+    """
+    Clean up attached files when a secret is deleted.
+    This ensures the custom File.delete() method runs for proper cloud storage cleanup.
+    """
+    secret = kwargs['instance']
+    # Manually delete each attached file to trigger custom delete() method
+    for file in secret.attached_files.all():
+        file.delete()

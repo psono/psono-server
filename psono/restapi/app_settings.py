@@ -50,6 +50,7 @@ from .serializers import (
     UpdateShareSerializer as DefaultUpdateShareSerializer,
     CreateFileSerializer as DefaultCreateFileSerializer,
     ReadFileSerializer as DefaultReadFileSerializer,
+    DeleteFileSerializer as DefaultDeleteFileSerializer,
     CreateDatastoreSerializer as DefaultCreateDatastoreSerializer,
     UpdateDatastoreSerializer as DefaultUpdateDatastoreSerializer,
     DeleteDatastoreSerializer as DefaultDeleteDatastoreSerializer,
@@ -444,6 +445,13 @@ ReadFileSerializer = import_callable(
     serializers.get(
         'READ_FILE_SERIALIZER',
         DefaultReadFileSerializer
+    )
+)
+
+DeleteFileSerializer = import_callable(
+    serializers.get(
+        'DELETE_FILE_SERIALIZER',
+        DefaultDeleteFileSerializer
     )
 )
 

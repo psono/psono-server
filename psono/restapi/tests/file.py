@@ -3,6 +3,7 @@ import os
 import binascii
 import random
 import string
+import uuid
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
@@ -275,19 +276,102 @@ class FileTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    def test_delete(self):
+    def test_delete_shard_file(self):
         """
-        Tests DELETE on file
+        Tests DELETE on shard file attached to secret (soft delete)
         """
 
         url = reverse('file')
 
-        data = {}
+        # Create a secret
+        secret = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b'12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the secret on a shard
+        file = models.File.objects.create(
+            shard=self.shard1,
+            file_repository_id=None,
+            chunk_count=1,
+            size=50,
+            user=self.test_user_obj,
+            secret=secret
+        )
+
+        # Create a secret link so user has write permission
+        secret_link = models.Secret_Link.objects.create(
+            link_id=uuid.uuid4(),
+            secret=secret,
+            parent_datastore=self.test_datastore_obj,
+            parent_share_id=None
+        )
+
+        data = {
+            'file_id': str(file.id)
+        }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Verify file was soft deleted (delete_date is set, not removed from DB)
+        file.refresh_from_db()
+        self.assertIsNotNone(file.delete_date)
+
+    def test_delete_file_repository_file(self):
+        """
+        Tests DELETE on file repository file attached to secret (hard delete)
+        """
+
+        url = reverse('file')
+
+        # Create a file repository
+        file_repository = models.File_Repository.objects.create(
+            title='Test GCP Repository',
+            type='gcp_cloud_storage',
+            data=b'encrypted_data',
+            active=True
+        )
+
+        # Create a secret
+        secret = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b'12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the secret on a file repository
+        file = models.File.objects.create(
+            shard=None,
+            file_repository=file_repository,
+            chunk_count=1,
+            size=50,
+            user=self.test_user_obj,
+            secret=secret
+        )
+
+        # Create a secret link so user has write permission
+        secret_link = models.Secret_Link.objects.create(
+            link_id=uuid.uuid4(),
+            secret=secret,
+            parent_datastore=self.test_datastore_obj,
+            parent_share_id=None
+        )
+
+        data = {
+            'file_id': str(file.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Verify file was hard deleted (removed from DB)
+        self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
     def test_delete_unauthenticated(self):
         """
@@ -301,6 +385,89 @@ class FileTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_missing_file_id(self):
+        """
+        Tests DELETE on file with missing file_id
+        """
+
+        url = reverse('file')
+
+        data = {}
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_file_not_attached_to_secret(self):
+        """
+        Tests DELETE on file that is not attached to a secret (file_link file)
+        """
+
+        url = reverse('file')
+
+        # Create a file NOT attached to a secret (like traditional file_link files)
+        file = models.File.objects.create(
+            shard=self.shard1,
+            file_repository_id=None,
+            chunk_count=1,
+            size=50,
+            user=self.test_user_obj,
+            secret=None  # Not attached to secret
+        )
+
+        data = {
+            'file_id': str(file.id)
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_without_write_permission(self):
+        """
+        Tests DELETE on file without write permission on the secret
+        """
+
+        url = reverse('file')
+
+        # Create a secret
+        secret = models.Secret.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b'12345',
+            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type="dummy"
+        )
+
+        # Create a file attached to the secret
+        file = models.File.objects.create(
+            shard=self.shard1,
+            file_repository_id=None,
+            chunk_count=1,
+            size=50,
+            user=self.test_user_obj,
+            secret=secret
+        )
+
+        # Create a secret link with only read permission (no write)
+        secret_link = models.Secret_Link.objects.create(
+            link_id=uuid.uuid4(),
+            secret=secret,
+            parent_datastore=self.test_datastore_obj,
+            parent_share_id=None
+        )
+
+        data = {
+            'file_id': str(file.id)
+        }
+
+        # Authenticate as different user who doesn't have write permission
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_read(self):
         """
