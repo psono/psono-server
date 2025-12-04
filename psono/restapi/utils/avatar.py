@@ -1,6 +1,6 @@
 from google.oauth2 import service_account
 from django.conf import settings
-from django.core.files.storage import get_storage_class
+from django.utils.module_loading import import_string
 def get_avatar_storage():
     """
     Returns the avatar storage if a specific storage is configured, otherwise None
@@ -17,7 +17,7 @@ def get_avatar_storage():
                 settings.AVATAR_STORAGE['kwargs']['credentials']
             )
 
-        storage = get_storage_class(
+        storage = import_string(
             settings.AVAILABLE_AVATAR_STORAGES[settings.AVATAR_STORAGE['class']]
         )(**settings.AVATAR_STORAGE['kwargs'])
     return storage
