@@ -244,7 +244,7 @@ s3transfer==0.10.0
     # via boto3
 scrypt==0.8.27
     # via -r requirements.in
-sentry-sdk[django]==2.16.0
+sentry-sdk[django]==2.48.0
     # via -r requirements.in
 service-identity==24.1.0
     # via twisted
