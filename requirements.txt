@@ -47,7 +47,7 @@ botocore==1.34.162
     #   s3transfer
 cachetools==5.3.3
     # via google-auth
-cbor2==5.6.5
+cbor2==5.8.0
     # via webauthn
 certifi==2024.7.4
     # via
@@ -244,7 +244,7 @@ s3transfer==0.10.0
     # via boto3
 scrypt==0.8.27
     # via -r requirements.in
-sentry-sdk[django]==2.16.0
+sentry-sdk[django]==2.48.0
     # via -r requirements.in
 service-identity==24.1.0
     # via twisted
