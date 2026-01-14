@@ -25,14 +25,12 @@ autobahn==24.4.2
     # via daphne
 automat==24.8.1
     # via twisted
-azure-core==1.24.2
+azure-core==1.38.0
     # via
     #   azure-storage-blob
     #   django-storages
 azure-storage-blob==12.13.0
-    # via
-    #   -r requirements.in
-    #   django-storages
+    # via django-storages
 bcrypt==4.3.0
     # via
     #   -r requirements.in
@@ -248,7 +246,6 @@ service-identity==24.1.0
     # via twisted
 six==1.16.0
     # via
-    #   azure-core
     #   duo-client
     #   isodate
     #   python-dateutil
