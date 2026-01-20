@@ -105,7 +105,7 @@ djangorestframework==3.16.1
     #   drf-spectacular
 drf-spectacular==0.28.0
     # via -r requirements.in
-duo-client==4.2.3
+duo-client==5.5.0
     # via -r requirements.in
 google-api-core==2.18.0
     # via
@@ -246,7 +246,6 @@ service-identity==24.1.0
     # via twisted
 six==1.16.0
     # via
-    #   duo-client
     #   isodate
     #   python-dateutil
 sqlparse==0.5.0

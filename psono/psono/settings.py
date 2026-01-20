@@ -685,6 +685,12 @@ if isinstance(AUTHENTICATION_METHODS, str) and AUTHENTICATION_METHODS:
 elif isinstance(AUTHENTICATION_METHODS, str):
     AUTHENTICATION_METHODS = []
 
+DOMAIN_SYNONYMS = config_get('DOMAIN_SYNONYMS', [])
+if isinstance(DOMAIN_SYNONYMS, str) and DOMAIN_SYNONYMS:
+    DOMAIN_SYNONYMS = [[domain_synonym.strip() for domain_synonym in DOMAIN_SYNONYMS.split(',')]]
+if isinstance(DOMAIN_SYNONYMS, list) and len(DOMAIN_SYNONYMS) > 0 and isinstance(DOMAIN_SYNONYMS[0], str):
+    DOMAIN_SYNONYMS = [DOMAIN_SYNONYMS]
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
@@ -721,6 +727,7 @@ def generate_signature():
         'log_audit': False,
         'public_key': PUBLIC_KEY,
         'authentication_methods': AUTHENTICATION_METHODS,
+        'domain_synonyms': DOMAIN_SYNONYMS,
         'web_client': web_client,
         'management': MANAGEMENT_ENABLED,
         'files': FILES_ENABLED,

@@ -21,7 +21,7 @@ pyotp==2.3.0
 ntplib==0.3.4
 yubico-client==1.12.0
 python-dateutil==2.8.0
-duo-client==4.2.3
+duo-client==5.5.0
 scrypt==0.8.27
 sentry-sdk[django]==2.48.0
 requests==2.32.4
