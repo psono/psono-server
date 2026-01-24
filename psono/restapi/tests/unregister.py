@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django.conf import settings
 from django.test.utils import override_settings
+from django.core import mail
 from rest_framework import status
 
 from restapi import models
@@ -88,12 +89,15 @@ class UnegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Verify that an email was sent
+        self.assertEqual(len(mail.outbox), 1)
 
     @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
     def test_post_authentication_unregister_invalid_username(self):
         """
         Tests POST method on authentication_unregister with invalid username
+        Returns HTTP_201_CREATED to prevent username enumeration
         """
 
         url = reverse('authentication_unregister')
@@ -104,8 +108,10 @@ class UnegistrationTests(APITestCaseExtended):
 
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), ['USER_WITH_USERNAME_DOESNT_EXIST'])
+        # Should return success to prevent enumeration attacks
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Verify that NO email was sent (user doesn't exist)
+        self.assertEqual(len(mail.outbox), 0)
 
     @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -123,6 +129,8 @@ class UnegistrationTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Verify that an email was sent
+        self.assertEqual(len(mail.outbox), 1)
 
     @override_settings(WEB_CLIENT_URL='')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
@@ -146,6 +154,7 @@ class UnegistrationTests(APITestCaseExtended):
     def test_post_authentication_unregister_invalid_email(self):
         """
         Tests POST method on authentication_unregister with invalid email
+        Returns HTTP_201_CREATED to prevent email enumeration
         """
 
         url = reverse('authentication_unregister')
@@ -156,8 +165,46 @@ class UnegistrationTests(APITestCaseExtended):
 
         response = self.client.post(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get('non_field_errors'), ['USER_WITH_EMAIL_DOESNT_EXIST'])
+        # Should return success to prevent enumeration attacks
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Verify that NO email was sent (user doesn't exist)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(WEB_CLIENT_URL='https://psono.pw')
+    @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))
+    def test_post_authentication_unregister_user_without_email(self):
+        """
+        Tests POST method on authentication_unregister for a user without an associated email
+        Returns HTTP_201_CREATED to prevent user enumeration
+        """
+        # Create a user without an email
+        test_username_no_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'noemail@psono.pw'
+        user_without_email = models.User.objects.create(
+            username=test_username_no_email,
+            email='',  # No email
+            email_bcrypt='',
+            authkey="abc",
+            public_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
+            private_key=binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode(),
+            private_key_nonce=binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode(),
+            secret_key=binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode(),
+            secret_key_nonce=binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode(),
+            user_sauce='0ee09a1a2c32b240d4ac9642b218adf01c88948aa2a90f1466a8217623fc1b7f',
+            is_email_active=False
+        )
+
+        url = reverse('authentication_unregister')
+
+        data = {
+            'username': test_username_no_email
+        }
+
+        response = self.client.post(url, data)
+
+        # Should return success to prevent enumeration attacks
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Verify that NO email was sent (user has no email address)
+        self.assertEqual(len(mail.outbox), 0)
 
     @override_settings(WEB_CLIENT_URL='https://psono.pw')
     @override_settings(PASSWORD_HASHERS=('restapi.tests.base.InsecureUnittestPasswordHasher',))

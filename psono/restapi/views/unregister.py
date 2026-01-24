@@ -11,6 +11,7 @@ from rest_framework.parsers import JSONParser
 from django.utils import translation
 
 import os
+import logging
 from email.mime.image import MIMEImage
 
 from ..utils.avatar import delete_avatar_storage_of_user
@@ -18,6 +19,8 @@ from ..app_settings import CreateUnregisterSerializer
 from ..app_settings import UpdateUnregisterSerializer
 from ..utils import generate_unregistration_code
 from ..utils import decrypt_with_db_secret
+
+logger = logging.getLogger(__name__)
 
 class UnregisterView(GenericAPIView):
     permission_classes = (AllowAny,)
@@ -84,7 +87,26 @@ class UnregisterView(GenericAPIView):
         serializer = CreateUnregisterSerializer(data=request.data, context=self.get_serializer_context())
 
         if not serializer.is_valid():
+            # Check for enumeration-prone errors and return success to prevent enumeration attacks
+            errors = serializer.errors
+            non_field_errors = errors.get('non_field_errors', [])
 
+            # These errors should not reveal whether a user exists or not
+            enumeration_errors = [
+                'USER_WITH_USERNAME_DOESNT_EXIST',
+                'USER_WITH_EMAIL_DOESNT_EXIST',
+                'USER_HAS_NO_EMAIL_ADDRESS_ASSOCIATED'
+            ]
+
+            # Check if any of the errors are enumeration-prone
+            for error in non_field_errors:
+                if error in enumeration_errors:
+                    # Log the error for monitoring but don't reveal it to the caller
+                    logger.warning(f"Unregistration attempt failed: {error}")
+                    # Return success to prevent enumeration
+                    return Response({}, status=status.HTTP_201_CREATED)
+
+            # For other errors, return the actual error
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data['user']
