@@ -414,7 +414,7 @@ else:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'YourPostgresDatabase',
             'USER': 'YourPostgresUser',
-            'PASSWORD': 'YourPostgresPassword',
+            'PASSWORD': 'YourPostgresPassword',  # nosec -- not [B105:hardcoded_password_string]
             'HOST': 'YourPostgresHost',
             'PORT': 'YourPostgresPort',
             'OPTIONS': {},

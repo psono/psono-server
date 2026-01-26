@@ -204,7 +204,7 @@ class GroupView(GenericAPIView):
             "secret_key_type": 'symmetric',
             "private_key": str(request.data['private_key']),
             "private_key_nonce": str(request.data['private_key_nonce']),
-            "private_key_type": 'symmetric',
+            "private_key_type": 'symmetric',  # nosec -- not [B105:hardcoded_password_string]
             "public_key": str(request.data['public_key']),
             "group_admin": True,
             "share_admin": True,

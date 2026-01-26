@@ -1,5 +1,5 @@
-# PSONO Dockerfile for Ubuntu 22.04
-FROM psono-docker.jfrog.io/ubuntu:22.04
+# PSONO Dockerfile for Ubuntu 24.04
+FROM psono-docker.jfrog.io/ubuntu:24.04
 ENV DEBIAN_FRONTEND noninteractive
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -8,6 +8,7 @@ WORKDIR /root
 
 RUN mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
+    echo 'break-system-packages = true' >> /root/.pip/pip.conf && \
     echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apt-get update && \
     apt-get install -y \
@@ -22,7 +23,6 @@ RUN mkdir -p /root/.pip && \
         python3-pip \
         python3-psycopg2 \
         postgresql-client && \
-    pip3 install --upgrade setuptools pip && \
     pip3 install -r requirements.txt && \
     pip3 install -r requirements-amd64.txt && \
     mkdir -p /root/.psono_server && \
