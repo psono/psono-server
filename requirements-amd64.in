@@ -1,8 +1,8 @@
-opentelemetry-sdk==1.22.0
-opentelemetry-exporter-otlp-proto-grpc==1.22.0
-opentelemetry-instrumentation-wsgi==0.43b0
-opentelemetry-instrumentation-django==0.43b0
-opentelemetry-instrumentation-requests==0.43b0
-opentelemetry-instrumentation-grpc==0.43b0
-opentelemetry-instrumentation-redis==0.43b0
-opentelemetry-instrumentation-logging==0.43b0
+opentelemetry-sdk==1.39.1
+opentelemetry-exporter-otlp-proto-grpc==1.39.1
+opentelemetry-instrumentation-wsgi==0.60b1
+opentelemetry-instrumentation-django==0.60b1
+opentelemetry-instrumentation-requests==0.60b1
+opentelemetry-instrumentation-grpc==0.60b1
+opentelemetry-instrumentation-redis==0.60b1
+opentelemetry-instrumentation-logging==0.60b1
