@@ -29,7 +29,7 @@ boto3==1.34.39
 dj-database-url==2.1.0
 toml==0.10.2
 webauthn==2.5.2
-tzdata==2024.1
+tzdata==2025.3
 django-timezone-field==7.1.0
 django-countries==8.2.0
 drf-spectacular==0.28.0

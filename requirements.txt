@@ -258,7 +258,7 @@ typing-extensions==4.15.0
     #   dj-database-url
     #   django-countries
     #   twisted
-tzdata==2024.1
+tzdata==2025.3
     # via -r requirements.in
 ujson==5.11.0
     # via autobahn
