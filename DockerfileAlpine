@@ -5,6 +5,7 @@ LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
 COPY . /root/
 ENV PYTHONUNBUFFERED True
+ENV AUTOBAHN_USE_NVX=0
 WORKDIR /root
 
 # Buildkit should populate this on build with e.g. "arm64" or "amd64"
