@@ -55,7 +55,7 @@ class RegisterSerializer(serializers.Serializer):
             msg = 'PROVIDED_DOMAIN_NOT_ALLOWED_FOR_REGISTRATION'
             raise exceptions.ValidationError(msg)
 
-        if not re.match('^[a-z0-9.\-]*$', username, re.IGNORECASE):
+        if not re.match(r'^[a-z0-9.\-]*$', username, re.IGNORECASE):
             msg = 'USERNAME_VALIDATION_NAME_CONTAINS_INVALID_CHARS'
             raise exceptions.ValidationError(msg)
 
