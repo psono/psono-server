@@ -31,9 +31,9 @@ upload-translations:
     - curl -fSL "https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/docker-ce_25.0.3-1~ubuntu.22.04~jammy_amd64.deb" -o docker-ce.deb && echo "63c7703814558a829ab3cc37c8018c050c9dad56f99c261090500f6c87821fd1 docker-ce.deb" | sha256sum -c -
     - dpkg -i ./containerd.deb ./docker-ce.deb ./docker-ce-cli.deb ./docker-buildx-plugin.deb
     - docker info
-    - docker build -f DockerfileUbuntu -t ubu-testimage --pull .
+    - docker build -f DockerfileDebian -t testimage --pull .
     - mkdir locale
-    - docker run -v $(pwd)/locale:/root/psono/locale ubu-testimage bash -c "cd /root/psono && django-admin makemessages --locale=en -i 'restapi' -i 'fileserver' -i 'administration'"
+    - docker run -v $(pwd)/locale:/root/psono/locale testimage bash -c "cd /root/psono && django-admin makemessages --locale=en -i 'restapi' -i 'fileserver' -i 'administration'"
     - pip3 install requests
     - python3 var/upload_translations.py
   only:
@@ -108,10 +108,10 @@ run-unittests-ubuntu:
   script:
     - docker info
     - sh ./var/update_version.sh
-    - docker build -f DockerfileUbuntu -t ubu-testimage --pull .
+    - docker build -f DockerfileDebian -t testimage --pull .
     - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
-    - docker run --link db:postgres -e "PSONO_THROTTLING=False" ubu-testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
+    - docker run --link db:postgres -e "PSONO_THROTTLING=False" testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
 
 run-unittests-alpine:
