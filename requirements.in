@@ -8,7 +8,7 @@ paramiko==3.4.0
 django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
 django-cors-headers==3.10.1
 django-filter==2.4.0
-pillow==11.3.0
+pillow==12.1.1
 PyYAML==6.0.1
 bcrypt==4.3.0
 psycopg[binary]==3.3.2
