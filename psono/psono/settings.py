@@ -302,7 +302,7 @@ REST_FRAMEWORK = {
         'user': config_get('THROTTLE_RATE_USER', '86400/day'),
         'health_check': config_get('THROTTLE_RATE_HEALTH_CHECK', '61/hour'),
         'info': config_get('THROTTLE_RATE_INFO', '600/hour'),
-        'status_check': config_get('THROTTLE_RATE_STATUS_CHECK', '6/minute'),
+        'status_check': config_get('THROTTLE_RATE_STATUS_CHECK', '61/minute'),
         'ga_verify': config_get('THROTTLE_RATE_GA_VERIFY', '6/minute'),
         'duo_verify': config_get('THROTTLE_RATE_DUO_VERIFY', '6/minute'),
         'yubikey_otp_verify': config_get('THROTTLE_RATE_YUBIKEY_OTP_VERIFY', '6/minute'),

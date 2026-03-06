@@ -27,7 +27,9 @@ import hashlib
 import binascii
 import ipaddress
 
-from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link, File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
+from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link
+from ..models import File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
+from ..models import Ivalt
 from ..models import File_Repository_Right
 from .avatar import delete_avatar_storage_of_user
 
@@ -1099,11 +1101,13 @@ def reset_2fa(username: str) -> dict:
     user.google_authenticator_enabled = False
     user.yubikey_otp_enabled = False
     user.webauthn_enabled = False
+    user.ivalt_enabled = False
     user.save()
 
     Duo.objects.filter(user_id=user.id).delete()
     Google_Authenticator.objects.filter(user_id=user.id).delete()
     Yubikey_OTP.objects.filter(user_id=user.id).delete()
+    Ivalt.objects.filter(user_id=user.id).delete()
 
     return {}
 
