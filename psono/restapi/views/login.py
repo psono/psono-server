@@ -146,6 +146,7 @@ class LoginView(GenericAPIView):
                 "authentication": user.authentication,
                 'hashing_algorithm': user.hashing_algorithm,
                 'hashing_parameters': user.hashing_parameters,
+                'require_password_change': user.require_password_change,
             }
         }
 

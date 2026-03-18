@@ -12,6 +12,7 @@ class UpdateUserSerializer(serializers.Serializer):
     is_email_active = BooleanField(required=False)
     is_staff = BooleanField(required=False)
     is_superuser = BooleanField(required=False)
+    require_password_change = BooleanField(required=False)
     email = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
 
 
@@ -22,6 +23,7 @@ class UpdateUserSerializer(serializers.Serializer):
         is_email_active = attrs.get('is_email_active', None)
         is_superuser = attrs.get('is_superuser', None)
         is_staff = attrs.get('is_staff', None)
+        require_password_change = attrs.get('require_password_change', None)
         email = attrs.get('email')
 
         try:
@@ -64,5 +66,6 @@ class UpdateUserSerializer(serializers.Serializer):
         attrs['is_email_active'] = is_email_active
         attrs['is_superuser'] = is_superuser
         attrs['is_staff'] = is_staff
+        attrs['require_password_change'] = require_password_change
 
         return attrs

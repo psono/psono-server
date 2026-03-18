@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import status
+from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 
 from restapi import models
 from ..utils import encrypt_with_db_secret
@@ -151,7 +152,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_post_authentication_yubikey_otp_verify_correct(self, settings_fct, yubico_verify_true_fct):
         """
@@ -171,7 +172,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None, YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     def test_post_authentication_yubikey_otp_verify_no_yubikey_support(self, settings_fct):
         """
         Tests POST method on authentication_yubikey_otp_verify
@@ -191,7 +192,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), ['SERVER_NOT_SUPPORT_YUBIKEY'])
 
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_false)
     def test_post_authentication_yubikey_otp_verify_yubikey_incorrect(self, settings_fct, yubico_verify_false_fct):
         """
@@ -212,7 +213,7 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertEqual(response.data.get('non_field_errors'), ['YUBICO_TOKEN_INVALID'])
 
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_post_authentication_yubikey_otp_verify_not_attached_to_this_account(self, settings_fct, yubico_verify_true_fct):
         """
@@ -357,7 +358,7 @@ class YubikeyOTPTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_activate_yubikey_otp_success(self, settings_fct, yubico_verify_true_fct):
         """

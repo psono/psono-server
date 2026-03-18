@@ -1,5 +1,7 @@
 from django.test import TestCase
 
+from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
+
 from restapi.utils import authenticate, yubikey_authenticate, yubikey_get_yubikey_id, calculate_user_rights_on_share, get_datastore, is_allowed_url
 from restapi.utils import encrypt_secret, decrypt_secret
 from restapi import models
@@ -46,16 +48,16 @@ class TestUtils(TestCase):
         """
         self.assertEqual(authenticate('narf', False, 'asdf'), (False, 'USER_NOT_FOUND'))
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     @patch('restapi.utils.yubikey.Yubico.verify', side_effect=yubico_verify_true)
     def test_yubikey_authenticate_works(self, settings_fct, yubico_verify_true_fct):
         self.assertTrue(yubikey_authenticate(5))
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=')
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY='T3VoIHlvdSBmb3VuZCBtZT8=', YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     def test_yubikey_authenticate_client_id_none(self, settings_fct):
         self.assertIsNone(yubikey_authenticate(5))
 
-    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY=None)
+    @patch('restapi.utils.yubikey.settings', YUBIKEY_CLIENT_ID='123', YUBIKEY_SECRET_KEY=None, YUBICO_API_URLS=DEFAULT_YUBICO_API_URLS)
     def test_yubikey_authenticate_secret_key_none(self, settings_fct):
         self.assertIsNone(yubikey_authenticate(5))
 

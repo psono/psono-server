@@ -160,7 +160,8 @@ class ActivateTokenView(GenericAPIView):
                 "authentication": 'AUTHKEY',
                 "email": decrypt_with_db_secret(request.user.email) if request.user.email else '',
                 "secret_key": request.user.secret_key,
-                "secret_key_nonce": request.user.secret_key_nonce
+                "secret_key_nonce": request.user.secret_key_nonce,
+                "require_password_change": request.user.require_password_change
             }
         },status=status.HTTP_200_OK)
 

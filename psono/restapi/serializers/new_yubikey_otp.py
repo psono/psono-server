@@ -1,6 +1,5 @@
 from django.conf import settings
-from yubico_client import Yubico
-
+from ..utils import yubikey_authenticate
 
 from rest_framework import serializers, exceptions
 
@@ -18,15 +17,11 @@ class NewYubikeyOTPSerializer(serializers.Serializer):
             msg = 'SERVER_NOT_SUPPORT_YUBIKEY'
             raise exceptions.ValidationError(msg)
 
-        if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
+        yubikey_is_valid = yubikey_authenticate(value)
+
+        if yubikey_is_valid is None:
             msg = 'SERVER_NOT_SUPPORT_YUBIKEY'
             raise exceptions.ValidationError(msg)
-
-        client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY)
-        try:
-            yubikey_is_valid = client.verify(value)
-        except:
-            yubikey_is_valid = False
 
         if not yubikey_is_valid:
             msg = 'YUBICO_TOKEN_INVALID'

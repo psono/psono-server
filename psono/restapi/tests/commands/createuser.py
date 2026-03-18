@@ -109,6 +109,26 @@ class CommandCreateuserTestCase(TestCase):
         self.assertFalse(found)
         self.assertEqual(out.getvalue(), 'USER_WITH_EMAIL_ALREADY_EXISTS\n')
 
+    def test_createuser_require_password_change(self):
+        """
+        Tests to create a user with require_password_change enabled
+        """
+
+        username = 'username-require@example.com'
+        password = 'myPassword'
+        email = 'require-password-change@something.com'
+
+        args = [username, password, email]
+        opts = {
+            'require_password_change': True,
+        }
+
+        out = StringIO()
+        call_command('createuser', stdout=out, *args, **opts)
+
+        user = models.User.objects.get(username=username)
+        self.assertTrue(user.require_password_change)
+
     def test_createuser_username_already_exist(self):
         """
         Tests to create a user where the username already exists
