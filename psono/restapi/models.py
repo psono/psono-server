@@ -75,6 +75,7 @@ class User(models.Model):
         help_text='True once webauthn 2fa is enabled')
     ivalt_enabled = models.BooleanField('iValt 2FA enabled', default=False,
         help_text='True once ivalt 2fa is enabled')
+    require_password_change = models.BooleanField('require password change', default=False)
     display_name = models.CharField('display name', max_length=512, default='')
     last_login = models.DateTimeField(default=timezone.now)
     hashing_algorithm = models.CharField('hashing algorithm', max_length=32, default=DEFAULT_HASHING_ALGORITHM, choices=HASHING_ALGORITHMS,)

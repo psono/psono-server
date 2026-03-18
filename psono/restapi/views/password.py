@@ -92,6 +92,7 @@ class PasswordView(GenericAPIView):
         user.duo_enabled = False
         user.hashing_algorithm = hashing_algorithm
         user.hashing_parameters = hashing_parameters
+        user.require_password_change = False
         user.save()
 
         # Delete 2 Factors

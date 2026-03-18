@@ -64,6 +64,7 @@ class UserUpdate(GenericAPIView):
         # Password Change
         if 'authkey' in request.data and request.data['authkey'] is not None:
             request.user.authkey = make_password(str(request.data['authkey']))
+            request.user.require_password_change = False
         if 'secret_key' in request.data and request.data['secret_key'] is not None:
             request.user.secret_key = str(request.data['secret_key'])
         if 'secret_key_nonce' in request.data and request.data['secret_key_nonce'] is not None:

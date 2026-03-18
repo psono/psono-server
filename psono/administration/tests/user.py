@@ -315,6 +315,47 @@ class UpdateUserTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_update_user_require_password_change_true(self):
+        """
+        Tests Update user require_password_change to true
+        """
+
+        url = reverse('admin_user')
+
+        data = {
+            'user_id': self.test_user_obj.id,
+            'require_password_change': True,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertTrue(self.test_user_obj.require_password_change)
+
+    def test_update_user_require_password_change_false(self):
+        """
+        Tests Update user require_password_change to false
+        """
+
+        self.test_user_obj.require_password_change = True
+        self.test_user_obj.save()
+
+        url = reverse('admin_user')
+
+        data = {
+            'user_id': self.test_user_obj.id,
+            'require_password_change': False,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertFalse(self.test_user_obj.require_password_change)
+
     @patch('administration.serializers.update_user.settings', REGISTRATION_EMAIL_FILTER=['example2.com'])
     def test_update_user_email_success_with_email_registration_filter(self, patched_registration_email_filter):
         """

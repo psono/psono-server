@@ -163,6 +163,7 @@ class UserView(GenericAPIView):
             'is_email_active': user.is_email_active,
             'is_superuser': user.is_superuser,
             'is_staff': user.is_staff,
+            'require_password_change': user.require_password_change,
             'authentication': user.authentication,
 
             'memberships': memberships,
@@ -208,7 +209,7 @@ class UserView(GenericAPIView):
             search = serializer.validated_data.get('search')
 
             user_qs = User.objects.annotate(recovery_code_exist=Exists(recovery_codes), emergency_code_exist=Exists(emergency_codes))\
-                    .only('id', 'create_date', 'last_login', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'webauthn_enabled', 'yubikey_otp_enabled')
+                    .only('id', 'create_date', 'last_login', 'username', 'is_active', 'is_email_active', 'duo_enabled', 'google_authenticator_enabled', 'webauthn_enabled', 'yubikey_otp_enabled', 'require_password_change')
 
             if search:
                 user_qs = user_qs.filter(Q(username__icontains=search) | Q(email_bcrypt=get_static_bcrypt_hash_from_email(search)))
@@ -237,6 +238,7 @@ class UserView(GenericAPIView):
                     'google_authenticator_enabled': u.google_authenticator_enabled,
                     'webauthn_enabled': u.webauthn_enabled,
                     'yubikey_otp_enabled': u.yubikey_otp_enabled,
+                    'require_password_change': u.require_password_change,
                     'recovery_code_exist': u.recovery_code_exist,
                     'emergency_code_exist': u.emergency_code_exist,
                 })
@@ -272,6 +274,7 @@ class UserView(GenericAPIView):
         is_email_active = serializer.validated_data.get('is_email_active')
         is_superuser = serializer.validated_data.get('is_superuser')
         is_staff = serializer.validated_data.get('is_staff')
+        require_password_change = serializer.validated_data.get('require_password_change')
         email = serializer.validated_data.get('email')
 
         if is_active is not None:
@@ -291,6 +294,9 @@ class UserView(GenericAPIView):
         if email is not None:
             user.email = email
             user.email_bcrypt = serializer.validated_data.get('email_bcrypt')
+
+        if require_password_change is not None:
+            user.require_password_change = require_password_change
 
         # saves it
         user.save()

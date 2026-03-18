@@ -17,6 +17,13 @@ class Command(BaseCommand):
             help='Shows the password in the completion success message in plain text',
         )
 
+        parser.add_argument(
+            '--require-password-change',
+            action='store_true',
+            dest='require_password_change',
+            help='Marks the created user to require a password change on next login',
+        )
+
 
     def handle(self, *args, **options):
 
@@ -29,6 +36,11 @@ class Command(BaseCommand):
         if 'error' in result:
             self.stdout.write(result['error'])
             return
+
+        if options['require_password_change']:
+            user = result['user']
+            user.require_password_change = True
+            user.save(update_fields=['require_password_change'])
 
         if not options['show_password']:
             password = '******'  #nosec
