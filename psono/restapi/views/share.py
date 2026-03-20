@@ -3,6 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
+from django.db.models import Q
+from django.utils import timezone
 from ..permissions import IsAuthenticated
 
 from ..models import (
@@ -44,9 +46,10 @@ class ShareView(GenericAPIView):
                 .filter(user=user)\
                 .exclude(creator__isnull=True, accepted__isnull=True)\
                 .exclude(creator__isnull=True, accepted=False)\
+                .filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now()))\
                 .only("id","share_id", "user_id", "title", "title_nonce", "key", "key_nonce",
                       "read", "write", "grant", "accepted", "creator__id", "creator__username",
-                      "creator__public_key", "create_date", "write_date", "type", "type_nonce")
+                      "creator__public_key", "create_date", "write_date", "type", "type_nonce", "expiration_date")
 
             for user_share_right in user_share_rights:
 
@@ -67,6 +70,7 @@ class ShareView(GenericAPIView):
                     'share_right_write': user_share_right.write,
                     'share_right_grant': user_share_right.grant,
                     'share_right_accepted': user_share_right.accepted,
+                    'share_right_expiration_date': user_share_right.expiration_date.isoformat() if user_share_right.expiration_date else None,
                     'share_right_create_user_id': user_share_right.creator.id if user_share_right.creator is not None else '',
                     'share_right_create_user_username': user_share_right.creator.username if user_share_right.creator is not None else '',
                     'share_right_create_user_public_key': user_share_right.creator.public_key if user_share_right.creator is not None else ''

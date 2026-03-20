@@ -9,6 +9,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.conf import settings
+from django.db.models import Q
+from django.utils import timezone
 from django.utils import translation
 
 from ..utils import get_all_inherited_rights
@@ -62,12 +64,15 @@ class ShareRightView(GenericAPIView):
 
             # Generate a list of a all share rights
 
-            user_share_rights = User_Share_Right.objects.filter(user=request.user, accepted=True).only("share_id", "read", "write", "grant")
+            user_share_rights = User_Share_Right.objects.filter(user=request.user, accepted=True).filter(
+                Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+            ).only("share_id", "read", "write", "grant")
             group_share_rights = Group_Share_Right.objects.raw("""SELECT gr.*
                 FROM restapi_group_share_right gr
                     JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
                 WHERE ms.user_id = %(user_id)s
-                    AND ms.accepted = true""", {
+                    AND ms.accepted = true
+                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""", {
                 'user_id': request.user.id,
             })
 
@@ -125,6 +130,10 @@ class ShareRightView(GenericAPIView):
 
                     return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
                                     "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
+                if share_right.expiration_date and share_right.expiration_date <= timezone.now():
+
+                    return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
+                                    "resource_id": user_share_right_id}, status=status.HTTP_403_FORBIDDEN)
             except User_Share_Right.DoesNotExist:
 
                 return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
@@ -139,7 +148,8 @@ class ShareRightView(GenericAPIView):
                 'read': share_right.read,
                 'write': share_right.write,
                 'grant': share_right.grant,
-                'share_id': share_right.share_id
+                'share_id': share_right.share_id,
+                'expiration_date': share_right.expiration_date.isoformat() if share_right.expiration_date else None,
             }
 
             return Response(response,
@@ -187,6 +197,7 @@ class ShareRightView(GenericAPIView):
                 write=serializer.validated_data['write'],
                 grant=serializer.validated_data['grant'],
                 accepted=accepted,
+                expiration_date=serializer.validated_data.get('expiration_date'),
             )
 
             if settings.CACHE_ENABLE:
@@ -253,6 +264,7 @@ class ShareRightView(GenericAPIView):
                 read=serializer.validated_data['read'],
                 write=serializer.validated_data['write'],
                 grant=serializer.validated_data['grant'],
+                expiration_date=serializer.validated_data.get('expiration_date'),
             )
 
             if settings.CACHE_ENABLE:
@@ -342,6 +354,8 @@ class ShareRightView(GenericAPIView):
         share_right_obj.read = serializer.validated_data['read']
         share_right_obj.write = serializer.validated_data['write']
         share_right_obj.grant = serializer.validated_data['grant']
+        if 'expiration_date' in serializer.validated_data:
+            share_right_obj.expiration_date = serializer.validated_data.get('expiration_date')
         share_right_obj.save()
 
         return Response({"share_right_id": str(share_right_obj.id)},

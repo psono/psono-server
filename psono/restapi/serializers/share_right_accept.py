@@ -1,5 +1,7 @@
 
 from rest_framework import serializers, exceptions
+from django.db.models import Q
+from django.utils import timezone
 from ..fields import UUIDField
 
 from ..models import User_Share_Right
@@ -20,7 +22,7 @@ class ShareRightAcceptSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         try:
-            user_share_right_obj = User_Share_Right.objects.get(pk=share_right_id, user=self.context['request'].user, accepted=None)
+            user_share_right_obj = User_Share_Right.objects.filter(pk=share_right_id, user=self.context['request'].user, accepted=None).filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())).get()
         except User_Share_Right.DoesNotExist:
             msg = "You don't have permission to access it or it does not exist or you already accepted or declined this share."
             raise exceptions.ValidationError(msg)

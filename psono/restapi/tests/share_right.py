@@ -10,6 +10,8 @@ from ..utils import encrypt_with_db_secret
 
 import random
 import string
+from datetime import timedelta
+from django.utils import timezone
 
 
 class ReadUserShareRightTest(APITestCaseExtended):
@@ -505,6 +507,152 @@ class CreateUserShareRightTest(APITestCaseExtended):
         response = self.client.put(url, initial_data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
+    def test_grant_share_right_with_expiration_date(self):
+        url = reverse('share_right')
+        expiration_date = timezone.now() + timedelta(days=3)
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+            'expiration_date': expiration_date.isoformat(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        share_right = models.User_Share_Right.objects.get(pk=response.data['share_right_id'])
+        self.assertIsNotNone(share_right.expiration_date)
+
+    def test_grant_share_right_failure_with_past_expiration_date(self):
+        url = reverse('share_right')
+        expiration_date = timezone.now() - timedelta(minutes=1)
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+            'expiration_date': expiration_date.isoformat(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('EXPIRATION_DATE_NEEDS_TO_BE_IN_THE_FUTURE', response.data['non_field_errors'])
+
+    def test_grant_share_right_replaces_expired_user_share_right(self):
+        url = reverse('share_right')
+
+        expired_share_right = models.User_Share_Right.objects.create(
+            key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            title=''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            title_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type=''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            type_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            share_id=self.test_share1_obj.id,
+            creator_id=self.test_user_obj.id,
+            user_id=self.test_user2_obj.id,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
+            expiration_date=timezone.now() - timedelta(minutes=1),
+        )
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'user_id': str(self.test_user2_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(models.User_Share_Right.objects.filter(pk=expired_share_right.id).exists())
+        self.assertEqual(
+            models.User_Share_Right.objects.filter(
+                share_id=self.test_share1_obj.id,
+                user_id=self.test_user2_obj.id,
+            ).count(),
+            1,
+        )
+
+    def test_grant_share_right_replaces_expired_group_share_right(self):
+        url = reverse('share_right')
+
+        expired_share_right = models.Group_Share_Right.objects.create(
+            key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            title=''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            title_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            type=''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            type_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            share_id=self.test_share1_obj.id,
+            creator_id=self.test_user_obj.id,
+            group_id=self.test_group_obj.id,
+            read=True,
+            write=True,
+            grant=True,
+            expiration_date=timezone.now() - timedelta(minutes=1),
+        )
+
+        initial_data = {
+            'key': ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
+            'key_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'share_id': str(self.test_share1_obj.id),
+            'title': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'title_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'type': ''.join(random.choice(string.ascii_lowercase) for _ in range(512)),
+            'type_nonce': ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'group_id': str(self.test_group_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, initial_data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(models.Group_Share_Right.objects.filter(pk=expired_share_right.id).exists())
+        self.assertEqual(
+            models.Group_Share_Right.objects.filter(
+                share_id=self.test_share1_obj.id,
+                group_id=self.test_group_obj.id,
+            ).count(),
+            1,
+        )
 
     def test_grant_share_right_failure_for_user_twice(self):
         """
@@ -1143,6 +1291,50 @@ class UpdateUserShareRightTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+
+    def test_update_user_share_right_expiration_date(self):
+        url = reverse('share_right')
+        expiration_date = timezone.now() + timedelta(days=2)
+
+        data = {
+            'share_id': str(self.test_share1_obj.id),
+            'user_id': str(self.test_user2_obj.id),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'expiration_date': expiration_date.isoformat(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        share_right = models.User_Share_Right.objects.get(
+            share_id=self.test_share1_obj.id,
+            user_id=self.test_user2_obj.id,
+        )
+        self.assertIsNotNone(share_right.expiration_date)
+
+    def test_update_user_share_right_failure_with_past_expiration_date(self):
+        url = reverse('share_right')
+        expiration_date = timezone.now() - timedelta(minutes=1)
+
+        data = {
+            'share_id': str(self.test_share1_obj.id),
+            'user_id': str(self.test_user2_obj.id),
+            'read': True,
+            'write': True,
+            'grant': True,
+            'expiration_date': expiration_date.isoformat(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('EXPIRATION_DATE_NEEDS_TO_BE_IN_THE_FUTURE', response.data['non_field_errors'])
 
     def test_update_user_share_right_failure_user_does_not_exist(self):
         """

@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
+from django.db.models import Q
+from django.utils import timezone
 from ..permissions import IsAuthenticated
 
 from ..models import (
@@ -60,13 +62,16 @@ class GroupRightsView(GenericAPIView):
         group_id = serializer.validated_data.get('group_id', False)
 
         if group_id:
-            share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant").filter(group_id=group_id)
+            share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant", "expiration_date").filter(
+                group_id=group_id
+            ).filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now()))
         else:
-            share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant
+            share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant, gr.expiration_date
                 FROM restapi_group_share_right gr
                     JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
                 WHERE ms.user_id = %(user_id)s
-                    AND MS.accepted = TRUE""", {
+                    AND MS.accepted = TRUE
+                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""", {
                 'user_id': request.user.id,
             })
 
@@ -79,6 +84,7 @@ class GroupRightsView(GenericAPIView):
                 'read': right.read,
                 'write': right.write,
                 'grant': right.grant,
+                'expiration_date': right.expiration_date.isoformat() if right.expiration_date else None,
             })
 
         return Response({

@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from django.db.models import Q
+from django.utils import timezone
 from django_countries import countries
 from urllib.parse import urlparse
 
@@ -220,6 +222,7 @@ def get_secret_counts_for_users(user_ids: List[str]):
                         JOIN restapi_share_tree st ON parent_st.path @> st.path
                WHERE usr.user_id = ANY (%(user_ids)s)
                  AND usr.accepted = true
+                  AND (usr.expiration_date IS NULL OR usr.expiration_date > NOW())
 
                UNION
 
@@ -232,7 +235,8 @@ def get_secret_counts_for_users(user_ids: List[str]):
                         JOIN restapi_share_tree st ON parent_st.path @> st.path
                WHERE ugm.user_id = ANY (%(user_ids)s)
                  AND ugm.accepted = true
-           ),
+                  AND (gsr.expiration_date IS NULL OR gsr.expiration_date > NOW())
+            ),
            user_accessible_secrets AS (
                -- Secrets from accessible shares
                SELECT DISTINCT 
@@ -289,6 +293,7 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
                 WHERE t.share_id = ANY(%(share_ids)s)
                     AND ur.user_id = %(user_id)s
                     AND ur.accepted = true
+                    AND (ur.expiration_date IS NULL OR ur.expiration_date > NOW())
                 ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
             ) a
             UNION
@@ -303,6 +308,7 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
                 WHERE t.share_id = ANY(%(share_ids)s)
                     AND gm.user_id = %(user_id)s
                     AND gm.accepted = true
+                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())
                 ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
             ) b
             """, {
@@ -343,7 +349,7 @@ def get_all_direct_user_rights(user_id: str, share_id: Union[str, List[str]]) ->
 
     user_share_rights = User_Share_Right.objects.only("share_id", "read", "write", "grant").filter(
         user_id=user_id, share_id__in=share_ids, accepted=True
-    )
+    ).filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now()))
     user_share_rights_dict = {}
     for usr in user_share_rights:
         if str(usr.share_id) not in user_share_rights_dict:
@@ -379,7 +385,8 @@ def get_all_direct_group_rights(user_id: str, share_id: Union[str, List[str]]) -
             JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
         WHERE gr.share_id = ANY(%(share_ids)s) 
             AND ms.user_id = %(user_id)s
-            AND ms.accepted = true""", {
+            AND ms.accepted = true
+            AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""", {
         'share_ids': share_ids,
         'user_id': user_id,
     })

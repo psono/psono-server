@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
+from django.db.models import Q
+from django.utils import timezone
 from ..permissions import IsAuthenticated
 from ..authentication import TokenAuthentication
 from django.core.cache import cache
@@ -44,7 +46,9 @@ class StatusView(GenericAPIView):
             user_status = cache.get(cache_key)
 
         if user_status is None:
-            unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).exclude(creator__isnull=True).count()
+            unaccepted_shares_count = User_Share_Right.objects.filter(user=request.user, accepted__isnull=True).exclude(creator__isnull=True).filter(
+                Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+            ).count()
             unaccepted_groups_count = User_Group_Membership.objects.filter(user=request.user, accepted__isnull=True, private_key__isnull=False).count()
 
             try:

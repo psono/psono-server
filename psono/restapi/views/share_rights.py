@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
+from django.db.models import Q
+from django.utils import timezone
 from ..permissions import IsAuthenticated
 
 from ..app_settings import (
@@ -47,7 +49,9 @@ class ShareRightsView(GenericAPIView):
         user_share_rights = []
         group_share_rights = []
 
-        for u in share.user_share_rights.exclude(creator__isnull=True, accepted__isnull=True).exclude(creator__isnull=True, accepted=False).all():
+        for u in share.user_share_rights.exclude(creator__isnull=True, accepted__isnull=True).exclude(creator__isnull=True, accepted=False).filter(
+            Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+        ).all():
 
             right = {
                 'id': u.id,
@@ -60,11 +64,14 @@ class ShareRightsView(GenericAPIView):
                 'user_id': u.user_id,
                 'share_id': u.share_id,
                 'username': u.user.username,
+                'expiration_date': u.expiration_date.isoformat() if u.expiration_date else None,
             }
 
             user_share_rights.append(right)
 
-        for u in share.group_share_rights.all():
+        for u in share.group_share_rights.filter(
+            Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+        ).all():
 
             right = {
                 'id': u.id,
@@ -77,6 +84,7 @@ class ShareRightsView(GenericAPIView):
                 'group_id': u.group_id,
                 'share_id': u.share_id,
                 'group_name': u.group.name,
+                'expiration_date': u.expiration_date.isoformat() if u.expiration_date else None,
             }
 
             group_share_rights.append(right)

@@ -1,4 +1,6 @@
 from django.test import TestCase
+from django.utils import timezone
+from datetime import timedelta
 
 from yubico_client.yubico import DEFAULT_API_URLS as DEFAULT_YUBICO_API_URLS
 
@@ -351,6 +353,25 @@ class TestCalculateShareRightsOnShare(TestCase):
             {'read': False, 'grant': False, 'write': False}
         )
 
+
+    def test_direct_user_rights_expired(self):
+
+        models.User_Share_Right.objects.create(
+            creator_id=self.user1.id,
+            user_id=self.user1.id,
+            share_id=self.share1.id,
+            read=True,
+            write=True,
+            grant=True,
+            accepted = True,
+            expiration_date=timezone.now() - timedelta(minutes=1),
+        )
+
+        self.assertEqual(
+            calculate_user_rights_on_share(self.user1.id, self.share1.id),
+            {'read': False, 'grant': False, 'write': False}
+        )
+
     def test_direct_group_rights(self):
 
         models.User_Group_Membership.objects.create(
@@ -413,6 +434,31 @@ class TestCalculateShareRightsOnShare(TestCase):
             read=True,
             write=True,
             grant=True,
+        )
+
+        self.assertEqual(
+            calculate_user_rights_on_share(self.user1.id, self.share1.id),
+            {'read': False, 'grant': False, 'write': False}
+        )
+
+
+    def test_direct_group_rights_expired(self):
+
+        models.User_Group_Membership.objects.create(
+            creator_id=self.user1.id,
+            user_id=self.user1.id,
+            group_id=self.group1.id,
+            accepted=True
+        )
+
+        models.Group_Share_Right.objects.create(
+            creator_id=self.user1.id,
+            share_id=self.share1.id,
+            group_id=self.group1.id,
+            read=True,
+            write=True,
+            grant=True,
+            expiration_date=timezone.now() - timedelta(minutes=1),
         )
 
         self.assertEqual(

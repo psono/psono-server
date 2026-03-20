@@ -563,6 +563,8 @@ class Group_Share_Right(models.Model):
         help_text='Designates whether this user has "write" rights and can update this share')
     grant = models.BooleanField('Grant right', default=False,
         help_text='Designates whether this user has "grant" rights and can re-share this share')
+    expiration_date = models.DateTimeField('Expiration date', null=True, blank=True, default=None,
+        help_text='Defines when this share right expires. Null means permanent.')
     # accepted = models.BooleanField('Accepted', null=True, blank=True, default=None,
     #     help_text='Defines if the share has been accepted, declined, or still waits for approval')
 
@@ -645,6 +647,8 @@ class User_Share_Right(models.Model):
         help_text='Designates whether this user has "grant" rights and can re-share this share')
     accepted = models.BooleanField('Accepted', null=True, blank=True, default=None,
         help_text='Defines if the share has been accepted, declined, or still waits for approval')
+    expiration_date = models.DateTimeField('Expiration date', null=True, blank=True, default=None,
+        help_text='Defines when this share right expires. Null means permanent.')
 
     class Meta:
         abstract = False

@@ -1,4 +1,6 @@
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from rest_framework import status
 from .base import APITestCaseExtended
@@ -198,5 +200,6 @@ class UserShareRightsTest(APITestCaseExtended):
                             'own_share_rights does not exist in answer')
         self.assertNotEqual(response.data.get('user_share_rights', False), False,
                             'user_share_rights does not exist in answer')
+        self.assertIn('expiration_date', response.data['user_share_rights'][0])
 
     #TODO Test actual database integrity of saved share rights

@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
+from django.db.models import Q
+from django.utils import timezone
 from ..permissions import IsAuthenticated
 from django.core.cache import cache
 from django.conf import settings
@@ -70,7 +72,9 @@ class GroupView(GenericAPIView):
                 details['user_id'] = membership.creator.id if membership.creator is not None else ''
                 details['user_username'] = membership.creator.username if membership.creator is not None else ''
                 details['share_right_grant'] = True
-                for right in membership.group.group_share_rights.all():
+                for right in membership.group.group_share_rights.filter(
+                    Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+                ).all():
                     if not right.grant:
                         details['share_right_grant'] = False
                         break
@@ -98,7 +102,9 @@ class GroupView(GenericAPIView):
         group_share_rights = []
 
         if membership.accepted:
-            for s in membership.group.group_share_rights.all():
+            for s in membership.group.group_share_rights.filter(
+                Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now())
+            ).all():
                 group_share_rights.append({
                     'id': s.id,
                     'create_date': s.create_date.isoformat(),
@@ -112,6 +118,7 @@ class GroupView(GenericAPIView):
                     'read': s.read,
                     'write': s.write,
                     'grant': s.grant,
+                    'expiration_date': s.expiration_date.isoformat() if s.expiration_date else None,
                 })
 
         response = {

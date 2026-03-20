@@ -399,6 +399,7 @@ class CreateShareTests(APITestCaseExtended):
                     'share_right_write': True,
                     'share_right_grant': True,
                     'share_right_accepted': True,
+                    'share_right_expiration_date': None,
                 }
 
                 self.assertEqual(store, target_store)

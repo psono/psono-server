@@ -1,6 +1,7 @@
 from ..utils import user_has_rights_on_share
 
 from rest_framework import serializers, exceptions
+from django.utils import timezone
 from ..fields import UUIDField, BooleanField
 from ..models import User_Share_Right, Group_Share_Right
 
@@ -12,6 +13,7 @@ class UpdateShareRightSerializer(serializers.Serializer):
     read = BooleanField()
     write = BooleanField()
     grant = BooleanField()
+    expiration_date = serializers.DateTimeField(required=False, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -19,6 +21,11 @@ class UpdateShareRightSerializer(serializers.Serializer):
         group_id = attrs.get('group_id', False)
 
         share_id = attrs['share_id']
+        expiration_date = attrs.get('expiration_date', None)
+
+        if expiration_date is not None and expiration_date <= timezone.now():
+            msg = 'EXPIRATION_DATE_NEEDS_TO_BE_IN_THE_FUTURE'
+            raise exceptions.ValidationError(msg)
 
         if not user_id and not group_id:
             msg = "Either user id or group id needs to be specified."
