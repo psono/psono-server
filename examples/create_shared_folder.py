@@ -12,6 +12,7 @@ This example demonstrates the process of:
    - Storing the share_id and share_secret_key in the datastore
 5. Updating the datastore with the new shared folder reference
 """
+
 import uuid
 import requests
 import json
@@ -23,14 +24,15 @@ from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
 
-api_key_id = 'e1cd9c08-4887-4b06-a26d-c92b1e84f49e'
-api_key_private_key = '0bbc18ac5d82ffabe324722ade66d99378c7772eef727e8e255e38ad2ab9f50c'
-api_key_secret_key = '04ab9b23de0f710e2c521fb1fbb77802dbd9f1586c31fd454b0497f0aa94acb4'
-server_url = 'https://psonoclient.chickahoona.com/server'
-server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
-server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
+api_key_id = "e1cd9c08-4887-4b06-a26d-c92b1e84f49e"
+api_key_private_key = "0bbc18ac5d82ffabe324722ade66d99378c7772eef727e8e255e38ad2ab9f50c"
+api_key_secret_key = "04ab9b23de0f710e2c521fb1fbb77802dbd9f1586c31fd454b0497f0aa94acb4"
+server_url = "https://psonoclient.chickahoona.com/server"
+server_public_key = "02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b"
+server_signature = "4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1"
 
 SSL_VERIFY = False
+
 
 def get_device_description():
     """
@@ -40,7 +42,8 @@ def get_device_description():
     :return:
     :rtype:
     """
-    return 'Console Client ' + socket.gethostname()
+    return "Console Client " + socket.gethostname()
+
 
 def generate_client_login_info():
     """
@@ -53,28 +56,35 @@ def generate_client_login_info():
 
     box = PrivateKey.generate()
     session_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
-    session_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+    session_public_key = box.public_key.encode(
+        encoder=nacl.encoding.HexEncoder
+    ).decode()
 
     info = {
-        'api_key_id': api_key_id,
-        'session_public_key': session_public_key,
-        'device_description': get_device_description(),
+        "api_key_id": api_key_id,
+        "session_public_key": session_public_key,
+        "device_description": get_device_description(),
     }
 
     info = json.dumps(info)
 
-    signing_box = nacl.signing.SigningKey(api_key_private_key, encoder=nacl.encoding.HexEncoder)
+    signing_box = nacl.signing.SigningKey(
+        api_key_private_key, encoder=nacl.encoding.HexEncoder
+    )
 
     # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
     signed = signing_box.sign(info.encode())
     signature = binascii.hexlify(signed.signature)
 
     return session_private_key, {
-        'info': info,
-        'signature': signature.decode(),
+        "info": info,
+        "signature": signature.decode(),
     }
 
-def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_public_key, session_private_key):
+
+def decrypt_server_login_info(
+    login_info_hex, login_info_nonce_hex, session_public_key, session_private_key
+):
     """
     Takes the login info and nonce together with the session public and private key.
     Will decrypt the login info and interpret it as json and return the json parsed object.
@@ -91,8 +101,10 @@ def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_publ
     :rtype:
     """
 
-    crypto_box = Box(PrivateKey(session_private_key, encoder=nacl.encoding.HexEncoder),
-                     PublicKey(session_public_key, encoder=nacl.encoding.HexEncoder))
+    crypto_box = Box(
+        PrivateKey(session_private_key, encoder=nacl.encoding.HexEncoder),
+        PublicKey(session_public_key, encoder=nacl.encoding.HexEncoder),
+    )
 
     login_info = nacl.encoding.HexEncoder.decode(login_info_hex)
     login_info_nonce = nacl.encoding.HexEncoder.decode(login_info_nonce_hex)
@@ -100,6 +112,7 @@ def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_publ
     login_info = json.loads(crypto_box.decrypt(login_info, login_info_nonce).decode())
 
     return login_info
+
 
 def verify_signature(login_info, login_info_signature):
     """
@@ -116,7 +129,9 @@ def verify_signature(login_info, login_info_signature):
     :rtype:
     """
 
-    verify_key = nacl.signing.VerifyKey(server_signature, encoder=nacl.encoding.HexEncoder)
+    verify_key = nacl.signing.VerifyKey(
+        server_signature, encoder=nacl.encoding.HexEncoder
+    )
 
     verify_key.verify(login_info.encode(), binascii.unhexlify(login_info_signature))
 
@@ -165,13 +180,14 @@ def encrypt_symmetric(msg, secret):
     encrypted = secret_box.encrypt(msg.encode(), nonce)
 
     # cut away the nonce
-    text = encrypted[len(nonce):]
+    text = encrypted[len(nonce) :]
 
     # convert nonce and encrypted msg to hex
     nonce_hex = nacl.encoding.HexEncoder.encode(nonce).decode()
     text_hex = nacl.encoding.HexEncoder.encode(text).decode()
 
-    return {'text': text_hex, 'nonce': nonce_hex}
+    return {"text": text_hex, "nonce": nonce_hex}
+
 
 def decrypt_with_api_secret_key(secret_hex, secret_nonce_hex):
     """
@@ -189,23 +205,30 @@ def decrypt_with_api_secret_key(secret_hex, secret_nonce_hex):
     return decrypt_symmetric(secret_hex, secret_nonce_hex, api_key_secret_key)
 
 
-def api_request(method, endpoint, data = None, token = None, session_secret_key = None):
+def api_request(method, endpoint, data=None, token=None, session_secret_key=None):
 
     if token:
-        headers = {'content-type': 'application/json', 'authorization': 'Token ' + token}
+        headers = {
+            "content-type": "application/json",
+            "authorization": "Token " + token,
+        }
     else:
-        headers = {'content-type': 'application/json'}
+        headers = {"content-type": "application/json"}
 
     if session_secret_key and data:
         data = json.dumps(encrypt_symmetric(data, session_secret_key))
 
-    r = requests.request(method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY)
+    r = requests.request(
+        method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY
+    )
 
     if not session_secret_key:
         return r.json()
     else:
         encrypted_content = r.json()
-        decrypted_content = decrypt_symmetric(encrypted_content['text'], encrypted_content['nonce'], session_secret_key)
+        decrypted_content = decrypt_symmetric(
+            encrypted_content["text"], encrypted_content["nonce"], session_secret_key
+        )
         return json.loads(decrypted_content)
 
 
@@ -220,8 +243,8 @@ def api_login(client_login_info):
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/api-key/login/'
+    method = "POST"
+    endpoint = "/api-key/login/"
     data = json.dumps(client_login_info)
 
     return api_request(method, endpoint, data)
@@ -239,10 +262,12 @@ def api_read_datastores(token, session_secret_key):
     :rtype:
     """
 
-    method = 'GET'
-    endpoint = '/datastore/'
+    method = "GET"
+    endpoint = "/datastore/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
 def api_logout(token, session_secret_key):
@@ -257,10 +282,12 @@ def api_logout(token, session_secret_key):
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/authentication/logout/'
+    method = "POST"
+    endpoint = "/authentication/logout/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
 def api_read_datastore(token, session_secret_key, datastore_id):
@@ -277,13 +304,17 @@ def api_read_datastore(token, session_secret_key, datastore_id):
     :rtype:
     """
 
-    method = 'GET'
-    endpoint = '/datastore/' + datastore_id + '/'
+    method = "GET"
+    endpoint = "/datastore/" + datastore_id + "/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
-def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data, encrypted_data_nonce):
+def api_write_datastore(
+    token, session_secret_key, datastore_id, encrypted_data, encrypted_data_nonce
+):
     """
     Updates a datastore
 
@@ -301,18 +332,31 @@ def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data,
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/datastore/'
-    data = json.dumps({
-        'datastore_id': datastore_id,
-        'data': encrypted_data,
-        'data_nonce': encrypted_data_nonce,
-    })
+    method = "POST"
+    endpoint = "/datastore/"
+    data = json.dumps(
+        {
+            "datastore_id": datastore_id,
+            "data": encrypted_data,
+            "data_nonce": encrypted_data_nonce,
+        }
+    )
 
-    return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, data=data, token=token, session_secret_key=session_secret_key
+    )
 
 
-def api_create_share(token, session_secret_key, encrypted_data, encrypted_data_nonce, encrypted_key, encrypted_key_nonce, parent_datastore_id, link_id):
+def api_create_share(
+    token,
+    session_secret_key,
+    encrypted_data,
+    encrypted_data_nonce,
+    encrypted_key,
+    encrypted_key_nonce,
+    parent_datastore_id,
+    link_id,
+):
     """
     Creates a new share
 
@@ -327,19 +371,23 @@ def api_create_share(token, session_secret_key, encrypted_data, encrypted_data_n
     :return:
     """
 
-    method = 'POST'
-    endpoint = '/share/'
-    data = json.dumps({
-        'data': encrypted_data,
-        'data_nonce': encrypted_data_nonce,
-        'key': encrypted_key,
-        'key_nonce': encrypted_key_nonce,
-        'key_type': 'symmetric',
-        'parent_datastore_id': parent_datastore_id,
-        'link_id': link_id,
-    })
+    method = "POST"
+    endpoint = "/share/"
+    data = json.dumps(
+        {
+            "data": encrypted_data,
+            "data_nonce": encrypted_data_nonce,
+            "key": encrypted_key,
+            "key_nonce": encrypted_key_nonce,
+            "key_type": "symmetric",
+            "parent_datastore_id": parent_datastore_id,
+            "link_id": link_id,
+        }
+    )
 
-    return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, data=data, token=token, session_secret_key=session_secret_key
+    )
 
 
 def create_folder(folder_name, datastore_content):
@@ -350,20 +398,22 @@ def create_folder(folder_name, datastore_content):
     :param datastore_content:
     :return:
     """
-    if 'folders' not in datastore_content:
-        datastore_content['folders'] = []
+    if "folders" not in datastore_content:
+        datastore_content["folders"] = []
 
     folder = {
-        'id': str(uuid.uuid4()),
-        'name': folder_name,
+        "id": str(uuid.uuid4()),
+        "name": folder_name,
     }
 
-    datastore_content['folders'].append(folder)
+    datastore_content["folders"].append(folder)
 
     return folder
 
 
-def convert_folder_to_share(token, session_secret_key, folder, datastore_content, datastore_id, user_secret_key):
+def convert_folder_to_share(
+    token, session_secret_key, folder, datastore_content, datastore_id, user_secret_key
+):
     """
     Converts a regular folder into a shared folder by:
     1. Generating a new secret key for the share
@@ -382,12 +432,14 @@ def convert_folder_to_share(token, session_secret_key, folder, datastore_content
     """
 
     # Step 1: Generate a new secret key for the share (32 bytes = 256 bits)
-    share_secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
+    share_secret_key = nacl.encoding.HexEncoder.encode(
+        nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
+    ).decode()
 
     # Step 2: Prepare the folder content for the share
     # Remove the folder id since it's stored in the datastore, not in the share
     share_content = {
-        'name': folder['name'],
+        "name": folder["name"],
     }
 
     # Copy over any existing items or subfolders
@@ -396,10 +448,10 @@ def convert_folder_to_share(token, session_secret_key, folder, datastore_content
     # - POST /secret/link/ for each secret to update its parent_share_id
     # - POST /file/link/ for each file to update its parent_share_id
     # This example assumes an empty folder for simplicity.
-    if 'items' in folder:
-        share_content['items'] = folder['items']
-    if 'folders' in folder:
-        share_content['folders'] = folder['folders']
+    if "items" in folder:
+        share_content["items"] = folder["items"]
+    if "folders" in folder:
+        share_content["folders"] = folder["folders"]
 
     # Step 3: Encrypt the share content with the new share secret key
     encrypted_share = encrypt_symmetric(json.dumps(share_content), share_secret_key)
@@ -408,38 +460,40 @@ def convert_folder_to_share(token, session_secret_key, folder, datastore_content
     encrypted_share_key = encrypt_symmetric(share_secret_key, user_secret_key)
 
     # Step 5: Create a link_id for the share (this links the folder in the datastore to the share)
-    link_id = folder['id']
+    link_id = folder["id"]
 
     # Step 6: Call the backend to create the share
     result = api_create_share(
         token,
         session_secret_key,
-        encrypted_share['text'],
-        encrypted_share['nonce'],
-        encrypted_share_key['text'],
-        encrypted_share_key['nonce'],
+        encrypted_share["text"],
+        encrypted_share["nonce"],
+        encrypted_share_key["text"],
+        encrypted_share_key["nonce"],
         datastore_id,
-        link_id
+        link_id,
     )
 
-    share_id = result['share_id']
+    share_id = result["share_id"]
 
     # Step 7: Update the folder object with share information
-    folder['share_id'] = share_id
-    folder['share_secret_key'] = share_secret_key
+    folder["share_id"] = share_id
+    folder["share_secret_key"] = share_secret_key
 
     # Step 8: Update the share_index in the datastore
     # The share_index is a dictionary that maps share_ids to their metadata (paths and secret_key)
     # This allows the client to efficiently locate and decrypt shares within the datastore
-    if 'share_index' not in datastore_content:
-        datastore_content['share_index'] = {}
+    if "share_index" not in datastore_content:
+        datastore_content["share_index"] = {}
 
     # Add the new share to the share_index
     # The path contains the folder ID because the share is located at this folder in the datastore
     # If the folder were nested, the path would be [parent_folder_id, child_folder_id, ...]
-    datastore_content['share_index'][share_id] = {
-        'paths': [[folder['id']]],  # Array of paths where this share appears (list of folder IDs leading to the share)
-        'secret_key': share_secret_key,  # The share's secret key for decryption
+    datastore_content["share_index"][share_id] = {
+        "paths": [
+            [folder["id"]]
+        ],  # Array of paths where this share appears (list of folder IDs leading to the share)
+        "secret_key": share_secret_key,  # The share's secret key for decryption
     }
 
     print(f"Created shared folder '{folder['name']}' with share_id: {share_id}")
@@ -456,30 +510,47 @@ def main():
 
     # 3. Verify the signature in order to proof that we are really communicating with the server
     # (or someone who is in the posession of the servers private key :D)
-    verify_signature(json_response['login_info'], json_response['login_info_signature'])
+    verify_signature(json_response["login_info"], json_response["login_info_signature"])
 
     # 4. Decrypt the actual login info with the token and session_secret_key for the transport encryption
-    decrypted_sever_login_info = decrypt_server_login_info(json_response['login_info'], json_response['login_info_nonce'], json_response['server_session_public_key'], session_private_key)
+    decrypted_sever_login_info = decrypt_server_login_info(
+        json_response["login_info"],
+        json_response["login_info_nonce"],
+        json_response["server_session_public_key"],
+        session_private_key,
+    )
 
-    token = decrypted_sever_login_info['token'] # That is the token that we have to send always as header
-    session_secret_key = decrypted_sever_login_info['session_secret_key'] # that is the symmetric secret for the transport encryption
-    user_username = decrypted_sever_login_info['user']['username'] # The username
-    user_public_key = decrypted_sever_login_info['user']['public_key'] # The user's public key
+    token = decrypted_sever_login_info[
+        "token"
+    ]  # That is the token that we have to send always as header
+    session_secret_key = decrypted_sever_login_info[
+        "session_secret_key"
+    ]  # that is the symmetric secret for the transport encryption
+    user_username = decrypted_sever_login_info["user"]["username"]  # The username
+    user_public_key = decrypted_sever_login_info["user"][
+        "public_key"
+    ]  # The user's public key
 
-    if decrypted_sever_login_info['api_key_restrict_to_secrets']:
+    if decrypted_sever_login_info["api_key_restrict_to_secrets"]:
         print("api key is restricted. it should only be used to read specific secrets")
         return
-    if not decrypted_sever_login_info['api_key_read']:
+    if not decrypted_sever_login_info["api_key_read"]:
         print("api key doesn't allow read. Please allow read first")
         return
 
-    if not decrypted_sever_login_info['api_key_write']:
+    if not decrypted_sever_login_info["api_key_write"]:
         print("api key doesn't allow write. Please allow write first")
         return
 
     # if the api key is unrestricted then the request will also return the encrypted secret and private key of the user, symmetric encrypted with the api secret key
-    user_private_key = decrypt_with_api_secret_key(decrypted_sever_login_info['user']['private_key'], decrypted_sever_login_info['user']['private_key_nonce']) # The user's private key
-    user_secret_key = decrypt_with_api_secret_key(decrypted_sever_login_info['user']['secret_key'], decrypted_sever_login_info['user']['secret_key_nonce']) # The user's secret key
+    user_private_key = decrypt_with_api_secret_key(
+        decrypted_sever_login_info["user"]["private_key"],
+        decrypted_sever_login_info["user"]["private_key_nonce"],
+    )  # The user's private key
+    user_secret_key = decrypt_with_api_secret_key(
+        decrypted_sever_login_info["user"]["secret_key"],
+        decrypted_sever_login_info["user"]["secret_key_nonce"],
+    )  # The user's secret key
 
     # 5. Now we can start actual reading the datastore and secrets e.g. to read the datastore:
     content = api_read_datastores(token, session_secret_key)
@@ -488,21 +559,35 @@ def main():
     datastore_content = None
     datastore_id = None
     datastore_secret = None
-    for datastore in content['datastores']:
-        if datastore['type'] != 'password':
+    for datastore in content["datastores"]:
+        if datastore["type"] != "password":
             continue
-        datastore_id = datastore['id']
-        datastore_read_result = api_read_datastore(token, session_secret_key, datastore['id'])
-        datastore_secret = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
-        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_secret))
+        datastore_id = datastore["id"]
+        datastore_read_result = api_read_datastore(
+            token, session_secret_key, datastore["id"]
+        )
+        datastore_secret = decrypt_symmetric(
+            datastore_read_result["secret_key"],
+            datastore_read_result["secret_key_nonce"],
+            user_secret_key,
+        )
+        datastore_content = json.loads(
+            decrypt_symmetric(
+                datastore_read_result["data"],
+                datastore_read_result["data_nonce"],
+                datastore_secret,
+            )
+        )
         break
 
     if datastore_id is None:
-        print("No password datastore yet found, please create one for the user first with the webclient.")
+        print(
+            "No password datastore yet found, please create one for the user first with the webclient."
+        )
         return
 
     # 7. Create a new folder
-    folder_name = 'My New Shared Folder'
+    folder_name = "My New Shared Folder"
     folder = create_folder(folder_name, datastore_content)
 
     print(f"Created folder '{folder_name}' with id: {folder['id']}")
@@ -514,23 +599,33 @@ def main():
         folder,
         datastore_content,
         datastore_id,
-        user_secret_key
+        user_secret_key,
     )
 
     # 9. Encrypt and save the updated datastore (which now contains the shared folder reference)
-    encrypted_datastore = encrypt_symmetric(json.dumps(datastore_content), datastore_secret)
-    api_write_datastore(token, session_secret_key, datastore_id, encrypted_datastore['text'], encrypted_datastore['nonce'])
+    encrypted_datastore = encrypt_symmetric(
+        json.dumps(datastore_content), datastore_secret
+    )
+    api_write_datastore(
+        token,
+        session_secret_key,
+        datastore_id,
+        encrypted_datastore["text"],
+        encrypted_datastore["nonce"],
+    )
 
     print(f"\nSuccess! Shared folder created:")
     print(f"  - Folder name: {folder_name}")
     print(f"  - Folder ID: {folder['id']}")
     print(f"  - Share ID: {share_id}")
     print(f"  - Share secret key: {share_secret_key}")
-    print(f"\nThe shared folder is now stored in the user's datastore and can be shared with other users.")
+    print(
+        f"\nThe shared folder is now stored in the user's datastore and can be shared with other users."
+    )
 
     # 10. Logout
     api_logout(token, session_secret_key)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

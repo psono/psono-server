@@ -3,26 +3,21 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
-from ..models import (
-    Recovery_Code
-)
+from ..models import Recovery_Code
 
-from ..app_settings import (
-    UserSearchSerializer
-)
+from ..app_settings import UserSearchSerializer
 
 
 from ..authentication import TokenAuthentication
 
 
 class UserSearch(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UserSearchSerializer
         return Serializer
 
@@ -43,23 +38,24 @@ class UserSearch(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        users = serializer.validated_data.get('users')
+        users = serializer.validated_data.get("users")
 
         result = []
         for user in users:
             user_details = {
-                'id': user.id,
-                'public_key': user.public_key,
-                'username': user.username,
-                'avatar_id': user.avatar_id,
+                "id": user.id,
+                "public_key": user.public_key,
+                "username": user.username,
+                "avatar_id": user.avatar_id,
             }
 
             if user.id == request.user.id:
-                user_details['multifactor_auth_enabled'] = user.any_2fa_active()
-                user_details['recovery_code_enabled'] = Recovery_Code.objects.filter(user=user).exists()
+                user_details["multifactor_auth_enabled"] = user.any_2fa_active()
+                user_details["recovery_code_enabled"] = Recovery_Code.objects.filter(
+                    user=user
+                ).exists()
 
             result.append(user_details)
 

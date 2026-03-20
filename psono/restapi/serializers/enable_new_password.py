@@ -7,19 +7,19 @@ from ..models import User, Recovery_Code
 
 
 class EnableNewPasswordSerializer(serializers.Serializer):
-
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
+    username = serializers.EmailField(
+        required=True, error_messages={"invalid": "INVALID_USERNAME_FORMAT"}
+    )
     recovery_authkey = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        username = attrs.get('username')
-        recovery_authkey = attrs.get('recovery_authkey')
+        username = attrs.get("username")
+        recovery_authkey = attrs.get("recovery_authkey")
 
         if not settings.ALLOW_LOST_PASSWORD:
             msg = "PASSWORD_RESET_HAS_BEEN_DISABLED"
             raise exceptions.ValidationError(msg)
-
 
         try:
             user = User.objects.get(username=username)
@@ -38,7 +38,7 @@ class EnableNewPasswordSerializer(serializers.Serializer):
             msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
-        attrs['recovery_code'] = recovery_code
+        attrs["user"] = user
+        attrs["recovery_code"] = recovery_code
 
         return attrs

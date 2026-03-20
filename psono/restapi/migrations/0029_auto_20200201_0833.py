@@ -4,20 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0028_securityreport_securityreportentry'),
+        ("restapi", "0028_securityreport_securityreportentry"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='securityreport',
-            name='master_password_breached',
-            field=models.PositiveIntegerField(default=None, help_text='Has the master password been breached', null=True, verbose_name='Master password breached'),
+            model_name="securityreport",
+            name="master_password_breached",
+            field=models.PositiveIntegerField(
+                default=None,
+                help_text="Has the master password been breached",
+                null=True,
+                verbose_name="Master password breached",
+            ),
         ),
         migrations.AlterField(
-            model_name='securityreportentry',
-            name='breached',
-            field=models.PositiveIntegerField(default=None, null=True, verbose_name='Breached'),
+            model_name="securityreportentry",
+            name="breached",
+            field=models.PositiveIntegerField(
+                default=None, null=True, verbose_name="Breached"
+            ),
         ),
     ]

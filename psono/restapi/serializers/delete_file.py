@@ -14,11 +14,11 @@ class DeleteFileSerializer(serializers.Serializer):
     file_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
-        file_id = attrs.get('file_id')
+        file_id = attrs.get("file_id")
 
         # Check if the file exists
         try:
-            file = File.objects.only('id', 'secret_id').get(pk=file_id)
+            file = File.objects.only("id", "secret_id").get(pk=file_id)
         except File.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
@@ -29,10 +29,12 @@ class DeleteFileSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # Check if user has write permission on the secret
-        if not user_has_rights_on_secret(self.context['request'].user.id, file.secret_id, write=True):
+        if not user_has_rights_on_secret(
+            self.context["request"].user.id, file.secret_id, write=True
+        ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['file'] = file
+        attrs["file"] = file
 
         return attrs

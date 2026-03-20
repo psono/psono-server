@@ -1,6 +1,8 @@
 from google.oauth2 import service_account
 from django.conf import settings
 from django.utils.module_loading import import_string
+
+
 def get_avatar_storage():
     """
     Returns the avatar storage if a specific storage is configured, otherwise None
@@ -8,19 +10,22 @@ def get_avatar_storage():
     storage = None
     if settings.AVATAR_STORAGE:
         if (
-                settings.AVATAR_STORAGE['class'] == 'google_cloud' and
-                'kwargs' in settings.AVATAR_STORAGE and
-                'credentials' in settings.AVATAR_STORAGE['kwargs'] and
-                isinstance(settings.AVATAR_STORAGE['kwargs']['credentials'], dict)
+            settings.AVATAR_STORAGE["class"] == "google_cloud"
+            and "kwargs" in settings.AVATAR_STORAGE
+            and "credentials" in settings.AVATAR_STORAGE["kwargs"]
+            and isinstance(settings.AVATAR_STORAGE["kwargs"]["credentials"], dict)
         ):
-            settings.AVATAR_STORAGE['kwargs']['credentials'] = service_account.Credentials.from_service_account_info(
-                settings.AVATAR_STORAGE['kwargs']['credentials']
+            settings.AVATAR_STORAGE["kwargs"]["credentials"] = (
+                service_account.Credentials.from_service_account_info(
+                    settings.AVATAR_STORAGE["kwargs"]["credentials"]
+                )
             )
 
         storage = import_string(
-            settings.AVAILABLE_AVATAR_STORAGES[settings.AVATAR_STORAGE['class']]
-        )(**settings.AVATAR_STORAGE['kwargs'])
+            settings.AVAILABLE_AVATAR_STORAGES[settings.AVATAR_STORAGE["class"]]
+        )(**settings.AVATAR_STORAGE["kwargs"])
     return storage
+
 
 def delete_avatar_storage_of_user(user_id):
     """

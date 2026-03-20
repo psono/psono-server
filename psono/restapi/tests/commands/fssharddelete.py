@@ -7,12 +7,11 @@ from io import StringIO
 
 
 class CommandFSShardDeleteTestCase(TestCase):
-
     def setUp(self):
 
         self.shard = models.Fileserver_Shard.objects.create(
-            title='Some Title',
-            description='Some description',
+            title="Some Title",
+            description="Some description",
         )
 
     def test_delete_shard(self):
@@ -24,9 +23,6 @@ class CommandFSShardDeleteTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('fssharddelete', stdout=out, *args, **opts)
+        call_command("fssharddelete", stdout=out, *args, **opts)
 
         self.assertEqual(models.Fileserver_Shard.objects.count(), 0)
-
-
-

@@ -9,58 +9,56 @@ from ..app_settings import (
     UpdateFileRepositoryRightSerializer,
     DeleteFileRepositoryRightSerializer,
 )
-from ..models import (
-    File_Repository_Right
-)
+from ..models import File_Repository_Right
 from ..authentication import TokenAuthentication
 
-class FileRepositoryRightView(GenericAPIView):
 
+class FileRepositoryRightView(GenericAPIView):
     """
     Manages file repository rights
     """
 
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("PUT", "POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateFileRepositoryRightSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UpdateFileRepositoryRightSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteFileRepositoryRightSerializer
         return Serializer
 
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
-
     def put(self, request, *args, **kwargs):
         """
         Creates a new file repository right
         """
 
-        serializer = CreateFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = CreateFileRepositoryRightSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         file_repository_right = File_Repository_Right.objects.create(
-            user_id=serializer.validated_data['user_id'],
-            file_repository_id=serializer.validated_data['file_repository_id'],
-            read=serializer.validated_data['read'],
-            write=serializer.validated_data['write'],
-            grant=serializer.validated_data['grant'],
+            user_id=serializer.validated_data["user_id"],
+            file_repository_id=serializer.validated_data["file_repository_id"],
+            read=serializer.validated_data["read"],
+            write=serializer.validated_data["write"],
+            grant=serializer.validated_data["grant"],
             accepted=False,
         )
 
-        return Response({'file_repository_right_id': file_repository_right.id}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"file_repository_right_id": file_repository_right.id},
+            status=status.HTTP_201_CREATED,
+        )
 
     def post(self, request, *args, **kwargs):
         """
@@ -76,18 +74,17 @@ class FileRepositoryRightView(GenericAPIView):
         :rtype:
         """
 
-        serializer = UpdateFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UpdateFileRepositoryRightSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file_repository_right = serializer.validated_data['file_repository_right']
-        file_repository_right.read = serializer.validated_data['read']
-        file_repository_right.write = serializer.validated_data['write']
-        file_repository_right.grant = serializer.validated_data['grant']
+        file_repository_right = serializer.validated_data["file_repository_right"]
+        file_repository_right.read = serializer.validated_data["read"]
+        file_repository_right.write = serializer.validated_data["write"]
+        file_repository_right.grant = serializer.validated_data["grant"]
         file_repository_right.save()
 
         return Response({}, status=status.HTTP_200_OK)
@@ -102,15 +99,14 @@ class FileRepositoryRightView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteFileRepositoryRightSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteFileRepositoryRightSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file_repository_right = serializer.validated_data.get('file_repository_right')
+        file_repository_right = serializer.validated_data.get("file_repository_right")
 
         # delete it
         file_repository_right.delete()

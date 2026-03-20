@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0034_user_external_id_user_language'),
+        ("restapi", "0034_user_external_id_user_language"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='secret',
-            name='read_count',
-            field=models.IntegerField(default=0, help_text='A counter how often this secret has been read so far', verbose_name='Read Count'),
+            model_name="secret",
+            name="read_count",
+            field=models.IntegerField(
+                default=0,
+                help_text="A counter how often this secret has been read so far",
+                verbose_name="Read Count",
+            ),
         ),
     ]

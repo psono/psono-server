@@ -10,14 +10,14 @@ from ..app_settings import (
     VerifyEmailSerializer,
 )
 
-class VerifyEmailView(GenericAPIView):
 
+class VerifyEmailView(GenericAPIView):
     permission_classes = (AllowAny,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
     parser_classes = [JSONParser]
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return VerifyEmailSerializer
         return Serializer
 
@@ -35,15 +35,15 @@ class VerifyEmailView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
         user.is_email_active = True
         user.save()
 
-        return Response({"success": "Successfully activated."},
-                        status=status.HTTP_200_OK)
+        return Response(
+            {"success": "Successfully activated."}, status=status.HTTP_200_OK
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

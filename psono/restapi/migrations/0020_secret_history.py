@@ -6,26 +6,56 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0019_auto_20180320_1255'),
+        ("restapi", "0019_auto_20180320_1255"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Secret_History',
+            name="Secret_History",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('data', models.BinaryField()),
-                ('data_nonce', models.CharField(max_length=64, unique=True, verbose_name='data nonce')),
-                ('type', models.CharField(db_index=True, default='password', max_length=64)),
-                ('secret', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='history', to='restapi.Secret')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='secret_history', to='restapi.User')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                ("data", models.BinaryField()),
+                (
+                    "data_nonce",
+                    models.CharField(
+                        max_length=64, unique=True, verbose_name="data nonce"
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(db_index=True, default="password", max_length=64),
+                ),
+                (
+                    "secret",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="history",
+                        to="restapi.Secret",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="secret_history",
+                        to="restapi.User",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

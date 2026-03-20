@@ -26,18 +26,18 @@ from ..app_settings import (
 )
 from ..authentication import TokenAuthenticationAllowInactive
 
-class WebauthnVerifyView(GenericAPIView):
 
-    authentication_classes = (TokenAuthenticationAllowInactive, )
+class WebauthnVerifyView(GenericAPIView):
+    authentication_classes = (TokenAuthenticationAllowInactive,)
     permission_classes = (IsAuthenticated,)
     token_model = Token
-    allowed_methods = ('POST', 'PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'duo_verify'
+    allowed_methods = ("POST", "PUT", "OPTIONS", "HEAD")
+    throttle_scope = "duo_verify"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return WebauthnVerifySerializer
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return WebauthnVerifyInitSerializer
         return Serializer
 
@@ -46,33 +46,40 @@ class WebauthnVerifyView(GenericAPIView):
 
     def put(self, request, *args, **kwargs):
 
-        serializer = WebauthnVerifyInitSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = WebauthnVerifyInitSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        origin = serializer.validated_data.get('origin')
-        rp_id = serializer.validated_data.get('rp_id')
+        origin = serializer.validated_data.get("origin")
+        rp_id = serializer.validated_data.get("rp_id")
 
         allow_credentials = []
-        webauthns = Webauthn.objects.filter(user_id=request.user.id, origin=origin, active=True).only('credential_id')
+        webauthns = Webauthn.objects.filter(
+            user_id=request.user.id, origin=origin, active=True
+        ).only("credential_id")
         for w in webauthns:
-            allow_credentials.append(PublicKeyCredentialDescriptor(id=nacl.encoding.HexEncoder.decode(w.credential_id)))
+            allow_credentials.append(
+                PublicKeyCredentialDescriptor(
+                    id=nacl.encoding.HexEncoder.decode(w.credential_id)
+                )
+            )
 
         opts = generate_authentication_options(
             rp_id=rp_id,
             timeout=90000,
             allow_credentials=allow_credentials,
-            user_verification=UserVerificationRequirement.DISCOURAGED
+            user_verification=UserVerificationRequirement.DISCOURAGED,
         )
         options = json.loads(options_to_json(opts))
 
-        Webauthn.objects.filter(user_id=request.user.id, origin=origin, active=True).update(challenge=encrypt_with_db_secret(options['challenge']))
+        Webauthn.objects.filter(
+            user_id=request.user.id, origin=origin, active=True
+        ).update(challenge=encrypt_with_db_secret(options["challenge"]))
 
-        return Response({
-            "options": options
-        }, status=status.HTTP_200_OK)
+        return Response({"options": options}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """
@@ -91,12 +98,10 @@ class WebauthnVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Webauthn challenge has been solved, so lets update the token
-        token = serializer.validated_data['token']
+        token = serializer.validated_data["token"]
         token.webauthn_2fa = False
 
         if settings.MULTIFACTOR_ENABLED:

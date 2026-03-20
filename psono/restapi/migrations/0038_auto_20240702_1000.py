@@ -6,38 +6,61 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0037_avatar'),
+        ("restapi", "0037_avatar"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='ivalt_enabled',
-            field=models.BooleanField(default=False, help_text='True once iValt 2fa is enabled',
-                                      verbose_name='iValt 2FA enabled'),
+            model_name="user",
+            name="ivalt_enabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="True once iValt 2fa is enabled",
+                verbose_name="iValt 2FA enabled",
+            ),
         ),
         migrations.AddField(
-            model_name='token',
-            name='ivalt_2fa',
-            field=models.BooleanField(default=False, help_text='iValt 2fa',
-                                      verbose_name='iValt 2FA'),
+            model_name="token",
+            name="ivalt_2fa",
+            field=models.BooleanField(
+                default=False, help_text="iValt 2fa", verbose_name="iValt 2FA"
+            ),
         ),
         migrations.CreateModel(
-            name='Ivalt',
+            name="Ivalt",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('mobile', models.CharField(max_length=512, verbose_name='origin')),
-                ('active', models.BooleanField(default=True, help_text='Designates whether this 2FA is active or not.',
-                                               verbose_name='Is Active?')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ivalt',
-                                           to='restapi.user')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                ("mobile", models.CharField(max_length=512, verbose_name="origin")),
+                (
+                    "active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Designates whether this 2FA is active or not.",
+                        verbose_name="Is Active?",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="ivalt",
+                        to="restapi.user",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

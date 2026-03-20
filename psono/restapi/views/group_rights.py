@@ -6,9 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 from ..permissions import IsAuthenticated
 
-from ..models import (
-    Group_Share_Right
-)
+from ..models import Group_Share_Right
 
 from ..app_settings import (
     ReadGroupRightsSerializer,
@@ -16,14 +14,14 @@ from ..app_settings import (
 
 from ..authentication import TokenAuthentication
 
-class GroupRightsView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class GroupRightsView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadGroupRightsSerializer
         return Serializer
 
@@ -33,7 +31,7 @@ class GroupRightsView(GenericAPIView):
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def get(self, request, group_id = None, *args, **kwargs):
+    def get(self, request, group_id=None, *args, **kwargs):
         """
         Returns a list of all group rights accessible by the user or
         a list of all groups accessible by the user filtered for a specific group
@@ -50,46 +48,56 @@ class GroupRightsView(GenericAPIView):
         :rtype:
         """
 
-        serializer = ReadGroupRightsSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadGroupRightsSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-        group_id = serializer.validated_data.get('group_id', False)
+        group_id = serializer.validated_data.get("group_id", False)
 
         if group_id:
-            share_rights = Group_Share_Right.objects.only("group_id", "share_id", "read", "write", "grant", "expiration_date").filter(
-                group_id=group_id
-            ).filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now()))
+            share_rights = (
+                Group_Share_Right.objects.only(
+                    "group_id", "share_id", "read", "write", "grant", "expiration_date"
+                )
+                .filter(group_id=group_id)
+                .filter(
+                    Q(expiration_date__isnull=True)
+                    | Q(expiration_date__gt=timezone.now())
+                )
+            )
         else:
-            share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant, gr.expiration_date
+            share_rights = Group_Share_Right.objects.raw(
+                """SELECT gr.id, gr.group_id, gr.share_id, gr.read, gr.write, gr.grant, gr.expiration_date
                 FROM restapi_group_share_right gr
                     JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
                 WHERE ms.user_id = %(user_id)s
                     AND MS.accepted = TRUE
-                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""", {
-                'user_id': request.user.id,
-            })
+                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""",
+                {
+                    "user_id": request.user.id,
+                },
+            )
 
         group_rights = []
         for right in share_rights:
-            group_rights.append({
-                'id': str(right.id),
-                'group_id': str(right.group_id),
-                'share_id': str(right.share_id),
-                'read': right.read,
-                'write': right.write,
-                'grant': right.grant,
-                'expiration_date': right.expiration_date.isoformat() if right.expiration_date else None,
-            })
+            group_rights.append(
+                {
+                    "id": str(right.id),
+                    "group_id": str(right.group_id),
+                    "share_id": str(right.share_id),
+                    "read": right.read,
+                    "write": right.write,
+                    "grant": right.grant,
+                    "expiration_date": right.expiration_date.isoformat()
+                    if right.expiration_date
+                    else None,
+                }
+            )
 
-        return Response({
-            'group_rights': group_rights
-        }, status=status.HTTP_200_OK)
+        return Response({"group_rights": group_rights}, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

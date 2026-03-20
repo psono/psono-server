@@ -3,12 +3,13 @@ from restapi.fields import UUIDField
 
 from restapi.models import Link_Share
 
+
 class DeleteLinkShareSerializer(serializers.Serializer):
     link_share_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        link_share_id = attrs.get('link_share_id')
+        link_share_id = attrs.get("link_share_id")
 
         try:
             link_share = Link_Share.objects.get(pk=link_share_id)
@@ -16,6 +17,6 @@ class DeleteLinkShareSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['link_share'] = link_share
+        attrs["link_share"] = link_share
 
         return attrs

@@ -9,15 +9,15 @@ from restapi.authentication import FileserverAuthentication
 from ..permissions import IsFileserver
 from ..app_settings import FileserverRevokeDownloadSerializer
 
-class RevokeDownloadView(GenericAPIView):
 
-    authentication_classes = (FileserverAuthentication, )
+class RevokeDownloadView(GenericAPIView):
+    authentication_classes = (FileserverAuthentication,)
     permission_classes = (IsFileserver,)
-    allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver_download'
+    allowed_methods = ("PUT", "OPTIONS", "HEAD")
+    throttle_scope = "fileserver_download"
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return FileserverRevokeDownloadSerializer
         return Serializer
 
@@ -29,21 +29,26 @@ class RevokeDownloadView(GenericAPIView):
         Unpacks the authorization information. Checks the user permission (e.g. quota).
         """
 
-        serializer = FileserverRevokeDownloadSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverRevokeDownloadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file_transfer = serializer.validated_data.get('file_transfer')
-        file_chunk = serializer.validated_data.get('file_chunk')
+        file_transfer = serializer.validated_data.get("file_transfer")
+        file_chunk = serializer.validated_data.get("file_chunk")
 
         with transaction.atomic():
-            file_transfer.size_transferred = F('size_transferred') - file_chunk.size
-            file_transfer.chunk_count_transferred = F('chunk_count_transferred') - 1
-            file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
+            file_transfer.size_transferred = F("size_transferred") - file_chunk.size
+            file_transfer.chunk_count_transferred = F("chunk_count_transferred") - 1
+            file_transfer.save(
+                update_fields=[
+                    "size_transferred",
+                    "chunk_count_transferred",
+                    "write_date",
+                ]
+            )
 
         return Response({}, status=status.HTTP_200_OK)
 

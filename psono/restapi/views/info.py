@@ -7,10 +7,11 @@ from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from django.conf import settings
 
+
 class InfoView(GenericAPIView):
     permission_classes = (AllowAny,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
-    throttle_scope = 'info'
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
+    throttle_scope = "info"
     parser_classes = [JSONParser]
 
     def get_serializer_class(self):

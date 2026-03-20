@@ -25,19 +25,20 @@ from ..app_settings import (
     ReadSecretWithAPIKeySerializer,
 )
 
-class APIKeyAccessSecretView(GenericAPIView):
 
+class APIKeyAccessSecretView(GenericAPIView):
     renderer_classes = (PlainJSONRenderer,)
     permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadSecretWithAPIKeySerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UpdateSecretWithAPIKeySerializer
         return Serializer
+
     parser_classes = [JSONParser]
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -47,49 +48,55 @@ class APIKeyAccessSecretView(GenericAPIView):
         Updates a secret.
         """
 
-        serializer = UpdateSecretWithAPIKeySerializer(data=request.data, context=self.get_serializer_context())
-
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        secret = serializer.validated_data.get('secret')
-        user = serializer.validated_data.get('user')
-
-        Secret_History.objects.create(
-            secret = secret,
-            data = secret.data,
-            data_nonce = secret.data_nonce,
-            user = user,
-            type = secret.type,
-            callback_url = secret.callback_url,
-            callback_user = secret.callback_user,
-            callback_pass = secret.callback_pass,
+        serializer = UpdateSecretWithAPIKeySerializer(
+            data=request.data, context=self.get_serializer_context()
         )
 
-        if serializer.validated_data['data']:
-            secret.data = serializer.validated_data['data'].encode()
-        if serializer.validated_data['data_nonce']:
-            secret.data_nonce = str(serializer.validated_data['data_nonce'])
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if serializer.validated_data.get('callback_url', None) is not None:
-            secret.callback_url = serializer.validated_data['callback_url']
-        if serializer.validated_data.get('callback_user', None) is not None:
-            secret.callback_user = serializer.validated_data['callback_user']
-        if serializer.validated_data.get('callback_pass', None) is not None:
-            secret.callback_pass = encrypt_with_db_secret(serializer.validated_data['callback_pass'])
+        secret = serializer.validated_data.get("secret")
+        user = serializer.validated_data.get("user")
+
+        Secret_History.objects.create(
+            secret=secret,
+            data=secret.data,
+            data_nonce=secret.data_nonce,
+            user=user,
+            type=secret.type,
+            callback_url=secret.callback_url,
+            callback_user=secret.callback_user,
+            callback_pass=secret.callback_pass,
+        )
+
+        if serializer.validated_data["data"]:
+            secret.data = serializer.validated_data["data"].encode()
+        if serializer.validated_data["data_nonce"]:
+            secret.data_nonce = str(serializer.validated_data["data_nonce"])
+
+        if serializer.validated_data.get("callback_url", None) is not None:
+            secret.callback_url = serializer.validated_data["callback_url"]
+        if serializer.validated_data.get("callback_user", None) is not None:
+            secret.callback_user = serializer.validated_data["callback_user"]
+        if serializer.validated_data.get("callback_pass", None) is not None:
+            secret.callback_pass = encrypt_with_db_secret(
+                serializer.validated_data["callback_pass"]
+            )
 
         secret.save()
 
-        if secret.callback_url and not settings.DISABLE_CALLBACKS and is_allowed_callback_url(secret.callback_url):
-            headers = {'content-type': 'application/json'}
+        if (
+            secret.callback_url
+            and not settings.DISABLE_CALLBACKS
+            and is_allowed_callback_url(secret.callback_url)
+        ):
+            headers = {"content-type": "application/json"}
             data = {
-                'event': 'UPDATE_SECRET_SUCCESS',
-                'secret_id': str(secret.id),
+                "event": "UPDATE_SECRET_SUCCESS",
+                "secret_id": str(secret.id),
             }
 
-            callback_pass = ''  #nosec -- not [B105:hardcoded_password_string]
+            callback_pass = ""  # nosec -- not [B105:hardcoded_password_string]
             if secret.callback_user and secret.callback_pass:
                 try:
                     callback_pass = decrypt_with_db_secret(secret.callback_pass)
@@ -102,8 +109,14 @@ class APIKeyAccessSecretView(GenericAPIView):
                 auth = None
 
             try:
-                requests.post(secret.callback_url, data=data, headers=headers, auth=auth, timeout=5.0)
-            except: # nosec
+                requests.post(
+                    secret.callback_url,
+                    data=data,
+                    headers=headers,
+                    auth=auth,
+                    timeout=5.0,
+                )
+            except:  # nosec
                 pass
 
         return Response(json.dumps({}), status=status.HTTP_200_OK)
@@ -113,34 +126,41 @@ class APIKeyAccessSecretView(GenericAPIView):
         Returns a secret and decrypts it for the client.
         """
 
-        serializer = ReadSecretWithAPIKeySerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadSecretWithAPIKeySerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        secret = serializer.validated_data.get('secret')
-        secret_key = serializer.validated_data.get('secret_key')
-        json_filter = serializer.validated_data.get('json_filter')
-        api_key_secret = serializer.validated_data.get('api_key_secret')
+        secret = serializer.validated_data.get("secret")
+        secret_key = serializer.validated_data.get("secret_key")
+        json_filter = serializer.validated_data.get("json_filter")
+        api_key_secret = serializer.validated_data.get("api_key_secret")
 
         read_count = secret.read_count
-        secret.read_count = F('read_count') + 1
+        secret.read_count = F("read_count") + 1
         secret.save(update_fields=["read_count"])
 
         if not secret_key:
-            return Response(json.dumps({
-                'data': secret.data.decode(),
-                'data_nonce': str(secret.data_nonce),
-                'secret_key': api_key_secret.secret_key,
-                'secret_key_nonce': api_key_secret.secret_key_nonce,
-                'read_count': read_count + 1,
-            }), status=status.HTTP_200_OK)
+            return Response(
+                json.dumps(
+                    {
+                        "data": secret.data.decode(),
+                        "data_nonce": str(secret.data_nonce),
+                        "secret_key": api_key_secret.secret_key,
+                        "secret_key_nonce": api_key_secret.secret_key_nonce,
+                        "read_count": read_count + 1,
+                    }
+                ),
+                status=status.HTTP_200_OK,
+            )
 
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        decrypted_data_json = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(secret.data),
-                                        nacl.encoding.HexEncoder.decode(secret.data_nonce))
+        decrypted_data_json = crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(secret.data),
+            nacl.encoding.HexEncoder.decode(secret.data_nonce),
+        )
 
         if not json_filter:
             return Response(decrypted_data_json, status=status.HTTP_200_OK)
@@ -148,7 +168,6 @@ class APIKeyAccessSecretView(GenericAPIView):
         filtered_data = filter_as_json(decrypted_data_json, json_filter)
 
         return Response(filtered_data, status=status.HTTP_200_OK)
-
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

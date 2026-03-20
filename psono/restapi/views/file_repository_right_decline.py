@@ -12,13 +12,12 @@ from ..app_settings import (
 
 
 class FileRepositoryRightDeclineView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return FileRepositoryRightDeclineSerializer
         return Serializer
 
@@ -33,15 +32,16 @@ class FileRepositoryRightDeclineView(GenericAPIView):
         It deletes a users own FileRepositoryRight.
         """
 
-        serializer = FileRepositoryRightDeclineSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileRepositoryRightDeclineSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file_repository_right_obj = serializer.validated_data.get('file_repository_right_obj')
+        file_repository_right_obj = serializer.validated_data.get(
+            "file_repository_right_obj"
+        )
 
         file_repository_right_obj.delete()
 

@@ -7,25 +7,24 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0004_auto_20170423_1701'),
+        ("restapi", "0004_auto_20170423_1701"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='device_description',
+            model_name="token",
+            name="device_description",
             field=models.CharField(max_length=256, null=True),
         ),
         migrations.AddField(
-            model_name='token',
-            name='device_fingerprint',
+            model_name="token",
+            name="device_fingerprint",
             field=models.CharField(max_length=128, null=True),
         ),
         migrations.AddField(
-            model_name='token',
-            name='id',
+            model_name="token",
+            name="id",
             field=models.UUIDField(db_index=True, default=uuid.uuid4, editable=False),
         ),
     ]

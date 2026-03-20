@@ -18,21 +18,18 @@ from datetime import timedelta
 import json
 import binascii
 
-from ..models import (
-    Token
-)
-from ..app_settings import (
-    APIKeyLoginSerializer
-)
+from ..models import Token
+from ..app_settings import APIKeyLoginSerializer
+
 
 class APIKeyLoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'api_key_login'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "api_key_login"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return APIKeyLoginSerializer
         return Serializer
 
@@ -54,12 +51,9 @@ class APIKeyLoginView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        api_key = serializer.validated_data['api_key']
+        api_key = serializer.validated_data["api_key"]
 
         if not settings.ALLOW_MULTIPLE_SESSIONS:
             Token.objects.filter(user=api_key.user).delete()
@@ -70,10 +64,11 @@ class APIKeyLoginView(GenericAPIView):
             duo_2fa=False,
             yubikey_otp_2fa=False,
             webauthn_2fa=False,
-            device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
-            device_description=serializer.validated_data.get('device_description', ''),
-            client_date=serializer.validated_data.get('device_time'),
-            valid_till=timezone.now() + timedelta(seconds=serializer.validated_data.get('session_duration')),
+            device_fingerprint=serializer.validated_data.get("device_fingerprint", ""),
+            device_description=serializer.validated_data.get("device_description", ""),
+            client_date=serializer.validated_data.get("device_time"),
+            valid_till=timezone.now()
+            + timedelta(seconds=serializer.validated_data.get("session_duration")),
             active=True,
             read=api_key.read,
             write=api_key.write,
@@ -84,8 +79,12 @@ class APIKeyLoginView(GenericAPIView):
 
         # our hex encoded public / private keyssession_duration
         server_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        server_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = serializer.validated_data['user_session_public_key']
+        server_session_public_key_hex = box.public_key.encode(
+            encoder=nacl.encoding.HexEncoder
+        )
+        user_session_public_key_hex = serializer.validated_data[
+            "user_session_public_key"
+        ]
 
         response = {
             "token": token.clear_text_key,
@@ -98,38 +97,49 @@ class APIKeyLoginView(GenericAPIView):
             "user": {
                 "username": api_key.user.username,
                 "public_key": api_key.user.public_key,
-            }
+            },
         }
 
         if not api_key.restrict_to_secrets:
-            response['user']['private_key'] = api_key.user_private_key
-            response['user']['private_key_nonce'] = api_key.user_private_key_nonce
-            response['user']['secret_key'] = api_key.user_secret_key
-            response['user']['secret_key_nonce'] = api_key.user_secret_key_nonce
+            response["user"]["private_key"] = api_key.user_private_key
+            response["user"]["private_key_nonce"] = api_key.user_private_key_nonce
+            response["user"]["secret_key"] = api_key.user_secret_key
+            response["user"]["secret_key_nonce"] = api_key.user_secret_key_nonce
 
-        server_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        server_crypto_box = Box(
+            PrivateKey(
+                server_session_private_key_hex, encoder=nacl.encoding.HexEncoder
+            ),
+            PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder),
+        )
 
         login_info_nonce = nacl.utils.random(Box.NONCE_SIZE)
         login_info_nonce_hex = nacl.encoding.HexEncoder.encode(login_info_nonce)
-        encrypted = server_crypto_box.encrypt(json.dumps(response).encode(), login_info_nonce)
-        encrypted_login_info = encrypted[len(login_info_nonce):]
+        encrypted = server_crypto_box.encrypt(
+            json.dumps(response).encode(), login_info_nonce
+        )
+        encrypted_login_info = encrypted[len(login_info_nonce) :]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
 
-        signing_box = nacl.signing.SigningKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder)
+        signing_box = nacl.signing.SigningKey(
+            settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder
+        )
 
         # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
         signed = signing_box.sign(encrypted_login_info_hex)
         signature = binascii.hexlify(signed.signature)
 
-        return Response({
-            'login_info': encrypted_login_info_hex,
-            'login_info_signature': signature,
-            'login_info_nonce': login_info_nonce_hex,
-            'server_session_public_key': server_session_public_key_hex.decode('utf-8')
-        },status=status.HTTP_200_OK)
-
-
+        return Response(
+            {
+                "login_info": encrypted_login_info_hex,
+                "login_info_signature": signature,
+                "login_info_nonce": login_info_nonce_hex,
+                "server_session_public_key": server_session_public_key_hex.decode(
+                    "utf-8"
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

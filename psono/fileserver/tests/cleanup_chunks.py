@@ -8,9 +8,15 @@ from restapi.tests.base import APITestCaseExtended
 from restapi.authentication import TokenAuthentication
 
 from restapi.models import (
-    Fileserver_Cluster, Fileserver_Shard, Fileserver_Cluster_Shard_Link,
-    Fileserver_Cluster_Members, Fileserver_Cluster_Member_Shard_Link,
-    User, File, File_Chunk, File_Link
+    Fileserver_Cluster,
+    Fileserver_Shard,
+    Fileserver_Cluster_Shard_Link,
+    Fileserver_Cluster_Members,
+    Fileserver_Cluster_Member_Shard_Link,
+    User,
+    File,
+    File_Chunk,
+    File_Link,
 )
 from restapi.utils import encrypt_with_db_secret
 
@@ -32,14 +38,18 @@ class CleanupChunksTest(APITestCaseExtended):
     def setUp(self):
         # Create cluster
         box = PrivateKey.generate()
-        self.cluster_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder).decode()
-        self.cluster_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+        self.cluster_private_key_hex = box.encode(
+            encoder=nacl.encoding.HexEncoder
+        ).decode()
+        self.cluster_public_key_hex = box.public_key.encode(
+            encoder=nacl.encoding.HexEncoder
+        ).decode()
 
         private_key = encrypt_with_db_secret(self.cluster_private_key_hex)
         public_key = encrypt_with_db_secret(self.cluster_public_key_hex)
 
         self.cluster1 = Fileserver_Cluster.objects.create(
-            title='Test Cluster',
+            title="Test Cluster",
             auth_public_key=public_key,
             auth_private_key=private_key,
             file_size_limit=0,
@@ -47,14 +57,14 @@ class CleanupChunksTest(APITestCaseExtended):
 
         # Create shard
         self.shard1 = Fileserver_Shard.objects.create(
-            title='Test Shard',
-            description='Test Shard Description',
+            title="Test Shard",
+            description="Test Shard Description",
             active=True,
         )
 
         self.shard2 = Fileserver_Shard.objects.create(
-            title='Test Shard 2',
-            description='Test Shard 2 Description',
+            title="Test Shard 2",
+            description="Test Shard 2 Description",
             active=True,
         )
 
@@ -68,14 +78,18 @@ class CleanupChunksTest(APITestCaseExtended):
         )
 
         # Create fileserver member
-        token_hash = TokenAuthentication.user_token_to_token_hash('test-token')
+        token_hash = TokenAuthentication.user_token_to_token_hash("test-token")
         self.fileserver1 = Fileserver_Cluster_Members.objects.create(
-            create_ip='127.0.0.1',
+            create_ip="127.0.0.1",
             fileserver_cluster=self.cluster1,
             key=token_hash,
-            public_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            secret_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            url='https://fs01.example.com/fileserver',
+            public_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            secret_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            url="https://fs01.example.com/fileserver",
             read=True,
             write=True,
             delete_capability=True,
@@ -93,17 +107,17 @@ class CleanupChunksTest(APITestCaseExtended):
 
         # Create a user for file ownership
         self.user = User.objects.create(
-            email='test@example.com',
-            email_bcrypt='',
-            username='testuser',
-            authkey='abc',
-            public_key='public_key',
-            private_key='private_key',
-            private_key_nonce='private_key_nonce',
-            secret_key='secret_key',
-            secret_key_nonce='secret_key_nonce',
-            user_sauce='90272aaf01a2d525f74a',
-            is_email_active=True
+            email="test@example.com",
+            email_bcrypt="",
+            username="testuser",
+            authkey="abc",
+            public_key="public_key",
+            private_key="private_key",
+            private_key_nonce="private_key_nonce",
+            secret_key="secret_key",
+            secret_key_nonce="secret_key_nonce",
+            user_sauce="90272aaf01a2d525f74a",
+            is_email_active=True,
         )
 
         # Create file with delete_date in the past
@@ -117,7 +131,7 @@ class CleanupChunksTest(APITestCaseExtended):
 
         # Create file chunks
         self.chunk1 = File_Chunk.objects.create(
-            hash_checksum='chunk1hash',
+            hash_checksum="chunk1hash",
             position=0,
             user=self.user,
             file=self.file1,
@@ -125,7 +139,7 @@ class CleanupChunksTest(APITestCaseExtended):
         )
 
         self.chunk2 = File_Chunk.objects.create(
-            hash_checksum='chunk2hash',
+            hash_checksum="chunk2hash",
             position=1,
             user=self.user,
             file=self.file1,
@@ -136,20 +150,20 @@ class CleanupChunksTest(APITestCaseExtended):
         """
         Tests GET request to retrieve chunks that should be cleaned up
         """
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('shards', response.data)
-        self.assertIsInstance(response.data['shards'], dict)
+        self.assertIn("shards", response.data)
+        self.assertIsInstance(response.data["shards"], dict)
 
         # Check that our shard is in the response
         shard_id_str = str(self.shard1.id)
-        if shard_id_str in response.data['shards']:
-            self.assertIn('chunk1hash', response.data['shards'][shard_id_str])
-            self.assertIn('chunk2hash', response.data['shards'][shard_id_str])
+        if shard_id_str in response.data["shards"]:
+            self.assertIn("chunk1hash", response.data["shards"][shard_id_str])
+            self.assertIn("chunk2hash", response.data["shards"][shard_id_str])
 
     def test_get_cleanup_chunks_no_delete_capability(self):
         """
@@ -159,43 +173,49 @@ class CleanupChunksTest(APITestCaseExtended):
         self.member_shard_link.delete_capability = False
         self.member_shard_link.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['shards'], {})
+        self.assertEqual(response.data["shards"], {})
 
     def test_get_cleanup_chunks_expired_fileserver(self):
         """
         Tests GET request with expired fileserver
         """
         # Expire the fileserver
-        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10)
+        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(
+            seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10
+        )
         self.fileserver1.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['shards'], {})
+        self.assertEqual(response.data["shards"], {})
 
     def test_get_cleanup_chunks_multiple_fileservers(self):
         """
         Tests GET request with multiple fileservers for position calculation
         """
         # Create second fileserver
-        token_hash2 = TokenAuthentication.user_token_to_token_hash('test-token-2')
+        token_hash2 = TokenAuthentication.user_token_to_token_hash("test-token-2")
         fileserver2 = Fileserver_Cluster_Members.objects.create(
-            create_ip='127.0.0.2',
+            create_ip="127.0.0.2",
             fileserver_cluster=self.cluster1,
             key=token_hash2,
-            public_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            secret_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            url='https://fs02.example.com/fileserver',
+            public_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            secret_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            url="https://fs02.example.com/fileserver",
             read=True,
             write=True,
             delete_capability=True,
@@ -210,25 +230,25 @@ class CleanupChunksTest(APITestCaseExtended):
             delete_capability=True,
         )
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('shards', response.data)
+        self.assertIn("shards", response.data)
 
     def test_post_cleanup_chunks_success(self):
         """
         Tests POST request to confirm chunk deletion
         """
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
+            "deleted_chunks": [
                 {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash', 'chunk2hash']
+                    "shard_id": str(self.shard1.id),
+                    "chunks": ["chunk1hash", "chunk2hash"],
                 }
             ]
         }
@@ -239,8 +259,12 @@ class CleanupChunksTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Verify chunks were deleted
-        self.assertEqual(File_Chunk.objects.filter(hash_checksum='chunk1hash').count(), 0)
-        self.assertEqual(File_Chunk.objects.filter(hash_checksum='chunk2hash').count(), 0)
+        self.assertEqual(
+            File_Chunk.objects.filter(hash_checksum="chunk1hash").count(), 0
+        )
+        self.assertEqual(
+            File_Chunk.objects.filter(hash_checksum="chunk2hash").count(), 0
+        )
 
         # Verify file was deleted (since it has no chunks left and delete_date is in the past)
         self.assertEqual(File.objects.filter(id=self.file1.id).count(), 0)
@@ -253,14 +277,11 @@ class CleanupChunksTest(APITestCaseExtended):
         self.member_shard_link.delete_capability = False
         self.member_shard_link.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
-                {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash']
-                }
+            "deleted_chunks": [
+                {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]}
             ]
         }
 
@@ -283,21 +304,21 @@ class CleanupChunksTest(APITestCaseExtended):
         )
 
         chunk3 = File_Chunk.objects.create(
-            hash_checksum='chunk3hash',
+            hash_checksum="chunk3hash",
             position=0,
             user=self.user,
             file=file2,
             size=512,
         )
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         # Try to delete chunk from shard2 while claiming it's from shard1
         data = {
-            'deleted_chunks': [
+            "deleted_chunks": [
                 {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk3hash']  # This chunk belongs to shard2
+                    "shard_id": str(self.shard1.id),
+                    "chunks": ["chunk3hash"],  # This chunk belongs to shard2
                 }
             ]
         }
@@ -312,17 +333,16 @@ class CleanupChunksTest(APITestCaseExtended):
         Tests POST request with expired fileserver
         """
         # Expire the fileserver
-        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10)
+        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(
+            seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10
+        )
         self.fileserver1.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
-                {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash']
-                }
+            "deleted_chunks": [
+                {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]}
             ]
         }
 
@@ -338,14 +358,11 @@ class CleanupChunksTest(APITestCaseExtended):
         self.fileserver1.write = False
         self.fileserver1.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
-                {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash']
-                }
+            "deleted_chunks": [
+                {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]}
             ]
         }
 
@@ -361,14 +378,11 @@ class CleanupChunksTest(APITestCaseExtended):
         self.shard1.active = False
         self.shard1.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
-                {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash']
-                }
+            "deleted_chunks": [
+                {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]}
             ]
         }
 
@@ -381,11 +395,9 @@ class CleanupChunksTest(APITestCaseExtended):
         """
         Tests POST request with empty deleted_chunks list
         """
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
-        data = {
-            'deleted_chunks': []
-        }
+        data = {"deleted_chunks": []}
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.post(url, data)
@@ -396,7 +408,7 @@ class CleanupChunksTest(APITestCaseExtended):
         """
         Tests that PUT method is not allowed
         """
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.put(url, {})
@@ -407,7 +419,7 @@ class CleanupChunksTest(APITestCaseExtended):
         """
         Tests that DELETE method is not allowed
         """
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.delete(url)
@@ -418,14 +430,18 @@ class CleanupChunksTest(APITestCaseExtended):
         """
         Tests position=None case triggering continue statement
         """
-        token_hash2 = TokenAuthentication.user_token_to_token_hash('test-token-valid')
+        token_hash2 = TokenAuthentication.user_token_to_token_hash("test-token-valid")
         fileserver2 = Fileserver_Cluster_Members.objects.create(
-            create_ip='127.0.0.2',
+            create_ip="127.0.0.2",
             fileserver_cluster=self.cluster1,
             key=token_hash2,
-            public_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            secret_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            url='https://fs02.example.com/fileserver',
+            public_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            secret_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            url="https://fs02.example.com/fileserver",
             read=True,
             write=True,
             delete_capability=True,
@@ -440,16 +456,18 @@ class CleanupChunksTest(APITestCaseExtended):
             delete_capability=True,
         )
 
-        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10)
+        self.fileserver1.valid_till = timezone.now() - datetime.timedelta(
+            seconds=settings.FILESERVER_ALIVE_TIMEOUT + 10
+        )
         self.fileserver1.save()
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         self.client.force_authenticate(user=self.fileserver1)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['shards'], {})
+        self.assertEqual(response.data["shards"], {})
 
     def test_get_serializer_class_non_post(self):
         """
@@ -459,7 +477,7 @@ class CleanupChunksTest(APITestCaseExtended):
         from rest_framework.test import APIRequestFactory
 
         factory = APIRequestFactory()
-        request = factory.get(reverse('fileserver_cleanup_chunks'))
+        request = factory.get(reverse("fileserver_cleanup_chunks"))
         request.user = self.fileserver1
 
         view = CleanupChunksView()
@@ -467,6 +485,7 @@ class CleanupChunksTest(APITestCaseExtended):
 
         serializer_class = view.get_serializer_class()
         from rest_framework.serializers import Serializer
+
         self.assertEqual(serializer_class, Serializer)
 
     def test_post_cleanup_chunks_multiple_shards(self):
@@ -500,25 +519,19 @@ class CleanupChunksTest(APITestCaseExtended):
         )
 
         chunk3 = File_Chunk.objects.create(
-            hash_checksum='chunk3hash',
+            hash_checksum="chunk3hash",
             position=0,
             user=self.user,
             file=file2,
             size=512,
         )
 
-        url = reverse('fileserver_cleanup_chunks')
+        url = reverse("fileserver_cleanup_chunks")
 
         data = {
-            'deleted_chunks': [
-                {
-                    'shard_id': str(self.shard1.id),
-                    'chunks': ['chunk1hash']
-                },
-                {
-                    'shard_id': str(self.shard2.id),
-                    'chunks': ['chunk3hash']
-                }
+            "deleted_chunks": [
+                {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]},
+                {"shard_id": str(self.shard2.id), "chunks": ["chunk3hash"]},
             ]
         }
 
@@ -528,5 +541,9 @@ class CleanupChunksTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Verify chunks were deleted
-        self.assertEqual(File_Chunk.objects.filter(hash_checksum='chunk1hash').count(), 0)
-        self.assertEqual(File_Chunk.objects.filter(hash_checksum='chunk3hash').count(), 0)
+        self.assertEqual(
+            File_Chunk.objects.filter(hash_checksum="chunk1hash").count(), 0
+        )
+        self.assertEqual(
+            File_Chunk.objects.filter(hash_checksum="chunk3hash").count(), 0
+        )

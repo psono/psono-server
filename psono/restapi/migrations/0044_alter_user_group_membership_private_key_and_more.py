@@ -2,47 +2,71 @@
 
 from django.db import migrations, models
 
+
 def update_is_staff(apps, schema_editor):
-    User = apps.get_model('restapi', 'User')
+    User = apps.get_model("restapi", "User")
     User.objects.filter(is_staff=False, is_superuser=True).update(is_staff=True)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0043_group_is_managed'),
+        ("restapi", "0043_group_is_managed"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='private_key',
-            field=models.CharField(help_text='The Private Key encrypted with the (public or secret) key of the user.', max_length=256, null=True, verbose_name='Private key'),
+            model_name="user_group_membership",
+            name="private_key",
+            field=models.CharField(
+                help_text="The Private Key encrypted with the (public or secret) key of the user.",
+                max_length=256,
+                null=True,
+                verbose_name="Private key",
+            ),
         ),
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='private_key_nonce',
-            field=models.CharField(max_length=64, null=True, verbose_name='Private Key nonce'),
+            model_name="user_group_membership",
+            name="private_key_nonce",
+            field=models.CharField(
+                max_length=64, null=True, verbose_name="Private Key nonce"
+            ),
         ),
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='private_key_type',
-            field=models.CharField(default='asymmetric', help_text='Key type of the private key, either "symmetric", or "asymmetric"', max_length=16, null=True, verbose_name='Private Key type'),
+            model_name="user_group_membership",
+            name="private_key_type",
+            field=models.CharField(
+                default="asymmetric",
+                help_text='Key type of the private key, either "symmetric", or "asymmetric"',
+                max_length=16,
+                null=True,
+                verbose_name="Private Key type",
+            ),
         ),
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='secret_key',
-            field=models.CharField(help_text='The secret key encrypted with the (public or secret) key of the user.', max_length=256, null=True, verbose_name='Secret Key'),
+            model_name="user_group_membership",
+            name="secret_key",
+            field=models.CharField(
+                help_text="The secret key encrypted with the (public or secret) key of the user.",
+                max_length=256,
+                null=True,
+                verbose_name="Secret Key",
+            ),
         ),
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='secret_key_nonce',
-            field=models.CharField(max_length=64, null=True, verbose_name='Key nonce'),
+            model_name="user_group_membership",
+            name="secret_key_nonce",
+            field=models.CharField(max_length=64, null=True, verbose_name="Key nonce"),
         ),
         migrations.AlterField(
-            model_name='user_group_membership',
-            name='secret_key_type',
-            field=models.CharField(default='asymmetric', help_text='Key type of the secret key, either "symmetric", or "asymmetric"', max_length=16, null=True, verbose_name='Key type'),
+            model_name="user_group_membership",
+            name="secret_key_type",
+            field=models.CharField(
+                default="asymmetric",
+                help_text='Key type of the secret key, either "symmetric", or "asymmetric"',
+                max_length=16,
+                null=True,
+                verbose_name="Key type",
+            ),
         ),
         migrations.RunPython(update_is_staff),
     ]

@@ -15,49 +15,48 @@ from nacl.public import PrivateKey, PublicKey, Box
 
 
 class ActivateEmergencyLoginSerializer(serializers.Serializer):
-
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
+    username = serializers.EmailField(
+        required=True, error_messages={"invalid": "INVALID_USERNAME_FORMAT"}
+    )
     emergency_authkey = serializers.CharField(required=True)
     update_data = serializers.CharField(required=True)
     update_data_nonce = serializers.CharField(max_length=64, required=True)
-
-
 
     def validate_update_data(self, value):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
-
 
     def validate_update_data_nonce(self, value):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
 
     def validate(self, attrs: dict) -> dict:
 
-        username = attrs.get('username')
-        emergency_authkey = attrs.get('emergency_authkey')
+        username = attrs.get("username")
+        emergency_authkey = attrs.get("emergency_authkey")
 
-        update_data = nacl.encoding.HexEncoder.decode(attrs.get('update_data'))
-        update_data_nonce = nacl.encoding.HexEncoder.decode(attrs.get('update_data_nonce'))
+        update_data = nacl.encoding.HexEncoder.decode(attrs.get("update_data"))
+        update_data_nonce = nacl.encoding.HexEncoder.decode(
+            attrs.get("update_data_nonce")
+        )
 
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             msg = "USERNAME_OR_RECOVERY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
-
 
         emergency_codes = Emergency_Code.objects.filter(user_id=user.id)
 
@@ -73,42 +72,50 @@ class ActivateEmergencyLoginSerializer(serializers.Serializer):
             msg = "USERNAME_OR_EMERGENCY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
-
-        if valid_emergency_code.verifier_issue_date + datetime.timedelta(0,settings.RECOVERY_VERIFIER_TIME_VALID) < timezone.now():
+        if (
+            valid_emergency_code.verifier_issue_date
+            + datetime.timedelta(0, settings.RECOVERY_VERIFIER_TIME_VALID)
+            < timezone.now()
+        ):
             msg = "VALIDATOR_EXPIRED"
             raise exceptions.ValidationError(msg)
 
         try:
-            crypto_box = Box(PrivateKey(valid_emergency_code.verifier, encoder=nacl.encoding.HexEncoder),
-                             PublicKey(user.public_key, encoder=nacl.encoding.HexEncoder))
+            crypto_box = Box(
+                PrivateKey(
+                    valid_emergency_code.verifier, encoder=nacl.encoding.HexEncoder
+                ),
+                PublicKey(user.public_key, encoder=nacl.encoding.HexEncoder),
+            )
 
-            login_info = json.loads(crypto_box.decrypt(update_data, update_data_nonce).decode())
+            login_info = json.loads(
+                crypto_box.decrypt(update_data, update_data_nonce).decode()
+            )
 
         except:
             msg = "VALIDATOR_FAILED"
             raise exceptions.ValidationError(msg)
 
-
         if not valid_emergency_code.user.is_active:
-            msg = 'USER_ACCOUNT_IS_DISABLED'
+            msg = "USER_ACCOUNT_IS_DISABLED"
             raise exceptions.ValidationError(msg)
 
         if not valid_emergency_code.user.is_email_active:
-            msg = 'EMAIL_NOT_YET_VERIFIED'
+            msg = "EMAIL_NOT_YET_VERIFIED"
             raise exceptions.ValidationError(msg)
 
-        attrs['emergency_code'] = valid_emergency_code
-        attrs['user'] = user
-        attrs['session_duration'] = settings.DEFAULT_TOKEN_TIME_VALID
+        attrs["emergency_code"] = valid_emergency_code
+        attrs["user"] = user
+        attrs["session_duration"] = settings.DEFAULT_TOKEN_TIME_VALID
 
-        attrs['device_fingerprint'] = login_info.get('device_fingerprint', '')
-        attrs['device_description'] = login_info.get('device_description', '')
-        attrs['user_session_public_key'] = login_info.get('session_public_key', '')
+        attrs["device_fingerprint"] = login_info.get("device_fingerprint", "")
+        attrs["device_description"] = login_info.get("device_description", "")
+        attrs["user_session_public_key"] = login_info.get("session_public_key", "")
 
-        device_time = login_info.get('device_time', None)
+        device_time = login_info.get("device_time", None)
         if device_time is None:
-            attrs['device_time'] = None
+            attrs["device_time"] = None
         else:
-            attrs['device_time'] = dateutil.parser.parse(device_time)
+            attrs["device_time"] = dateutil.parser.parse(device_time)
 
         return attrs

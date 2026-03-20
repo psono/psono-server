@@ -10,7 +10,6 @@ from io import StringIO
 
 
 class CommandFSClusterDeleteTestCase(TestCase):
-
     def setUp(self):
         box = PrivateKey.generate()
         private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
@@ -20,7 +19,7 @@ class CommandFSClusterDeleteTestCase(TestCase):
         public_key_hex = encrypt_with_db_secret(public_key_hex.decode())
 
         self.cluster = models.Fileserver_Cluster.objects.create(
-            title='Some Title',
+            title="Some Title",
             auth_public_key=public_key_hex,
             auth_private_key=private_key_hex,
             file_size_limit=0,
@@ -35,9 +34,6 @@ class CommandFSClusterDeleteTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('fsclusterdelete', stdout=out, *args, **opts)
+        call_command("fsclusterdelete", stdout=out, *args, **opts)
 
         self.assertEqual(models.Fileserver_Cluster.objects.count(), 0)
-
-
-

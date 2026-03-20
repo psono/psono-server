@@ -5,8 +5,8 @@ from rest_framework import serializers, exceptions
 
 from ..fields import BooleanField
 
-class CreateAPIKeySerializer(serializers.Serializer):
 
+class CreateAPIKeySerializer(serializers.Serializer):
     title = serializers.CharField(max_length=256, required=True)
     read = BooleanField(required=False, default=True)
     write = BooleanField(required=False, default=False)
@@ -27,8 +27,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -37,8 +37,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -47,8 +47,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -57,8 +57,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -67,8 +67,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -77,8 +77,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -87,8 +87,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -97,8 +97,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -107,8 +107,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -117,8 +117,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
 
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value

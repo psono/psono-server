@@ -8,8 +8,8 @@ from ..utils import user_has_rights_on_secret
 from ..utils import user_has_rights_on_file
 from ..models import File
 
-class CreateLinkShareSerializer(serializers.Serializer):
 
+class CreateLinkShareSerializer(serializers.Serializer):
     secret_id = UUIDField(required=False)
     file_id = UUIDField(required=False)
 
@@ -19,12 +19,16 @@ class CreateLinkShareSerializer(serializers.Serializer):
 
     # allowed_reads > 0 => restrict reads to allowed_reads times
     # allowed_reads not provided => No restriction
-    allowed_reads = serializers.IntegerField(required=False, min_value=0, allow_null=True)
+    allowed_reads = serializers.IntegerField(
+        required=False, min_value=0, allow_null=True
+    )
 
     # passphrase is None => passphrase = ''
     # passphrase = '' => same
     # passphrase = '....' =>
-    passphrase = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    passphrase = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
 
     # valid_till is None => No restriction time wise
     # else => set restriciton
@@ -34,12 +38,12 @@ class CreateLinkShareSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        secret_id = attrs.get('secret_id', None)
-        file_id = attrs.get('file_id', None)
-        allowed_reads = attrs.get('allowed_reads', None)
-        passphrase = attrs.get('passphrase', None)
-        valid_till = attrs.get('valid_till', None)
-        allow_write = attrs.get('allow_write', False)
+        secret_id = attrs.get("secret_id", None)
+        file_id = attrs.get("file_id", None)
+        allowed_reads = attrs.get("allowed_reads", None)
+        passphrase = attrs.get("passphrase", None)
+        valid_till = attrs.get("valid_till", None)
+        allow_write = attrs.get("allow_write", False)
 
         if not secret_id and not file_id:
             msg = "EITHER_SECRET_OR_FILE_REQUIRED"
@@ -54,19 +58,23 @@ class CreateLinkShareSerializer(serializers.Serializer):
         if allow_write:
             write_required = True
 
-        if secret_id and not user_has_rights_on_secret(self.context['request'].user.id, secret_id, write=write_required):
+        if secret_id and not user_has_rights_on_secret(
+            self.context["request"].user.id, secret_id, write=write_required
+        ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         # check if the user has the necessary rights
         if file_id:
             try:
-                file = File.objects.only('id', 'secret_id').get(pk=file_id)
+                file = File.objects.only("id", "secret_id").get(pk=file_id)
             except File.DoesNotExist:
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
-            if not user_has_rights_on_file(self.context['request'].user.id, file, read=True):
+            if not user_has_rights_on_file(
+                self.context["request"].user.id, file, read=True
+            ):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
@@ -74,16 +82,18 @@ class CreateLinkShareSerializer(serializers.Serializer):
             msg = "VALID_TILL_CANNOT_BE_IN_THE_PAST"
             raise exceptions.ValidationError(msg)
 
-        if passphrase == '':  #nosec -- not [B105:hardcoded_password_string]
+        if passphrase == "":  # nosec -- not [B105:hardcoded_password_string]
             passphrase = None
         if passphrase is not None:
             passphrase = make_password(passphrase)
 
-        attrs['secret_id'] = secret_id
-        attrs['file_id'] = file_id
-        attrs['allowed_reads'] = allowed_reads
-        attrs['passphrase'] = passphrase
-        attrs['valid_till'] = valid_till
-        attrs['allow_write'] = allow_write if secret_id else False  # Files don't support write / updates with link shares
+        attrs["secret_id"] = secret_id
+        attrs["file_id"] = file_id
+        attrs["allowed_reads"] = allowed_reads
+        attrs["passphrase"] = passphrase
+        attrs["valid_till"] = valid_till
+        attrs["allow_write"] = (
+            allow_write if secret_id else False
+        )  # Files don't support write / updates with link shares
 
         return attrs

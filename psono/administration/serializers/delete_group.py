@@ -3,12 +3,13 @@ from restapi.fields import UUIDField
 
 from restapi.models import Group
 
+
 class DeleteGroupSerializer(serializers.Serializer):
     group_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        group_id = attrs.get('group_id')
+        group_id = attrs.get("group_id")
 
         try:
             group = Group.objects.get(id=group_id)
@@ -16,6 +17,6 @@ class DeleteGroupSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['group'] = group
+        attrs["group"] = group
 
         return attrs

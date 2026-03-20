@@ -13,31 +13,44 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  re_path(r'^blog/', include(blog_urls))
 """
+
 from django.urls import re_path, include, path
 from django.conf import settings
 from rest_framework import routers
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 router = routers.DefaultRouter()
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    re_path(r'^', include('restapi.urls')),
-    re_path(r'^admin/', include('administration.urls')),
-    re_path(r'^fileserver/', include('fileserver.urls')),
-    re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    re_path(r"^", include("restapi.urls")),
+    re_path(r"^admin/", include("administration.urls")),
+    re_path(r"^fileserver/", include("fileserver.urls")),
+    re_path(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
 ]
 
 if settings.DEBUG:
     urlpatterns += [
         # Optional: Schema-Datei generieren
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         # Optional: Swagger UI
-        path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path(
+            "api/schema/swagger-ui/",
+            SpectacularSwaggerView.as_view(url_name="schema"),
+            name="swagger-ui",
+        ),
         # Optional: ReDoc UI
-        path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+        path(
+            "api/schema/redoc/",
+            SpectacularRedocView.as_view(url_name="schema"),
+            name="redoc",
+        ),
     ]
 
 if settings.URL_PREFIX:
-    urlpatterns = [path(f'{settings.URL_PREFIX}', include(urlpatterns))]
+    urlpatterns = [path(f"{settings.URL_PREFIX}", include(urlpatterns))]

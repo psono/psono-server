@@ -10,34 +10,47 @@ from .serializers import (
     FileserverConfirmChunkDeletionSerializer as DefaultFileserverConfirmChunkDeletionSerializer,
 )
 
+
 def import_callable(path_or_callable):
-    if hasattr(path_or_callable, '__call__'):
+    if hasattr(path_or_callable, "__call__"):
         return path_or_callable
     else:
-        package, attr = path_or_callable.rsplit('.', 1)
+        package, attr = path_or_callable.rsplit(".", 1)
         return getattr(import_module(package), attr)
 
-serializers = getattr(settings, 'FILESERVER_SERIALIZERS', {})
+
+serializers = getattr(settings, "FILESERVER_SERIALIZERS", {})
 
 FileserverAuthorizeUploadSerializer = import_callable(
-    serializers.get('FILESERVER_AUTHORIZE_UPLOAD_SERIALIZER', DefaultFileserverAuthorizeUploadSerializer)
+    serializers.get(
+        "FILESERVER_AUTHORIZE_UPLOAD_SERIALIZER",
+        DefaultFileserverAuthorizeUploadSerializer,
+    )
 )
 
 FileserverAuthorizeDownloadSerializer = import_callable(
-    serializers.get('FILESERVER_AUTHORIZE_DOWNLOAD_SERIALIZER', DefaultFileserverAuthorizeDownloadSerializer)
+    serializers.get(
+        "FILESERVER_AUTHORIZE_DOWNLOAD_SERIALIZER",
+        DefaultFileserverAuthorizeDownloadSerializer,
+    )
 )
 
 FileserverRevokeDownloadSerializer = import_callable(
-    serializers.get('FILESERVER_REVOKE_DOWNLOAD_SERIALIZER', DefaultFileserverRevokeDownloadSerializer)
+    serializers.get(
+        "FILESERVER_REVOKE_DOWNLOAD_SERIALIZER",
+        DefaultFileserverRevokeDownloadSerializer,
+    )
 )
 
 
 FileserverAliveSerializer = import_callable(
-    serializers.get('FILESERVER_ALIVE_SERIALIZER', DefaultFileserverAliveSerializer)
+    serializers.get("FILESERVER_ALIVE_SERIALIZER", DefaultFileserverAliveSerializer)
 )
 
 
 FileserverConfirmChunkDeletionSerializer = import_callable(
-    serializers.get('FILESERVER_CONFIRM_CHUNK_DELETION_SERIALIZER', DefaultFileserverConfirmChunkDeletionSerializer)
+    serializers.get(
+        "FILESERVER_CONFIRM_CHUNK_DELETION_SERIALIZER",
+        DefaultFileserverConfirmChunkDeletionSerializer,
+    )
 )
-

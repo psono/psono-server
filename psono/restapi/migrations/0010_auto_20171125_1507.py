@@ -6,15 +6,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0009_auto_20171007_1106'),
+        ("restapi", "0009_auto_20171007_1106"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='authkey',
-            field=models.CharField(max_length=128, null=True, verbose_name='auth key'),
+            model_name="user",
+            name="authkey",
+            field=models.CharField(max_length=128, null=True, verbose_name="auth key"),
         ),
     ]

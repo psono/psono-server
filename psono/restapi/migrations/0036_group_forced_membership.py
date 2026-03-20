@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0035_secret_read_count'),
+        ("restapi", "0035_secret_read_count"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='group',
-            name='forced_membership',
-            field=models.BooleanField(default=False, help_text='Designates whether users can deny or leave this groups membership', verbose_name='Forced Membership'),
+            model_name="group",
+            name="forced_membership",
+            field=models.BooleanField(
+                default=False,
+                help_text="Designates whether users can deny or leave this groups membership",
+                verbose_name="Forced Membership",
+            ),
         ),
     ]

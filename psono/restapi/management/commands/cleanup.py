@@ -11,8 +11,9 @@ from restapi.models import Link_Share
 from restapi.models import Share
 from restapi.models import DeviceCode
 
+
 class Command(BaseCommand):
-    help = 'Clears expired token and objects (shares, secrets, ...) without reference'
+    help = "Clears expired token and objects (shares, secrets, ...) without reference"
 
     def handle(self, *args, **options):
 
@@ -21,22 +22,22 @@ class Command(BaseCommand):
         DeviceCode.objects.filter(valid_till__lt=timezone.now()).delete()
 
         secret_links = Secret_Link.objects.filter(
-            secret = OuterRef('pk'),
+            secret=OuterRef("pk"),
         )
         Secret.objects.annotate(
-            has_secret_link = Exists(secret_links),
+            has_secret_link=Exists(secret_links),
         ).filter(has_secret_link=False).delete()
 
         Link_Share.objects.filter(valid_till__lt=timezone.now()).delete()
 
         share_tree = Share_Tree.objects.filter(
-            share = OuterRef('pk'),
+            share=OuterRef("pk"),
         )
         Share.objects.annotate(
-            has_share_tree_entry = Exists(share_tree),
+            has_share_tree_entry=Exists(share_tree),
         ).filter(
             has_share_tree_entry=False,
-            create_date__lt=timezone.now() - timedelta(days=28)
+            create_date__lt=timezone.now() - timedelta(days=28),
         ).delete()
 
-        self.stdout.write('Done' )
+        self.stdout.write("Done")

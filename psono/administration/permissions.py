@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 
+
 class AdminPermission(BasePermission):
     """
     Allows access only to superusers or staff that has the necessary object level permissions.

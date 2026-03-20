@@ -5,7 +5,6 @@ from ..fields import UUIDField
 
 
 class ShareOverviewSerializer(serializers.Serializer):
-
     id = UUIDField(default=uuid.uuid4)
     data = serializers.CharField()
     data_nonce = serializers.CharField(max_length=64)

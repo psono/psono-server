@@ -10,15 +10,15 @@ from ..permissions import IsFileserver
 from ..app_settings import FileserverAuthorizeUploadSerializer
 from restapi.models import File_Chunk
 
-class AuthorizeUploadView(GenericAPIView):
 
-    authentication_classes = (FileserverAuthentication, )
+class AuthorizeUploadView(GenericAPIView):
+    authentication_classes = (FileserverAuthentication,)
     permission_classes = (IsFileserver,)
-    allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver_upload'
+    allowed_methods = ("PUT", "OPTIONS", "HEAD")
+    throttle_scope = "fileserver_upload"
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return FileserverAuthorizeUploadSerializer
         return Serializer
 
@@ -30,20 +30,18 @@ class AuthorizeUploadView(GenericAPIView):
         Unpacks the authorization information. Checks the user permission (e.g. quota).
         """
 
-        serializer = FileserverAuthorizeUploadSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverAuthorizeUploadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        file_transfer = serializer.validated_data.get('file_transfer')
-        user_id = serializer.validated_data.get('user_id')
-        chunk_position = serializer.validated_data.get('chunk_position')
-        chunk_size = serializer.validated_data.get('chunk_size')
-        hash_checksum = serializer.validated_data.get('hash_checksum')
-
+        file_transfer = serializer.validated_data.get("file_transfer")
+        user_id = serializer.validated_data.get("user_id")
+        chunk_position = serializer.validated_data.get("chunk_position")
+        chunk_size = serializer.validated_data.get("chunk_size")
+        hash_checksum = serializer.validated_data.get("hash_checksum")
 
         with transaction.atomic():
             File_Chunk.objects.create(
@@ -54,14 +52,22 @@ class AuthorizeUploadView(GenericAPIView):
                 size=chunk_size,
             )
 
-            file_transfer.size_transferred = F('size_transferred') + chunk_size
-            file_transfer.chunk_count_transferred = F('chunk_count_transferred') + 1
-            file_transfer.save(update_fields=["size_transferred", "chunk_count_transferred", "write_date"])
+            file_transfer.size_transferred = F("size_transferred") + chunk_size
+            file_transfer.chunk_count_transferred = F("chunk_count_transferred") + 1
+            file_transfer.save(
+                update_fields=[
+                    "size_transferred",
+                    "chunk_count_transferred",
+                    "write_date",
+                ]
+            )
 
-
-        return Response({
-            'shard_id': file_transfer.shard_id,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "shard_id": file_transfer.shard_id,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

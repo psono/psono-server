@@ -4,16 +4,19 @@ from django.conf import settings
 
 from rest_framework import serializers, exceptions
 
-from restapi.models import File_Transfer, File_Chunk, Fileserver_Cluster_Member_Shard_Link
+from restapi.models import (
+    File_Transfer,
+    File_Chunk,
+    Fileserver_Cluster_Member_Shard_Link,
+)
 from restapi.parsers import decrypt
 from restapi.fields import UUIDField
 
 from datetime import timedelta
 import json
 
+
 class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
-
-
     file_transfer_id = UUIDField(required=True)
     ticket = serializers.CharField(required=True)
     ticket_nonce = serializers.CharField(required=True)
@@ -21,66 +24,94 @@ class FileserverAuthorizeDownloadSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        file_transfer_id = attrs.get('file_transfer_id')
-        ticket_encrypted = attrs.get('ticket')
-        ticket_nonce = attrs.get('ticket_nonce')
-        ip_address = attrs.get('ip_address')
+        file_transfer_id = attrs.get("file_transfer_id")
+        ticket_encrypted = attrs.get("ticket")
+        ticket_nonce = attrs.get("ticket_nonce")
+        ip_address = attrs.get("ip_address")
 
         try:
-            file_transfer = File_Transfer.objects.select_related('user').\
-                only('chunk_count', 'size', 'chunk_count_transferred', 'size_transferred', 'file_id', 'shard_id', 'secret_key', 'user__is_active', 'user_id').\
-                get(pk=file_transfer_id, type='download', create_date__gte=timezone.now()-timedelta(hours=12))
+            file_transfer = (
+                File_Transfer.objects.select_related("user")
+                .only(
+                    "chunk_count",
+                    "size",
+                    "chunk_count_transferred",
+                    "size_transferred",
+                    "file_id",
+                    "shard_id",
+                    "secret_key",
+                    "user__is_active",
+                    "user_id",
+                )
+                .get(
+                    pk=file_transfer_id,
+                    type="download",
+                    create_date__gte=timezone.now() - timedelta(hours=12),
+                )
+            )
         except File_Transfer.DoesNotExist:
-            msg = 'Filetransfer does not exist.'
+            msg = "Filetransfer does not exist."
             raise exceptions.ValidationError(msg)
 
         if not file_transfer.user.is_active:
-            msg = 'User inactive.'
+            msg = "User inactive."
             raise exceptions.ValidationError(msg)
 
         try:
-            ticket_json = decrypt(file_transfer.secret_key, ticket_encrypted, ticket_nonce)
+            ticket_json = decrypt(
+                file_transfer.secret_key, ticket_encrypted, ticket_nonce
+            )
         except:
-            msg = 'Malformed ticket. Decryption failed.'
+            msg = "Malformed ticket. Decryption failed."
             raise exceptions.ValidationError(msg)
 
         ticket = json.loads(ticket_json)
 
-        if 'hash_checksum' not in ticket:
-            msg = 'Malformed ticket. Blake2b hash missing.'
+        if "hash_checksum" not in ticket:
+            msg = "Malformed ticket. Blake2b hash missing."
             raise exceptions.ValidationError(msg)
 
-        hash_checksum = ticket['hash_checksum'].lower()
+        hash_checksum = ticket["hash_checksum"].lower()
 
-        if not re.match('^[0-9a-f]*$', hash_checksum, re.IGNORECASE):
-            msg = 'HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION'
+        if not re.match("^[0-9a-f]*$", hash_checksum, re.IGNORECASE):
+            msg = "HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION"
             raise exceptions.ValidationError(msg)
 
-        count_cmsl = Fileserver_Cluster_Member_Shard_Link.objects.select_related('member')\
-            .filter(member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
-                 shard__active=True, member=self.context['request'].user, shard_id=file_transfer.shard_id).count()
+        count_cmsl = (
+            Fileserver_Cluster_Member_Shard_Link.objects.select_related("member")
+            .filter(
+                member__valid_till__gt=timezone.now()
+                - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
+                shard__active=True,
+                member=self.context["request"].user,
+                shard_id=file_transfer.shard_id,
+            )
+            .count()
+        )
 
         if count_cmsl != 1:
-            msg = 'Permission denied.'
+            msg = "Permission denied."
             raise exceptions.ValidationError(msg)
 
         try:
-            file_chunk = File_Chunk.objects.get(hash_checksum=hash_checksum, file_id=file_transfer.file_id)
+            file_chunk = File_Chunk.objects.get(
+                hash_checksum=hash_checksum, file_id=file_transfer.file_id
+            )
         except File_Chunk.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if file_transfer.chunk_count_transferred + 1 > file_transfer.chunk_count:
-            msg = 'Chunk count exceeded.'
+            msg = "Chunk count exceeded."
             raise exceptions.ValidationError(msg)
 
         if file_transfer.size_transferred + file_chunk.size > file_transfer.size:
-            msg = 'Chunk size exceeded.'
+            msg = "Chunk size exceeded."
             raise exceptions.ValidationError(msg)
 
-        attrs['file_transfer'] = file_transfer
-        attrs['user_id'] = file_transfer.user_id
-        attrs['file_chunk'] = file_chunk
-        attrs['hash_checksum'] = hash_checksum
+        attrs["file_transfer"] = file_transfer
+        attrs["user_id"] = file_transfer.user_id
+        attrs["file_chunk"] = file_chunk
+        attrs["hash_checksum"] = hash_checksum
 
         return attrs

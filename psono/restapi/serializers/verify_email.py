@@ -4,16 +4,19 @@ from rest_framework import serializers, exceptions
 
 
 class VerifyEmailSerializer(serializers.Serializer):
-    activation_code = serializers.CharField(style={'input_type': 'password'}, required=True, )
+    activation_code = serializers.CharField(
+        style={"input_type": "password"},
+        required=True,
+    )
 
     def validate(self, attrs: dict) -> dict:
-        activation_code = attrs.get('activation_code', '').strip()
+        activation_code = attrs.get("activation_code", "").strip()
 
         user = validate_activation_code(activation_code)
 
         if not user:
-            msg = 'ACTIVATION_CODE_INCORRECT'
+            msg = "ACTIVATION_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
-        attrs['user'] = user
-        attrs['activation_code'] = activation_code
+        attrs["user"] = user
+        attrs["activation_code"] = activation_code
         return attrs

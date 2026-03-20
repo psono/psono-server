@@ -6,15 +6,15 @@ from ..models import User, Emergency_Code
 
 
 class EmergencyLoginSerializer(serializers.Serializer):
-
-    username = serializers.EmailField(required=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
+    username = serializers.EmailField(
+        required=True, error_messages={"invalid": "INVALID_USERNAME_FORMAT"}
+    )
     emergency_authkey = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        username = attrs.get('username')
-        emergency_authkey = attrs.get('emergency_authkey')
-
+        username = attrs.get("username")
+        emergency_authkey = attrs.get("emergency_authkey")
 
         try:
             user = User.objects.get(username=username)
@@ -36,7 +36,7 @@ class EmergencyLoginSerializer(serializers.Serializer):
             msg = "USERNAME_OR_EMERGENCY_CODE_INCORRECT"
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
-        attrs['emergency_code'] = valid_emergency_code
+        attrs["user"] = user
+        attrs["emergency_code"] = valid_emergency_code
 
         return attrs

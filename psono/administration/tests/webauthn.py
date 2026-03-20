@@ -13,21 +13,51 @@ from restapi.tests.base import APITestCaseExtended
 
 class ReadWebauthnTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -39,7 +69,7 @@ class ReadWebauthnTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -55,52 +85,81 @@ class ReadWebauthnTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.webauthn = models.Webauthn.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            origin= 'https://example.com',
-            rp_id= 'example.com',
-            credential_id= 'abc',
-            credential_public_key= 'abc',
-            challenge= 'abc',
+            title="My Sweet Title",
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id="abc",
+            credential_public_key="abc",
+            challenge="abc",
         )
-
 
     def test_read_webauthn(self):
         """
         Tests GET method on webauthn
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class UpdateWebauthnTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -112,7 +171,7 @@ class UpdateWebauthnTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -128,52 +187,81 @@ class UpdateWebauthnTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.webauthn = models.Webauthn.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            origin= 'https://example.com',
-            rp_id= 'example.com',
-            credential_id= 'abc',
-            credential_public_key= 'abc',
-            challenge= 'abc',
+            title="My Sweet Title",
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id="abc",
+            credential_public_key="abc",
+            challenge="abc",
         )
-
 
     def test_update_webauthn(self):
         """
         Tests PUT method on webauthn
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class CreateWebauthnTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -185,7 +273,7 @@ class CreateWebauthnTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -201,29 +289,27 @@ class CreateWebauthnTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.webauthn = models.Webauthn.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            origin= 'https://example.com',
-            rp_id= 'example.com',
-            credential_id= 'abc',
-            credential_public_key= 'abc',
-            challenge= 'abc',
+            title="My Sweet Title",
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id="abc",
+            credential_public_key="abc",
+            challenge="abc",
         )
-
 
     def test_create_webauthn(self):
         """
         Tests POST method on webauthn
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(url, data)
@@ -233,21 +319,51 @@ class CreateWebauthnTests(APITestCaseExtended):
 
 class DeleteWebauthnTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -259,7 +375,7 @@ class DeleteWebauthnTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -275,30 +391,27 @@ class DeleteWebauthnTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.webauthn = models.Webauthn.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            origin= 'https://example.com',
-            rp_id= 'example.com',
-            credential_id= 'abc',
-            credential_public_key= 'abc',
-            challenge= 'abc',
+            title="My Sweet Title",
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id="abc",
+            credential_public_key="abc",
+            challenge="abc",
         )
-
 
     def test_delete_webauthn_success(self):
         """
         Tests DELETE method on webauthn
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-            'webauthn_id': self.webauthn.id
-        }
+        data = {"webauthn_id": self.webauthn.id}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
@@ -307,53 +420,44 @@ class DeleteWebauthnTests(APITestCaseExtended):
 
         self.assertEqual(models.Webauthn.objects.all().count(), 0)
 
-
     def test_delete_webauthn_failure_no_admin(self):
         """
         Tests DELETE method on webauthn without being an admin
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-            'webauthn_id': self.webauthn.id
-        }
+        data = {"webauthn_id": self.webauthn.id}
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
     def test_delete_webauthn_failure_no_webauthn_id(self):
         """
         Tests DELETE method on webauthn without a webauthn id
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_delete_webauthn_failure_webauthn_id_not_exist(self):
         """
         Tests DELETE method on webauthn with a webauthn id that does not exist
         """
 
-        url = reverse('admin_webauthn')
+        url = reverse("admin_webauthn")
 
-        data = {
-            'webauthn_id': '499d3c84-e8ae-4a6b-a4c2-43c79beb069a'
-        }
+        data = {"webauthn_id": "499d3c84-e8ae-4a6b-a4c2-43c79beb069a"}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-

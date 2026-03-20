@@ -4,7 +4,7 @@ from . import views
 from django.urls import URLPattern
 from typing import List
 
-urlpatterns = [] # type: List[URLPattern]
+urlpatterns = []  # type: List[URLPattern]
 
 if settings.CREDIT_HANDLER_ENABLED:
     # URLs for credit communication only

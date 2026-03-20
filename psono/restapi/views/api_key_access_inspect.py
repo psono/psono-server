@@ -13,15 +13,15 @@ from ..app_settings import (
     ReadAPIKeyInspectSerializer,
 )
 
-class APIKeyAccessInspectView(GenericAPIView):
 
+class APIKeyAccessInspectView(GenericAPIView):
     renderer_classes = (StaticHTMLRenderer,)
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ReadAPIKeyInspectSerializer
         return Serializer
 
@@ -35,31 +35,37 @@ class APIKeyAccessInspectView(GenericAPIView):
         """
         Returns all ids of available secrets
         """
-        serializer = ReadAPIKeyInspectSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadAPIKeyInspectSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        api_key_secrets = serializer.validated_data.get('api_key_secrets')
-        api_key = serializer.validated_data.get('api_key')
+        api_key_secrets = serializer.validated_data.get("api_key_secrets")
+        api_key = serializer.validated_data.get("api_key")
         api_key_secrets_list = []
 
         for api_key_secret in api_key_secrets:
-            api_key_secrets_list.append({
-                'secret_id': str(api_key_secret.secret_id),
-                'write_date': api_key_secret.secret.write_date.isoformat(),
-            })
+            api_key_secrets_list.append(
+                {
+                    "secret_id": str(api_key_secret.secret_id),
+                    "write_date": api_key_secret.secret.write_date.isoformat(),
+                }
+            )
 
-        return Response(json.dumps({
-            'allow_insecure_access': api_key.allow_insecure_access,
-            'restrict_to_secrets': api_key.restrict_to_secrets,
-            'read': api_key.read,
-            'write': api_key.write,
-            'api_key_secrets': api_key_secrets_list
-        }), status=status.HTTP_200_OK)
-
+        return Response(
+            json.dumps(
+                {
+                    "allow_insecure_access": api_key.allow_insecure_access,
+                    "restrict_to_secrets": api_key.restrict_to_secrets,
+                    "read": api_key.read,
+                    "write": api_key.write,
+                    "api_key_secrets": api_key_secrets_list,
+                }
+            ),
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

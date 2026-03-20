@@ -15,21 +15,51 @@ from restapi.utils import encrypt_with_db_secret
 
 class ReadGATests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -41,7 +71,7 @@ class ReadGATests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -57,7 +87,7 @@ class ReadGATests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         secret = pyotp.random_base32()
@@ -65,43 +95,72 @@ class ReadGATests(APITestCaseExtended):
 
         self.ga = models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
-            title='My Sweet Title',
-            secret=encrypt_with_db_secret(str(secret))
+            title="My Sweet Title",
+            secret=encrypt_with_db_secret(str(secret)),
         )
-
 
     def test_read_ga(self):
         """
         Tests GET method on google authenticator
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class UpdateGATests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -113,7 +172,7 @@ class UpdateGATests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -129,7 +188,7 @@ class UpdateGATests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         secret = pyotp.random_base32()
@@ -137,43 +196,72 @@ class UpdateGATests(APITestCaseExtended):
 
         self.ga = models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
-            title='My Sweet Title',
-            secret=encrypt_with_db_secret(str(secret))
+            title="My Sweet Title",
+            secret=encrypt_with_db_secret(str(secret)),
         )
-
 
     def test_update_ga(self):
         """
         Tests PUT method on google authenticator
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class CreateGATests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -185,7 +273,7 @@ class CreateGATests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -201,7 +289,7 @@ class CreateGATests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         secret = pyotp.random_base32()
@@ -209,43 +297,72 @@ class CreateGATests(APITestCaseExtended):
 
         self.ga = models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
-            title='My Sweet Title',
-            secret=encrypt_with_db_secret(str(secret))
+            title="My Sweet Title",
+            secret=encrypt_with_db_secret(str(secret)),
         )
-
 
     def test_create_ga(self):
         """
         Tests POST method on google authenticator
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class DeleteGATests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -257,7 +374,7 @@ class DeleteGATests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -273,7 +390,7 @@ class DeleteGATests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         secret = pyotp.random_base32()
@@ -281,21 +398,18 @@ class DeleteGATests(APITestCaseExtended):
 
         self.ga = models.Google_Authenticator.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            secret = encrypt_with_db_secret(str(secret))
+            title="My Sweet Title",
+            secret=encrypt_with_db_secret(str(secret)),
         )
-
 
     def test_delete_ga_success(self):
         """
         Tests DELETE method on ga
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-            'google_authenticator_id': self.ga.id
-        }
+        data = {"google_authenticator_id": self.ga.id}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
@@ -304,53 +418,44 @@ class DeleteGATests(APITestCaseExtended):
 
         self.assertEqual(models.Google_Authenticator.objects.all().count(), 0)
 
-
     def test_delete_ga_failure_no_admin(self):
         """
         Tests DELETE method on ga without being an admin
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-            'google_authenticator_id': self.ga.id
-        }
+        data = {"google_authenticator_id": self.ga.id}
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
     def test_delete_ga_failure_no_ga_id(self):
         """
         Tests DELETE method on ga without a ga id
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_delete_ga_failure_ga_id_not_exist(self):
         """
         Tests DELETE method on ga with a ga id that does not exist
         """
 
-        url = reverse('admin_google_authenticator')
+        url = reverse("admin_google_authenticator")
 
-        data = {
-            'google_authenticator_id': '499d3c84-e8ae-4a6b-a4c2-43c79beb069a'
-        }
+        data = {"google_authenticator_id": "499d3c84-e8ae-4a6b-a4c2-43c79beb069a"}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-

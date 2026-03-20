@@ -1,6 +1,14 @@
-from .s3 import s3_construct_signed_download_url, s3_construct_signed_upload_url, s3_delete, create_key as _create_key
+from .s3 import (
+    s3_construct_signed_download_url,
+    s3_construct_signed_upload_url,
+    s3_delete,
+    create_key as _create_key,
+)
 
-def aws_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+
+def aws_construct_signed_upload_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum
+):
     """
     Constructs the signed upload url
 
@@ -19,10 +27,14 @@ def aws_construct_signed_upload_url(bucket, region, access_key_id, secret_access
     :rtype:
     """
 
-    return s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum)
+    return s3_construct_signed_upload_url(
+        bucket, region, access_key_id, secret_access_key, hash_checksum
+    )
 
 
-def aws_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+def aws_construct_signed_download_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum
+):
     """
     Constructs the signed upload url
 
@@ -41,7 +53,9 @@ def aws_construct_signed_download_url(bucket, region, access_key_id, secret_acce
     :rtype:
     """
 
-    return s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum)
+    return s3_construct_signed_download_url(
+        bucket, region, access_key_id, secret_access_key, hash_checksum
+    )
 
 
 def aws_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):

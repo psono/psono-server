@@ -5,8 +5,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from ..models import DeviceCode
-from ..serializers.claim_device_code import ClaimDeviceCodeSerializer, DeviceCodeExpiredError
+from ..serializers.claim_device_code import (
+    ClaimDeviceCodeSerializer,
+    DeviceCodeExpiredError,
+)
 from ..authentication import TokenAuthentication
+
 
 class DeviceCodeClaimView(GenericAPIView):
     """
@@ -15,8 +19,8 @@ class DeviceCodeClaimView(GenericAPIView):
     """
 
     queryset = DeviceCode.objects.all()
-    lookup_url_kwarg = 'device_code'
-    http_method_names = ['put', 'options']
+    lookup_url_kwarg = "device_code"
+    http_method_names = ["put", "options"]
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     serializer_class = ClaimDeviceCodeSerializer
@@ -28,29 +32,42 @@ class DeviceCodeClaimView(GenericAPIView):
         Expects 'device_code' in the URL.
         """
         instance = self.get_object()
-        
-        serializer = cast(ClaimDeviceCodeSerializer, self.get_serializer(instance, data=request.data, context={'user': request.user}))
+
+        serializer = cast(
+            ClaimDeviceCodeSerializer,
+            self.get_serializer(
+                instance, data=request.data, context={"user": request.user}
+            ),
+        )
 
         try:
             if not serializer.is_valid():
-                return Response(
-                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except DeviceCodeExpiredError:
             instance.state = DeviceCode.DeviceCodeState.EXPIRED
-            instance.save(update_fields=['state', 'write_date'])
-            
+            instance.save(update_fields=["state", "write_date"])
+
             raise
 
         validated_data = serializer.validated_data
-        
-        credentials_bytes = validated_data.get('_credentials_bytes')
-        
+
+        credentials_bytes = validated_data.get("_credentials_bytes")
+
         instance.encrypted_credentials = credentials_bytes
-        instance.encrypted_credentials_nonce = validated_data.get('encrypted_credentials_nonce', '')
+        instance.encrypted_credentials_nonce = validated_data.get(
+            "encrypted_credentials_nonce", ""
+        )
         instance.user = request.user
         instance.state = DeviceCode.DeviceCodeState.CLAIMED
-        instance.save(update_fields=['encrypted_credentials', 'encrypted_credentials_nonce', 'user', 'state', 'write_date'])
+        instance.save(
+            update_fields=[
+                "encrypted_credentials",
+                "encrypted_credentials_nonce",
+                "user",
+                "state",
+                "write_date",
+            ]
+        )
 
         response_body = {
             "state": instance.state.value,
@@ -61,13 +78,15 @@ class DeviceCodeClaimView(GenericAPIView):
             "encrypted_credentials_nonce": instance.encrypted_credentials_nonce,
         }
 
-        return Response(response_body, status=status.HTTP_200_OK) 
-    
+        return Response(response_body, status=status.HTTP_200_OK)
+
     def http_method_not_allowed(self, request, *args, **kwargs):
         """
         If a method other than PUT is called, return a clear error message.
         """
         return Response(
-            {"detail": f"{request.method.upper()} method not supported. Use PUT to claim a device code."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            {
+                "detail": f"{request.method.upper()} method not supported. Use PUT to claim a device code."
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )

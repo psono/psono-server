@@ -6,55 +6,116 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0013_auto_20180222_0644'),
+        ("restapi", "0013_auto_20180222_0644"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Old_Credential',
+            name="Old_Credential",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('authkey', models.CharField(max_length=128, null=True, verbose_name='auth key')),
-                ('public_key', models.CharField(max_length=256, verbose_name='public key')),
-                ('private_key', models.CharField(max_length=256, verbose_name='private key')),
-                ('private_key_nonce', models.CharField(max_length=64, unique=True, verbose_name='private key nonce')),
-                ('secret_key', models.CharField(max_length=256, verbose_name='secret key')),
-                ('secret_key_nonce', models.CharField(max_length=64, unique=True, verbose_name='secret key nonce')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                (
+                    "authkey",
+                    models.CharField(
+                        max_length=128, null=True, verbose_name="auth key"
+                    ),
+                ),
+                (
+                    "public_key",
+                    models.CharField(max_length=256, verbose_name="public key"),
+                ),
+                (
+                    "private_key",
+                    models.CharField(max_length=256, verbose_name="private key"),
+                ),
+                (
+                    "private_key_nonce",
+                    models.CharField(
+                        max_length=64, unique=True, verbose_name="private key nonce"
+                    ),
+                ),
+                (
+                    "secret_key",
+                    models.CharField(max_length=256, verbose_name="secret key"),
+                ),
+                (
+                    "secret_key_nonce",
+                    models.CharField(
+                        max_length=64, unique=True, verbose_name="secret key nonce"
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Old_Email',
+            name="Old_Email",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('email', models.CharField(max_length=512, unique=True, verbose_name='email address')),
-                ('email_bcrypt', models.CharField(max_length=60, unique=True, verbose_name='bcrypt of email address')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                (
+                    "email",
+                    models.CharField(
+                        max_length=512, unique=True, verbose_name="email address"
+                    ),
+                ),
+                (
+                    "email_bcrypt",
+                    models.CharField(
+                        max_length=60,
+                        unique=True,
+                        verbose_name="bcrypt of email address",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='user',
-            name='authentication',
-            field=models.CharField(default='AUTHKEY', max_length=16, verbose_name='Authentication method'),
+            model_name="user",
+            name="authentication",
+            field=models.CharField(
+                default="AUTHKEY", max_length=16, verbose_name="Authentication method"
+            ),
         ),
         migrations.AddField(
-            model_name='old_email',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='old_emails', to='restapi.User'),
+            model_name="old_email",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="old_emails",
+                to="restapi.User",
+            ),
         ),
         migrations.AddField(
-            model_name='old_credential',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='old_credentials', to='restapi.User'),
+            model_name="old_credential",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="old_credentials",
+                to="restapi.User",
+            ),
         ),
     ]

@@ -1,6 +1,7 @@
 """
 A small demo script that shows how to create a secret in a datastore (unrestricted API key)
 """
+
 import uuid
 import requests
 import json
@@ -12,14 +13,15 @@ from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
 
-api_key_id = '1794337d-de80-4aa0-8509-7070448221e6'
-api_key_private_key = '5c315e95703afd125d59bd26e5d7013683707a7671957b997b6cf11bb5670999'
-api_key_secret_key = '06f97520b4462565713851435c297ae8f70ee87fa6a8a4072bad87ccdb6d8d89'
-server_url = 'https://psonoclient.chickahoona.com/server'
-server_public_key = '02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b'
-server_signature = '4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1'
+api_key_id = "1794337d-de80-4aa0-8509-7070448221e6"
+api_key_private_key = "5c315e95703afd125d59bd26e5d7013683707a7671957b997b6cf11bb5670999"
+api_key_secret_key = "06f97520b4462565713851435c297ae8f70ee87fa6a8a4072bad87ccdb6d8d89"
+server_url = "https://psonoclient.chickahoona.com/server"
+server_public_key = "02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b"
+server_signature = "4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1"
 
 SSL_VERIFY = False
+
 
 def get_device_description():
     """
@@ -29,7 +31,8 @@ def get_device_description():
     :return:
     :rtype:
     """
-    return 'Console Client ' + socket.gethostname()
+    return "Console Client " + socket.gethostname()
+
 
 def generate_client_login_info():
     """
@@ -42,28 +45,35 @@ def generate_client_login_info():
 
     box = PrivateKey.generate()
     session_private_key = box.encode(encoder=nacl.encoding.HexEncoder).decode()
-    session_public_key = box.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+    session_public_key = box.public_key.encode(
+        encoder=nacl.encoding.HexEncoder
+    ).decode()
 
     info = {
-        'api_key_id': api_key_id,
-        'session_public_key': session_public_key,
-        'device_description': get_device_description(),
+        "api_key_id": api_key_id,
+        "session_public_key": session_public_key,
+        "device_description": get_device_description(),
     }
 
     info = json.dumps(info)
 
-    signing_box = nacl.signing.SigningKey(api_key_private_key, encoder=nacl.encoding.HexEncoder)
+    signing_box = nacl.signing.SigningKey(
+        api_key_private_key, encoder=nacl.encoding.HexEncoder
+    )
 
     # The first 128 chars (512 bits or 64 bytes) are the actual signature, the rest the binary encoded info
     signed = signing_box.sign(info.encode())
     signature = binascii.hexlify(signed.signature)
 
     return session_private_key, {
-        'info': info,
-        'signature': signature.decode(),
+        "info": info,
+        "signature": signature.decode(),
     }
 
-def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_public_key, session_private_key):
+
+def decrypt_server_login_info(
+    login_info_hex, login_info_nonce_hex, session_public_key, session_private_key
+):
     """
     Takes the login info and nonce together with the session public and private key.
     Will decrypt the login info and interpret it as json and return the json parsed object.
@@ -80,8 +90,10 @@ def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_publ
     :rtype:
     """
 
-    crypto_box = Box(PrivateKey(session_private_key, encoder=nacl.encoding.HexEncoder),
-                     PublicKey(session_public_key, encoder=nacl.encoding.HexEncoder))
+    crypto_box = Box(
+        PrivateKey(session_private_key, encoder=nacl.encoding.HexEncoder),
+        PublicKey(session_public_key, encoder=nacl.encoding.HexEncoder),
+    )
 
     login_info = nacl.encoding.HexEncoder.decode(login_info_hex)
     login_info_nonce = nacl.encoding.HexEncoder.decode(login_info_nonce_hex)
@@ -89,6 +101,7 @@ def decrypt_server_login_info(login_info_hex, login_info_nonce_hex, session_publ
     login_info = json.loads(crypto_box.decrypt(login_info, login_info_nonce).decode())
 
     return login_info
+
 
 def verify_signature(login_info, login_info_signature):
     """
@@ -105,7 +118,9 @@ def verify_signature(login_info, login_info_signature):
     :rtype:
     """
 
-    verify_key = nacl.signing.VerifyKey(server_signature, encoder=nacl.encoding.HexEncoder)
+    verify_key = nacl.signing.VerifyKey(
+        server_signature, encoder=nacl.encoding.HexEncoder
+    )
 
     verify_key.verify(login_info.encode(), binascii.unhexlify(login_info_signature))
 
@@ -154,13 +169,14 @@ def encrypt_symmetric(msg, secret):
     encrypted = secret_box.encrypt(msg.encode(), nonce)
 
     # cut away the nonce
-    text = encrypted[len(nonce):]
+    text = encrypted[len(nonce) :]
 
     # convert nonce and encrypted msg to hex
     nonce_hex = nacl.encoding.HexEncoder.encode(nonce).decode()
     text_hex = nacl.encoding.HexEncoder.encode(text).decode()
 
-    return {'text': text_hex, 'nonce': nonce_hex}
+    return {"text": text_hex, "nonce": nonce_hex}
+
 
 def decrypt_with_api_secret_key(secret_hex, secret_nonce_hex):
     """
@@ -178,23 +194,30 @@ def decrypt_with_api_secret_key(secret_hex, secret_nonce_hex):
     return decrypt_symmetric(secret_hex, secret_nonce_hex, api_key_secret_key)
 
 
-def api_request(method, endpoint, data = None, token = None, session_secret_key = None):
+def api_request(method, endpoint, data=None, token=None, session_secret_key=None):
 
     if token:
-        headers = {'content-type': 'application/json', 'authorization': 'Token ' + token}
+        headers = {
+            "content-type": "application/json",
+            "authorization": "Token " + token,
+        }
     else:
-        headers = {'content-type': 'application/json'}
+        headers = {"content-type": "application/json"}
 
     if session_secret_key and data:
         data = json.dumps(encrypt_symmetric(data, session_secret_key))
 
-    r = requests.request(method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY)
+    r = requests.request(
+        method, server_url + endpoint, data=data, headers=headers, verify=SSL_VERIFY
+    )
 
     if not session_secret_key:
         return r.json()
     else:
         encrypted_content = r.json()
-        decrypted_content = decrypt_symmetric(encrypted_content['text'], encrypted_content['nonce'], session_secret_key)
+        decrypted_content = decrypt_symmetric(
+            encrypted_content["text"], encrypted_content["nonce"], session_secret_key
+        )
         return json.loads(decrypted_content)
 
 
@@ -209,8 +232,8 @@ def api_login(client_login_info):
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/api-key/login/'
+    method = "POST"
+    endpoint = "/api-key/login/"
     data = json.dumps(client_login_info)
 
     return api_request(method, endpoint, data)
@@ -228,10 +251,12 @@ def api_read_datastores(token, session_secret_key):
     :rtype:
     """
 
-    method = 'GET'
-    endpoint = '/datastore/'
+    method = "GET"
+    endpoint = "/datastore/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
 def api_logout(token, session_secret_key):
@@ -246,10 +271,12 @@ def api_logout(token, session_secret_key):
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/authentication/logout/'
+    method = "POST"
+    endpoint = "/authentication/logout/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
 def api_read_datastore(token, session_secret_key, datastore_id):
@@ -266,13 +293,17 @@ def api_read_datastore(token, session_secret_key, datastore_id):
     :rtype:
     """
 
-    method = 'GET'
-    endpoint = '/datastore/' + datastore_id + '/'
+    method = "GET"
+    endpoint = "/datastore/" + datastore_id + "/"
 
-    return api_request(method, endpoint, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
 
 
-def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data, encrypted_data_nonce):
+def api_write_datastore(
+    token, session_secret_key, datastore_id, encrypted_data, encrypted_data_nonce
+):
     """
     Updates a datastore
 
@@ -290,18 +321,32 @@ def api_write_datastore(token, session_secret_key, datastore_id, encrypted_data,
     :rtype:
     """
 
-    method = 'POST'
-    endpoint = '/datastore/'
-    data = json.dumps({
-        'datastore_id': datastore_id,
-        'data': encrypted_data,
-        'data_nonce': encrypted_data_nonce,
-    })
+    method = "POST"
+    endpoint = "/datastore/"
+    data = json.dumps(
+        {
+            "datastore_id": datastore_id,
+            "data": encrypted_data,
+            "data_nonce": encrypted_data_nonce,
+        }
+    )
 
-    return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, data=data, token=token, session_secret_key=session_secret_key
+    )
 
 
-def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_nonce, link_id, parent_datastore_id, callback_url, callback_user, callback_pass):
+def api_create_secret(
+    token,
+    session_secret_key,
+    encrypted_data,
+    encrypted_data_nonce,
+    link_id,
+    parent_datastore_id,
+    callback_url,
+    callback_user,
+    callback_pass,
+):
     """
     Creates a secret
 
@@ -318,19 +363,24 @@ def api_create_secret(token, session_secret_key, encrypted_data, encrypted_data_
     :return:
     """
 
-    method = 'PUT'
-    endpoint = '/secret/'
-    data = json.dumps({
-        'data': encrypted_data,
-        'data_nonce': encrypted_data_nonce,
-        'link_id': link_id,
-        'parent_datastore_id': parent_datastore_id,
-        'callback_url': callback_url,
-        'callback_user': callback_user,
-        'callback_pass': callback_pass,
-    })
+    method = "PUT"
+    endpoint = "/secret/"
+    data = json.dumps(
+        {
+            "data": encrypted_data,
+            "data_nonce": encrypted_data_nonce,
+            "link_id": link_id,
+            "parent_datastore_id": parent_datastore_id,
+            "callback_url": callback_url,
+            "callback_user": callback_user,
+            "callback_pass": callback_pass,
+        }
+    )
 
-    return api_request(method, endpoint, data=data, token=token, session_secret_key=session_secret_key)
+    return api_request(
+        method, endpoint, data=data, token=token, session_secret_key=session_secret_key
+    )
+
 
 def create_folder_if_not_exist(folder_name, datastore_content):
     """
@@ -342,31 +392,32 @@ def create_folder_if_not_exist(folder_name, datastore_content):
     :param datastore_content:
     :return:
     """
-    if 'folders' not in datastore_content:
-        datastore_content['folders'] = []
+    if "folders" not in datastore_content:
+        datastore_content["folders"] = []
 
-    for f in datastore_content['folders']:
-        if f['name'] == folder_name:
+    for f in datastore_content["folders"]:
+        if f["name"] == folder_name:
             return f
 
     folder = {
-        'id': str(uuid.uuid4()),
-        'name': folder_name,
+        "id": str(uuid.uuid4()),
+        "name": folder_name,
     }
 
-    datastore_content['folders'].append(folder)
+    datastore_content["folders"].append(folder)
 
     return folder
 
+
 def create_secret(
-        token,
-        session_secret_key,
-        name,
-        type,
-        urlfilter,
-        content,
-        folder,
-        datastore_id,
+    token,
+    session_secret_key,
+    name,
+    type,
+    urlfilter,
+    content,
+    folder,
+    datastore_id,
 ):
     """
     Creates a new secret and adds it to the folder
@@ -380,29 +431,38 @@ def create_secret(
     :param folder:
     :return:
     """
-    if 'items' not in folder:
-        folder['items'] = []
+    if "items" not in folder:
+        folder["items"] = []
 
-    secret_key = nacl.encoding.HexEncoder.encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode()
+    secret_key = nacl.encoding.HexEncoder.encode(
+        nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
+    ).decode()
     encrypted_secret = encrypt_symmetric(json.dumps(content), secret_key)
 
     link_id = str(uuid.uuid4())
 
     result = api_create_secret(
-        token, session_secret_key, encrypted_secret['text'], encrypted_secret['nonce'], link_id, datastore_id,
-        '', '', ''
+        token,
+        session_secret_key,
+        encrypted_secret["text"],
+        encrypted_secret["nonce"],
+        link_id,
+        datastore_id,
+        "",
+        "",
+        "",
     )
 
     item = {
-        'id': link_id,
-        'name': name,
-        'type': type,
-        'secret_id': result['secret_id'],
-        'secret_key': secret_key,
-        'urlfilter': urlfilter,
+        "id": link_id,
+        "name": name,
+        "type": type,
+        "secret_id": result["secret_id"],
+        "secret_key": secret_key,
+        "urlfilter": urlfilter,
     }
 
-    folder['items'].append(item)
+    folder["items"].append(item)
 
 
 def main():
@@ -414,85 +474,122 @@ def main():
 
     # 3. Verify the signature in order to proof that we are really communicating with the server
     # (or someone who is in the posession of the servers private key :D)
-    verify_signature(json_response['login_info'], json_response['login_info_signature'])
+    verify_signature(json_response["login_info"], json_response["login_info_signature"])
 
     # 4. Decrypt the actual login info with the token and session_secret_key for the transport encryption
-    decrypted_sever_login_info = decrypt_server_login_info(json_response['login_info'], json_response['login_info_nonce'], json_response['server_session_public_key'], session_private_key)
+    decrypted_sever_login_info = decrypt_server_login_info(
+        json_response["login_info"],
+        json_response["login_info_nonce"],
+        json_response["server_session_public_key"],
+        session_private_key,
+    )
 
-    token = decrypted_sever_login_info['token'] # That is the token that we have to send always as header
-    session_secret_key = decrypted_sever_login_info['session_secret_key'] # that is the symmetric secret for the transport encryption
-    user_username = decrypted_sever_login_info['user']['username'] # The username
-    user_public_key = decrypted_sever_login_info['user']['public_key'] # The user's public key
+    token = decrypted_sever_login_info[
+        "token"
+    ]  # That is the token that we have to send always as header
+    session_secret_key = decrypted_sever_login_info[
+        "session_secret_key"
+    ]  # that is the symmetric secret for the transport encryption
+    user_username = decrypted_sever_login_info["user"]["username"]  # The username
+    user_public_key = decrypted_sever_login_info["user"][
+        "public_key"
+    ]  # The user's public key
 
-    if decrypted_sever_login_info['api_key_restrict_to_secrets']:
+    if decrypted_sever_login_info["api_key_restrict_to_secrets"]:
         print("api key is restricted. it should only be used to read specific secrets")
         return
-    if not decrypted_sever_login_info['api_key_read']:
+    if not decrypted_sever_login_info["api_key_read"]:
         print("api key doesn't allow read. Please allow read first")
         return
 
-    if not decrypted_sever_login_info['api_key_write']:
+    if not decrypted_sever_login_info["api_key_write"]:
         print("api key doesn't allow write. Please allow write first")
         return
 
     # if the api key is unrestricted then the request will also return the encrypted secret and private key of the user, symmetric encrypted with the api secret key
-    user_private_key = decrypt_with_api_secret_key(decrypted_sever_login_info['user']['private_key'], decrypted_sever_login_info['user']['private_key_nonce']) # The user's private key
-    user_secret_key = decrypt_with_api_secret_key(decrypted_sever_login_info['user']['secret_key'], decrypted_sever_login_info['user']['secret_key_nonce']) # The user's secret key
+    user_private_key = decrypt_with_api_secret_key(
+        decrypted_sever_login_info["user"]["private_key"],
+        decrypted_sever_login_info["user"]["private_key_nonce"],
+    )  # The user's private key
+    user_secret_key = decrypt_with_api_secret_key(
+        decrypted_sever_login_info["user"]["secret_key"],
+        decrypted_sever_login_info["user"]["secret_key_nonce"],
+    )  # The user's secret key
 
     # 5. Now we can start actual reading the datastore and secrets e.g. to read the datastore:
     content = api_read_datastores(token, session_secret_key)
-
 
     # 6. Read content of the first password datastore including all its shares, all secrets and filter the secrets
     datastore_content = None
     datastore_id = None
     datastore_secret = None
-    for datastore in content['datastores']:
-        if datastore['type'] != 'password':
+    for datastore in content["datastores"]:
+        if datastore["type"] != "password":
             continue
-        datastore_id = datastore['id']
-        datastore_read_result = api_read_datastore(token, session_secret_key, datastore['id'])
-        datastore_secret = decrypt_symmetric(datastore_read_result['secret_key'], datastore_read_result['secret_key_nonce'], user_secret_key)
-        datastore_content = json.loads(decrypt_symmetric(datastore_read_result['data'], datastore_read_result['data_nonce'], datastore_secret))
+        datastore_id = datastore["id"]
+        datastore_read_result = api_read_datastore(
+            token, session_secret_key, datastore["id"]
+        )
+        datastore_secret = decrypt_symmetric(
+            datastore_read_result["secret_key"],
+            datastore_read_result["secret_key_nonce"],
+            user_secret_key,
+        )
+        datastore_content = json.loads(
+            decrypt_symmetric(
+                datastore_read_result["data"],
+                datastore_read_result["data_nonce"],
+                datastore_secret,
+            )
+        )
         break
 
     if datastore_id is None:
-        print("No password datastore yet found, please create one for the user first with the webclient.")
+        print(
+            "No password datastore yet found, please create one for the user first with the webclient."
+        )
         return
 
     # 7. Create a folder
-    folder = create_folder_if_not_exist('My Folder', datastore_content)
+    folder = create_folder_if_not_exist("My Folder", datastore_content)
 
     # 8. Create secret
     create_secret(
         token,
         session_secret_key,
-        name='My Secret', # Thats the title shwon in the folder structure
-        type='website_password', # The type of the entry.
-        urlfilter='www.example.com', # only necessary for website_password and bookmarks, to allow the matching / searching
-        content={ # The actual content that will be stored on the external secret
-            'website_password_title': 'My Secret',
-            'website_password_url': 'https://www.example.com',
-            'website_password_username': 'MyUsername',
-            'website_password_password': 'MyPassword',
-            'website_password_notes': 'A note',
-            'website_password_auto_submit': False,
-            'website_password_url_filter': 'www.example.com',
+        name="My Secret",  # Thats the title shwon in the folder structure
+        type="website_password",  # The type of the entry.
+        urlfilter="www.example.com",  # only necessary for website_password and bookmarks, to allow the matching / searching
+        content={  # The actual content that will be stored on the external secret
+            "website_password_title": "My Secret",
+            "website_password_url": "https://www.example.com",
+            "website_password_username": "MyUsername",
+            "website_password_password": "MyPassword",
+            "website_password_notes": "A note",
+            "website_password_auto_submit": False,
+            "website_password_url_filter": "www.example.com",
         },
         folder=folder,
         datastore_id=datastore_id,
     )
 
-
     # 9. Encrypt Datastore
-    encrypted_datastore = encrypt_symmetric(json.dumps(datastore_content), datastore_secret)
+    encrypted_datastore = encrypt_symmetric(
+        json.dumps(datastore_content), datastore_secret
+    )
 
     # 10. Save new datastore content
-    api_write_datastore(token, session_secret_key, datastore_id, encrypted_datastore['text'], encrypted_datastore['nonce'])
+    api_write_datastore(
+        token,
+        session_secret_key,
+        datastore_id,
+        encrypted_datastore["text"],
+        encrypted_datastore["nonce"],
+    )
 
     # 11. Logout
     api_logout(token, session_secret_key)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

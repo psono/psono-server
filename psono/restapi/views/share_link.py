@@ -16,7 +16,6 @@ from ..authentication import TokenAuthentication
 
 
 class ShareLinkView(GenericAPIView):
-
     """
     Check the REST Token and the object permissions and returns
     own share right if the necessary access rights are granted
@@ -26,19 +25,18 @@ class ShareLinkView(GenericAPIView):
     Return a list of the shares or the share and the access rights or a message for an update of rights
     """
 
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("PUT", "POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateShareLinkSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UpdateShareLinkSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteShareLinkSerializer
         return Serializer
-
 
     def put(self, request, *args, **kwargs):
         """
@@ -54,22 +52,28 @@ class ShareLinkView(GenericAPIView):
         :return: 201 / 400
         """
 
-        serializer = CreateShareLinkSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = CreateShareLinkSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        link_id = serializer.validated_data.get("link_id")
+        share_id = serializer.validated_data.get("share_id")
+        parent_share_id = serializer.validated_data.get("parent_share_id")
+        parent_datastore_id = serializer.validated_data.get("parent_datastore_id")
+
+        if not create_share_link(
+            link_id, share_id, parent_share_id, parent_datastore_id
+        ):
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                {
+                    "message": "Link id already exists.",
+                    "resource_id": request.data["link_id"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
-
-        link_id = serializer.validated_data.get('link_id')
-        share_id = serializer.validated_data.get('share_id')
-        parent_share_id = serializer.validated_data.get('parent_share_id')
-        parent_datastore_id = serializer.validated_data.get('parent_datastore_id')
-
-        if not create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
-            return Response({"message":"Link id already exists.",
-                            "resource_id": request.data['link_id']}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
@@ -90,27 +94,31 @@ class ShareLinkView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = UpdateShareLinkSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UpdateShareLinkSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        shares = serializer.validated_data.get('shares')
-        new_parent_share_id = serializer.validated_data.get('new_parent_share_id')
-        new_parent_datastore_id = serializer.validated_data.get('new_parent_datastore_id')
+        shares = serializer.validated_data.get("shares")
+        new_parent_share_id = serializer.validated_data.get("new_parent_share_id")
+        new_parent_datastore_id = serializer.validated_data.get(
+            "new_parent_datastore_id"
+        )
 
         # all checks passed, lets move the link with a delete and create at the new location
-        delete_share_link(request.data['link_id'])
+        delete_share_link(request.data["link_id"])
 
         for share_id in shares:
-            create_share_link(request.data['link_id'], share_id, new_parent_share_id, new_parent_datastore_id)
+            create_share_link(
+                request.data["link_id"],
+                share_id,
+                new_parent_share_id,
+                new_parent_datastore_id,
+            )
 
         return Response({}, status=status.HTTP_200_OK)
-
-
 
     def delete(self, request, *args, **kwargs):
         """
@@ -126,14 +134,13 @@ class ShareLinkView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteShareLinkSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteShareLinkSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        delete_share_link(request.data['link_id'])
+        delete_share_link(request.data["link_id"])
 
         return Response({}, status=status.HTTP_200_OK)

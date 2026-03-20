@@ -14,13 +14,12 @@ from ..app_settings import (
 
 
 class MembershipDeclineView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return MembershipDeclineSerializer
         return Serializer
 
@@ -35,20 +34,19 @@ class MembershipDeclineView(GenericAPIView):
         Marks a membership as declined. In addition deletes now unnecessary information.
         """
 
-        serializer = MembershipDeclineSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = MembershipDeclineSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        membership_obj = serializer.validated_data.get('membership_obj')
+        membership_obj = serializer.validated_data.get("membership_obj")
         membership_obj.accepted = False
         membership_obj.save()
 
         if settings.CACHE_ENABLE:
-            cache_key = 'psono_user_status_' + str(membership_obj.user.id)
+            cache_key = "psono_user_status_" + str(membership_obj.user.id)
             cache.delete(cache_key)
 
         return Response({}, status=status.HTTP_200_OK)

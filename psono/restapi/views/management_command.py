@@ -14,14 +14,15 @@ from ..app_settings import (
     ManagementCommandSerializer,
 )
 
+
 class ManagementCommandView(GenericAPIView):
-    authentication_classes = (ManagementCommandAuthentication, )
+    authentication_classes = (ManagementCommandAuthentication,)
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ManagementCommandSerializer
         return Serializer
 
@@ -33,21 +34,20 @@ class ManagementCommandView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        serializer = ManagementCommandSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ManagementCommandSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        command_name = serializer.validated_data.get('command_name')
-        command_args = serializer.validated_data.get('command_args')
+        command_name = serializer.validated_data.get("command_name")
+        command_args = serializer.validated_data.get("command_args")
 
         out = StringIO()
         call_command(command_name, stdout=out, *command_args)
 
-        return Response({
-            'output': out.getvalue()
-        }, status=status.HTTP_200_OK)
+        return Response({"output": out.getvalue()}, status=status.HTTP_200_OK)
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

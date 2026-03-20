@@ -2,8 +2,8 @@ from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..utils import get_datastore
 
-class UpdateDatastoreSerializer(serializers.Serializer):
 
+class UpdateDatastoreSerializer(serializers.Serializer):
     datastore_id = UUIDField(required=True)
     name = serializers.CharField(max_length=64, required=False)
     data = serializers.CharField(required=False, allow_blank=True)
@@ -15,13 +15,13 @@ class UpdateDatastoreSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        datastore_id = attrs.get('datastore_id')
+        datastore_id = attrs.get("datastore_id")
 
-        datastore = get_datastore(datastore_id, self.context['request'].user)
+        datastore = get_datastore(datastore_id, self.context["request"].user)
         if not datastore:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['datastore'] = datastore
+        attrs["datastore"] = datastore
 
         return attrs

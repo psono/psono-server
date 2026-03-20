@@ -7,7 +7,9 @@ from typing import Dict
 
 # import the logging
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
     """
@@ -34,41 +36,31 @@ def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
                 host=settings.DUO_PROXY_HOST,
                 port=settings.DUO_PROXY_PORT,
                 headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE
+                proxy_type=settings.DUO_PROXY_TYPE,
             )
         check = auth_api.check()
     except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
+        return {"error": "Host incorrect: Could not be found"}
     except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
+        return {"error": "Host incorrect: SSL Certificate Error"}
     except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
+        if "Invalid integration key" in str(e):
+            return {"error": "Invalid integration key"}
+        if "Invalid signature" in str(e):
+            return {"error": "Invalid secret key"}
 
-        return {
-            'error': str(e)
-        }
+        return {"error": str(e)}
 
     except Exception as e:
         logger.error(e)
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
+        return {"error": "Duo offline. Try again later."}
 
     return check
 
 
-def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: str) -> dict:
+def duo_auth_enroll(
+    integration_key: str, secret_key: str, host: str, username: str
+) -> dict:
     """
     Anonymous enrollment of a new device
 
@@ -95,56 +87,42 @@ def duo_auth_enroll(integration_key: str, secret_key: str, host: str, username: 
                 host=settings.DUO_PROXY_HOST,
                 port=settings.DUO_PROXY_PORT,
                 headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE
+                proxy_type=settings.DUO_PROXY_TYPE,
             )
 
         pre_auth = auth_api.preauth(username=username)
 
-        if pre_auth['result'] == 'deny':
-            return {
-                'error': 'User denied by DUO'
-            }
+        if pre_auth["result"] == "deny":
+            return {"error": "User denied by DUO"}
 
-        enrollment = {} # type: Dict
-        if pre_auth['result'] == 'enroll':
+        enrollment = {}  # type: Dict
+        if pre_auth["result"] == "enroll":
             enrollment = auth_api.enroll(username=username)
 
     except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
+        return {"error": "Host incorrect: Could not be found"}
     except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
+        return {"error": "Host incorrect: SSL Certificate Error"}
     except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
-        if 'username already exists' in str(e):
-            return {
-                'error': 'Username already exists in Duo.'
-            }
+        if "Invalid integration key" in str(e):
+            return {"error": "Invalid integration key"}
+        if "Invalid signature" in str(e):
+            return {"error": "Invalid secret key"}
+        if "username already exists" in str(e):
+            return {"error": "Username already exists in Duo."}
 
-        return {
-            'error': str(e)
-        }
+        return {"error": str(e)}
 
     except Exception as e:
         logger.error(e)
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
+        return {"error": "Duo offline. Try again later."}
 
     return enrollment
 
 
-def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, user_id: str, activation_code: str) -> dict:
+def duo_auth_enroll_status(
+    integration_key: str, secret_key: str, host: str, user_id: str, activation_code: str
+) -> dict:
     """
     Anonymous enrollment of a new device
 
@@ -174,44 +152,42 @@ def duo_auth_enroll_status(integration_key: str, secret_key: str, host: str, use
                 host=settings.DUO_PROXY_HOST,
                 port=settings.DUO_PROXY_PORT,
                 headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE
+                proxy_type=settings.DUO_PROXY_TYPE,
             )
 
-        enrollment_status = auth_api.enroll_status(user_id=user_id, activation_code=activation_code)
+        enrollment_status = auth_api.enroll_status(
+            user_id=user_id, activation_code=activation_code
+        )
     except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
+        return {"error": "Host incorrect: Could not be found"}
     except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
+        return {"error": "Host incorrect: SSL Certificate Error"}
     except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
+        if "Invalid integration key" in str(e):
+            return {"error": "Invalid integration key"}
+        if "Invalid signature" in str(e):
+            return {"error": "Invalid secret key"}
 
-        return {
-            'error': str(e)
-        }
+        return {"error": str(e)}
 
     except Exception as e:
         logger.error(e)
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
+        return {"error": "Duo offline. Try again later."}
 
     return enrollment_status
 
 
-
-
-def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: str, factor: str, device: str = None, pushinfo: str = None, passcode: str = None, async_txn: bool = False) -> dict:
+def duo_auth_auth(
+    integration_key: str,
+    secret_key: str,
+    host: str,
+    username: str,
+    factor: str,
+    device: str = None,
+    pushinfo: str = None,
+    passcode: str = None,
+    async_txn: bool = False,
+) -> dict:
     """
     Auth call with the user id
 
@@ -249,37 +225,31 @@ def duo_auth_auth(integration_key: str, secret_key: str, host: str, username: st
                 host=settings.DUO_PROXY_HOST,
                 port=settings.DUO_PROXY_PORT,
                 headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE
+                proxy_type=settings.DUO_PROXY_TYPE,
             )
 
-        auth = auth_api.auth(username=username, factor=factor, device=device, pushinfo=pushinfo, passcode=passcode, async_txn=async_txn)
+        auth = auth_api.auth(
+            username=username,
+            factor=factor,
+            device=device,
+            pushinfo=pushinfo,
+            passcode=passcode,
+            async_txn=async_txn,
+        )
     except gaierror:
-        return {
-            'error': 'Host incorrect: Could not be found'
-        }
+        return {"error": "Host incorrect: Could not be found"}
     except SSLError:
-        return {
-            'error': 'Host incorrect: SSL Certificate Error'
-        }
+        return {"error": "Host incorrect: SSL Certificate Error"}
     except RuntimeError as e:
-        if 'Invalid integration key' in str(e):
-            return {
-                'error': 'Invalid integration key'
-            }
-        if 'Invalid signature' in str(e):
-            return {
-                'error': 'Invalid secret key'
-            }
+        if "Invalid integration key" in str(e):
+            return {"error": "Invalid integration key"}
+        if "Invalid signature" in str(e):
+            return {"error": "Invalid secret key"}
 
-        return {
-            'error': str(e)
-        }
+        return {"error": str(e)}
 
     except Exception as e:
         logger.error(e)
-        return {
-            'error': 'Duo offline. Try again later.'
-        }
+        return {"error": "Duo offline. Try again later."}
 
     return auth
-

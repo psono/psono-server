@@ -18,99 +18,116 @@ from ..app_settings import (
     UpdateMembershipSerializer,
     DeleteMembershipSerializer,
 )
-from ..models import (
-    User_Group_Membership
-)
+from ..models import User_Group_Membership
 from ..authentication import TokenAuthentication
 
-class MembershipView(GenericAPIView):
 
+class MembershipView(GenericAPIView):
     """
     Manages group memberships
     """
 
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("PUT", "POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateMembershipSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UpdateMembershipSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteMembershipSerializer
         return Serializer
 
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
-
     def put(self, request, *args, **kwargs):
         """
         Creates a new group membership
         """
 
-        serializer = CreateMembershipSerializer(data=request.data, context=self.get_serializer_context())
-
-        if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        membership = User_Group_Membership.objects.create(
-            user_id = serializer.validated_data['user_id'],
-            group_id = serializer.validated_data['group_id'],
-            creator = request.user,
-            secret_key = str(serializer.validated_data['secret_key']),
-            secret_key_nonce = str(serializer.validated_data['secret_key_nonce']),
-            secret_key_type = str(serializer.validated_data['secret_key_type']),
-            private_key = str(serializer.validated_data['private_key']),
-            private_key_nonce = str(serializer.validated_data['private_key_nonce']),
-            private_key_type = str(serializer.validated_data['private_key_type']),
-            group_admin = serializer.validated_data['group_admin'],
-            share_admin = serializer.validated_data['share_admin'],
+        serializer = CreateMembershipSerializer(
+            data=request.data, context=self.get_serializer_context()
         )
 
-        if not settings.DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED and serializer.validated_data['user'].email:
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        membership = User_Group_Membership.objects.create(
+            user_id=serializer.validated_data["user_id"],
+            group_id=serializer.validated_data["group_id"],
+            creator=request.user,
+            secret_key=str(serializer.validated_data["secret_key"]),
+            secret_key_nonce=str(serializer.validated_data["secret_key_nonce"]),
+            secret_key_type=str(serializer.validated_data["secret_key_type"]),
+            private_key=str(serializer.validated_data["private_key"]),
+            private_key_nonce=str(serializer.validated_data["private_key_nonce"]),
+            private_key_type=str(serializer.validated_data["private_key_type"]),
+            group_admin=serializer.validated_data["group_admin"],
+            share_admin=serializer.validated_data["share_admin"],
+        )
+
+        if (
+            not settings.DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED
+            and serializer.validated_data["user"].email
+        ):
             # send email
             if settings.WEB_CLIENT_URL:
-                groups_link = settings.WEB_CLIENT_URL + '/index.html#!/groups'
+                groups_link = settings.WEB_CLIENT_URL + "/index.html#!/groups"
             else:
                 groups_link = None
 
-            with translation.override(serializer.validated_data['user'].language):
-                subject = render_to_string('email/new_group_membership_created_subject.txt', {
-                    'groups_link': groups_link
-                }).replace('\n', ' ').replace('\r', '')
-                msg_plain = render_to_string('email/new_group_membership_created.txt', {
-                    'groups_link': groups_link
-                })
-                msg_html = render_to_string('email/new_group_membership_created.html', {
-                    'groups_link': groups_link
-                })
+            with translation.override(serializer.validated_data["user"].language):
+                subject = (
+                    render_to_string(
+                        "email/new_group_membership_created_subject.txt",
+                        {"groups_link": groups_link},
+                    )
+                    .replace("\n", " ")
+                    .replace("\r", "")
+                )
+                msg_plain = render_to_string(
+                    "email/new_group_membership_created.txt",
+                    {"groups_link": groups_link},
+                )
+                msg_html = render_to_string(
+                    "email/new_group_membership_created.html",
+                    {"groups_link": groups_link},
+                )
 
-            if settings.EMAIL_BACKEND in ['anymail.backends.brevo.EmailBackend']:
+            if settings.EMAIL_BACKEND in ["anymail.backends.brevo.EmailBackend"]:
                 # Brevo does not support inline attachments
-                msg_html = msg_html.replace('cid:logo.png', f'{settings.WEB_CLIENT_URL}/img/logo.png')
+                msg_html = msg_html.replace(
+                    "cid:logo.png", f"{settings.WEB_CLIENT_URL}/img/logo.png"
+                )
 
-            msg = EmailMultiAlternatives("%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subject), msg_plain,
-                                         settings.EMAIL_FROM,
-                                         [decrypt_with_db_secret(serializer.validated_data['user'].email)])
+            msg = EmailMultiAlternatives(
+                "%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subject),
+                msg_plain,
+                settings.EMAIL_FROM,
+                [decrypt_with_db_secret(serializer.validated_data["user"].email)],
+            )
 
             msg.attach_alternative(msg_html, "text/html")
-            msg.mixed_subtype = 'related'
+            msg.mixed_subtype = "related"
 
-            if settings.EMAIL_BACKEND not in ['anymail.backends.brevo.EmailBackend']:
-                for f in ['logo.png']:
-                    fp = open(os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'email', f), 'rb')
+            if settings.EMAIL_BACKEND not in ["anymail.backends.brevo.EmailBackend"]:
+                for f in ["logo.png"]:
+                    fp = open(
+                        os.path.join(
+                            os.path.dirname(__file__), "..", "..", "static", "email", f
+                        ),
+                        "rb",
+                    )
 
                     msg_img = MIMEImage(fp.read())
                     fp.close()
-                    msg_img.add_header('Content-ID', '<{}>'.format(f))
-                    msg_img.add_header('Content-Disposition', 'inline', filename='logo.png')
+                    msg_img.add_header("Content-ID", "<{}>".format(f))
+                    msg_img.add_header(
+                        "Content-Disposition", "inline", filename="logo.png"
+                    )
                     msg.attach(msg_img)
 
             try:
@@ -120,27 +137,28 @@ class MembershipView(GenericAPIView):
                 pass
 
         if settings.CACHE_ENABLE:
-            cache_key = 'psono_user_status_' + str(serializer.validated_data['user_id'])
+            cache_key = "psono_user_status_" + str(serializer.validated_data["user_id"])
             cache.delete(cache_key)
 
-        return Response({'membership_id': membership.id}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"membership_id": membership.id}, status=status.HTTP_201_CREATED
+        )
 
     def post(self, request, *args, **kwargs):
         """
         Updates a group membership
         """
 
-        serializer = UpdateMembershipSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UpdateMembershipSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        membership = serializer.validated_data['membership']
-        membership.group_admin = serializer.validated_data['group_admin']
-        membership.share_admin = serializer.validated_data['share_admin']
+        membership = serializer.validated_data["membership"]
+        membership.group_admin = serializer.validated_data["group_admin"]
+        membership.share_admin = serializer.validated_data["share_admin"]
         membership.save()
 
         return Response({}, status=status.HTTP_200_OK)
@@ -150,18 +168,17 @@ class MembershipView(GenericAPIView):
         Deletes a group membership
         """
 
-        serializer = DeleteMembershipSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteMembershipSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        membership = serializer.validated_data.get('membership')
+        membership = serializer.validated_data.get("membership")
 
         if settings.CACHE_ENABLE:
-            cache_key = 'psono_user_status_' + str(membership.user.id)
+            cache_key = "psono_user_status_" + str(membership.user.id)
             cache.delete(cache_key)
 
         # delete it

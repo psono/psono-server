@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0042_token_session_key'),
+        ("restapi", "0042_token_session_key"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='group',
-            name='is_managed',
-            field=models.BooleanField(default=False, verbose_name='Managed'),
+            model_name="group",
+            name="is_managed",
+            field=models.BooleanField(default=False, verbose_name="Managed"),
         ),
     ]

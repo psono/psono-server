@@ -17,8 +17,8 @@ import ntplib
 
 class HealthCheckView(GenericAPIView):
     permission_classes = (AllowAny,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
-    throttle_scope = 'health_check'
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
+    throttle_scope = "health_check"
     parser_classes = [JSONParser]
 
     def get_serializer_class(self):
@@ -78,10 +78,10 @@ class HealthCheckView(GenericAPIView):
             time_sync = False
 
         result = {
-            'db_read': { 'healthy': db_read },
-            'db_sync': { 'healthy': db_sync },
-            'time_sync': { 'healthy': time_sync },
-            '_info': { 'ip': get_ip(request) },
+            "db_read": {"healthy": db_read},
+            "db_sync": {"healthy": db_sync},
+            "time_sync": {"healthy": time_sync},
+            "_info": {"ip": get_ip(request)},
         }
 
         if unhealthy:

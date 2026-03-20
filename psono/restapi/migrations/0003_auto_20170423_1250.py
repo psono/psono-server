@@ -8,29 +8,50 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0002_auto_20170226_1625'),
+        ("restapi", "0002_auto_20170226_1625"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Google_Authenticator',
+            name="Google_Authenticator",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=256, verbose_name='title')),
-                ('secret', models.CharField(max_length=1024, verbose_name='secret as hex')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='google_authenticator', to='restapi.User')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=256, verbose_name="title")),
+                (
+                    "secret",
+                    models.CharField(max_length=1024, verbose_name="secret as hex"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="google_authenticator",
+                        to="restapi.User",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='token',
-            name='google_authenticator_2fa',
-            field=models.BooleanField(default=False, help_text='Specifies if Google Authenticator is required or not', verbose_name='Google Authenticator Required'),
+            model_name="token",
+            name="google_authenticator_2fa",
+            field=models.BooleanField(
+                default=False,
+                help_text="Specifies if Google Authenticator is required or not",
+                verbose_name="Google Authenticator Required",
+            ),
         ),
     ]

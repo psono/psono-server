@@ -9,22 +9,25 @@ from ..fields import UUIDField
 from ..models import Webauthn
 from ..utils import decrypt_with_db_secret
 
+
 class ActivateWebauthnSerializer(serializers.Serializer):
     webauthn_id = UUIDField(required=True)
     credential = serializers.CharField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        webauthn_id = attrs.get('webauthn_id', '')
-        credential = attrs.get('credential', '').strip()
+        webauthn_id = attrs.get("webauthn_id", "")
+        credential = attrs.get("credential", "").strip()
 
         try:
-            webauthn = Webauthn.objects.get(pk=webauthn_id, user=self.context['request'].user, active=False)
+            webauthn = Webauthn.objects.get(
+                pk=webauthn_id, user=self.context["request"].user, active=False
+            )
         except Webauthn.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if webauthn.origin.startswith('https://'):
+        if webauthn.origin.startswith("https://"):
             # we have a website so the parameters should look like:
             # expected_origin="https://psono.example.com",
             # expected_rp_id="psono.example.com",
@@ -48,8 +51,8 @@ class ActivateWebauthnSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['webauthn'] = webauthn
-        attrs['credential_id'] = registration_verification.credential_id
-        attrs['credential_public_key'] = registration_verification.credential_public_key
+        attrs["webauthn"] = webauthn
+        attrs["credential_id"] = registration_verification.credential_id
+        attrs["credential_public_key"] = registration_verification.credential_public_key
 
         return attrs

@@ -4,35 +4,51 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0038_auto_20240702_1000'),
+        ("restapi", "0038_auto_20240702_1000"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='link_share',
-            name='allow_write',
-            field=models.BooleanField(default=False, help_text='Do we allow people to update a secret', verbose_name='Allow write'),
+            model_name="link_share",
+            name="allow_write",
+            field=models.BooleanField(
+                default=False,
+                help_text="Do we allow people to update a secret",
+                verbose_name="Allow write",
+            ),
         ),
         migrations.AlterField(
-            model_name='ivalt',
-            name='mobile',
-            field=models.CharField(max_length=256, verbose_name='Mobile'),
+            model_name="ivalt",
+            name="mobile",
+            field=models.CharField(max_length=256, verbose_name="Mobile"),
         ),
         migrations.AlterField(
-            model_name='link_share',
-            name='allowed_reads',
-            field=models.IntegerField(blank=True, help_text='The remaining amount of allowed reads. Null if no restriction applies.', null=True, verbose_name='Allowed reads or writes'),
+            model_name="link_share",
+            name="allowed_reads",
+            field=models.IntegerField(
+                blank=True,
+                help_text="The remaining amount of allowed reads. Null if no restriction applies.",
+                null=True,
+                verbose_name="Allowed reads or writes",
+            ),
         ),
         migrations.AlterField(
-            model_name='token',
-            name='ivalt_2fa',
-            field=models.BooleanField(default=False, help_text='Specifies if ivalt is required or not', verbose_name='ivalt Required'),
+            model_name="token",
+            name="ivalt_2fa",
+            field=models.BooleanField(
+                default=False,
+                help_text="Specifies if ivalt is required or not",
+                verbose_name="ivalt Required",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='ivalt_enabled',
-            field=models.BooleanField(default=False, help_text='True once ivalt 2fa is enabled', verbose_name='iValt 2FA enabled'),
+            model_name="user",
+            name="ivalt_enabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="True once ivalt 2fa is enabled",
+                verbose_name="iValt 2FA enabled",
+            ),
         ),
     ]

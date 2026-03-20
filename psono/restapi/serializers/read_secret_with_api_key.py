@@ -17,13 +17,21 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        api_key_id = attrs.get('api_key_id')
-        secret_id = attrs.get('secret_id')
-        api_key_secret_key = attrs.get('api_key_secret_key', False)
-        json_filter = attrs.get('json_filter', '')
+        api_key_id = attrs.get("api_key_id")
+        secret_id = attrs.get("secret_id")
+        api_key_secret_key = attrs.get("api_key_secret_key", False)
+        json_filter = attrs.get("json_filter", "")
 
         try:
-            api_key_secret = API_Key_Secret.objects.select_related('secret', 'api_key', 'api_key__user').get(api_key_id=api_key_id, secret_id=secret_id, api_key__read=True, api_key__active=True, api_key__user__is_active=True)
+            api_key_secret = API_Key_Secret.objects.select_related(
+                "secret", "api_key", "api_key__user"
+            ).get(
+                api_key_id=api_key_id,
+                secret_id=secret_id,
+                api_key__read=True,
+                api_key__active=True,
+                api_key__user__is_active=True,
+            )
             api_key = api_key_secret.api_key
             user = api_key.user
             secret = api_key_secret.secret
@@ -42,22 +50,27 @@ class ReadSecretWithAPIKeySerializer(serializers.Serializer):
         secret_key = None
         if api_key_secret_key:
             try:
-                crypto_box = nacl.secret.SecretBox(api_key_secret_key, encoder=nacl.encoding.HexEncoder)
-                secret_key = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(api_key_secret.secret_key), nacl.encoding.HexEncoder.decode(api_key_secret.secret_key_nonce))
+                crypto_box = nacl.secret.SecretBox(
+                    api_key_secret_key, encoder=nacl.encoding.HexEncoder
+                )
+                secret_key = crypto_box.decrypt(
+                    nacl.encoding.HexEncoder.decode(api_key_secret.secret_key),
+                    nacl.encoding.HexEncoder.decode(api_key_secret.secret_key_nonce),
+                )
             except:
                 msg = "API_KEY_SECRET_KEY_INVALID"
                 raise exceptions.ValidationError(msg)
 
         json_filter = json_filter.strip()
         if json_filter:
-            json_filter = json_filter.split('.')
+            json_filter = json_filter.split(".")
         else:
             json_filter = []
 
-        attrs['secret'] = secret
-        attrs['user'] = user
-        attrs['api_key_secret'] = api_key_secret
-        attrs['secret_key'] = secret_key
-        attrs['json_filter'] = json_filter
+        attrs["secret"] = secret
+        attrs["user"] = user
+        attrs["api_key_secret"] = api_key_secret
+        attrs["secret_key"] = secret_key
+        attrs["json_filter"] = json_filter
 
         return attrs

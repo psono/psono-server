@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from ..fields import BooleanField
 
-class CreateDatastoreSerializer(serializers.Serializer):
 
+class CreateDatastoreSerializer(serializers.Serializer):
     type = serializers.CharField(max_length=64, required=True)
     description = serializers.CharField(max_length=64, required=True)
     data = serializers.CharField(required=False, allow_blank=True)

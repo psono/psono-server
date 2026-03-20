@@ -2,3 +2,4 @@ coverage
 mock
 tblib
 pip-tools
+ruff

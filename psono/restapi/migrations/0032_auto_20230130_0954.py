@@ -6,40 +6,57 @@ import restapi.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0031_auto_20221005_1928'),
+        ("restapi", "0031_auto_20221005_1928"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='old_credential',
-            name='hashing_algorithm',
-            field=models.CharField(choices=[('scrypt', 'scrypt')], default='scrypt', max_length=32, verbose_name='hashing algorithm'),
+            model_name="old_credential",
+            name="hashing_algorithm",
+            field=models.CharField(
+                choices=[("scrypt", "scrypt")],
+                default="scrypt",
+                max_length=32,
+                verbose_name="hashing algorithm",
+            ),
         ),
         migrations.AddField(
-            model_name='old_credential',
-            name='hashing_parameters',
-            field=models.JSONField(default=restapi.models.default_hashing_parameters, verbose_name='hashing parameters'),
+            model_name="old_credential",
+            name="hashing_parameters",
+            field=models.JSONField(
+                default=restapi.models.default_hashing_parameters,
+                verbose_name="hashing parameters",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='display_name',
-            field=models.CharField(default='', max_length=512, verbose_name='display name'),
+            model_name="user",
+            name="display_name",
+            field=models.CharField(
+                default="", max_length=512, verbose_name="display name"
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='hashing_algorithm',
-            field=models.CharField(choices=[('scrypt', 'scrypt')], default='scrypt', max_length=32, verbose_name='hashing algorithm'),
+            model_name="user",
+            name="hashing_algorithm",
+            field=models.CharField(
+                choices=[("scrypt", "scrypt")],
+                default="scrypt",
+                max_length=32,
+                verbose_name="hashing algorithm",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='hashing_parameters',
-            field=models.JSONField(default=restapi.models.default_hashing_parameters, verbose_name='hashing parameters'),
+            model_name="user",
+            name="hashing_parameters",
+            field=models.JSONField(
+                default=restapi.models.default_hashing_parameters,
+                verbose_name="hashing parameters",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='last_login',
+            model_name="user",
+            name="last_login",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]

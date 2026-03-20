@@ -22,7 +22,7 @@ class DeviceCodeView(generics.GenericAPIView):
     Handles the creation (POST) of Device Codes.
     """
 
-    http_method_names = ['post', 'options']
+    http_method_names = ["post", "options"]
     parser_classes = [JSONParser]
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -33,30 +33,34 @@ class DeviceCodeView(generics.GenericAPIView):
         Creates a new DeviceCode record. Anonymous access allowed.
         """
         serializer = self.get_serializer(data=request.data)
-        
+
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         # Get validated data from serializer
         validated_data = serializer.validated_data
-        
-        device_fingerprint = validated_data['device_fingerprint']
-        device_description = validated_data['device_description']
-        device_date = validated_data['device_date']
-        user_public_key_hex = validated_data['user_public_key']
-        
+
+        device_fingerprint = validated_data["device_fingerprint"]
+        device_description = validated_data["device_description"]
+        device_date = validated_data["device_date"]
+        user_public_key_hex = validated_data["user_public_key"]
+
         # Generate server key pair
         server_private_key = PrivateKey.generate()
-        server_private_key_hex = server_private_key.encode(encoder=nacl.encoding.HexEncoder).decode()
-        server_private_key_hex_encrypted = encrypt_with_db_secret(server_private_key_hex)
-        server_public_key_hex = server_private_key.public_key.encode(encoder=nacl.encoding.HexEncoder).decode()
-        
+        server_private_key_hex = server_private_key.encode(
+            encoder=nacl.encoding.HexEncoder
+        ).decode()
+        server_private_key_hex_encrypted = encrypt_with_db_secret(
+            server_private_key_hex
+        )
+        server_public_key_hex = server_private_key.public_key.encode(
+            encoder=nacl.encoding.HexEncoder
+        ).decode()
+
         # Calculate validity period
         valid_duration = datetime.timedelta(seconds=300)  # 5 minutes
         valid_till = timezone.now() + valid_duration
-        
+
         # Create the DeviceCode object
         device_code = DeviceCode.objects.create(
             device_fingerprint=device_fingerprint,
@@ -84,6 +88,8 @@ class DeviceCodeView(generics.GenericAPIView):
         If a method other than POST is called, return a clear error message.
         """
         return Response(
-            {"detail": f"{request.method.upper()} method not supported. Use POST to create a new device code."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            {
+                "detail": f"{request.method.upper()} method not supported. Use POST to create a new device code."
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )

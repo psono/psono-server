@@ -6,50 +6,111 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0026_auto_20190318_2047'),
+        ("restapi", "0026_auto_20190318_2047"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Link_Share',
+            name="Link_Share",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('public_title', models.CharField(max_length=256, verbose_name='Public Title')),
-                ('allowed_reads', models.IntegerField(blank=True, help_text='The remaining amount of allowed reads. Null if no restriction applies.', null=True, verbose_name='File size limit')),
-                ('node', models.BinaryField()),
-                ('node_nonce', models.CharField(max_length=64, verbose_name='Node nonce')),
-                ('passphrase', models.CharField(blank=True, max_length=128, null=True, verbose_name='Passphrase')),
-                ('valid_till', models.DateTimeField(blank=True, null=True)),
-                ('file', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='link_shares', to='restapi.File')),
-                ('secret', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='link_shares', to='restapi.Secret')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='link_shares', to='restapi.User')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                (
+                    "public_title",
+                    models.CharField(max_length=256, verbose_name="Public Title"),
+                ),
+                (
+                    "allowed_reads",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="The remaining amount of allowed reads. Null if no restriction applies.",
+                        null=True,
+                        verbose_name="File size limit",
+                    ),
+                ),
+                ("node", models.BinaryField()),
+                (
+                    "node_nonce",
+                    models.CharField(max_length=64, verbose_name="Node nonce"),
+                ),
+                (
+                    "passphrase",
+                    models.CharField(
+                        blank=True, max_length=128, null=True, verbose_name="Passphrase"
+                    ),
+                ),
+                ("valid_till", models.DateTimeField(blank=True, null=True)),
+                (
+                    "file",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="link_shares",
+                        to="restapi.File",
+                    ),
+                ),
+                (
+                    "secret",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="link_shares",
+                        to="restapi.Secret",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="link_shares",
+                        to="restapi.User",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='file_transfer',
-            name='secret_key',
-            field=models.CharField(default='', max_length=64),
+            model_name="file_transfer",
+            name="secret_key",
+            field=models.CharField(default="", max_length=64),
         ),
         migrations.AddField(
-            model_name='fileserver_cluster_member_shard_link',
-            name='allow_link_shares',
-            field=models.BooleanField(default=True, help_text='Allows anonymous access with link shares', verbose_name='Allow link shares'),
+            model_name="fileserver_cluster_member_shard_link",
+            name="allow_link_shares",
+            field=models.BooleanField(
+                default=True,
+                help_text="Allows anonymous access with link shares",
+                verbose_name="Allow link shares",
+            ),
         ),
         migrations.AddField(
-            model_name='fileserver_cluster_members',
-            name='allow_link_shares',
-            field=models.BooleanField(default=True, help_text='Allows anonymous access with link shares', verbose_name='Allow link shares'),
+            model_name="fileserver_cluster_members",
+            name="allow_link_shares",
+            field=models.BooleanField(
+                default=True,
+                help_text="Allows anonymous access with link shares",
+                verbose_name="Allow link shares",
+            ),
         ),
         migrations.AddField(
-            model_name='fileserver_cluster_shard_link',
-            name='allow_link_shares',
-            field=models.BooleanField(default=True, help_text='Allows anonymous access with link shares', verbose_name='Allow link shares'),
+            model_name="fileserver_cluster_shard_link",
+            name="allow_link_shares",
+            field=models.BooleanField(
+                default=True,
+                help_text="Allows anonymous access with link shares",
+                verbose_name="Allow link shares",
+            ),
         ),
     ]

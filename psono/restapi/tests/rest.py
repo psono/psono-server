@@ -69,13 +69,3 @@ class SystemTests(APITestCaseExtended):
         self.assertNotEqual(secret, 'the-mail-for-for-example-useraccount-activations@test.com',
                             'Please change the EMAIL_FROM value')
 """
-
-
-
-
-
-
-
-
-
-

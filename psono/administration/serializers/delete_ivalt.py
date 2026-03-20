@@ -3,12 +3,13 @@ from restapi.fields import UUIDField
 
 from restapi.models import Ivalt
 
+
 class DeleteIvaltSerializer(serializers.Serializer):
     ivalt_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        ivalt_id = attrs.get('ivalt_id')
+        ivalt_id = attrs.get("ivalt_id")
 
         try:
             ivalt = Ivalt.objects.get(pk=ivalt_id)
@@ -16,6 +17,6 @@ class DeleteIvaltSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['ivalt'] = ivalt
+        attrs["ivalt"] = ivalt
 
         return attrs
