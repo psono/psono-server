@@ -10,6 +10,8 @@ from restapi.models import Share_Tree
 from restapi.models import Link_Share
 from restapi.models import Share
 from restapi.models import DeviceCode
+from restapi.models import File
+from restapi.models import File_Link
 
 
 class Command(BaseCommand):
@@ -39,5 +41,13 @@ class Command(BaseCommand):
             has_share_tree_entry=False,
             create_date__lt=timezone.now() - timedelta(days=28),
         ).delete()
+
+        file_links = File_Link.objects.filter(file=OuterRef("pk"))
+        for file in File.objects.annotate(has_file_link=Exists(file_links)).filter(
+            has_file_link=False,
+            secret__isnull=True,
+            delete_date__isnull=True,
+        ):
+            file.delete()
 
         self.stdout.write("Done")

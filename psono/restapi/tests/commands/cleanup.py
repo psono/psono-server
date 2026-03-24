@@ -195,6 +195,110 @@ class CommandCleartokenTestCase(TestCase):
         self.assertTrue(models.Share.objects.filter(pk=test_share1_obj.id).exists())
         self.assertFalse(models.Share.objects.filter(pk=test_share2_obj.id).exists())
 
+    def test_inaccessible_share_cleans_up_orphaned_shard_file(self):
+        share = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345",
+        )
+        share.create_date = timezone.now() - timedelta(days=30)
+        share.save()
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
+
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum="cleanup-share-orphan-chunk",
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        link_id = "fdb5f5db-4fdb-43ee-95fa-a45482e92be3"
+        models.File_Link.objects.create(
+            link_id=link_id,
+            file_id=file.id,
+            parent_datastore_id=None,
+            parent_share_id=share.id,
+        )
+
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertFalse(models.Share.objects.filter(pk=share.id).exists())
+        self.assertFalse(models.File_Link.objects.filter(link_id=link_id).exists())
+
+        file.refresh_from_db()
+        self.assertIsNotNone(file.delete_date)
+        self.assertLessEqual(file.delete_date, timezone.now())
+
+    def test_inaccessible_share_deletes_file_with_active_link_share(self):
+        share = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345",
+        )
+        share.create_date = timezone.now() - timedelta(days=30)
+        share.save()
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
+
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        link_id = "698037f3-603f-4f8e-9ad1-cb78dc1263f8"
+        models.File_Link.objects.create(
+            link_id=link_id,
+            file_id=file.id,
+            parent_datastore_id=None,
+            parent_share_id=share.id,
+        )
+
+        models.Link_Share.objects.create(
+            user=self.test_user_obj,
+            secret=None,
+            file=file,
+            allowed_reads=5,
+            public_title="A public title",
+            node=b"kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi",
+            node_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            passphrase=None,
+            valid_till=timezone.now() + timedelta(days=1),
+        )
+
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertFalse(models.Share.objects.filter(pk=share.id).exists())
+        self.assertFalse(models.File_Link.objects.filter(link_id=link_id).exists())
+
+        file.refresh_from_db()
+        self.assertIsNotNone(file.delete_date)
+        self.assertLessEqual(file.delete_date, timezone.now())
+
     def test_inaccessible_secrets(self):
 
         inaccessible_secret_obj = models.Secret.objects.create(
@@ -594,3 +698,32 @@ class CommandCleartokenTestCase(TestCase):
         self.assertTrue(models.File.objects.filter(pk=file.id).exists())
         file_after = models.File.objects.get(pk=file.id)
         self.assertIsNone(file_after.delete_date)
+
+    def test_cleanup_keeps_already_soft_deleted_orphaned_shard_file(self):
+        """
+        Tests that cleanup command does not hard-delete a shard file that is
+        already soft-deleted and currently orphaned.
+        """
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
+
+        soft_delete_date = timezone.now() - timedelta(days=1)
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+            delete_date=soft_delete_date,
+        )
+
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertTrue(models.File.objects.filter(pk=file.id).exists())
+        file_after = models.File.objects.get(pk=file.id)
+        self.assertEqual(file_after.delete_date, soft_delete_date)
