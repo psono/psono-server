@@ -31,21 +31,35 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         self.test_username = "test@psono.pw"
         self.test_username2 = "test2@psono.pw"
         self.test_password = "myPassword"
-        self.test_authkey = "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7" \
-                            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
-        self.test_public_key = "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
-        self.test_secret_key = "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
-        self.test_secret_key_enc = "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422" \
-                                   "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011" \
-                                   "571a48eb"
+        self.test_authkey = (
+            "c55066421a559f76d8ed5227622e9f95a0c67df15220e40d7bc98a8a598124fa15373ac553ef3ee27c7"
+            "123d6be058e6d43cc71c1b666bdecaf33b734c8583a93"
+        )
+        self.test_public_key = (
+            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        )
+        self.test_secret_key = (
+            "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
+        )
+        self.test_secret_key_enc = (
+            "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422"
+            "996e4a26de599982d531eef3098c9a531a05f75878ac0739571d6a242e6bf68c2c28eadf1011"
+            "571a48eb"
+        )
         self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
         self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
-        self.test_private_key = "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
-        self.test_private_key_enc = "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52" \
-                                    "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576" \
-                                    "a74b9b2452"
+        self.test_private_key = (
+            "d636f7cc20384475bdc30c3ede98f719ee09d1fd4709276103772dd9479f353c"
+        )
+        self.test_private_key_enc = (
+            "abddebec9d20cecf7d1cab95ad6c6394db3826856bf21c2c6af9954e9816c2239f5df697e52"
+            "d60785eb1136803407b69729c38bb50eefdd2d24f2fa0f104990eee001866ba83704cf4f576"
+            "a74b9b2452"
+        )
         self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
-        self.test_private_key_nonce2 = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+        self.test_private_key_nonce2 = (
+            "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
+        )
 
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
@@ -57,8 +71,8 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce,
-            user_sauce='3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7',
-            is_email_active=True
+            user_sauce="3e7a12fcb7171c917005ef8110503ffbb85764163dbb567ef481e72a37f352a7",
+            is_email_active=True,
         )
 
         self.test_user2_obj = models.User.objects.create(
@@ -71,29 +85,33 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             private_key_nonce=self.test_private_key_nonce2,
             secret_key=self.test_secret_key_enc,
             secret_key_nonce=self.test_secret_key_nonce2,
-            user_sauce='f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01',
-            is_email_active=True
+            user_sauce="f3c0a6788364ab164d574b655ac2a90b8124d3a20fd341c38a24566188390d01",
+            is_email_active=True,
         )
 
         self.shard1 = models.Fileserver_Shard.objects.create(
-            title='Some Shard Title',
-            description='Some Shard Description',
+            title="Some Shard Title",
+            description="Some Shard Description",
         )
 
         self.cluster1 = models.Fileserver_Cluster.objects.create(
-            title='Some Fileserver Cluster Title',
-            auth_public_key='abc',
-            auth_private_key='abc',
+            title="Some Fileserver Cluster Title",
+            auth_public_key="abc",
+            auth_private_key="abc",
             file_size_limit=0,
         )
 
         self.fileserver1 = models.Fileserver_Cluster_Members.objects.create(
-            create_ip='127.0.0.1',
+            create_ip="127.0.0.1",
             fileserver_cluster=self.cluster1,
-            key='abc',
-            public_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            secret_key=binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode(),
-            url='https://fs01.example.com/fileserver',
+            key="abc",
+            public_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            secret_key=binascii.hexlify(
+                os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+            ).decode(),
+            url="https://fs01.example.com/fileserver",
             read=True,
             write=True,
             delete_capability=True,
@@ -117,24 +135,32 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             type="my-type",
             description="my-description",
             data=b"12345",
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            secret_key="".join(
+                random.choice(string.ascii_lowercase) for _ in range(256)
+            ),
+            secret_key_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
         )
 
         # Create a secret owned by test_user_obj
         self.secret1 = models.Secret.objects.create(
             user=self.test_user_obj,
             data=b"secret-data",
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type='password',
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="password",
         )
 
         self.secret_link1 = models.Secret_Link.objects.create(
-            link_id='a0e98f85-6134-49e9-9bc1-3face1401bdc',
+            link_id="a0e98f85-6134-49e9-9bc1-3face1401bdc",
             secret_id=self.secret1.id,
             parent_datastore_id=self.test_datastore_obj.id,
-            parent_share_id=None
+            parent_share_id=None,
         )
 
         # Create a secret owned by test_user2_obj (user without access)
@@ -143,23 +169,31 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             type="my-type",
             description="my-description",
             data=b"12345",
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            secret_key=''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            secret_key_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            secret_key="".join(
+                random.choice(string.ascii_lowercase) for _ in range(256)
+            ),
+            secret_key_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
         )
 
         self.secret2 = models.Secret.objects.create(
             user=self.test_user2_obj,
             data=b"secret-data-2",
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type='password',
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="password",
         )
 
         self.secret_link2 = models.Secret_Link.objects.create(
-            link_id='b0e98f85-6134-49e9-9bc1-3face1401bdc',
+            link_id="b0e98f85-6134-49e9-9bc1-3face1401bdc",
             secret_id=self.secret2.id,
             parent_datastore_id=self.test_datastore2_obj.id,
-            parent_share_id=None
+            parent_share_id=None,
         )
 
     def test_create_file_with_parent_secret_id(self):
@@ -167,13 +201,13 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         Tests PUT on file with parent_secret_id
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': str(self.secret1.id),
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": str(self.secret1.id),
+            "chunk_count": 1,
+            "size": 512,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -183,12 +217,12 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             print(f"Error response: {response.data}")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('file_id', response.data)
-        self.assertIn('file_transfer_id', response.data)
-        self.assertIn('file_transfer_secret_key', response.data)
+        self.assertIn("file_id", response.data)
+        self.assertIn("file_transfer_id", response.data)
+        self.assertIn("file_transfer_secret_key", response.data)
 
         # Verify the file was created with secret_id set
-        file = models.File.objects.get(id=response.data['file_id'])
+        file = models.File.objects.get(id=response.data["file_id"])
         self.assertEqual(str(file.secret_id), str(self.secret1.id))
 
         # Verify no File_Link was created
@@ -200,81 +234,83 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         Tests PUT on file with parent_secret_id where user has no permission on secret
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': str(self.secret2.id),  # Secret owned by user2
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": str(self.secret2.id),  # Secret owned by user2
+            "chunk_count": 1,
+            "size": 512,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('NO_PERMISSION_OR_NOT_EXIST', str(response.data))
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", str(response.data))
 
     def test_create_file_with_both_parent_secret_and_link_id(self):
         """
         Tests PUT on file with both parent_secret_id and link_id (should fail)
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': str(self.secret1.id),
-            'link_id': "b8866161-0b1f-4a8e-acde-07047313ec8f",
-            'parent_datastore_id': str(self.test_datastore_obj.id),
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": str(self.secret1.id),
+            "link_id": "b8866161-0b1f-4a8e-acde-07047313ec8f",
+            "parent_datastore_id": str(self.test_datastore_obj.id),
+            "chunk_count": 1,
+            "size": 512,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('EITHER_PARENT_SECRET_OR_LINK_NOT_BOTH', str(response.data))
+        self.assertIn("EITHER_PARENT_SECRET_OR_LINK_NOT_BOTH", str(response.data))
 
     def test_create_file_without_parent_secret_or_link_id(self):
         """
         Tests PUT on file without parent_secret_id or link_id (should fail)
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "chunk_count": 1,
+            "size": 512,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('EITHER_PARENT_SECRET_OR_LINK_NEED_TO_BE_DEFINED', str(response.data))
+        self.assertIn(
+            "EITHER_PARENT_SECRET_OR_LINK_NEED_TO_BE_DEFINED", str(response.data)
+        )
 
     def test_create_file_with_nonexistent_parent_secret_id(self):
         """
         Tests PUT on file with a non-existent parent_secret_id
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': '00000000-0000-0000-0000-000000000000',
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": "00000000-0000-0000-0000-000000000000",
+            "chunk_count": 1,
+            "size": 512,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('NO_PERMISSION_OR_NOT_EXIST', str(response.data))
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", str(response.data))
 
     def test_delete_secret_cascades_to_attached_file_shard(self):
         """
@@ -325,14 +361,14 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             user=self.test_user_obj,
         )
 
-        url = reverse('file', kwargs={'file_id': str(file.id)})
+        url = reverse("file", kwargs={"file_id": str(file.id)})
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('file_transfer_id', response.data)
-        self.assertIn('file_transfer_secret_key', response.data)
+        self.assertIn("file_transfer_id", response.data)
+        self.assertIn("file_transfer_secret_key", response.data)
 
     def test_read_file_attached_to_secret_without_permission(self):
         """
@@ -349,14 +385,14 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             user=self.test_user2_obj,
         )
 
-        url = reverse('file', kwargs={'file_id': str(file.id)})
+        url = reverse("file", kwargs={"file_id": str(file.id)})
 
         # Try to access as user1 (no permission)
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('NO_PERMISSION_OR_NOT_EXIST', str(response.data))
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", str(response.data))
 
     def test_file_attached_to_secret_has_no_file_links(self):
         """
@@ -395,11 +431,15 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         )
 
         # User1 should have access (owns the secret)
-        has_access = user_has_rights_on_file(str(self.test_user_obj.id), file, read=True)
+        has_access = user_has_rights_on_file(
+            str(self.test_user_obj.id), file, read=True
+        )
         self.assertTrue(has_access)
 
         # User2 should not have access (doesn't own the secret)
-        has_access = user_has_rights_on_file(str(self.test_user2_obj.id), file, read=True)
+        has_access = user_has_rights_on_file(
+            str(self.test_user2_obj.id), file, read=True
+        )
         self.assertFalse(has_access)
 
     def test_create_file_with_parent_secret_id_and_share_access(self):
@@ -411,7 +451,9 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         share = models.Share.objects.create(
             user_id=self.test_user_obj.id,
             data=b"share-data",
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
         )
 
         models.User_Share_Right.objects.create(
@@ -421,25 +463,25 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             read=True,
             write=True,
             grant=False,
-            accepted=True
+            accepted=True,
         )
 
         # Move secret1 to the share
         models.Secret_Link.objects.filter(secret_id=self.secret1.id).delete()
         models.Secret_Link.objects.create(
-            link_id='c0e98f85-6134-49e9-9bc1-3face1401bdc',
+            link_id="c0e98f85-6134-49e9-9bc1-3face1401bdc",
             secret_id=self.secret1.id,
             parent_share_id=share.id,
-            parent_datastore_id=None
+            parent_datastore_id=None,
         )
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': str(self.secret1.id),
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": str(self.secret1.id),
+            "chunk_count": 1,
+            "size": 512,
         }
 
         # User2 should be able to attach a file (has write access to shared secret)
@@ -447,10 +489,10 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('file_id', response.data)
+        self.assertIn("file_id", response.data)
 
         # Verify the file was created with secret_id set
-        file = models.File.objects.get(id=response.data['file_id'])
+        file = models.File.objects.get(id=response.data["file_id"])
         self.assertEqual(str(file.secret_id), str(self.secret1.id))
 
     def test_unauthenticated_create_file_with_parent_secret_id(self):
@@ -458,20 +500,20 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         Tests PUT on file with parent_secret_id without authentication
         """
 
-        url = reverse('file')
+        url = reverse("file")
 
         data = {
-            'shard_id': self.shard1.id,
-            'parent_secret_id': str(self.secret1.id),
-            'chunk_count': 1,
-            'size': 512,
+            "shard_id": self.shard1.id,
+            "parent_secret_id": str(self.secret1.id),
+            "chunk_count": 1,
+            "size": 512,
         }
 
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    @patch('restapi.utils.gcs_delete')
+    @patch("restapi.utils.gcs_delete")
     def test_delete_secret_cascades_to_gcs_file_repository(self, mock_gcs_delete):
         """
         Tests that deleting a secret with GCS file repository attachment calls gcs_delete
@@ -479,12 +521,12 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Create a GCS file repository
         file_repository_data = {
-            'gcp_cloud_storage_bucket': 'test-bucket',
-            'gcp_cloud_storage_json_key': '{"key": "value"}',
+            "gcp_cloud_storage_bucket": "test-bucket",
+            "gcp_cloud_storage_json_key": '{"key": "value"}',
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test GCS Repository',
-            type='gcp_cloud_storage',
+            title="Test GCS Repository",
+            type="gcp_cloud_storage",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -503,7 +545,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk1 = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='hash1',
+            hash_checksum="hash1",
             position=0,
             size=50,
         )
@@ -511,7 +553,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk2 = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='hash2',
+            hash_checksum="hash2",
             position=1,
             size=50,
         )
@@ -524,18 +566,18 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify the calls were made with correct parameters
         calls = mock_gcs_delete.call_args_list
-        self.assertEqual(calls[0][0][0], 'test-bucket')  # bucket
+        self.assertEqual(calls[0][0][0], "test-bucket")  # bucket
         self.assertEqual(calls[0][0][1], '{"key": "value"}')  # json_key
-        self.assertEqual(calls[0][0][2], 'hash1')  # hash_checksum
+        self.assertEqual(calls[0][0][2], "hash1")  # hash_checksum
 
-        self.assertEqual(calls[1][0][0], 'test-bucket')
+        self.assertEqual(calls[1][0][0], "test-bucket")
         self.assertEqual(calls[1][0][1], '{"key": "value"}')
-        self.assertEqual(calls[1][0][2], 'hash2')
+        self.assertEqual(calls[1][0][2], "hash2")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.aws_delete')
+    @patch("restapi.utils.aws_delete")
     def test_delete_secret_cascades_to_aws_s3_file_repository(self, mock_aws_delete):
         """
         Tests that deleting a secret with AWS S3 file repository attachment calls aws_delete
@@ -543,14 +585,14 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Create an AWS S3 file repository
         file_repository_data = {
-            'aws_s3_bucket': 'test-aws-bucket',
-            'aws_s3_region': 'us-east-1',
-            'aws_s3_access_key_id': 'AKIAIOSFODNN7EXAMPLE',
-            'aws_s3_secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+            "aws_s3_bucket": "test-aws-bucket",
+            "aws_s3_region": "us-east-1",
+            "aws_s3_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+            "aws_s3_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test AWS S3 Repository',
-            type='aws_s3',
+            title="Test AWS S3 Repository",
+            type="aws_s3",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -569,7 +611,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='aws-hash-1',
+            hash_checksum="aws-hash-1",
             position=0,
             size=50,
         )
@@ -582,30 +624,32 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify the call parameters
         call_args = mock_aws_delete.call_args[0]
-        self.assertEqual(call_args[0], 'test-aws-bucket')
-        self.assertEqual(call_args[1], 'us-east-1')
-        self.assertEqual(call_args[2], 'AKIAIOSFODNN7EXAMPLE')
-        self.assertEqual(call_args[3], 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY')
-        self.assertEqual(call_args[4], 'aws-hash-1')
+        self.assertEqual(call_args[0], "test-aws-bucket")
+        self.assertEqual(call_args[1], "us-east-1")
+        self.assertEqual(call_args[2], "AKIAIOSFODNN7EXAMPLE")
+        self.assertEqual(call_args[3], "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+        self.assertEqual(call_args[4], "aws-hash-1")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.azure_blob_delete')
-    def test_delete_secret_cascades_to_azure_blob_file_repository(self, mock_azure_delete):
+    @patch("restapi.utils.azure_blob_delete")
+    def test_delete_secret_cascades_to_azure_blob_file_repository(
+        self, mock_azure_delete
+    ):
         """
         Tests that deleting a secret with Azure Blob file repository attachment calls azure_blob_delete
         """
 
         # Create an Azure Blob file repository
         file_repository_data = {
-            'azure_blob_storage_account_name': 'testaccount',
-            'azure_blob_storage_account_primary_key': 'test-primary-key',
-            'azure_blob_storage_account_container_name': 'test-container',
+            "azure_blob_storage_account_name": "testaccount",
+            "azure_blob_storage_account_primary_key": "test-primary-key",
+            "azure_blob_storage_account_container_name": "test-container",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test Azure Blob Repository',
-            type='azure_blob',
+            title="Test Azure Blob Repository",
+            type="azure_blob",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -624,7 +668,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='azure-hash-1',
+            hash_checksum="azure-hash-1",
             position=0,
             size=50,
         )
@@ -637,15 +681,15 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify the call parameters
         call_args = mock_azure_delete.call_args[0]
-        self.assertEqual(call_args[0], 'testaccount')
-        self.assertEqual(call_args[1], 'test-primary-key')
-        self.assertEqual(call_args[2], 'test-container')
-        self.assertEqual(call_args[3], 'azure-hash-1')
+        self.assertEqual(call_args[0], "testaccount")
+        self.assertEqual(call_args[1], "test-primary-key")
+        self.assertEqual(call_args[2], "test-container")
+        self.assertEqual(call_args[3], "azure-hash-1")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.do_delete')
+    @patch("restapi.utils.do_delete")
     def test_delete_secret_cascades_to_do_spaces_file_repository(self, mock_do_delete):
         """
         Tests that deleting a secret with DigitalOcean Spaces file repository attachment calls do_delete
@@ -653,14 +697,14 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Create a DO Spaces file repository
         file_repository_data = {
-            'do_space': 'test-space',
-            'do_region': 'nyc3',
-            'do_key': 'DO-KEY',
-            'do_secret': 'DO-SECRET',
+            "do_space": "test-space",
+            "do_region": "nyc3",
+            "do_key": "DO-KEY",
+            "do_secret": "DO-SECRET",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test DO Spaces Repository',
-            type='do_spaces',
+            title="Test DO Spaces Repository",
+            type="do_spaces",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -679,7 +723,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='do-hash-1',
+            hash_checksum="do-hash-1",
             position=0,
             size=50,
         )
@@ -692,31 +736,33 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify the call parameters
         call_args = mock_do_delete.call_args[0]
-        self.assertEqual(call_args[0], 'test-space')
-        self.assertEqual(call_args[1], 'nyc3')
-        self.assertEqual(call_args[2], 'DO-KEY')
-        self.assertEqual(call_args[3], 'DO-SECRET')
-        self.assertEqual(call_args[4], 'do-hash-1')
+        self.assertEqual(call_args[0], "test-space")
+        self.assertEqual(call_args[1], "nyc3")
+        self.assertEqual(call_args[2], "DO-KEY")
+        self.assertEqual(call_args[3], "DO-SECRET")
+        self.assertEqual(call_args[4], "do-hash-1")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.backblaze_delete')
-    def test_delete_secret_cascades_to_backblaze_file_repository(self, mock_backblaze_delete):
+    @patch("restapi.utils.backblaze_delete")
+    def test_delete_secret_cascades_to_backblaze_file_repository(
+        self, mock_backblaze_delete
+    ):
         """
         Tests that deleting a secret with Backblaze file repository attachment calls backblaze_delete
         """
 
         # Create a Backblaze file repository
         file_repository_data = {
-            'backblaze_bucket': 'test-b2-bucket',
-            'backblaze_region': 'us-west-002',
-            'backblaze_access_key_id': 'B2-KEY-ID',
-            'backblaze_secret_access_key': 'B2-SECRET',
+            "backblaze_bucket": "test-b2-bucket",
+            "backblaze_region": "us-west-002",
+            "backblaze_access_key_id": "B2-KEY-ID",
+            "backblaze_secret_access_key": "B2-SECRET",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test Backblaze Repository',
-            type='backblaze',
+            title="Test Backblaze Repository",
+            type="backblaze",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -735,7 +781,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='b2-hash-1',
+            hash_checksum="b2-hash-1",
             position=0,
             size=50,
         )
@@ -748,18 +794,20 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify the call parameters
         call_args = mock_backblaze_delete.call_args[0]
-        self.assertEqual(call_args[0], 'test-b2-bucket')
-        self.assertEqual(call_args[1], 'us-west-002')
-        self.assertEqual(call_args[2], 'B2-KEY-ID')
-        self.assertEqual(call_args[3], 'B2-SECRET')
-        self.assertEqual(call_args[4], 'b2-hash-1')
+        self.assertEqual(call_args[0], "test-b2-bucket")
+        self.assertEqual(call_args[1], "us-west-002")
+        self.assertEqual(call_args[2], "B2-KEY-ID")
+        self.assertEqual(call_args[3], "B2-SECRET")
+        self.assertEqual(call_args[4], "b2-hash-1")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.s3_delete')
-    @patch('restapi.utils.is_allowed_other_s3_endpoint_url')
-    def test_delete_secret_cascades_to_other_s3_file_repository(self, mock_is_allowed, mock_s3_delete):
+    @patch("restapi.utils.s3_delete")
+    @patch("restapi.utils.is_allowed_other_s3_endpoint_url")
+    def test_delete_secret_cascades_to_other_s3_file_repository(
+        self, mock_is_allowed, mock_s3_delete
+    ):
         """
         Tests that deleting a secret with other S3-compatible file repository attachment calls s3_delete
         """
@@ -769,15 +817,15 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Create an other S3 file repository
         file_repository_data = {
-            'other_s3_bucket': 'test-s3-bucket',
-            'other_s3_region': 'us-west-1',
-            'other_s3_access_key_id': 'S3-KEY',
-            'other_s3_secret_access_key': 'S3-SECRET',
-            'other_s3_endpoint_url': 'https://s3.example.com',
+            "other_s3_bucket": "test-s3-bucket",
+            "other_s3_region": "us-west-1",
+            "other_s3_access_key_id": "S3-KEY",
+            "other_s3_secret_access_key": "S3-SECRET",
+            "other_s3_endpoint_url": "https://s3.example.com",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test Other S3 Repository',
-            type='other_s3',
+            title="Test Other S3 Repository",
+            type="other_s3",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -796,7 +844,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         chunk = models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='s3-hash-1',
+            hash_checksum="s3-hash-1",
             position=0,
             size=50,
         )
@@ -805,40 +853,42 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         self.secret1.delete()
 
         # Verify is_allowed_other_s3_endpoint_url was called
-        mock_is_allowed.assert_called_once_with('https://s3.example.com')
+        mock_is_allowed.assert_called_once_with("https://s3.example.com")
 
         # Verify s3_delete was called
         self.assertEqual(mock_s3_delete.call_count, 1)
 
         # Verify the call parameters
         call_args = mock_s3_delete.call_args[0]
-        self.assertEqual(call_args[0], 'test-s3-bucket')
-        self.assertEqual(call_args[1], 'us-west-1')
-        self.assertEqual(call_args[2], 'S3-KEY')
-        self.assertEqual(call_args[3], 'S3-SECRET')
-        self.assertEqual(call_args[4], 's3-hash-1')
+        self.assertEqual(call_args[0], "test-s3-bucket")
+        self.assertEqual(call_args[1], "us-west-1")
+        self.assertEqual(call_args[2], "S3-KEY")
+        self.assertEqual(call_args[3], "S3-SECRET")
+        self.assertEqual(call_args[4], "s3-hash-1")
 
         # Verify endpoint_url was passed as keyword argument
         call_kwargs = mock_s3_delete.call_args[1]
-        self.assertEqual(call_kwargs['endpoint_url'], 'https://s3.example.com')
+        self.assertEqual(call_kwargs["endpoint_url"], "https://s3.example.com")
 
         # Verify file was deleted from database
         self.assertFalse(models.File.objects.filter(id=file.id).exists())
 
-    @patch('restapi.utils.gcs_delete')
-    def test_delete_secret_with_multiple_chunks_calls_delete_for_each(self, mock_gcs_delete):
+    @patch("restapi.utils.gcs_delete")
+    def test_delete_secret_with_multiple_chunks_calls_delete_for_each(
+        self, mock_gcs_delete
+    ):
         """
         Tests that deleting a secret with a file with multiple chunks calls delete for each chunk
         """
 
         # Create a GCS file repository
         file_repository_data = {
-            'gcp_cloud_storage_bucket': 'test-bucket',
-            'gcp_cloud_storage_json_key': '{"key": "value"}',
+            "gcp_cloud_storage_bucket": "test-bucket",
+            "gcp_cloud_storage_json_key": '{"key": "value"}',
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test GCS Repository',
-            type='gcp_cloud_storage',
+            title="Test GCS Repository",
+            type="gcp_cloud_storage",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -858,7 +908,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
             models.File_Chunk.objects.create(
                 user=self.test_user_obj,
                 file=file,
-                hash_checksum=f'hash-{i}',
+                hash_checksum=f"hash-{i}",
                 position=i,
                 size=50,
             )
@@ -871,9 +921,11 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Verify each chunk hash was passed
         chunk_hashes = [call[0][2] for call in mock_gcs_delete.call_args_list]
-        self.assertEqual(sorted(chunk_hashes), ['hash-0', 'hash-1', 'hash-2', 'hash-3', 'hash-4'])
+        self.assertEqual(
+            sorted(chunk_hashes), ["hash-0", "hash-1", "hash-2", "hash-3", "hash-4"]
+        )
 
-    @patch('restapi.utils.gcs_delete')
+    @patch("restapi.utils.gcs_delete")
     def test_delete_secret_continues_on_chunk_delete_failure(self, mock_gcs_delete):
         """
         Tests that secret deletion continues even if individual chunk deletion fails
@@ -884,12 +936,12 @@ class FileSecretAttachmentTests(APITestCaseExtended):
 
         # Create a GCS file repository
         file_repository_data = {
-            'gcp_cloud_storage_bucket': 'test-bucket',
-            'gcp_cloud_storage_json_key': '{"key": "value"}',
+            "gcp_cloud_storage_bucket": "test-bucket",
+            "gcp_cloud_storage_json_key": '{"key": "value"}',
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test GCS Repository',
-            type='gcp_cloud_storage',
+            title="Test GCS Repository",
+            type="gcp_cloud_storage",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -907,7 +959,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='hash-1',
+            hash_checksum="hash-1",
             position=0,
             size=50,
         )
@@ -915,7 +967,7 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         models.File_Chunk.objects.create(
             user=self.test_user_obj,
             file=file,
-            hash_checksum='hash-2',
+            hash_checksum="hash-2",
             position=1,
             size=50,
         )

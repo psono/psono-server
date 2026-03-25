@@ -4,25 +4,24 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0024_auto_20190127_1357'),
+        ("restapi", "0024_auto_20190127_1357"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='fileserver_cluster_member_shard_link',
-            old_name='delete',
-            new_name='delete_capability',
+            model_name="fileserver_cluster_member_shard_link",
+            old_name="delete",
+            new_name="delete_capability",
         ),
         migrations.RenameField(
-            model_name='fileserver_cluster_members',
-            old_name='delete',
-            new_name='delete_capability',
+            model_name="fileserver_cluster_members",
+            old_name="delete",
+            new_name="delete_capability",
         ),
         migrations.RenameField(
-            model_name='fileserver_cluster_shard_link',
-            old_name='delete',
-            new_name='delete_capability',
+            model_name="fileserver_cluster_shard_link",
+            old_name="delete",
+            new_name="delete_capability",
         ),
     ]

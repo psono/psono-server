@@ -4,24 +4,21 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
-from ..models import (
-    Token
-)
+from ..models import Token
 
-from ..app_settings import (
-    IvaltVerifySerializer
-)
+from ..app_settings import IvaltVerifySerializer
 from ..authentication import TokenAuthenticationAllowInactive
 
+
 class IvaltVerifyView(GenericAPIView):
-    authentication_classes = (TokenAuthenticationAllowInactive, )
+    authentication_classes = (TokenAuthenticationAllowInactive,)
     permission_classes = (IsAuthenticated,)
     token_model = Token
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'ivalt_verify'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "ivalt_verify"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return IvaltVerifySerializer
         return Serializer
 
@@ -50,10 +47,9 @@ class IvaltVerifyView(GenericAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        
-        request_type = serializer.validated_data['request_type']
-        if request_type == 'verification':
-            token = serializer.validated_data['token']
+        request_type = serializer.validated_data["request_type"]
+        if request_type == "verification":
+            token = serializer.validated_data["token"]
             if settings.MULTIFACTOR_ENABLED:
                 # only mark iVALT challenge as solved and the others potentially open
                 token.ivalt_2fa = False

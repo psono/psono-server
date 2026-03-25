@@ -6,6 +6,7 @@ import bcrypt
 from restapi.utils import encrypt_with_db_secret
 from restapi.models import User
 
+
 class UpdateUserSerializer(serializers.Serializer):
     user_id = UUIDField(required=True)
     is_active = BooleanField(required=False)
@@ -13,18 +14,19 @@ class UpdateUserSerializer(serializers.Serializer):
     is_staff = BooleanField(required=False)
     is_superuser = BooleanField(required=False)
     require_password_change = BooleanField(required=False)
-    email = serializers.EmailField(required=False, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
-
+    email = serializers.EmailField(
+        required=False, error_messages={"invalid": "INVALID_EMAIL_FORMAT"}
+    )
 
     def validate(self, attrs: dict) -> dict:
 
-        user_id = attrs.get('user_id')
-        is_active = attrs.get('is_active', None)
-        is_email_active = attrs.get('is_email_active', None)
-        is_superuser = attrs.get('is_superuser', None)
-        is_staff = attrs.get('is_staff', None)
-        require_password_change = attrs.get('require_password_change', None)
-        email = attrs.get('email')
+        user_id = attrs.get("user_id")
+        is_active = attrs.get("is_active", None)
+        is_email_active = attrs.get("is_email_active", None)
+        is_superuser = attrs.get("is_superuser", None)
+        is_staff = attrs.get("is_staff", None)
+        require_password_change = attrs.get("require_password_change", None)
+        email = attrs.get("email")
 
         try:
             user = User.objects.get(pk=user_id)
@@ -33,13 +35,12 @@ class UpdateUserSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         if email is not None:
-
             email = email.lower().strip()
 
             if len(settings.REGISTRATION_EMAIL_FILTER) > 0:
                 email_prefix, domain = email.split("@")
                 if domain not in settings.REGISTRATION_EMAIL_FILTER:
-                    msg = 'E-Mail not allowed to register.'
+                    msg = "E-Mail not allowed to register."
                     raise exceptions.ValidationError(msg)
 
             # generate bcrypt with static salt.
@@ -47,25 +48,32 @@ class UpdateUserSerializer(serializers.Serializer):
             # if you want to store emails encrypted while not having to decrypt all emails for duplicate email hunt
             # Im aware that this allows attackers with this fix salt to "mass" attack all emails.
             # if you have a better solution, please let me know.
-            email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
-            email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt_full = bcrypt.hashpw(
+                email.encode(), settings.EMAIL_SECRET_SALT.encode()
+            )
+            email_bcrypt = email_bcrypt_full.decode().replace(
+                settings.EMAIL_SECRET_SALT, "", 1
+            )
 
-            if User.objects.filter(email_bcrypt=email_bcrypt).exclude(pk=user_id).exists():
-                msg = 'USER_WITH_EMAIL_ALREADY_EXISTS'
+            if (
+                User.objects.filter(email_bcrypt=email_bcrypt)
+                .exclude(pk=user_id)
+                .exists()
+            ):
+                msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
                 raise exceptions.ValidationError(msg)
 
-            attrs['email_bcrypt'] = email_bcrypt
+            attrs["email_bcrypt"] = email_bcrypt
 
             # normally encrypt emails, so they are not stored in plaintext with a random nonce
             email = encrypt_with_db_secret(email)
 
-
-        attrs['user'] = user
-        attrs['email'] = email
-        attrs['is_active'] = is_active
-        attrs['is_email_active'] = is_email_active
-        attrs['is_superuser'] = is_superuser
-        attrs['is_staff'] = is_staff
-        attrs['require_password_change'] = require_password_change
+        attrs["user"] = user
+        attrs["email"] = email
+        attrs["is_active"] = is_active
+        attrs["is_email_active"] = is_email_active
+        attrs["is_superuser"] = is_superuser
+        attrs["is_staff"] = is_staff
+        attrs["require_password_change"] = require_password_change
 
         return attrs

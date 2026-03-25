@@ -11,18 +11,17 @@ from ..models import (
     default_hashing_parameters,
     DEFAULT_HASHING_ALGORITHM,
 )
-from ..app_settings import (
-    PreLoginSerializer
-)
+from ..app_settings import PreLoginSerializer
+
 
 class PreLoginView(GenericAPIView):
     permission_classes = (AllowAny,)
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'prelogin'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "prelogin"
     parser_classes = [JSONParser]
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return PreLoginSerializer
         return Serializer
 
@@ -49,12 +48,9 @@ class PreLoginView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
 
         hashing_parameters = default_hashing_parameters()
         hashing_algorithm = DEFAULT_HASHING_ALGORITHM
@@ -63,11 +59,13 @@ class PreLoginView(GenericAPIView):
             hashing_parameters = user.hashing_parameters
             hashing_algorithm = user.hashing_algorithm
 
-
-        return Response({
-            'hashing_parameters': hashing_parameters,
-            'hashing_algorithm': hashing_algorithm
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "hashing_parameters": hashing_parameters,
+                "hashing_algorithm": hashing_algorithm,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

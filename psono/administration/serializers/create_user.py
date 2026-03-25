@@ -4,34 +4,41 @@ import bcrypt
 
 from restapi.models import User
 
-class CreateUserSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=True, error_messages={'invalid': 'INVALID_USERNAME_FORMAT'})
-    email = serializers.EmailField(required=True, error_messages={'invalid': 'INVALID_EMAIL_FORMAT'})
-    password = serializers.CharField(required=False)
 
+class CreateUserSerializer(serializers.Serializer):
+    username = serializers.EmailField(
+        required=True, error_messages={"invalid": "INVALID_USERNAME_FORMAT"}
+    )
+    email = serializers.EmailField(
+        required=True, error_messages={"invalid": "INVALID_EMAIL_FORMAT"}
+    )
+    password = serializers.CharField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 
-        email = attrs.get('email', '')
-        username = attrs.get('username', '')
-        password = attrs.get('password', '')
+        email = attrs.get("email", "")
+        username = attrs.get("username", "")
+        password = attrs.get("password", "")
 
         username = username.strip().lower()
         email = email.strip().lower()
 
-        email_bcrypt = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode()).decode().replace(
-            settings.EMAIL_SECRET_SALT, '', 1)
+        email_bcrypt = (
+            bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
+            .decode()
+            .replace(settings.EMAIL_SECRET_SALT, "", 1)
+        )
 
         if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-            msg = 'USER_WITH_EMAIL_ALREADY_EXISTS'
+            msg = "USER_WITH_EMAIL_ALREADY_EXISTS"
             raise exceptions.ValidationError(msg)
 
         if User.objects.filter(username=username).exists():
-            msg = 'USER_WITH_USERNAME_ALREADY_EXISTS'
+            msg = "USER_WITH_USERNAME_ALREADY_EXISTS"
             raise exceptions.ValidationError(msg)
 
-        attrs['username'] = username
-        attrs['email'] = email
-        attrs['password'] = password
+        attrs["username"] = username
+        attrs["email"] = email
+        attrs["password"] = password
 
         return attrs

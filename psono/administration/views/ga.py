@@ -3,9 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 
-from ..app_settings import (
-    DeleteGASerializer
-)
+from ..app_settings import DeleteGASerializer
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -13,14 +11,13 @@ from restapi.models import Google_Authenticator, User
 
 
 class GaView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
     serializer_class = DeleteGASerializer
-    allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteGASerializer
         return Serializer
 
@@ -38,22 +35,23 @@ class GaView(GenericAPIView):
         Deletes a Google authenticator
         """
 
-        serializer = DeleteGASerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteGASerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        google_authenticator = serializer.validated_data.get('google_authenticator')
+        google_authenticator = serializer.validated_data.get("google_authenticator")
 
         user_id = google_authenticator.user_id
 
         # delete it
         google_authenticator.delete()
 
-        if not Google_Authenticator.objects.filter(user_id=user_id, active=True).exists():
+        if not Google_Authenticator.objects.filter(
+            user_id=user_id, active=True
+        ).exists():
             user = User.objects.get(pk=user_id)
             user.google_authenticator_enabled = False
             user.save()

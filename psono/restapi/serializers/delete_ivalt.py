@@ -10,15 +10,15 @@ class DeleteIvaltSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        ivalt_id = attrs.get('ivalt_id')
+        ivalt_id = attrs.get("ivalt_id")
 
         # check if ivalt mobile no exists
         try:
-            ivalt = Ivalt.objects.get(pk=ivalt_id, user=self.context['request'].user)
+            ivalt = Ivalt.objects.get(pk=ivalt_id, user=self.context["request"].user)
         except Ivalt.DoesNotExist:
-            msg = 'NO_PERMISSION_OR_NOT_EXIST'
+            msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['ivalt'] = ivalt
+        attrs["ivalt"] = ivalt
 
         return attrs

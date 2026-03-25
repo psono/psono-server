@@ -5,6 +5,7 @@ from ..models import DeviceCode
 
 logger = logging.getLogger(__name__)
 
+
 class PollDeviceCodeTokenSerializer(serializers.Serializer):
     """
     Serializer for polling device code token status.
@@ -12,13 +13,17 @@ class PollDeviceCodeTokenSerializer(serializers.Serializer):
     """
 
     def validate(self, attrs):
-        device_code_id = self.context["request"].parser_context["kwargs"].get("device_code", None)
+        device_code_id = (
+            self.context["request"].parser_context["kwargs"].get("device_code", None)
+        )
 
         if not device_code_id:
             raise serializers.ValidationError("DEVICE_CODE_MISSING")
 
         try:
-            device_code = DeviceCode.objects.select_related("user").get(id=device_code_id)
+            device_code = DeviceCode.objects.select_related("user").get(
+                id=device_code_id
+            )
         except DeviceCode.DoesNotExist:
             raise serializers.ValidationError("DEVICE_CODE_NOT_FOUND")
 
@@ -26,12 +31,12 @@ class PollDeviceCodeTokenSerializer(serializers.Serializer):
             raise serializers.ValidationError("DEVICE_CODE_INVALID_STATE")
 
         current_time = timezone.now()
-        
+
         # Check if the code should be expired based on valid_till
         if device_code.valid_till < current_time:
             device_code.delete()
             raise serializers.ValidationError("DEVICE_CODE_EXPIRED")
-        
+
         # Check current state - only CLAIMED codes can proceed to token creation
         if device_code.state != device_code.DeviceCodeState.CLAIMED:
             raise serializers.ValidationError("DEVICE_CODE_NOT_CLAIMED")
@@ -45,9 +50,9 @@ class PollDeviceCodeTokenSerializer(serializers.Serializer):
                 f"Device fingerprint: {device_code.device_fingerprint}"
             )
             device_code.state = device_code.DeviceCodeState.FAILED
-            device_code.save(update_fields=['state', 'write_date'])
+            device_code.save(update_fields=["state", "write_date"])
             raise serializers.ValidationError("DEVICE_CODE_INVALID_STATE")
-        
+
         attrs["device_code"] = device_code
 
         return attrs

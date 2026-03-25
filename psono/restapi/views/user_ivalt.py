@@ -22,14 +22,14 @@ from ..authentication import TokenAuthentication
 class UserIvalt(GenericAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE')
+    allowed_methods = ("GET", "PUT", "POST", "DELETE")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateIvaltSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ActivateIvaltSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteIvaltSerializer
         return Serializer
 
@@ -40,65 +40,73 @@ class UserIvalt(GenericAPIView):
 
         ivalt = []
         for ivalt_obj in Ivalt.objects.filter(user=request.user).all():
-            ivalt.append({
-                'id': ivalt_obj.id,
-                'active': ivalt_obj.active,
-                'mobile': decrypt_with_db_secret(ivalt_obj.mobile),
-            })
+            ivalt.append(
+                {
+                    "id": ivalt_obj.id,
+                    "active": ivalt_obj.active,
+                    "mobile": decrypt_with_db_secret(ivalt_obj.mobile),
+                }
+            )
 
-        return Response({
-            "ivalt": ivalt
-        },
-            status=status.HTTP_200_OK)
+        return Response({"ivalt": ivalt}, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
         sets a new ivalt 2FA
         """
 
-        serializer = CreateIvaltSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = CreateIvaltSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         new_ivalt = Ivalt.objects.create(
             user=request.user,
-            mobile=encrypt_with_db_secret(serializer.validated_data.get('mobile')),
-            active=False
+            mobile=encrypt_with_db_secret(serializer.validated_data.get("mobile")),
+            active=False,
         )
-       
-        return Response({'message': 'BIOMETRIC_AUTH_REQUEST_SUCCESSFULLY_SENT', 'id': new_ivalt.id}, status=status.HTTP_201_CREATED)
-            
+
+        return Response(
+            {"message": "BIOMETRIC_AUTH_REQUEST_SUCCESSFULLY_SENT", "id": new_ivalt.id},
+            status=status.HTTP_201_CREATED,
+        )
 
     def post(self, request, *args, **kwargs):
         """
         sets a new ivalt 2FA
         """
-        serializer = ActivateIvaltSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ActivateIvaltSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        ivalt = serializer.validated_data.get('ivalt')
+        ivalt = serializer.validated_data.get("ivalt")
         request.user.ivalt_enabled = True
         request.user.save()
         ivalt.active = True
         ivalt.save()
-        return Response({'message': 'BIOMETRIC_AUTHENTICATION_SUCCESSFULLY_DONE'}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "BIOMETRIC_AUTHENTICATION_SUCCESSFULLY_DONE"},
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, request, *args, **kwargs):
         """
         Deletes an Ivalt 2FA
         """
 
-        serializer = DeleteIvaltSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteIvaltSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        ivalt = serializer.validated_data.get('ivalt')
+        ivalt = serializer.validated_data.get("ivalt")
 
         request.user.ivalt_enabled = False
         request.user.save()

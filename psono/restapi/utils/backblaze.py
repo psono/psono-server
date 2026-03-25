@@ -1,6 +1,14 @@
-from .s3 import s3_construct_signed_download_url, s3_construct_signed_upload_url, s3_delete, create_key as _create_key
+from .s3 import (
+    s3_construct_signed_download_url,
+    s3_construct_signed_upload_url,
+    s3_delete,
+    create_key as _create_key,
+)
 
-def backblaze_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+
+def backblaze_construct_signed_upload_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum
+):
     """
     Constructs the signed upload url
 
@@ -19,10 +27,19 @@ def backblaze_construct_signed_upload_url(bucket, region, access_key_id, secret_
     :rtype:
     """
 
-    return s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
+    return s3_construct_signed_upload_url(
+        bucket,
+        region,
+        access_key_id,
+        secret_access_key,
+        hash_checksum,
+        endpoint_url="https://s3." + region + ".backblazeb2.com",
+    )
 
 
-def backblaze_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum):
+def backblaze_construct_signed_download_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum
+):
     """
     Constructs the signed upload url
 
@@ -41,7 +58,14 @@ def backblaze_construct_signed_download_url(bucket, region, access_key_id, secre
     :rtype:
     """
 
-    return s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
+    return s3_construct_signed_download_url(
+        bucket,
+        region,
+        access_key_id,
+        secret_access_key,
+        hash_checksum,
+        endpoint_url="https://s3." + region + ".backblazeb2.com",
+    )
 
 
 def backblaze_delete(bucket, region, access_key_id, secret_access_key, hash_checksum):
@@ -62,7 +86,14 @@ def backblaze_delete(bucket, region, access_key_id, secret_access_key, hash_chec
     :return:
     :rtype:
     """
-    return s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url='https://s3.' + region + '.backblazeb2.com')
+    return s3_delete(
+        bucket,
+        region,
+        access_key_id,
+        secret_access_key,
+        hash_checksum,
+        endpoint_url="https://s3." + region + ".backblazeb2.com",
+    )
 
 
 def create_key(hash_checksum):

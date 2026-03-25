@@ -13,15 +13,15 @@ from ..permissions import IsFileserver
 from ..app_settings import FileserverConfirmChunkDeletionSerializer
 from restapi.models import Fileserver_Cluster_Member_Shard_Link, File_Chunk, File
 
-class CleanupChunksView(GenericAPIView):
 
-    authentication_classes = (FileserverAuthentication, )
+class CleanupChunksView(GenericAPIView):
+    authentication_classes = (FileserverAuthentication,)
     permission_classes = (IsFileserver,)
-    allowed_methods = ('GET', 'POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver_upload'
+    allowed_methods = ("GET", "POST", "OPTIONS", "HEAD")
+    throttle_scope = "fileserver_upload"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return FileserverConfirmChunkDeletionSerializer
         return Serializer
 
@@ -31,56 +31,71 @@ class CleanupChunksView(GenericAPIView):
         """
 
         # Get a list of all shards that are handled by this particular fileserver
-        shard_ids = Fileserver_Cluster_Member_Shard_Link.objects.filter(member=request.user, delete_capability=True).values_list('shard_id', flat=True)
+        shard_ids = Fileserver_Cluster_Member_Shard_Link.objects.filter(
+            member=request.user, delete_capability=True
+        ).values_list("shard_id", flat=True)
 
         # get a list of all fileservers, that are responsible for these shards with the capability to delete
-        links = Fileserver_Cluster_Member_Shard_Link.objects\
-            .filter(shard_id__in=shard_ids, member__valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT), delete_capability=True)\
-            .values('member_id', 'shard_id', 'member__create_date')\
-            .distinct()\
-            .order_by('member__create_date')
+        links = (
+            Fileserver_Cluster_Member_Shard_Link.objects.filter(
+                shard_id__in=shard_ids,
+                member__valid_till__gt=timezone.now()
+                - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT),
+                delete_capability=True,
+            )
+            .values("member_id", "shard_id", "member__create_date")
+            .distinct()
+            .order_by("member__create_date")
+        )
 
         lookup_dict = {}
         for link in links:
-            if link['shard_id'] not in lookup_dict:
-                lookup_dict[link['shard_id']] = {
-                    'count': 0,
-                    'position': None
-                }
-            if link['member_id'] == request.user.id:
-                lookup_dict[link['shard_id']]['position'] = lookup_dict[link['shard_id']]['count']
-            lookup_dict[link['shard_id']]['count'] = lookup_dict[link['shard_id']]['count'] + 1
+            if link["shard_id"] not in lookup_dict:
+                lookup_dict[link["shard_id"]] = {"count": 0, "position": None}
+            if link["member_id"] == request.user.id:
+                lookup_dict[link["shard_id"]]["position"] = lookup_dict[
+                    link["shard_id"]
+                ]["count"]
+            lookup_dict[link["shard_id"]]["count"] = (
+                lookup_dict[link["shard_id"]]["count"] + 1
+            )
 
         shards = {}
         for shard_id, value in lookup_dict.items():
-            if value['position'] is None:
+            if value["position"] is None:
                 continue
 
-            start, end = get_uuid_start_and_end(value['count'], value['position'])
-            shards[str(shard_id)] = list(File_Chunk.objects.values_list('hash_checksum', flat=True).filter(pk__gte=start, pk__lte=end, file__delete_date__lte=timezone.now(), file__shard_id=shard_id))
+            start, end = get_uuid_start_and_end(value["count"], value["position"])
+            shards[str(shard_id)] = list(
+                File_Chunk.objects.values_list("hash_checksum", flat=True).filter(
+                    pk__gte=start,
+                    pk__lte=end,
+                    file__delete_date__lte=timezone.now(),
+                    file__shard_id=shard_id,
+                )
+            )
 
-        return Response({
-            'shards': shards
-        }, status=status.HTTP_200_OK)
+        return Response({"shards": shards}, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, *args, **kwargs):
 
-        serializer = FileserverConfirmChunkDeletionSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverConfirmChunkDeletionSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        hash_checksums = serializer.validated_data.get('hash_checksums')
+        hash_checksums = serializer.validated_data.get("hash_checksums")
 
         File_Chunk.objects.filter(hash_checksum__in=hash_checksums).delete()
 
-        File.objects.filter(file_chunk__isnull=True, delete_date__lte=timezone.now()).delete()
+        File.objects.filter(
+            file_chunk__isnull=True, delete_date__lte=timezone.now()
+        ).delete()
 
         return Response({}, status=status.HTTP_200_OK)
 

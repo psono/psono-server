@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0033_group_file_repository_right'),
+        ("restapi", "0033_group_file_repository_right"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='external_id',
-            field=models.CharField(db_index=True, max_length=64, null=True, verbose_name='external id'),
+            model_name="user",
+            name="external_id",
+            field=models.CharField(
+                db_index=True, max_length=64, null=True, verbose_name="external id"
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='language',
-            field=models.CharField(default='en', max_length=16, verbose_name='language'),
+            model_name="user",
+            name="language",
+            field=models.CharField(
+                default="en", max_length=16, verbose_name="language"
+            ),
         ),
     ]

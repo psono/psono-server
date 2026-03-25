@@ -4,25 +4,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0014_auto_20180308_0713'),
+        ("restapi", "0014_auto_20180308_0713"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='old_email',
-            name='email_bcrypt',
-            field=models.CharField(max_length=60, verbose_name='bcrypt of email address'),
+            model_name="old_email",
+            name="email_bcrypt",
+            field=models.CharField(
+                max_length=60, verbose_name="bcrypt of email address"
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='email',
-            field=models.CharField(max_length=512, verbose_name='email address'),
+            model_name="user",
+            name="email",
+            field=models.CharField(max_length=512, verbose_name="email address"),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='email_bcrypt',
-            field=models.CharField(max_length=60, verbose_name='bcrypt of email address'),
+            model_name="user",
+            name="email_bcrypt",
+            field=models.CharField(
+                max_length=60, verbose_name="bcrypt of email address"
+            ),
         ),
     ]

@@ -10,26 +10,34 @@ from webauthn import (
     generate_registration_options,
     options_to_json,
 )
-from webauthn.helpers.structs import AttestationConveyancePreference, AuthenticatorSelectionCriteria, UserVerificationRequirement
+from webauthn.helpers.structs import (
+    AttestationConveyancePreference,
+    AuthenticatorSelectionCriteria,
+    UserVerificationRequirement,
+)
 
 from ..permissions import IsAuthenticated
 from ..models import Webauthn
-from ..app_settings import NewWebauthnSerializer, ActivateWebauthnSerializer, DeleteWebauthnSerializer
+from ..app_settings import (
+    NewWebauthnSerializer,
+    ActivateWebauthnSerializer,
+    DeleteWebauthnSerializer,
+)
 from ..authentication import TokenAuthentication
 from ..utils import encrypt_with_db_secret
 
-class UserWebauthn(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class UserWebauthn(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return NewWebauthnSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ActivateWebauthnSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteWebauthnSerializer
         return Serializer
 
@@ -50,16 +58,15 @@ class UserWebauthn(GenericAPIView):
         webauthns = []
 
         for w in Webauthn.objects.filter(user=request.user).all():
-            webauthns.append({
-                'id': w.id,
-                'active': w.active,
-                'title': w.title,
-            })
+            webauthns.append(
+                {
+                    "id": w.id,
+                    "active": w.active,
+                    "title": w.title,
+                }
+            )
 
-        return Response({
-            "webauthns": webauthns
-        },
-            status=status.HTTP_200_OK)
+        return Response({"webauthns": webauthns}, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
@@ -78,11 +85,10 @@ class UserWebauthn(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        origin = serializer.validated_data.get('origin')
-        rp_id = serializer.validated_data.get('rp_id')
+        origin = serializer.validated_data.get("origin")
+        rp_id = serializer.validated_data.get("rp_id")
 
         opts = generate_registration_options(
             rp_id=rp_id,
@@ -100,18 +106,16 @@ class UserWebauthn(GenericAPIView):
 
         new_webauthn = Webauthn.objects.create(
             user=request.user,
-            title=serializer.validated_data.get('title'),
+            title=serializer.validated_data.get("title"),
             origin=origin,
             rp_id=rp_id,
-            challenge=encrypt_with_db_secret(str(options['challenge'])),
-            active=False
+            challenge=encrypt_with_db_secret(str(options["challenge"])),
+            active=False,
         )
 
-        return Response({
-            "id": new_webauthn.id,
-            "options": options
-        },
-            status=status.HTTP_201_CREATED)
+        return Response(
+            {"id": new_webauthn.id, "options": options}, status=status.HTTP_201_CREATED
+        )
 
     def post(self, request, *args, **kwargs):
         """
@@ -127,20 +131,21 @@ class UserWebauthn(GenericAPIView):
         :rtype:
         """
 
-        serializer = ActivateWebauthnSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ActivateWebauthnSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        webauthn = serializer.validated_data.get('webauthn')
-        credential_id = serializer.validated_data.get('credential_id')
-        credential_public_key = serializer.validated_data.get('credential_public_key')
+        webauthn = serializer.validated_data.get("webauthn")
+        credential_id = serializer.validated_data.get("credential_id")
+        credential_public_key = serializer.validated_data.get("credential_public_key")
 
         webauthn.credential_id = nacl.encoding.HexEncoder.encode(credential_id).decode()
-        webauthn.credential_public_key = nacl.encoding.HexEncoder.encode(credential_public_key).decode()
+        webauthn.credential_public_key = nacl.encoding.HexEncoder.encode(
+            credential_public_key
+        ).decode()
         webauthn.active = True
         webauthn.save()
 
@@ -159,16 +164,15 @@ class UserWebauthn(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteWebauthnSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteWebauthnSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        webauthn = serializer.validated_data.get('webauthn')
-        webauthn_count = serializer.validated_data.get('webauthn_count')
+        webauthn = serializer.validated_data.get("webauthn")
+        webauthn_count = serializer.validated_data.get("webauthn_count")
 
         # Update the user attribute if we only had 1 webauthn
         if webauthn_count < 2 and webauthn.active:

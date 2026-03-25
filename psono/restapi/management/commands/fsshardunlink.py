@@ -5,42 +5,34 @@ from typing import List
 
 def unlink_shard(link_id: str) -> dict:
 
-    if not link_id or link_id == 'None':
-        return {
-            'error': 'LINK_ID required'
-        }
+    if not link_id or link_id == "None":
+        return {"error": "LINK_ID required"}
 
     try:
         link = Fileserver_Cluster_Shard_Link.objects.get(pk=link_id)
     except Fileserver_Cluster_Shard_Link.DoesNotExist:
-        return {
-            'error': 'A link with this id was not found.'
-        }
+        return {"error": "A link with this id was not found."}
 
     link.delete()
 
-    return {
-    }
+    return {}
+
 
 class Command(BaseCommand):
-    help = 'Unlinks a shard from a cluster'
-    requires_system_checks = [] # type: List
+    help = "Unlinks a shard from a cluster"
+    requires_system_checks = []  # type: List
 
     def add_arguments(self, parser):
-        parser.add_argument('link_id', nargs='?')
-
+        parser.add_argument("link_id", nargs="?")
 
     def handle(self, *args, **options):
 
-        link_id = str(options['link_id'])
+        link_id = str(options["link_id"])
 
         result = unlink_shard(link_id)
 
-        if 'error' in result:
-            self.stdout.write(result['error'])
+        if "error" in result:
+            self.stdout.write(result["error"])
             return
 
-        print('Deleted successful.')
-
-
-
+        print("Deleted successful.")

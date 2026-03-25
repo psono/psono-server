@@ -5,23 +5,26 @@ from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..models import Yubikey_OTP
-from ..app_settings import NewYubikeyOTPSerializer, ActivateYubikeySerializer, DeleteYubikeySerializer
+from ..app_settings import (
+    NewYubikeyOTPSerializer,
+    ActivateYubikeySerializer,
+    DeleteYubikeySerializer,
+)
 from ..authentication import TokenAuthentication
 from ..utils import encrypt_with_db_secret
 
 
 class UserYubikeyOTP(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return NewYubikeyOTPSerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ActivateYubikeySerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteYubikeySerializer
         return Serializer
 
@@ -42,16 +45,15 @@ class UserYubikeyOTP(GenericAPIView):
         yubikey_otps = []
 
         for yk in Yubikey_OTP.objects.filter(user=request.user).all():
-            yubikey_otps.append({
-                'id': yk.id,
-                'active': yk.active,
-                'title': yk.title,
-            })
+            yubikey_otps.append(
+                {
+                    "id": yk.id,
+                    "active": yk.active,
+                    "title": yk.title,
+                }
+            )
 
-        return Response({
-            "yubikey_otps": yubikey_otps
-        },
-            status=status.HTTP_200_OK)
+        return Response({"yubikey_otps": yubikey_otps}, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
@@ -70,27 +72,28 @@ class UserYubikeyOTP(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        yubikey_otp = serializer.validated_data.get('yubikey_otp')
+        yubikey_otp = serializer.validated_data.get("yubikey_otp")
         yubikey_id = yubikey_otp[:12]
 
         new_yubikey = Yubikey_OTP.objects.create(
             user=request.user,
-            title= serializer.validated_data.get('title'),
-            yubikey_id = encrypt_with_db_secret(str(yubikey_id)),
-            active=True # YubiKeys don't need validation
+            title=serializer.validated_data.get("title"),
+            yubikey_id=encrypt_with_db_secret(str(yubikey_id)),
+            active=True,  # YubiKeys don't need validation
         )
 
         # Also update the user immediately and don't wait for the activation
         request.user.yubikey_otp_enabled = True
         request.user.save()
 
-        return Response({
-            "id": new_yubikey.id,
-        },
-            status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "id": new_yubikey.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def post(self, request, *args, **kwargs):
         """
@@ -106,15 +109,14 @@ class UserYubikeyOTP(GenericAPIView):
         :rtype:
         """
 
-        serializer = ActivateYubikeySerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ActivateYubikeySerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        yubikey_otp = serializer.validated_data.get('yubikey_otp')
+        yubikey_otp = serializer.validated_data.get("yubikey_otp")
 
         yubikey_otp.active = True
         yubikey_otp.save()
@@ -134,16 +136,15 @@ class UserYubikeyOTP(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteYubikeySerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteYubikeySerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        yubikey_otp = serializer.validated_data.get('yubikey_otp')
-        yubikey_otp_count = serializer.validated_data.get('yubikey_otp_count')
+        yubikey_otp = serializer.validated_data.get("yubikey_otp")
+        yubikey_otp_count = serializer.validated_data.get("yubikey_otp_count")
 
         # Update the user attribute if we only had 1 yubikey
         if yubikey_otp_count < 2 and yubikey_otp.active:

@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth.hashers import BasePasswordHasher
 from django.contrib.auth.hashers import mask_hash
 
+
 class InsecureUnittestPasswordHasher(BasePasswordHasher):
     """
     The Salted MD5 password hashing algorithm (not recommended) and only used for unittests to speed them up
@@ -48,6 +49,7 @@ class InsecureUnittestPasswordHasher(BasePasswordHasher):
     def harden_runtime(self, password, encoded):
         pass
 
+
 def is_uuid(expr):
     """
     check if a given expression is a uuid (version 4)
@@ -64,6 +66,7 @@ def is_uuid(expr):
 
     return not not val
 
+
 class UUIDEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, UUID):
@@ -72,30 +75,65 @@ class UUIDEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
+
 class CustomAPIClient(APIClient):
-    def post(self, path, data=None, format=None, content_type="application/json", follow=False, **extra):
+    def post(
+        self,
+        path,
+        data=None,
+        format=None,
+        content_type="application/json",
+        follow=False,
+        **extra,
+    ):
         if data:
             data = json.dumps(data, cls=UUIDEncoder)
         return super().post(path, data, format, content_type, follow, **extra)
 
     # You can override other methods like put, patch, etc. if needed
-    def put(self, path, data=None, format=None, content_type="application/json", follow=False, **extra):
+    def put(
+        self,
+        path,
+        data=None,
+        format=None,
+        content_type="application/json",
+        follow=False,
+        **extra,
+    ):
         if data:
             data = json.dumps(data, cls=UUIDEncoder)
         return super().put(path, data, format, content_type, follow, **extra)
 
-    def patch(self, path, data=None, format=None, content_type="application/json", follow=False, **extra):
+    def patch(
+        self,
+        path,
+        data=None,
+        format=None,
+        content_type="application/json",
+        follow=False,
+        **extra,
+    ):
         if data:
             data = json.dumps(data, cls=UUIDEncoder)
         return super().patch(path, data, format, content_type, follow, **extra)
 
-    def delete(self, path, data=None, format=None, content_type="application/json", follow=False, **extra):
+    def delete(
+        self,
+        path,
+        data=None,
+        format=None,
+        content_type="application/json",
+        follow=False,
+        **extra,
+    ):
         if data:
             data = json.dumps(data, cls=UUIDEncoder)
         return super().delete(path, data, format, content_type, follow, **extra)
 
+
 class APITestCaseExtended(APITestCase):
     client_class = CustomAPIClient
+
     @staticmethod
     def safe_repr(self, obj, short=False):
         _MAX_LENGTH = 80
@@ -105,7 +143,7 @@ class APITestCaseExtended(APITestCase):
             result = object.__repr__(obj)
         if not short or len(result) < _MAX_LENGTH:
             return result
-        return result[:_MAX_LENGTH] + ' [truncated]...'
+        return result[:_MAX_LENGTH] + " [truncated]..."
 
     def assertIsUUIDString(self, expr, msg=None):
         """Check that the expression is a valid uuid"""

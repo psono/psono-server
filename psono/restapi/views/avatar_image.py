@@ -12,14 +12,16 @@ from django.http import HttpResponse
 from ..app_settings import (
     ReadAvatarImageSerializer,
 )
+
+
 class AvatarImageView(GenericAPIView):
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
-    throttle_scope = 'avatar_image'
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
+    throttle_scope = "avatar_image"
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadAvatarImageSerializer
         return Serializer
 
@@ -34,20 +36,19 @@ class AvatarImageView(GenericAPIView):
 
     def get(self, request, user_id, avatar_id):
 
-        serializer = ReadAvatarImageSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadAvatarImageSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        mime_type = serializer.validated_data['mime_type']
-        data = serializer.validated_data['data']
+        mime_type = serializer.validated_data["mime_type"]
+        data = serializer.validated_data["data"]
         response = HttpResponse(data, content_type=mime_type, status=status.HTTP_200_OK)
         max_age = 2592000  # 30 days in seconds
-        response['Cache-Control'] = f'max-age={max_age}, public'
-        response['Pragma'] = 'cache'
+        response["Cache-Control"] = f"max-age={max_age}, public"
+        response["Pragma"] = "cache"
         expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
-        response['Expires'] = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        response["Expires"] = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         return response

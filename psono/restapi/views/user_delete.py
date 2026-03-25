@@ -5,23 +5,19 @@ from rest_framework.serializers import Serializer
 
 from ..permissions import IsAuthenticated
 from ..utils.avatar import delete_avatar_storage_of_user
-from ..app_settings import (
-    UserDeleteSerializer
-)
+from ..app_settings import UserDeleteSerializer
 
 from ..authentication import TokenAuthentication
 
 
-
 class UserDelete(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
-    throttle_scope = 'user_delete'
+    allowed_methods = ("DELETE", "OPTIONS", "HEAD")
+    throttle_scope = "user_delete"
 
     def get_serializer_class(self):
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return UserDeleteSerializer
         return Serializer
 
@@ -39,13 +35,12 @@ class UserDelete(GenericAPIView):
         Checks the REST Token and deletes the current user
         """
 
-        serializer = UserDeleteSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UserDeleteSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         delete_avatar_storage_of_user(request.user.id)
 

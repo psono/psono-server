@@ -21,18 +21,18 @@ from ..app_settings import (
 )
 from ..authentication import TokenAuthentication
 
-class FileView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class FileView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "PUT", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadFileSerializer
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateFileSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteFileSerializer
         return Serializer
 
@@ -41,17 +41,17 @@ class FileView(GenericAPIView):
         Indirectly reads a file by providing a filetransfer id for download
         """
 
-        serializer = ReadFileSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadFileSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        file = serializer.validated_data['file']
-        credit = serializer.validated_data['credit']
+        file = serializer.validated_data["file"]
+        credit = serializer.validated_data["credit"]
 
         with transaction.atomic():
-
             file_transfer = File_Transfer.objects.create(
                 user_id=request.user.id,
                 shard_id=file.shard_id,
@@ -62,19 +62,20 @@ class FileView(GenericAPIView):
                 chunk_count=file.chunk_count,
                 chunk_count_transferred=0,
                 credit=credit,
-                type='download',
+                type="download",
             )
 
             if credit != Decimal(str(0)):
-                request.user.credit = F('credit') - credit
+                request.user.credit = F("credit") - credit
                 request.user.save(update_fields=["credit"])
 
-        return Response({
-            "file_transfer_id": file_transfer.id,
-            "file_transfer_secret_key": file_transfer.secret_key,
-        }, status=status.HTTP_201_CREATED)
-
-
+        return Response(
+            {
+                "file_transfer_id": file_transfer.id,
+                "file_transfer_secret_key": file_transfer.secret_key,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def put(self, request, *args, **kwargs):
         """
@@ -85,33 +86,34 @@ class FileView(GenericAPIView):
         2. Secret attachment file without File_Link
         """
 
-        serializer = CreateFileSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = CreateFileSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        shard = serializer.validated_data['shard']
-        file_repository = serializer.validated_data['file_repository']
-        chunk_count = serializer.validated_data['chunk_count']
-        size = serializer.validated_data['size']
-        link_id = serializer.validated_data.get('link_id', None)
-        parent_datastore_id = serializer.validated_data.get('parent_datastore_id', None)
-        parent_share_id = serializer.validated_data.get('parent_share_id', None)
-        parent_secret_id = serializer.validated_data.get('parent_secret_id', None)
-        credit = serializer.validated_data['credit']
+        shard = serializer.validated_data["shard"]
+        file_repository = serializer.validated_data["file_repository"]
+        chunk_count = serializer.validated_data["chunk_count"]
+        size = serializer.validated_data["size"]
+        link_id = serializer.validated_data.get("link_id", None)
+        parent_datastore_id = serializer.validated_data.get("parent_datastore_id", None)
+        parent_share_id = serializer.validated_data.get("parent_share_id", None)
+        parent_secret_id = serializer.validated_data.get("parent_secret_id", None)
+        credit = serializer.validated_data["credit"]
 
         size_transferred = 0
         chunk_count_transferred = 0
 
         with transaction.atomic():
             file = File.objects.create(
-                shard = shard,
-                file_repository = file_repository,
-                secret_id = parent_secret_id,
-                chunk_count = chunk_count,
-                size = size,
-                user_id = request.user.id,
+                shard=shard,
+                file_repository=file_repository,
+                secret_id=parent_secret_id,
+                chunk_count=chunk_count,
+                size=size,
+                user_id=request.user.id,
             )
 
             file_transfer = File_Transfer.objects.create(
@@ -124,27 +126,30 @@ class FileView(GenericAPIView):
                 chunk_count=chunk_count,
                 chunk_count_transferred=chunk_count_transferred,
                 credit=credit,
-                type='upload',
+                type="upload",
             )
 
             # Only create File_Link if this is NOT a secret attachment
             if link_id is not None:
                 File_Link.objects.create(
-                    link_id = link_id,
-                    file_id = file.id,
-                    parent_datastore_id = parent_datastore_id,
-                    parent_share_id = parent_share_id
+                    link_id=link_id,
+                    file_id=file.id,
+                    parent_datastore_id=parent_datastore_id,
+                    parent_share_id=parent_share_id,
                 )
 
             if credit != Decimal(str(0)):
-                request.user.credit = F('credit') - credit
+                request.user.credit = F("credit") - credit
                 request.user.save(update_fields=["credit"])
 
-        return Response({
-            "file_id": file.id,
-            "file_transfer_id": file_transfer.id,
-            "file_transfer_secret_key": file_transfer.secret_key,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "file_id": file.id,
+                "file_transfer_id": file_transfer.id,
+                "file_transfer_secret_key": file_transfer.secret_key,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def post(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -157,12 +162,14 @@ class FileView(GenericAPIView):
         Only works for files attached to secrets (not file_link files).
         """
 
-        serializer = DeleteFileSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteFileSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        file = serializer.validated_data['file']
+        file = serializer.validated_data["file"]
 
         # Call file.delete() which handles cloud storage cleanup
         file.delete()

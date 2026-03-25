@@ -29,13 +29,12 @@ class DeviceCodeTokenView(generics.GenericAPIView):
     Only returns the state without leaking extra information.
     """
 
-    allowed_methods = ['POST', 'OPTIONS']
+    allowed_methods = ["POST", "OPTIONS"]
     parser_classes = [JSONParser]
     permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = PollDeviceCodeTokenSerializer
     throttle_scope = "device_code_token"
-
 
     def post(self, request, *args, **kwargs):
         """
@@ -43,28 +42,31 @@ class DeviceCodeTokenView(generics.GenericAPIView):
         If CLAIMED and credentials exist, returns them in a nacl.public.Box encrypted payload.
         Otherwise, returns the state to prevent leaking information.
         """
-        serializer = cast(PollDeviceCodeTokenSerializer, self.get_serializer(data=request.data))
-        
+        serializer = cast(
+            PollDeviceCodeTokenSerializer, self.get_serializer(data=request.data)
+        )
+
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         device_code = cast(DeviceCode, serializer.validated_data.get("device_code"))
-        
+
         new_session_token = self._create_new_session_token(device_code)
         box = self._prepare_encryption_box(device_code)
-        response_data = self._create_encrypted_response_data(device_code, box, new_session_token)
+        response_data = self._create_encrypted_response_data(
+            device_code, box, new_session_token
+        )
 
         device_code.delete()
-        
+
         return Response(response_data, status=status.HTTP_200_OK)
 
-    
     def _prepare_encryption_box(self, device_code: DeviceCode) -> Box:
         """Prepare the encryption box for secure communication."""
 
-        server_private_key_hex_decrypted = decrypt_with_db_secret(device_code.server_private_key)
+        server_private_key_hex_decrypted = decrypt_with_db_secret(
+            device_code.server_private_key
+        )
         server_private_key_bytes = HexEncoder.decode(server_private_key_hex_decrypted)
         server_private_key_obj = PrivateKey(server_private_key_bytes)
 
@@ -72,7 +74,6 @@ class DeviceCodeTokenView(generics.GenericAPIView):
         user_public_key_obj = PublicKey(user_public_key_bytes)
 
         return Box(server_private_key_obj, user_public_key_obj)
-
 
     def _create_new_session_token(self, device_code: DeviceCode) -> dict:
         """
@@ -86,7 +87,9 @@ class DeviceCodeTokenView(generics.GenericAPIView):
         new_token = Token(
             user=user,
             active=True,
-            valid_till=(timezone.now() + timedelta(seconds=settings.MAX_APP_TOKEN_TIME_VALID)),
+            valid_till=(
+                timezone.now() + timedelta(seconds=settings.MAX_APP_TOKEN_TIME_VALID)
+            ),
             device_description=device_description,
             device_fingerprint=device_fingerprint,
             client_date=device_code.device_date,
@@ -103,38 +106,49 @@ class DeviceCodeTokenView(generics.GenericAPIView):
             "session_secret_key": new_token.secret_key,
             "token_valid_till": new_token.valid_till.isoformat(),
         }
-    
-    def _create_encrypted_response_data(self, instance: DeviceCode, box: Box, new_session_token_data: dict) -> dict:
+
+    def _create_encrypted_response_data(
+        self, instance: DeviceCode, box: Box, new_session_token_data: dict
+    ) -> dict:
         """Create and return an encrypted response, including the provided session token data."""
-        
+
         payload_data = {
             "id": str(instance.id),
             "state": DeviceCode.DeviceCodeState.CLAIMED.value,
             "token": new_session_token_data["token"],
             "session_secret_key": new_session_token_data["session_secret_key"],
             "token_valid_till": new_session_token_data["token_valid_till"],
-            "encrypted_credentials": HexEncoder.encode(instance.encrypted_credentials).decode() if instance.encrypted_credentials else None,
-            "encrypted_credentials_nonce": instance.encrypted_credentials_nonce if instance.encrypted_credentials_nonce else None,
+            "encrypted_credentials": HexEncoder.encode(
+                instance.encrypted_credentials
+            ).decode()
+            if instance.encrypted_credentials
+            else None,
+            "encrypted_credentials_nonce": instance.encrypted_credentials_nonce
+            if instance.encrypted_credentials_nonce
+            else None,
         }
-        
-        payload_json_bytes = json.dumps(payload_data, sort_keys=True).encode('utf-8')
+
+        payload_json_bytes = json.dumps(payload_data, sort_keys=True).encode("utf-8")
         encryption_nonce_bytes = nacl_random(Box.NONCE_SIZE)
-        encrypted_payload_message = box.encrypt(payload_json_bytes, encryption_nonce_bytes)
-        
+        encrypted_payload_message = box.encrypt(
+            payload_json_bytes, encryption_nonce_bytes
+        )
+
         return {
-            "boxed_payload": HexEncoder.encode(encrypted_payload_message.ciphertext).decode(),
+            "boxed_payload": HexEncoder.encode(
+                encrypted_payload_message.ciphertext
+            ).decode(),
             "nonce": HexEncoder.encode(encryption_nonce_bytes).decode(),
         }
-        
+
     def delete(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
+
     def put(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
+
     def get(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
 
 
 __all__ = [DeviceCodeTokenView]

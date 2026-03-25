@@ -7,33 +7,78 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0044_alter_user_group_membership_private_key_and_more'),
+        ("restapi", "0044_alter_user_group_membership_private_key_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DeviceCode',
+            name="DeviceCode",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('valid_till', models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
-                ('state', models.CharField(choices=[('pending', 'Pending'), ('claimed', 'Claimed'), ('token_issued', 'Token Issued'), ('expired', 'Expired'), ('failed', 'Failed')], default='pending', max_length=16)),
-                ('device_fingerprint', models.CharField(editable=False, max_length=128)),
-                ('device_description', models.CharField(editable=False, max_length=256, null=True)),
-                ('device_date', models.DateTimeField(editable=False, null=True)),
-                ('server_private_key', models.CharField(editable=False, max_length=256)),
-                ('server_public_key', models.CharField(editable=False, max_length=128)),
-                ('user_public_key', models.CharField(editable=False, max_length=128)),
-                ('encrypted_credentials', models.BinaryField(blank=True, null=True)),
-                ('encrypted_credentials_nonce', models.CharField(blank=True, max_length=64, null=True)),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='device_codes', to='restapi.user')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                (
+                    "valid_till",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now, editable=False
+                    ),
+                ),
+                (
+                    "state",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("claimed", "Claimed"),
+                            ("token_issued", "Token Issued"),
+                            ("expired", "Expired"),
+                            ("failed", "Failed"),
+                        ],
+                        default="pending",
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "device_fingerprint",
+                    models.CharField(editable=False, max_length=128),
+                ),
+                (
+                    "device_description",
+                    models.CharField(editable=False, max_length=256, null=True),
+                ),
+                ("device_date", models.DateTimeField(editable=False, null=True)),
+                (
+                    "server_private_key",
+                    models.CharField(editable=False, max_length=256),
+                ),
+                ("server_public_key", models.CharField(editable=False, max_length=128)),
+                ("user_public_key", models.CharField(editable=False, max_length=128)),
+                ("encrypted_credentials", models.BinaryField(blank=True, null=True)),
+                (
+                    "encrypted_credentials_nonce",
+                    models.CharField(blank=True, max_length=64, null=True),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="device_codes",
+                        to="restapi.user",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'restapi_device_code',
-                'abstract': False,
+                "db_table": "restapi_device_code",
+                "abstract": False,
             },
         ),
     ]

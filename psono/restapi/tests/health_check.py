@@ -14,7 +14,7 @@ class HealthCheckTest(APITestCaseExtended):
         Tests PUT method on healthcheck
         """
 
-        url = reverse('healthcheck')
+        url = reverse("healthcheck")
 
         data = {}
 
@@ -27,7 +27,7 @@ class HealthCheckTest(APITestCaseExtended):
         Tests POST method on healthcheck
         """
 
-        url = reverse('healthcheck')
+        url = reverse("healthcheck")
 
         data = {}
 
@@ -40,7 +40,7 @@ class HealthCheckTest(APITestCaseExtended):
         Tests DELETE method on healthcheck
         """
 
-        url = reverse('healthcheck')
+        url = reverse("healthcheck")
 
         data = {}
 
@@ -53,11 +53,10 @@ class HealthCheckTest(APITestCaseExtended):
         Tests GET method on
         """
 
-        url = reverse('healthcheck')
+        url = reverse("healthcheck")
 
         data = {}
 
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-

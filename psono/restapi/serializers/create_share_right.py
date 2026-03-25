@@ -1,8 +1,15 @@
 from ..utils import user_has_rights_on_share
 
 from rest_framework import serializers, exceptions
+from django.utils import timezone
 from ..fields import UUIDField, BooleanField
-from ..models import User, Group, User_Share_Right, Group_Share_Right, User_Group_Membership
+from ..models import (
+    User,
+    Group,
+    User_Share_Right,
+    Group_Share_Right,
+    User_Group_Membership,
+)
 
 
 class CreateShareRightSerializer(serializers.Serializer):
@@ -18,12 +25,18 @@ class CreateShareRightSerializer(serializers.Serializer):
     read = BooleanField()
     write = BooleanField()
     grant = BooleanField()
+    expiration_date = serializers.DateTimeField(required=False, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        user_id = attrs.get('user_id', False)
-        group_id = attrs.get('group_id', False)
-        share_id = attrs['share_id']
+        user_id = attrs.get("user_id", False)
+        group_id = attrs.get("group_id", False)
+        share_id = attrs["share_id"]
+        expiration_date = attrs.get("expiration_date", None)
+
+        if expiration_date is not None and expiration_date <= timezone.now():
+            msg = "EXPIRATION_DATE_NEEDS_TO_BE_IN_THE_FUTURE"
+            raise exceptions.ValidationError(msg)
 
         if not user_id and not group_id:
             msg = "Either user or group share right needs to be specified."
@@ -34,51 +47,75 @@ class CreateShareRightSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # check permissions on share
-        if not user_has_rights_on_share(self.context['request'].user.id, share_id, grant=True):
+        if not user_has_rights_on_share(
+            self.context["request"].user.id, share_id, grant=True
+        ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
         if user_id:
             # check if user exists
             try:
-                attrs['user'] = User.objects.get(pk=attrs['user_id'])
+                attrs["user"] = User.objects.get(pk=attrs["user_id"])
             except User.DoesNotExist:
-                msg = 'Target user does not exist.'
+                msg = "Target user does not exist."
                 raise exceptions.ValidationError(msg)
 
             # Lets see if it the share right already exists
             try:
-                user_share_right = User_Share_Right.objects.get(share_id=share_id, user_id=user_id)
-                if user_share_right.creator_id is None and not user_share_right.accepted:
+                user_share_right = User_Share_Right.objects.get(
+                    share_id=share_id, user_id=user_id
+                )
+                if (
+                    user_share_right.creator_id is None
+                    and not user_share_right.accepted
+                ):
                     # the user had an "unaccepted" share right yet the user who created it does not exist anymore
+                    user_share_right.delete()
+                elif (
+                    user_share_right.expiration_date is not None
+                    and user_share_right.expiration_date <= timezone.now()
+                ):
                     user_share_right.delete()
                 else:
                     msg = "User Share Right already exists."
                     raise exceptions.ValidationError(msg)
             except User_Share_Right.DoesNotExist:
-                pass # Good it doesn't exist yet
+                pass  # Good it doesn't exist yet
 
         # check if group exists
         if group_id:
             try:
-                attrs['group'] = Group.objects.get(pk=attrs['group_id'])
+                attrs["group"] = Group.objects.get(pk=attrs["group_id"])
             except Group.DoesNotExist:
-                msg = 'Target group does not exist.'
+                msg = "Target group does not exist."
                 raise exceptions.ValidationError(msg)
 
-            #check Permissions on group
+            # check Permissions on group
             try:
-                User_Group_Membership.objects.get(group_id=attrs['group_id'], user_id=self.context['request'].user.id, share_admin=True)
+                User_Group_Membership.objects.get(
+                    group_id=attrs["group_id"],
+                    user_id=self.context["request"].user.id,
+                    share_admin=True,
+                )
             except User_Group_Membership.DoesNotExist:
-                msg = 'You don\'t have the necessary rights to share with this group.'
+                msg = "You don't have the necessary rights to share with this group."
                 raise exceptions.ValidationError(msg)
 
             try:
                 # Lets see if it the share right already exists
-                Group_Share_Right.objects.get(share_id=share_id, group_id=group_id)
-                msg = "Group Share Right already exists."
-                raise exceptions.ValidationError(msg)
+                group_share_right = Group_Share_Right.objects.get(
+                    share_id=share_id, group_id=group_id
+                )
+                if (
+                    group_share_right.expiration_date is not None
+                    and group_share_right.expiration_date <= timezone.now()
+                ):
+                    group_share_right.delete()
+                else:
+                    msg = "Group Share Right already exists."
+                    raise exceptions.ValidationError(msg)
             except Group_Share_Right.DoesNotExist:
-                pass # Good it doesn't exist yet
+                pass  # Good it doesn't exist yet
 
         return attrs

@@ -7,15 +7,14 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0007_data_store_is_default'),
+        ("restapi", "0007_data_store_is_default"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='valid_till',
+            model_name="token",
+            name="valid_till",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]

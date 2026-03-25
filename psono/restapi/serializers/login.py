@@ -12,7 +12,6 @@ from rest_framework import serializers, exceptions
 
 
 class LoginSerializer(serializers.Serializer):
-
     public_key = serializers.CharField(required=True, min_length=64, max_length=64)
     login_info = serializers.CharField(required=True)
     login_info_nonce = serializers.CharField(required=True)
@@ -20,37 +19,43 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        login_info = attrs.get('login_info')
-        login_info_nonce = attrs.get('login_info_nonce')
-        public_key = attrs.get('public_key')
-        session_duration = attrs.get('session_duration', settings.DEFAULT_TOKEN_TIME_VALID)
+        login_info = attrs.get("login_info")
+        login_info_nonce = attrs.get("login_info_nonce")
+        public_key = attrs.get("public_key")
+        session_duration = attrs.get(
+            "session_duration", settings.DEFAULT_TOKEN_TIME_VALID
+        )
 
-        crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
-                         PublicKey(public_key, encoder=nacl.encoding.HexEncoder))
+        crypto_box = Box(
+            PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
+            PublicKey(public_key, encoder=nacl.encoding.HexEncoder),
+        )
 
         try:
-            request_data = json.loads(crypto_box.decrypt(
-                nacl.encoding.HexEncoder.decode(login_info),
-                nacl.encoding.HexEncoder.decode(login_info_nonce)
-            ).decode())
+            request_data = json.loads(
+                crypto_box.decrypt(
+                    nacl.encoding.HexEncoder.decode(login_info),
+                    nacl.encoding.HexEncoder.decode(login_info_nonce),
+                ).decode()
+            )
         except:
-            msg = 'LOGIN_INFO_CANNOT_BE_DECRYPTED'
+            msg = "LOGIN_INFO_CANNOT_BE_DECRYPTED"
             raise exceptions.ValidationError(msg)
 
-        if not request_data.get('username', False):
-            msg = 'USERNAME_REQUIRED'
+        if not request_data.get("username", False):
+            msg = "USERNAME_REQUIRED"
             raise exceptions.ValidationError(msg)
 
-        if not request_data.get('authkey', False):
-            msg = 'AUTHKEY_REQUIRED'
+        if not request_data.get("authkey", False):
+            msg = "AUTHKEY_REQUIRED"
             raise exceptions.ValidationError(msg)
 
-        username = request_data.get('username').lower().strip()
-        authkey = request_data.get('authkey')
-        password = request_data.get('password', False)
-        source = request_data.get('client_type', 'webclient')
+        username = request_data.get("username").lower().strip()
+        authkey = request_data.get("authkey")
+        password = request_data.get("password", False)
+        source = request_data.get("client_type", "webclient")
 
-        if source == 'app':
+        if source == "app":
             session_duration = min(session_duration, settings.MAX_APP_TOKEN_TIME_VALID)
             session_duration = max(session_duration, settings.MIN_APP_TOKEN_TIME_VALID)
         else:
@@ -58,31 +63,33 @@ class LoginSerializer(serializers.Serializer):
             session_duration = min(session_duration, settings.MAX_WEB_TOKEN_TIME_VALID)
             session_duration = max(session_duration, settings.MIN_WEB_TOKEN_TIME_VALID)
 
-        user, error_code = authenticate(username=username, authkey=authkey, password=password)
+        user, error_code = authenticate(
+            username=username, authkey=authkey, password=password
+        )
 
         if not user:
-            msg = 'USERNAME_OR_PASSWORD_WRONG'
+            msg = "USERNAME_OR_PASSWORD_WRONG"
             raise exceptions.ValidationError(msg)
 
         if not user.is_active:
-            msg = 'USER_DISABLED_ASK_ADMIN_TO_ENABLE'
+            msg = "USER_DISABLED_ASK_ADMIN_TO_ENABLE"
             raise exceptions.ValidationError(msg)
 
         if not user.is_email_active:
-            msg = 'ACCOUNT_NOT_VERIFIED'
+            msg = "ACCOUNT_NOT_VERIFIED"
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
-        attrs['user_session_public_key'] = public_key
-        attrs['session_duration'] = session_duration
+        attrs["user"] = user
+        attrs["user_session_public_key"] = public_key
+        attrs["session_duration"] = session_duration
 
-        attrs['device_fingerprint'] = request_data.get('device_fingerprint', '')
-        attrs['device_description'] = request_data.get('device_description', '')
+        attrs["device_fingerprint"] = request_data.get("device_fingerprint", "")
+        attrs["device_description"] = request_data.get("device_description", "")
 
-        device_time = request_data.get('device_time', None)
+        device_time = request_data.get("device_time", None)
         if device_time is None:
-            attrs['device_time'] = None
+            attrs["device_time"] = None
         else:
-            attrs['device_time'] = dateutil.parser.parse(device_time)
+            attrs["device_time"] = dateutil.parser.parse(device_time)
 
         return attrs

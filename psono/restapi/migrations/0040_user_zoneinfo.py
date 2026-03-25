@@ -5,15 +5,14 @@ import timezone_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0039_link_share_allow_write_alter_ivalt_mobile_and_more'),
+        ("restapi", "0039_link_share_allow_write_alter_ivalt_mobile_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='zoneinfo',
+            model_name="user",
+            name="zoneinfo",
             field=timezone_field.fields.TimeZoneField(null=True),
         ),
     ]

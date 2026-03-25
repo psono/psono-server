@@ -5,15 +5,14 @@ import django_countries.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0040_user_zoneinfo'),
+        ("restapi", "0040_user_zoneinfo"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='country',
+            model_name="user",
+            name="country",
             field=django_countries.fields.CountryField(max_length=2, null=True),
         ),
     ]

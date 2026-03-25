@@ -1,28 +1,27 @@
-
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..models import User, User_Group_Membership
 
 import re
 
-class CreateMembershipSerializer(serializers.Serializer):
 
+class CreateMembershipSerializer(serializers.Serializer):
     user_id = UUIDField(required=True)
     group_id = UUIDField(required=True)
     secret_key = serializers.CharField(required=True)
     secret_key_nonce = serializers.CharField(max_length=64, required=True)
-    secret_key_type = serializers.CharField(default='asymmetric')
+    secret_key_type = serializers.CharField(default="asymmetric")
     private_key = serializers.CharField(required=True)
     private_key_nonce = serializers.CharField(max_length=64, required=True)
-    private_key_type = serializers.CharField(default='asymmetric')
+    private_key_type = serializers.CharField(default="asymmetric")
     group_admin = BooleanField(default=False)
     share_admin = BooleanField(default=False)
 
     def validate_secret_key(self, value):
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -30,8 +29,8 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_secret_key_nonce(self, value):
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -39,8 +38,8 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_secret_key_type(self, value):
         value = value.strip()
 
-        if value not in ('symmetric', 'asymmetric'):
-            msg = 'UNKNOWN_SECRET_KEY_TYPE'
+        if value not in ("symmetric", "asymmetric"):
+            msg = "UNKNOWN_SECRET_KEY_TYPE"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -48,8 +47,8 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_private_key(self, value):
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -57,8 +56,8 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_private_key_nonce(self, value):
         value = value.strip()
 
-        if not re.match('^[0-9a-f]*$', value, re.IGNORECASE):
-            msg = 'NO_VALID_HEX'
+        if not re.match("^[0-9a-f]*$", value, re.IGNORECASE):
+            msg = "NO_VALID_HEX"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -66,8 +65,8 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_private_key_type(self, value):
         value = value.strip()
 
-        if value not in ('symmetric', 'asymmetric'):
-            msg = 'UNKNOWN_PRIVATE_KEY_TYPE'
+        if value not in ("symmetric", "asymmetric"):
+            msg = "UNKNOWN_PRIVATE_KEY_TYPE"
             raise exceptions.ValidationError(msg)
 
         return value
@@ -75,7 +74,12 @@ class CreateMembershipSerializer(serializers.Serializer):
     def validate_group_id(self, value):
 
         # This line also ensures that the desired group exists and that the user firing the request has admin rights
-        if not User_Group_Membership.objects.filter(group_id=value, user=self.context['request'].user, group_admin=True, accepted=True).exists():
+        if not User_Group_Membership.objects.filter(
+            group_id=value,
+            user=self.context["request"].user,
+            group_admin=True,
+            accepted=True,
+        ).exists():
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
@@ -83,19 +87,24 @@ class CreateMembershipSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        user_id = attrs.get('user_id')
-        group_id = attrs.get('group_id')
+        user_id = attrs.get("user_id")
+        group_id = attrs.get("group_id")
 
-        if User_Group_Membership.objects.filter(group_id=group_id, user_id=user_id).count() > 0:
+        if (
+            User_Group_Membership.objects.filter(
+                group_id=group_id, user_id=user_id
+            ).count()
+            > 0
+        ):
             msg = "USER_ALREADY_PART_OF_GROUP"
             raise exceptions.ValidationError(msg)
 
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
-            msg = 'USER_DOES_NOT_EXIST'
+            msg = "USER_DOES_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
+        attrs["user"] = user
 
         return attrs

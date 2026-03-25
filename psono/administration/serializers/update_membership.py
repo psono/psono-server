@@ -3,6 +3,7 @@ from restapi.fields import UUIDField, BooleanField
 
 from restapi.models import User_Group_Membership
 
+
 class UpdateMembershipSerializer(serializers.Serializer):
     membership_id = UUIDField(required=True)
     group_admin = BooleanField(required=False, allow_null=True)
@@ -10,7 +11,7 @@ class UpdateMembershipSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        membership_id = attrs.get('membership_id')
+        membership_id = attrs.get("membership_id")
 
         try:
             membership = User_Group_Membership.objects.get(id=membership_id)
@@ -18,6 +19,6 @@ class UpdateMembershipSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['membership'] = membership
+        attrs["membership"] = membership
 
         return attrs

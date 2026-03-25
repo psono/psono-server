@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0041_user_country'),
+        ("restapi", "0041_user_country"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='session_key',
+            model_name="token",
+            name="session_key",
             field=models.CharField(max_length=64, null=True),
         ),
     ]

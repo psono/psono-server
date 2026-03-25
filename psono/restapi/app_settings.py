@@ -124,836 +124,587 @@ from .serializers import (
     PollDeviceCodeTokenSerializer as DefaultPollDeviceCodeTokenSerializer,
 )
 
+
 def import_callable(path_or_callable):
-    if hasattr(path_or_callable, '__call__'):
+    if hasattr(path_or_callable, "__call__"):
         return path_or_callable
     else:
-        package, attr = path_or_callable.rsplit('.', 1)
+        package, attr = path_or_callable.rsplit(".", 1)
         return getattr(import_module(package), attr)
 
-serializers = getattr(settings, 'RESTAPI_AUTH_SERIALIZERS', {})
+
+serializers = getattr(settings, "RESTAPI_AUTH_SERIALIZERS", {})
 
 PreLoginSerializer = import_callable(
-    serializers.get('PRE_LOGIN_SERIALIZER', DefaultPreLoginSerializer)
+    serializers.get("PRE_LOGIN_SERIALIZER", DefaultPreLoginSerializer)
 )
 LoginSerializer = import_callable(
-    serializers.get('LOGIN_SERIALIZER', DefaultLoginSerializer)
+    serializers.get("LOGIN_SERIALIZER", DefaultLoginSerializer)
 )
 APIKeyLoginSerializer = import_callable(
-    serializers.get('API_KEY_LOGIN_SERIALIZER', DefaultAPIKeyLoginSerializer)
+    serializers.get("API_KEY_LOGIN_SERIALIZER", DefaultAPIKeyLoginSerializer)
 )
 
 GAVerifySerializer = import_callable(
-    serializers.get('GA_VERIFY_SERIALIZER', DefaultGAVerifySerializer)
+    serializers.get("GA_VERIFY_SERIALIZER", DefaultGAVerifySerializer)
 )
 
 WebauthnVerifyInitSerializer = import_callable(
-    serializers.get('WEBAUTHN_VERIFY_INIT_SERIALIZER', DefaultWebauthnVerifyInitSerializer)
+    serializers.get(
+        "WEBAUTHN_VERIFY_INIT_SERIALIZER", DefaultWebauthnVerifyInitSerializer
+    )
 )
 
 WebauthnVerifySerializer = import_callable(
-    serializers.get('WEBAUTHN_VERIFY_SERIALIZER', DefaultWebauthnVerifySerializer)
+    serializers.get("WEBAUTHN_VERIFY_SERIALIZER", DefaultWebauthnVerifySerializer)
 )
 
 DuoVerifySerializer = import_callable(
-    serializers.get('DUO_VERIFY_SERIALIZER', DefaultDuoVerifySerializer)
+    serializers.get("DUO_VERIFY_SERIALIZER", DefaultDuoVerifySerializer)
 )
 
 YubikeyOTPVerifySerializer = import_callable(
-    serializers.get('YUBIKEY_OTP_VERIFY_SERIALIZER', DefaultYubikeyOTPVerifySerializer)
+    serializers.get("YUBIKEY_OTP_VERIFY_SERIALIZER", DefaultYubikeyOTPVerifySerializer)
 )
 
 ActivateTokenSerializer = import_callable(
-    serializers.get('ACTIVATE_TOKEN_SERIALIZER', DefaultActivateTokenSerializer)
+    serializers.get("ACTIVATE_TOKEN_SERIALIZER", DefaultActivateTokenSerializer)
 )
 
 LogoutSerializer = import_callable(
-    serializers.get('LOGOUT_SERIALIZER', DefaultLogoutSerializer)
+    serializers.get("LOGOUT_SERIALIZER", DefaultLogoutSerializer)
 )
 
 
 RegisterSerializer = import_callable(
-    serializers.get(
-        'REGISTER_SERIALIZER',
-        DefaultRegisterSerializer
-    )
+    serializers.get("REGISTER_SERIALIZER", DefaultRegisterSerializer)
 )
 
 
 VerifyEmailSerializer = import_callable(
-    serializers.get(
-        'VERIFY_EMAIL_SERIALIZER',
-        DefaultVerifyEmailSerializer
-    )
+    serializers.get("VERIFY_EMAIL_SERIALIZER", DefaultVerifyEmailSerializer)
 )
 
 
 UserSearchSerializer = import_callable(
-    serializers.get(
-        'USER_SEARCH_SERIALIZER',
-        DefaultUserSearchSerializer
-    )
+    serializers.get("USER_SEARCH_SERIALIZER", DefaultUserSearchSerializer)
 )
 
 
 ReadSecretHistorySerializer = import_callable(
     serializers.get(
-        'READ_SECRET_HISTORY_SERIALIZER',
-        DefaultReadSecretHistorySerializer
+        "READ_SECRET_HISTORY_SERIALIZER", DefaultReadSecretHistorySerializer
     )
 )
 
 
 ReadHistorySerializer = import_callable(
-    serializers.get(
-        'READ_HISTORY_SERIALIZER',
-        DefaultReadHistorySerializer
-    )
+    serializers.get("READ_HISTORY_SERIALIZER", DefaultReadHistorySerializer)
 )
 
 UserUpdateSerializer = import_callable(
-    serializers.get(
-        'USER_UPDATE_SERIALIZER',
-        DefaultUserUpdateSerializer
-    )
+    serializers.get("USER_UPDATE_SERIALIZER", DefaultUserUpdateSerializer)
 )
 
 UserDeleteSerializer = import_callable(
-    serializers.get(
-        'USER_DELETE_SERIALIZER',
-        DefaultUserDeleteSerializer
-    )
+    serializers.get("USER_DELETE_SERIALIZER", DefaultUserDeleteSerializer)
 )
 
 NewGASerializer = import_callable(
-    serializers.get(
-        'NEW_GA_SERIALIZER',
-        DefaultNewGASerializer
-    )
+    serializers.get("NEW_GA_SERIALIZER", DefaultNewGASerializer)
 )
 
 NewWebauthnSerializer = import_callable(
-    serializers.get(
-        'NEW_WEBAUTHN_SERIALIZER',
-        DefaultNewWebauthnSerializer
-    )
+    serializers.get("NEW_WEBAUTHN_SERIALIZER", DefaultNewWebauthnSerializer)
 )
 
 NewDuoSerializer = import_callable(
-    serializers.get(
-        'NEW_DUO_SERIALIZER',
-        DefaultNewDuoSerializer
-    )
+    serializers.get("NEW_DUO_SERIALIZER", DefaultNewDuoSerializer)
 )
 
 NewYubikeyOTPSerializer = import_callable(
-    serializers.get(
-        'NEW_YUBIKEY_OTP_SERIALIZER',
-        DefaultNewYubikeyOTPSerializer
-    )
+    serializers.get("NEW_YUBIKEY_OTP_SERIALIZER", DefaultNewYubikeyOTPSerializer)
 )
 
 ActivateYubikeySerializer = import_callable(
-    serializers.get(
-        'ACTIVATE_YUBIKEY_SERIALIZER',
-        DefaultActivateYubikeySerializer
-    )
+    serializers.get("ACTIVATE_YUBIKEY_SERIALIZER", DefaultActivateYubikeySerializer)
 )
 
 DeleteYubikeySerializer = import_callable(
-    serializers.get(
-        'DELETE_YUBIKEY_SERIALIZER',
-        DefaultDeleteYubikeySerializer
-    )
+    serializers.get("DELETE_YUBIKEY_SERIALIZER", DefaultDeleteYubikeySerializer)
 )
 
 ActivateGASerializer = import_callable(
-    serializers.get(
-        'ACTIVATE_GA_SERIALIZER',
-        DefaultActivateGASerializer
-    )
+    serializers.get("ACTIVATE_GA_SERIALIZER", DefaultActivateGASerializer)
 )
 
 DeleteGASerializer = import_callable(
-    serializers.get(
-        'DELETE_GA_SERIALIZER',
-        DefaultDeleteGASerializer
-    )
+    serializers.get("DELETE_GA_SERIALIZER", DefaultDeleteGASerializer)
 )
 
 ActivateWebauthnSerializer = import_callable(
-    serializers.get(
-        'ACTIVATE_WEBAUTHN_SERIALIZER',
-        DefaultActivateWebauthnSerializer
-    )
+    serializers.get("ACTIVATE_WEBAUTHN_SERIALIZER", DefaultActivateWebauthnSerializer)
 )
 
 DeleteWebauthnSerializer = import_callable(
-    serializers.get(
-        'DELETE_WEBAUTHN_SERIALIZER',
-        DefaultDeleteWebauthnSerializer
-    )
+    serializers.get("DELETE_WEBAUTHN_SERIALIZER", DefaultDeleteWebauthnSerializer)
 )
 
 ActivateDuoSerializer = import_callable(
-    serializers.get(
-        'ACTIVATE_DUO_SERIALIZER',
-        DefaultActivateDuoSerializer
-    )
+    serializers.get("ACTIVATE_DUO_SERIALIZER", DefaultActivateDuoSerializer)
 )
 
 DeleteDuoSerializer = import_callable(
-    serializers.get(
-        'DELETE_DUO_SERIALIZER',
-        DefaultDeleteDuoSerializer
-    )
+    serializers.get("DELETE_DUO_SERIALIZER", DefaultDeleteDuoSerializer)
 )
 
 
 CreateShareRightSerializer = import_callable(
-    serializers.get(
-        'CREATE_SHARE_RIGHT_SERIALIZER',
-        DefaultCreateShareRightSerializer
-    )
+    serializers.get("CREATE_SHARE_RIGHT_SERIALIZER", DefaultCreateShareRightSerializer)
 )
 
 UpdateShareRightSerializer = import_callable(
-    serializers.get(
-        'UPDATE_SHARE_RIGHT_SERIALIZER',
-        DefaultUpdateShareRightSerializer
-    )
+    serializers.get("UPDATE_SHARE_RIGHT_SERIALIZER", DefaultUpdateShareRightSerializer)
 )
 
 DeleteShareRightSerializer = import_callable(
-    serializers.get(
-        'DELETE_SHARE_RIGHT_SERIALIZER',
-        DefaultDeleteShareRightSerializer
-    )
+    serializers.get("DELETE_SHARE_RIGHT_SERIALIZER", DefaultDeleteShareRightSerializer)
 )
 
 
 CreateRecoverycodeSerializer = import_callable(
     serializers.get(
-        'CREATE_RECOVERYCODE_SERIALIZER',
-        DefaultCreateRecoverycodeSerializer
+        "CREATE_RECOVERYCODE_SERIALIZER", DefaultCreateRecoverycodeSerializer
     )
 )
 
 
 CreateEmergencycodeSerializer = import_callable(
     serializers.get(
-        'CREATE_EMERGENCYCODE_SERIALIZER',
-        DefaultCreateEmergencycodeSerializer
+        "CREATE_EMERGENCYCODE_SERIALIZER", DefaultCreateEmergencycodeSerializer
     )
 )
 
 
 EmergencyLoginSerializer = import_callable(
-    serializers.get(
-        'EMERGENCY_LOGIN_SERIALIZER',
-        DefaultEmergencyLoginSerializer
-    )
+    serializers.get("EMERGENCY_LOGIN_SERIALIZER", DefaultEmergencyLoginSerializer)
 )
 
 
 ActivateEmergencyLoginSerializer = import_callable(
     serializers.get(
-        'ACTIVATE_EMERGENCY_LOGIN_SERIALIZER',
-        DefaultActivateEmergencyLoginSerializer
+        "ACTIVATE_EMERGENCY_LOGIN_SERIALIZER", DefaultActivateEmergencyLoginSerializer
     )
 )
 
 
 DeleteEmergencycodeSerializer = import_callable(
     serializers.get(
-        'DELETE_EMERGENCYCODE_SERIALIZER',
-        DefaultDeleteEmergencycodeSerializer
+        "DELETE_EMERGENCYCODE_SERIALIZER", DefaultDeleteEmergencycodeSerializer
     )
 )
 
 
 EnableNewPasswordSerializer = import_callable(
     serializers.get(
-        'ENABLE_NEW_PASSWORD_SERIALIZER',
-        DefaultEnableNewPasswordSerializer
+        "ENABLE_NEW_PASSWORD_SERIALIZER", DefaultEnableNewPasswordSerializer
     )
 )
 
 
 SetNewPasswordSerializer = import_callable(
-    serializers.get(
-        'SET_NEW_PASSWORD_SERIALIZER',
-        DefaultSetNewPasswordSerializer
-    )
+    serializers.get("SET_NEW_PASSWORD_SERIALIZER", DefaultSetNewPasswordSerializer)
 )
 
 CreateShareLinkSerializer = import_callable(
-    serializers.get(
-        'CREATE_SHARE_LINK_SERIALIZER',
-        DefaultCreateShareLinkSerializer
-    )
+    serializers.get("CREATE_SHARE_LINK_SERIALIZER", DefaultCreateShareLinkSerializer)
 )
 
 UpdateShareLinkSerializer = import_callable(
-    serializers.get(
-        'UPDATE_SHARE_LINK_SERIALIZER',
-        DefaultUpdateShareLinkSerializer
-    )
+    serializers.get("UPDATE_SHARE_LINK_SERIALIZER", DefaultUpdateShareLinkSerializer)
 )
 
 DeleteShareLinkSerializer = import_callable(
-    serializers.get(
-        'DELETE_SHARE_LINK_SERIALIZER',
-        DefaultDeleteShareLinkSerializer
-    )
+    serializers.get("DELETE_SHARE_LINK_SERIALIZER", DefaultDeleteShareLinkSerializer)
 )
 
 
 ReadShareSerializer = import_callable(
-    serializers.get(
-        'READ_SHARE_SERIALIZER',
-        DefaultReadShareSerializer
-    )
+    serializers.get("READ_SHARE_SERIALIZER", DefaultReadShareSerializer)
 )
 
 
 CreateShareSerializer = import_callable(
-    serializers.get(
-        'CREATE_SHARE_SERIALIZER',
-        DefaultCreateShareSerializer
-    )
+    serializers.get("CREATE_SHARE_SERIALIZER", DefaultCreateShareSerializer)
 )
 
 
 UpdateShareSerializer = import_callable(
-    serializers.get(
-        'UPDATE_SHARE_SERIALIZER',
-        DefaultUpdateShareSerializer
-    )
+    serializers.get("UPDATE_SHARE_SERIALIZER", DefaultUpdateShareSerializer)
 )
 
 
 CreateFileSerializer = import_callable(
-    serializers.get(
-        'CREATE_FILE_SERIALIZER',
-        DefaultCreateFileSerializer
-    )
+    serializers.get("CREATE_FILE_SERIALIZER", DefaultCreateFileSerializer)
 )
 
 
 ReadFileSerializer = import_callable(
-    serializers.get(
-        'READ_FILE_SERIALIZER',
-        DefaultReadFileSerializer
-    )
+    serializers.get("READ_FILE_SERIALIZER", DefaultReadFileSerializer)
 )
 
 DeleteFileSerializer = import_callable(
-    serializers.get(
-        'DELETE_FILE_SERIALIZER',
-        DefaultDeleteFileSerializer
-    )
+    serializers.get("DELETE_FILE_SERIALIZER", DefaultDeleteFileSerializer)
 )
 
 CreateDatastoreSerializer = import_callable(
-    serializers.get(
-        'CREATE_DATASTORE_SERIALIZER',
-        DefaultCreateDatastoreSerializer
-    )
+    serializers.get("CREATE_DATASTORE_SERIALIZER", DefaultCreateDatastoreSerializer)
 )
 
 UpdateDatastoreSerializer = import_callable(
-    serializers.get(
-        'UPDATE_DATASTORE_SERIALIZER',
-        DefaultUpdateDatastoreSerializer
-    )
+    serializers.get("UPDATE_DATASTORE_SERIALIZER", DefaultUpdateDatastoreSerializer)
 )
 
 DeleteDatastoreSerializer = import_callable(
-    serializers.get(
-        'DELETE_DATASTORE_SERIALIZER',
-        DefaultDeleteDatastoreSerializer
-    )
+    serializers.get("DELETE_DATASTORE_SERIALIZER", DefaultDeleteDatastoreSerializer)
 )
 
 
 DeleteMembershipSerializer = import_callable(
-    serializers.get(
-        'DELETE_MEMBERSHIP_SERIALIZER',
-        DefaultDeleteMembershipSerializer
-    )
+    serializers.get("DELETE_MEMBERSHIP_SERIALIZER", DefaultDeleteMembershipSerializer)
 )
 
 ShareOverviewSerializer = import_callable(
-    serializers.get(
-        'SHARE_OVERVIEW_SERIALIZER',
-        DefaultShareOverviewSerializer
-    )
+    serializers.get("SHARE_OVERVIEW_SERIALIZER", DefaultShareOverviewSerializer)
 )
 
 ShareRightAcceptSerializer = import_callable(
-    serializers.get(
-        'SHARE_RIGHT_ACCEPT_SERIALIZER',
-        DefaultShareRightAcceptSerializer
-    )
+    serializers.get("SHARE_RIGHT_ACCEPT_SERIALIZER", DefaultShareRightAcceptSerializer)
 )
 
 ShareRightDeclineSerializer = import_callable(
     serializers.get(
-        'SHARE_RIGHT_DECLINE_SERIALIZER',
-        DefaultShareRightDeclineSerializer
+        "SHARE_RIGHT_DECLINE_SERIALIZER", DefaultShareRightDeclineSerializer
     )
 )
 
 MoveSecretLinkSerializer = import_callable(
-    serializers.get(
-        'MOVE_SECRET_LINK_SERIALIZER',
-        DefaultMoveSecretLinkSerializer
-    )
+    serializers.get("MOVE_SECRET_LINK_SERIALIZER", DefaultMoveSecretLinkSerializer)
 )
 
 DeleteSecretLinkSerializer = import_callable(
-    serializers.get(
-        'DELETE_SECRET_LINK_SERIALIZER',
-        DefaultDeleteSecretLinkSerializer
-    )
+    serializers.get("DELETE_SECRET_LINK_SERIALIZER", DefaultDeleteSecretLinkSerializer)
 )
 
 MoveFileLinkSerializer = import_callable(
-    serializers.get(
-        'MOVE_FILE_LINK_SERIALIZER',
-        DefaultMoveFileLinkSerializer
-    )
+    serializers.get("MOVE_FILE_LINK_SERIALIZER", DefaultMoveFileLinkSerializer)
 )
 
 DeleteFileLinkSerializer = import_callable(
-    serializers.get(
-        'DELETE_FILE_LINK_SERIALIZER',
-        DefaultDeleteFileLinkSerializer
-    )
+    serializers.get("DELETE_FILE_LINK_SERIALIZER", DefaultDeleteFileLinkSerializer)
 )
 
 CreateGroupSerializer = import_callable(
-    serializers.get(
-        'CREATE_GROUP_SERIALIZER',
-        DefaultCreateGroupSerializer
-    )
+    serializers.get("CREATE_GROUP_SERIALIZER", DefaultCreateGroupSerializer)
 )
 
 ReadGroupRightsSerializer = import_callable(
-    serializers.get(
-        'READ_GROUP_RIGHTS_SERIALIZER',
-        DefaultReadGroupRightsSerializer
-    )
+    serializers.get("READ_GROUP_RIGHTS_SERIALIZER", DefaultReadGroupRightsSerializer)
 )
 
 CreateSecretSerializer = import_callable(
-    serializers.get(
-        'CREATE_SECRET_SERIALIZER',
-        DefaultCreateSecretSerializer
-    )
+    serializers.get("CREATE_SECRET_SERIALIZER", DefaultCreateSecretSerializer)
 )
 
 BulkCreateSecretSerializer = import_callable(
-    serializers.get(
-        'BULK_CREATE_SECRET_SERIALIZER',
-        DefaultBulkCreateSecretSerializer
-    )
+    serializers.get("BULK_CREATE_SECRET_SERIALIZER", DefaultBulkCreateSecretSerializer)
 )
 
 BulkReadSecretSerializer = import_callable(
-    serializers.get(
-        'BULK_READ_SECRET_SERIALIZER',
-        DefaultBulkReadSecretSerializer
-    )
+    serializers.get("BULK_READ_SECRET_SERIALIZER", DefaultBulkReadSecretSerializer)
 )
 
 BulkMoveSecretLinkSerializer = import_callable(
     serializers.get(
-        'BULK_MOVE_SECRET_LINK_SERIALIZER',
-        DefaultBulkMoveSecretLinkSerializer
+        "BULK_MOVE_SECRET_LINK_SERIALIZER", DefaultBulkMoveSecretLinkSerializer
     )
 )
 
 BulkDeleteSecretLinkSerializer = import_callable(
     serializers.get(
-        'BULK_DELETE_SECRET_LINK_SERIALIZER',
-        DefaultBulkDeleteSecretLinkSerializer
+        "BULK_DELETE_SECRET_LINK_SERIALIZER", DefaultBulkDeleteSecretLinkSerializer
     )
 )
 
 ReadSecretSerializer = import_callable(
-    serializers.get(
-        'READ_SECRET_SERIALIZER',
-        DefaultReadSecretSerializer
-    )
+    serializers.get("READ_SECRET_SERIALIZER", DefaultReadSecretSerializer)
 )
 
 UpdateSecretSerializer = import_callable(
-    serializers.get(
-        'UPDATE_SECRET_SERIALIZER',
-        DefaultUpdateSecretSerializer
-    )
+    serializers.get("UPDATE_SECRET_SERIALIZER", DefaultUpdateSecretSerializer)
 )
 
 CreateMembershipSerializer = import_callable(
-    serializers.get(
-        'CREATE_MEMBERSHIP_SERIALIZER',
-        DefaultCreateMembershipSerializer
-    )
+    serializers.get("CREATE_MEMBERSHIP_SERIALIZER", DefaultCreateMembershipSerializer)
 )
 
 UpdateMembershipSerializer = import_callable(
-    serializers.get(
-        'CREATE_MEMBERSHIP_SERIALIZER',
-        DefaultUpdateMembershipSerializer
-    )
+    serializers.get("CREATE_MEMBERSHIP_SERIALIZER", DefaultUpdateMembershipSerializer)
 )
 
 UpdateGroupSerializer = import_callable(
-    serializers.get(
-        'UPDATE_GROUP_SERIALIZER',
-        DefaultUpdateGroupSerializer
-    )
+    serializers.get("UPDATE_GROUP_SERIALIZER", DefaultUpdateGroupSerializer)
 )
 
 DeleteGroupSerializer = import_callable(
-    serializers.get(
-        'DELETE_GROUP_SERIALIZER',
-        DefaultDeleteGroupSerializer
-    )
+    serializers.get("DELETE_GROUP_SERIALIZER", DefaultDeleteGroupSerializer)
 )
 
 MembershipAcceptSerializer = import_callable(
-    serializers.get(
-        'MEMBERSHIP_ACCEPT_SERIALIZER',
-        DefaultMembershipAcceptSerializer
-    )
+    serializers.get("MEMBERSHIP_ACCEPT_SERIALIZER", DefaultMembershipAcceptSerializer)
 )
 
 MembershipDeclineSerializer = import_callable(
-    serializers.get(
-        'MEMBERSHIP_DECLINE_SERIALIZER',
-        DefaultMembershipDeclineSerializer
-    )
+    serializers.get("MEMBERSHIP_DECLINE_SERIALIZER", DefaultMembershipDeclineSerializer)
 )
 
 CreateAPIKeySerializer = import_callable(
-    serializers.get(
-        'CREATE_API_KEY_SERIALIZER',
-        DefaultCreateAPIKeySerializer
-    )
+    serializers.get("CREATE_API_KEY_SERIALIZER", DefaultCreateAPIKeySerializer)
 )
 
 UpdateAPIKeySerializer = import_callable(
-    serializers.get(
-        'UPDATE_API_KEY_SERIALIZER',
-        DefaultUpdateAPIKeySerializer
-    )
+    serializers.get("UPDATE_API_KEY_SERIALIZER", DefaultUpdateAPIKeySerializer)
 )
 
 ReadSecretWithAPIKeySerializer = import_callable(
     serializers.get(
-        'READ_SECRET_WITH_API_KEY_SERIALIZER',
-        DefaultReadSecretWithAPIKeySerializer
+        "READ_SECRET_WITH_API_KEY_SERIALIZER", DefaultReadSecretWithAPIKeySerializer
     )
 )
 
 UpdateSecretWithAPIKeySerializer = import_callable(
     serializers.get(
-        'UPDATE_SECRET_WITH_API_KEY_SERIALIZER',
-        DefaultUpdateSecretWithAPIKeySerializer
+        "UPDATE_SECRET_WITH_API_KEY_SERIALIZER", DefaultUpdateSecretWithAPIKeySerializer
     )
 )
 
 ReadAPIKeyInspectSerializer = import_callable(
     serializers.get(
-        'READ_SECRET_LIST_WITH_API_KEY_SERIALIZER',
-        DefaultReadAPIKeyInspectSerializer
+        "READ_SECRET_LIST_WITH_API_KEY_SERIALIZER", DefaultReadAPIKeyInspectSerializer
     )
 )
 
 DeleteAPIKeySerializer = import_callable(
-    serializers.get(
-        'DELETE_API_KEY_SERIALIZER',
-        DefaultDeleteAPIKeySerializer
-    )
+    serializers.get("DELETE_API_KEY_SERIALIZER", DefaultDeleteAPIKeySerializer)
 )
 
 AddSecretToAPIKeySerializer = import_callable(
     serializers.get(
-        'ADD_SECRET_TO_API_KEY_SERIALIZER',
-        DefaultAddSecretToAPIKeySerializer
+        "ADD_SECRET_TO_API_KEY_SERIALIZER", DefaultAddSecretToAPIKeySerializer
     )
 )
 
 RemoveSecretFromAPIKeySerializer = import_callable(
     serializers.get(
-        'REMOVE_SECRET_FROM_API_KEY_SERIALIZER',
-        DefaultRemoveSecretFromAPIKeySerializer
+        "REMOVE_SECRET_FROM_API_KEY_SERIALIZER", DefaultRemoveSecretFromAPIKeySerializer
     )
 )
 
 
 ReadShardSerializer = import_callable(
-    serializers.get(
-        'READ_SHARD_SERIALIZER',
-        DefaultReadShardSerializer
-    )
+    serializers.get("READ_SHARD_SERIALIZER", DefaultReadShardSerializer)
 )
 
 CreateFileRepositorySerializer = import_callable(
     serializers.get(
-        'CREATE_FILE_REPOSITORY_SERIALIZER',
-        DefaultCreateFileRepositorySerializer
+        "CREATE_FILE_REPOSITORY_SERIALIZER", DefaultCreateFileRepositorySerializer
     )
 )
 
 UpdateFileRepositorySerializer = import_callable(
     serializers.get(
-        'UPDATE_FILE_REPOSITORY_SERIALIZER',
-        DefaultUpdateFileRepositorySerializer
+        "UPDATE_FILE_REPOSITORY_SERIALIZER", DefaultUpdateFileRepositorySerializer
     )
 )
 
 DeleteFileRepositorySerializer = import_callable(
     serializers.get(
-        'DELETE_FILE_REPOSITORY_SERIALIZER',
-        DefaultDeleteFileRepositorySerializer
+        "DELETE_FILE_REPOSITORY_SERIALIZER", DefaultDeleteFileRepositorySerializer
     )
 )
 
 FileRepositoryUploadSerializer = import_callable(
     serializers.get(
-        'FILE_REPOSITORY_UPLOAD_SERIALIZER',
-        DefaultFileRepositoryUploadSerializer
+        "FILE_REPOSITORY_UPLOAD_SERIALIZER", DefaultFileRepositoryUploadSerializer
     )
 )
 
 FileRepositoryDownloadSerializer = import_callable(
     serializers.get(
-        'FILE_REPOSITORY_DOWNLOAD_SERIALIZER',
-        DefaultFileRepositoryDownloadSerializer
+        "FILE_REPOSITORY_DOWNLOAD_SERIALIZER", DefaultFileRepositoryDownloadSerializer
     )
 )
 
 FileRepositoryRightAcceptSerializer = import_callable(
     serializers.get(
-        'FILE_REPOSITORY_RIGHT_ACCEPT_SERIALIZER',
-        DefaultFileRepositoryRightAcceptSerializer
+        "FILE_REPOSITORY_RIGHT_ACCEPT_SERIALIZER",
+        DefaultFileRepositoryRightAcceptSerializer,
     )
 )
 
 FileRepositoryRightDeclineSerializer = import_callable(
     serializers.get(
-        'FILE_REPOSITORY_RIGHT_DECLINE_SERIALIZER',
-        DefaultFileRepositoryRightDeclineSerializer
+        "FILE_REPOSITORY_RIGHT_DECLINE_SERIALIZER",
+        DefaultFileRepositoryRightDeclineSerializer,
     )
 )
 
 CreateFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultCreateFileRepositoryRightSerializer
+        "CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultCreateFileRepositoryRightSerializer,
     )
 )
 
 UpdateFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultUpdateFileRepositoryRightSerializer
+        "CREATE_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultUpdateFileRepositoryRightSerializer,
     )
 )
 
 
 DeleteFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultDeleteFileRepositoryRightSerializer
+        "DELETE_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultDeleteFileRepositoryRightSerializer,
     )
 )
 
 CreateGroupFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultCreateGroupFileRepositoryRightSerializer
+        "CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultCreateGroupFileRepositoryRightSerializer,
     )
 )
 
 UpdateGroupFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultUpdateGroupFileRepositoryRightSerializer
+        "CREATE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultUpdateGroupFileRepositoryRightSerializer,
     )
 )
 
 
 DeleteGroupFileRepositoryRightSerializer = import_callable(
     serializers.get(
-        'DELETE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER',
-        DefaultDeleteGroupFileRepositoryRightSerializer
+        "DELETE_GROUP_FILE_REPOSITORY_RIGHT_SERIALIZER",
+        DefaultDeleteGroupFileRepositoryRightSerializer,
     )
 )
 
 CreateLinkShareSerializer = import_callable(
-    serializers.get(
-        'CREATE_LINK_SHARE_SERIALIZER',
-        DefaultCreateLinkShareSerializer
-    )
+    serializers.get("CREATE_LINK_SHARE_SERIALIZER", DefaultCreateLinkShareSerializer)
 )
 
 UpdateLinkShareSerializer = import_callable(
-    serializers.get(
-        'UPDATE_LINK_SHARE_SERIALIZER',
-        DefaultUpdateLinkShareSerializer
-    )
+    serializers.get("UPDATE_LINK_SHARE_SERIALIZER", DefaultUpdateLinkShareSerializer)
 )
 
 DeleteLinkShareSerializer = import_callable(
-    serializers.get(
-        'DELETE_LINK_SHARE_SERIALIZER',
-        DefaultDeleteLinkShareSerializer
-    )
+    serializers.get("DELETE_LINK_SHARE_SERIALIZER", DefaultDeleteLinkShareSerializer)
 )
 
 ReadLinkShareAccessSerializer = import_callable(
     serializers.get(
-        'READ_LINK_SHARE_ACCESS_SERIALIZER',
-        DefaultReadLinkShareAccessSerializer
+        "READ_LINK_SHARE_ACCESS_SERIALIZER", DefaultReadLinkShareAccessSerializer
     )
 )
 
 UpdateLinkShareAccessSerializer = import_callable(
     serializers.get(
-        'UPDATE_LINK_SHARE_ACCESS_SERIALIZER',
-        DefaultUpdateLinkShareAccessSerializer
+        "UPDATE_LINK_SHARE_ACCESS_SERIALIZER", DefaultUpdateLinkShareAccessSerializer
     )
 )
 
 CreateSecurityReportSerializer = import_callable(
     serializers.get(
-        'CREATE_SECURITY_REPORT_SERIALIZER',
-        DefaultCreateSecurityReportSerializer
+        "CREATE_SECURITY_REPORT_SERIALIZER", DefaultCreateSecurityReportSerializer
     )
 )
 
 ReadMetadataDatastoreSerializer = import_callable(
     serializers.get(
-        'READ_METADATA_DATASTORE_SERIALIZER',
-        DefaultReadMetadataDatastoreSerializer
+        "READ_METADATA_DATASTORE_SERIALIZER", DefaultReadMetadataDatastoreSerializer
     )
 )
 
 ReadMetadataShareSerializer = import_callable(
     serializers.get(
-        'READ_METADATA_SHARE_SERIALIZER',
-        DefaultReadMetadataShareSerializer
+        "READ_METADATA_SHARE_SERIALIZER", DefaultReadMetadataShareSerializer
     )
 )
 
 CreateAvatarSerializer = import_callable(
-    serializers.get(
-        'CREATE_AVATAR_SERIALIZER',
-        DefaultCreateAvatarSerializer
-    )
+    serializers.get("CREATE_AVATAR_SERIALIZER", DefaultCreateAvatarSerializer)
 )
 
 DeleteAvatarSerializer = import_callable(
-    serializers.get(
-        'DELETE_AVATAR_SERIALIZER',
-        DefaultDeleteAvatarSerializer
-    )
+    serializers.get("DELETE_AVATAR_SERIALIZER", DefaultDeleteAvatarSerializer)
 )
 
 ReadAvatarSerializer = import_callable(
-    serializers.get(
-        'READ_AVATAR_SERIALIZER',
-        DefaultReadAvatarSerializer
-    )
+    serializers.get("READ_AVATAR_SERIALIZER", DefaultReadAvatarSerializer)
 )
 
 ReadAvatarImageSerializer = import_callable(
-    serializers.get(
-        'READ_AVATAR_IMAGE_SERIALIZER',
-        DefaultReadAvatarImageSerializer
-    )
+    serializers.get("READ_AVATAR_IMAGE_SERIALIZER", DefaultReadAvatarImageSerializer)
 )
 
 ManagementCommandSerializer = import_callable(
-    serializers.get(
-        'MANAGEMENT_COMMAND_SERIALIZER',
-        DefaultManagementCommandSerializer
-    )
+    serializers.get("MANAGEMENT_COMMAND_SERIALIZER", DefaultManagementCommandSerializer)
 )
 
 ReadShareRightsSerializer = import_callable(
-    serializers.get(
-        'READ_SHARE_RIGHTS_SERIALIZER',
-        DefaultReadShareRightsSerializer
-    )
+    serializers.get("READ_SHARE_RIGHTS_SERIALIZER", DefaultReadShareRightsSerializer)
 )
 
 CreateIvaltSerializer = import_callable(
-    serializers.get(
-        'CREATE_IVALT_SERIALIZER',
-        DefaultCreateIvaltSerializer
-    )
+    serializers.get("CREATE_IVALT_SERIALIZER", DefaultCreateIvaltSerializer)
 )
 
 ActivateIvaltSerializer = import_callable(
-    serializers.get(
-        'ACTIVATE_IVALT_SERIALIZER',
-        DefaultActivateIvaltSerializer
-    )
+    serializers.get("ACTIVATE_IVALT_SERIALIZER", DefaultActivateIvaltSerializer)
 )
 
 DeleteIvaltSerializer = import_callable(
-    serializers.get(
-        'DELETE_IVALT_SERIALIZER',
-        DefaultDeleteIvaltSerializer
-    )
+    serializers.get("DELETE_IVALT_SERIALIZER", DefaultDeleteIvaltSerializer)
 )
 
 IvaltVerifySerializer = import_callable(
-    serializers.get(
-        'IVALT_VERIFY_SERIALIZER',
-        DefaultIvaltVerifySerializer
-    )
+    serializers.get("IVALT_VERIFY_SERIALIZER", DefaultIvaltVerifySerializer)
 )
 
 CreateUnregisterSerializer = import_callable(
-    serializers.get(
-        'CREATE_UNREGISTER_SERIALIZER',
-        DefaultCreateUnregisterSerializer
-    )
+    serializers.get("CREATE_UNREGISTER_SERIALIZER", DefaultCreateUnregisterSerializer)
 )
 
 UpdateUnregisterSerializer = import_callable(
-    serializers.get(
-        'UPDATE_UNREGISTER_SERIALIZER',
-        DefaultUpdateUnregisterSerializer
-    )
+    serializers.get("UPDATE_UNREGISTER_SERIALIZER", DefaultUpdateUnregisterSerializer)
 )
 
 CreateDeviceCodeSerializer = import_callable(
-    serializers.get(
-        'CREATE_DEVICE_CODE_SERIALIZER',
-        DefaultCreateDeviceCodeSerializer
-    )
+    serializers.get("CREATE_DEVICE_CODE_SERIALIZER", DefaultCreateDeviceCodeSerializer)
 )
 
 ClaimDeviceCodeSerializer = import_callable(
-    serializers.get(
-        'CLAIM_DEVICE_CODE_SERIALIZER',
-        DefaultClaimDeviceCodeSerializer
-    )
+    serializers.get("CLAIM_DEVICE_CODE_SERIALIZER", DefaultClaimDeviceCodeSerializer)
 )
 
 PollDeviceCodeTokenSerializer = import_callable(
     serializers.get(
-        'POLL_DEVICE_CODE_TOKEN_SERIALIZER',
-        DefaultPollDeviceCodeTokenSerializer
+        "POLL_DEVICE_CODE_TOKEN_SERIALIZER", DefaultPollDeviceCodeTokenSerializer
     )
 )
 
-EMAIL_VERIFICATION = 'mandatory'
+EMAIL_VERIFICATION = "mandatory"

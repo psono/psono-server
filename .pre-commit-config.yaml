@@ -1,0 +1,19 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+
+- repo: local
+  hooks:
+    - id: python-format
+      name: python format (ruff)
+      entry: ruff format
+      language: system
+      types: [python]
+      pass_filenames: true
+
+#    - id: python-fix
+#      name: python fix lint (ruff)
+#      entry: ruff check --fix
+#      language: system
+#      types: [python]
+#      pass_filenames: true

@@ -16,21 +16,51 @@ from restapi.utils import encrypt_with_db_secret
 
 class ReadDuoTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -42,7 +72,7 @@ class ReadDuoTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -58,53 +88,82 @@ class ReadDuoTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.duo = models.Duo.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            duo_integration_key = 'duo_integration_key',
-            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
-            duo_host = 'duo_secret_key',
-            enrollment_user_id = 'enrollment_user_id',
-            enrollment_activation_code = 'enrollment_activation_code',
-            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            title="My Sweet Title",
+            duo_integration_key="duo_integration_key",
+            duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
+            duo_host="duo_secret_key",
+            enrollment_user_id="enrollment_user_id",
+            enrollment_activation_code="enrollment_activation_code",
+            enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
         )
-
 
     def test_read_duo(self):
         """
         Tests GET method on duo
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class UpdateDuoTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -116,7 +175,7 @@ class UpdateDuoTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -132,53 +191,82 @@ class UpdateDuoTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.duo = models.Duo.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            duo_integration_key = 'duo_integration_key',
-            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
-            duo_host = 'duo_secret_key',
-            enrollment_user_id = 'enrollment_user_id',
-            enrollment_activation_code = 'enrollment_activation_code',
-            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            title="My Sweet Title",
+            duo_integration_key="duo_integration_key",
+            duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
+            duo_host="duo_secret_key",
+            enrollment_user_id="enrollment_user_id",
+            enrollment_activation_code="enrollment_activation_code",
+            enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
         )
-
 
     def test_update_duo(self):
         """
         Tests PUT method on duo
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
 class CreateDuoTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -190,7 +278,7 @@ class CreateDuoTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -206,30 +294,28 @@ class CreateDuoTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.duo = models.Duo.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            duo_integration_key = 'duo_integration_key',
-            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
-            duo_host = 'duo_secret_key',
-            enrollment_user_id = 'enrollment_user_id',
-            enrollment_activation_code = 'enrollment_activation_code',
-            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            title="My Sweet Title",
+            duo_integration_key="duo_integration_key",
+            duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
+            duo_host="duo_secret_key",
+            enrollment_user_id="enrollment_user_id",
+            enrollment_activation_code="enrollment_activation_code",
+            enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
         )
-
 
     def test_create_duo(self):
         """
         Tests POST method on duo
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(url, data)
@@ -239,21 +325,51 @@ class CreateDuoTests(APITestCaseExtended):
 
 class DeleteDuoTests(APITestCaseExtended):
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@example.com'
-        self.test_email2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_email_bcrypt2 = 'b'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test1@psono.pw'
-        self.test_username2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test2@psono.pw'
-        self.test_authkey = binascii.hexlify(os.urandom(settings.AUTH_KEY_LENGTH_BYTES)).decode()
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce2 = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = '6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com"
+        )
+        self.test_email2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_email_bcrypt2 = "b"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@psono.pw"
+        )
+        self.test_username2 = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test2@psono.pw"
+        )
+        self.test_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce2 = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "6df1f310730e5464ce23e05fa4eca0de3fe30805fc8cc1d6b37389262e4bd9c3"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -265,7 +381,7 @@ class DeleteDuoTests(APITestCaseExtended):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.admin = models.User.objects.create(
@@ -281,31 +397,28 @@ class DeleteDuoTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         self.duo = models.Duo.objects.create(
             user=self.test_user_obj,
-            title= 'My Sweet Title',
-            duo_integration_key = 'duo_integration_key',
-            duo_secret_key = encrypt_with_db_secret('duo_secret_key'),
-            duo_host = 'duo_secret_key',
-            enrollment_user_id = 'enrollment_user_id',
-            enrollment_activation_code = 'enrollment_activation_code',
-            enrollment_expiration_date = timezone.now() + timedelta(seconds=600),
+            title="My Sweet Title",
+            duo_integration_key="duo_integration_key",
+            duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
+            duo_host="duo_secret_key",
+            enrollment_user_id="enrollment_user_id",
+            enrollment_activation_code="enrollment_activation_code",
+            enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
         )
-
 
     def test_delete_duo_success(self):
         """
         Tests DELETE method on duo
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-            'duo_id': self.duo.id
-        }
+        data = {"duo_id": self.duo.id}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
@@ -314,53 +427,44 @@ class DeleteDuoTests(APITestCaseExtended):
 
         self.assertEqual(models.Duo.objects.all().count(), 0)
 
-
     def test_delete_duo_failure_no_admin(self):
         """
         Tests DELETE method on duo without being an admin
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-            'duo_id': self.duo.id
-        }
+        data = {"duo_id": self.duo.id}
 
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
     def test_delete_duo_failure_no_duo_id(self):
         """
         Tests DELETE method on duo without a duo id
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-        }
+        data = {}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_delete_duo_failure_duo_id_not_exist(self):
         """
         Tests DELETE method on duo with a duo id that does not exist
         """
 
-        url = reverse('admin_duo')
+        url = reverse("admin_duo")
 
-        data = {
-            'duo_id': '499d3c84-e8ae-4a6b-a4c2-43c79beb069a'
-        }
+        data = {"duo_id": "499d3c84-e8ae-4a6b-a4c2-43c79beb069a"}
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-

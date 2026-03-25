@@ -29,21 +29,27 @@ def fake_send_mail(subject, content, email_from, target_email_list, html_message
 
 
 class CommandSendtestmailTestCase(TestCase):
-
-    @patch('django.core.mail.send_mail', side_effect=fake_send_mail)
+    @patch("django.core.mail.send_mail", side_effect=fake_send_mail)
     def test_sendtestmail(self, fake_send_mail_fct):
 
-        target_email = 'target@example.com'
+        target_email = "target@example.com"
 
         args = [target_email]
         opts = {}
 
         out = StringIO()
-        call_command('sendtestmail', stdout=out, *args, **opts)
+        call_command("sendtestmail", stdout=out, *args, **opts)
 
         self.assertEqual(fake_send_mail_fct.call_count, 1)
 
-        fake_send_mail_fct.assert_has_calls([call('Testmail successfull',
-                                                  'If you read this, then everything is correctly configured.',
-                                                  settings.EMAIL_FROM, [target_email],
-                                                  html_message='If you read this, then everything is correctly configured.')])
+        fake_send_mail_fct.assert_has_calls(
+            [
+                call(
+                    "Testmail successfull",
+                    "If you read this, then everything is correctly configured.",
+                    settings.EMAIL_FROM,
+                    [target_email],
+                    html_message="If you read this, then everything is correctly configured.",
+                )
+            ]
+        )

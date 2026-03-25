@@ -16,22 +16,19 @@ from nacl.public import PrivateKey, PublicKey, Box
 from datetime import timedelta
 import json
 
-from ..models import (
-    Token, Ivalt
-)
-from ..app_settings import (
-    LoginSerializer
-)
+from ..models import Token, Ivalt
+from ..app_settings import LoginSerializer
+
 
 class LoginView(GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'login'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "login"
     parser_classes = [JSONParser]
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return LoginSerializer
         return Serializer
 
@@ -54,12 +51,9 @@ class LoginView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
 
         if not settings.ALLOW_MULTIPLE_SESSIONS:
             Token.objects.filter(user=user).delete()
@@ -71,10 +65,11 @@ class LoginView(GenericAPIView):
             webauthn_2fa=user.webauthn_enabled,
             yubikey_otp_2fa=user.yubikey_otp_enabled,
             ivalt_2fa=user.ivalt_enabled,
-            device_fingerprint=serializer.validated_data.get('device_fingerprint', ''),
-            device_description=serializer.validated_data.get('device_description', ''),
-            client_date=serializer.validated_data.get('device_time'),
-            valid_till=timezone.now() + timedelta(seconds=serializer.validated_data.get('session_duration')),
+            device_fingerprint=serializer.validated_data.get("device_fingerprint", ""),
+            device_description=serializer.validated_data.get("device_description", ""),
+            client_date=serializer.validated_data.get("device_time"),
+            valid_till=timezone.now()
+            + timedelta(seconds=serializer.validated_data.get("session_duration")),
             read=True,
             write=True,
         )
@@ -84,26 +79,44 @@ class LoginView(GenericAPIView):
 
         # our hex encoded public / private keyssession_duration
         server_session_private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
-        server_session_public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
-        user_session_public_key_hex = serializer.validated_data['user_session_public_key']
+        server_session_public_key_hex = box.public_key.encode(
+            encoder=nacl.encoding.HexEncoder
+        )
+        user_session_public_key_hex = serializer.validated_data[
+            "user_session_public_key"
+        ]
         user_public_key_hex = user.public_key
 
         # encrypt session secret with session_crypto_box
-        session_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                                 PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        session_crypto_box = Box(
+            PrivateKey(
+                server_session_private_key_hex, encoder=nacl.encoding.HexEncoder
+            ),
+            PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder),
+        )
         session_secret_key_nonce = nacl.utils.random(Box.NONCE_SIZE)
-        session_secret_key_nonce_hex = nacl.encoding.HexEncoder.encode(session_secret_key_nonce)
-        encrypted = session_crypto_box.encrypt(token.secret_key.encode(), session_secret_key_nonce)
-        session_secret_key = encrypted[len(session_secret_key_nonce):]
+        session_secret_key_nonce_hex = nacl.encoding.HexEncoder.encode(
+            session_secret_key_nonce
+        )
+        encrypted = session_crypto_box.encrypt(
+            token.secret_key.encode(), session_secret_key_nonce
+        )
+        session_secret_key = encrypted[len(session_secret_key_nonce) :]
         session_secret_key_hex = nacl.encoding.HexEncoder.encode(session_secret_key)
 
         # encrypt user_validator with user_crypto_box
-        user_crypto_box = Box(PrivateKey(server_session_private_key_hex, encoder=nacl.encoding.HexEncoder),
-                              PublicKey(user_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        user_crypto_box = Box(
+            PrivateKey(
+                server_session_private_key_hex, encoder=nacl.encoding.HexEncoder
+            ),
+            PublicKey(user_public_key_hex, encoder=nacl.encoding.HexEncoder),
+        )
         user_validator_nonce = nacl.utils.random(Box.NONCE_SIZE)
         user_validator_nonce_hex = nacl.encoding.HexEncoder.encode(user_validator_nonce)
-        encrypted = user_crypto_box.encrypt(token.user_validator.encode(), user_validator_nonce)
-        user_validator = encrypted[len(user_validator_nonce):]
+        encrypted = user_crypto_box.encrypt(
+            token.user_validator.encode(), user_validator_nonce
+        )
+        user_validator = encrypted[len(user_validator_nonce) :]
         user_validator_hex = nacl.encoding.HexEncoder.encode(user_validator)
 
         # if getattr(settings, 'REST_SESSION_LOGIN', True):
@@ -112,30 +125,30 @@ class LoginView(GenericAPIView):
         required_multifactors = []
 
         if user.google_authenticator_enabled:
-            required_multifactors.append('google_authenticator_2fa')
+            required_multifactors.append("google_authenticator_2fa")
 
         if user.duo_enabled:
-            required_multifactors.append('duo_2fa')
+            required_multifactors.append("duo_2fa")
 
         if user.yubikey_otp_enabled:
-            required_multifactors.append('yubikey_otp_2fa')
+            required_multifactors.append("yubikey_otp_2fa")
 
         if user.webauthn_enabled:
-            required_multifactors.append('webauthn_2fa')
+            required_multifactors.append("webauthn_2fa")
 
         if user.ivalt_enabled:
-            required_multifactors.append('ivalt_2fa')
+            required_multifactors.append("ivalt_2fa")
 
         response = {
             "token": token.clear_text_key,
             "session_key": token.session_key,
             "session_valid_till": token.valid_till.isoformat(),
             "required_multifactors": required_multifactors,
-            "session_public_key": server_session_public_key_hex.decode('utf-8'),
-            "session_secret_key": session_secret_key_hex.decode('utf-8'),
-            "session_secret_key_nonce": session_secret_key_nonce_hex.decode('utf-8'),
-            "user_validator": user_validator_hex.decode('utf-8'),
-            "user_validator_nonce": user_validator_nonce_hex.decode('utf-8'),
+            "session_public_key": server_session_public_key_hex.decode("utf-8"),
+            "session_secret_key": session_secret_key_hex.decode("utf-8"),
+            "session_secret_key_nonce": session_secret_key_nonce_hex.decode("utf-8"),
+            "user_validator": user_validator_hex.decode("utf-8"),
+            "user_validator_nonce": user_validator_nonce_hex.decode("utf-8"),
             "user": {
                 "username": user.username,
                 "language": user.language,
@@ -144,27 +157,32 @@ class LoginView(GenericAPIView):
                 "private_key_nonce": user.private_key_nonce,
                 "user_sauce": user.user_sauce,
                 "authentication": user.authentication,
-                'hashing_algorithm': user.hashing_algorithm,
-                'hashing_parameters': user.hashing_parameters,
-                'require_password_change': user.require_password_change,
-            }
+                "hashing_algorithm": user.hashing_algorithm,
+                "hashing_parameters": user.hashing_parameters,
+                "require_password_change": user.require_password_change,
+            },
         }
 
-        server_crypto_box = Box(PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
-                                PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder))
+        server_crypto_box = Box(
+            PrivateKey(settings.PRIVATE_KEY, encoder=nacl.encoding.HexEncoder),
+            PublicKey(user_session_public_key_hex, encoder=nacl.encoding.HexEncoder),
+        )
 
         login_info_nonce = nacl.utils.random(Box.NONCE_SIZE)
         login_info_nonce_hex = nacl.encoding.HexEncoder.encode(login_info_nonce)
-        encrypted = server_crypto_box.encrypt(json.dumps(response).encode(), login_info_nonce)
-        encrypted_login_info = encrypted[len(login_info_nonce):]
+        encrypted = server_crypto_box.encrypt(
+            json.dumps(response).encode(), login_info_nonce
+        )
+        encrypted_login_info = encrypted[len(login_info_nonce) :]
         encrypted_login_info_hex = nacl.encoding.HexEncoder.encode(encrypted_login_info)
 
-        return Response({
-            'login_info': encrypted_login_info_hex,
-            'login_info_nonce': login_info_nonce_hex
-        },status=status.HTTP_200_OK)
-
-
+        return Response(
+            {
+                "login_info": encrypted_login_info_hex,
+                "login_info_nonce": login_info_nonce_hex,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

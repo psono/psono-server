@@ -1,6 +1,9 @@
 import boto3
 
-def s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None):
+
+def s3_construct_signed_upload_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None
+):
     """
     Constructs the signed upload url
 
@@ -20,11 +23,11 @@ def s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_
     """
 
     client = boto3.client(
-        's3',
+        "s3",
         region_name=region,
         endpoint_url=endpoint_url,
         aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
+        aws_secret_access_key=secret_access_key,
     )
 
     key = create_key(hash_checksum)
@@ -34,7 +37,9 @@ def s3_construct_signed_upload_url(bucket, region, access_key_id, secret_access_
     return url
 
 
-def s3_construct_signed_download_url(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None):
+def s3_construct_signed_download_url(
+    bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None
+):
     """
     Constructs the signed upload url
 
@@ -54,21 +59,25 @@ def s3_construct_signed_download_url(bucket, region, access_key_id, secret_acces
     """
 
     client = boto3.client(
-        's3',
+        "s3",
         region_name=region,
         endpoint_url=endpoint_url,
         aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
+        aws_secret_access_key=secret_access_key,
     )
 
     key = create_key(hash_checksum)
 
-    url = client.generate_presigned_url(ClientMethod='get_object', Params={'Bucket': bucket, 'Key': key}, ExpiresIn=3600)
+    url = client.generate_presigned_url(
+        ClientMethod="get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=3600
+    )
 
     return url
 
 
-def s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None):
+def s3_delete(
+    bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None
+):
     """
     Deletes an object from s3
 
@@ -90,11 +99,11 @@ def s3_delete(bucket, region, access_key_id, secret_access_key, hash_checksum, e
     """
 
     client = boto3.client(
-        's3',
+        "s3",
         region_name=region,
         endpoint_url=endpoint_url,
         aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
+        aws_secret_access_key=secret_access_key,
     )
 
     key = create_key(hash_checksum)
@@ -113,4 +122,14 @@ def create_key(hash_checksum):
     :rtype:
     """
 
-    return hash_checksum[0:2] + '/' + hash_checksum[2:4] + '/' + hash_checksum[4:6] + '/' + hash_checksum[6:8] + '/' + hash_checksum
+    return (
+        hash_checksum[0:2]
+        + "/"
+        + hash_checksum[2:4]
+        + "/"
+        + hash_checksum[4:6]
+        + "/"
+        + hash_checksum[6:8]
+        + "/"
+        + hash_checksum
+    )

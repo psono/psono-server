@@ -6,26 +6,68 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0032_auto_20230130_0954'),
+        ("restapi", "0032_auto_20230130_0954"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Group_File_Repository_Right',
+            name="Group_File_Repository_Right",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('read', models.BooleanField(default=True, help_text='Weather this user can read the configured file repository details', verbose_name='Read')),
-                ('write', models.BooleanField(default=True, help_text='Weather this user can update the configured file repository', verbose_name='Write')),
-                ('grant', models.BooleanField(default=True, help_text='Weather this user can change permissions and delete the configured file repository', verbose_name='Grant')),
-                ('file_repository', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='group_file_repository_right', to='restapi.file_repository')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='file_repository_right', to='restapi.group')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                (
+                    "read",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Weather this user can read the configured file repository details",
+                        verbose_name="Read",
+                    ),
+                ),
+                (
+                    "write",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Weather this user can update the configured file repository",
+                        verbose_name="Write",
+                    ),
+                ),
+                (
+                    "grant",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Weather this user can change permissions and delete the configured file repository",
+                        verbose_name="Grant",
+                    ),
+                ),
+                (
+                    "file_repository",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="group_file_repository_right",
+                        to="restapi.file_repository",
+                    ),
+                ),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="file_repository_right",
+                        to="restapi.group",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

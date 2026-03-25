@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0022_auto_20181207_1954'),
+        ("restapi", "0022_auto_20181207_1954"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='secret',
-            name='callback_pass',
-            field=models.CharField(default='', max_length=256, verbose_name='Callback Password'),
+            model_name="secret",
+            name="callback_pass",
+            field=models.CharField(
+                default="", max_length=256, verbose_name="Callback Password"
+            ),
         ),
     ]

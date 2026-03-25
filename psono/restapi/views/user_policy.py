@@ -6,11 +6,11 @@ from ..permissions import IsAuthenticated
 
 from ..authentication import TokenAuthentication
 
-class UserPolicyView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class UserPolicyView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
         return Serializer

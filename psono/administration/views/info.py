@@ -12,11 +12,11 @@ from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User, Token, Fileserver_Cluster_Members
 
-class InfoView(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class InfoView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
         return Serializer
@@ -28,78 +28,117 @@ class InfoView(GenericAPIView):
 
         info = settings.SIGNATURE.copy()
 
-        info['user_count_active'] = User.objects.filter(is_active=True).count()
-        info['user_count_total'] = User.objects.count()
-        info['token_count_total'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).count()
-        info['token_count_device'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).values('device_fingerprint').annotate(num_sessions=Count('device_fingerprint')).count()
-        info['token_count_user'] = Token.objects.filter(valid_till__gt=timezone.now(), active=True).values('user_id').annotate(num_sessions=Count('user_id')).count()
+        info["user_count_active"] = User.objects.filter(is_active=True).count()
+        info["user_count_total"] = User.objects.count()
+        info["token_count_total"] = Token.objects.filter(
+            valid_till__gt=timezone.now(), active=True
+        ).count()
+        info["token_count_device"] = (
+            Token.objects.filter(valid_till__gt=timezone.now(), active=True)
+            .values("device_fingerprint")
+            .annotate(num_sessions=Count("device_fingerprint"))
+            .count()
+        )
+        info["token_count_user"] = (
+            Token.objects.filter(valid_till__gt=timezone.now(), active=True)
+            .values("user_id")
+            .annotate(num_sessions=Count("user_id"))
+            .count()
+        )
 
-
-        monthly_registrations = User.objects.annotate(month=TruncMonth('create_date')).values('month').annotate(counter=Count('id')).values('month', 'counter').order_by('month')
+        monthly_registrations = (
+            User.objects.annotate(month=TruncMonth("create_date"))
+            .values("month")
+            .annotate(counter=Count("id"))
+            .values("month", "counter")
+            .order_by("month")
+        )
         registrations_over_month = []
         count_total_month = 0
         for r in monthly_registrations:
-            count_total_month = count_total_month + r['counter']
-            registrations_over_month.append({
-                'count_new': r['counter'],
-                'count_total': count_total_month,
-                'month': r['month'].strftime('%b %y')
-            })
-        info['registrations_over_month'] = registrations_over_month
+            count_total_month = count_total_month + r["counter"]
+            registrations_over_month.append(
+                {
+                    "count_new": r["counter"],
+                    "count_total": count_total_month,
+                    "month": r["month"].strftime("%b %y"),
+                }
+            )
+        info["registrations_over_month"] = registrations_over_month
 
-
-        daily_registrations_offset = User.objects.filter(create_date__lt=timezone.now()-timedelta(days=16)).count()
-        daily_registrations = User.objects.filter(create_date__gte=timezone.now()-timedelta(days=16)).annotate(day=TruncDay('create_date')).values('day').annotate(count_new=Count('id')).values('day', 'count_new').order_by('day')
+        daily_registrations_offset = User.objects.filter(
+            create_date__lt=timezone.now() - timedelta(days=16)
+        ).count()
+        daily_registrations = (
+            User.objects.filter(create_date__gte=timezone.now() - timedelta(days=16))
+            .annotate(day=TruncDay("create_date"))
+            .values("day")
+            .annotate(count_new=Count("id"))
+            .values("day", "count_new")
+            .order_by("day")
+        )
 
         end_date = timezone.now()
         d = end_date - timedelta(days=16)
         registrations_over_day_index = {}
         while d <= end_date:
             registrations_over_day_index[d.strftime("%Y-%m-%d")] = {
-                'date': d.strftime("%Y-%m-%d"),
-                'count_new': 0,
-                'count_total': 0,
-                'weekday': d.strftime("%a"),
+                "date": d.strftime("%Y-%m-%d"),
+                "count_new": 0,
+                "count_total": 0,
+                "weekday": d.strftime("%a"),
             }
             d += timedelta(days=1)
 
         for r in daily_registrations:
-            registrations_over_day_index[r['day'].strftime('%Y-%m-%d')]['count_new'] = r['count_new']
+            registrations_over_day_index[r["day"].strftime("%Y-%m-%d")]["count_new"] = (
+                r["count_new"]
+            )
 
         registrations_over_day = []
         for k in sorted(registrations_over_day_index):
-            daily_registrations_offset = daily_registrations_offset + registrations_over_day_index[k]['count_new']
-            registrations_over_day_index[k]['count_total'] = daily_registrations_offset
+            daily_registrations_offset = (
+                daily_registrations_offset
+                + registrations_over_day_index[k]["count_new"]
+            )
+            registrations_over_day_index[k]["count_total"] = daily_registrations_offset
             registrations_over_day.append(registrations_over_day_index[k])
 
-        info['registrations_over_day'] = registrations_over_day
+        info["registrations_over_day"] = registrations_over_day
 
-
-        fileserver_cluster_members = Fileserver_Cluster_Members.objects.\
-            filter(valid_till__gt=timezone.now() - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT)).\
-            select_related('fileserver_cluster').\
-            only('create_date', 'fileserver_cluster__title', 'hostname', 'version')
+        fileserver_cluster_members = (
+            Fileserver_Cluster_Members.objects.filter(
+                valid_till__gt=timezone.now()
+                - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT)
+            )
+            .select_related("fileserver_cluster")
+            .only("create_date", "fileserver_cluster__title", "hostname", "version")
+        )
 
         fileserver = []
         for r in fileserver_cluster_members:
-            fileserver.append({
-                'create_date': r.create_date,
-                'fileserver_cluster_title': r.fileserver_cluster.title,
-                'hostname': r.hostname,
-                'version': r.version,
-            })
+            fileserver.append(
+                {
+                    "create_date": r.create_date,
+                    "fileserver_cluster_title": r.fileserver_cluster.title,
+                    "hostname": r.hostname,
+                    "version": r.version,
+                }
+            )
 
-        info['fileserver'] = fileserver
+        info["fileserver"] = fileserver
 
-        past_registrations = User.objects.order_by('-create_date')[:10]
+        past_registrations = User.objects.order_by("-create_date")[:10]
         registrations = []
         for r in past_registrations:
-            registrations.append({
-                'date': r.create_date,
-                'username': r.username,
-                'active': r.is_active,
-            })
-        info['registrations'] = registrations
+            registrations.append(
+                {
+                    "date": r.create_date,
+                    "username": r.username,
+                    "active": r.is_active,
+                }
+            )
+        info["registrations"] = registrations
 
         return Response(info, status=status.HTTP_200_OK)
 

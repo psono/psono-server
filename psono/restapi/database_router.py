@@ -1,9 +1,9 @@
 from django.conf import settings
 
-class MainRouter(object):
 
-    db_name_master = 'default'
-    db_name_slave = 'slave'
+class MainRouter(object):
+    db_name_master = "default"
+    db_name_slave = "slave"
 
     def db_for_read(self, model, **hints):
         """
@@ -14,7 +14,6 @@ class MainRouter(object):
             return self.db_name_slave
         else:
             return self.db_name_master
-
 
     def db_for_write(self, model, **hints):
         """

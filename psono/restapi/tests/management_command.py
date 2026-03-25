@@ -9,7 +9,8 @@ from django.test.utils import override_settings
 from restapi import models
 
 
-MANAGEMENT_COMMAND_ACCESS_KEY = 'ABC'
+MANAGEMENT_COMMAND_ACCESS_KEY = "ABC"
+
 
 class ManagementCommandTest(APITestCaseExtended):
     """
@@ -22,15 +23,14 @@ class ManagementCommandTest(APITestCaseExtended):
         Tests to execute a command that does not need args
         """
 
-
-        url = reverse('management_command')
+        url = reverse("management_command")
 
         data = {
-            'command_name': 'cleartoken',
+            "command_name": "cleartoken",
         }
 
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY)
+        client.credentials(HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY)
 
         response = client.post(url, json.dumps(data), content_type="application/json")
 
@@ -41,32 +41,34 @@ class ManagementCommandTest(APITestCaseExtended):
         """
         Tests to execute a command with wrong access key
         """
-        url = reverse('management_command')
+        url = reverse("management_command")
 
         data = {
-            'command_name': 'cleartoken',
+            "command_name": "cleartoken",
         }
 
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY + 'abcd')
+        client.credentials(
+            HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY + "abcd"
+        )
 
         response = client.post(url, json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY='')
+    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY="")
     def test_command_with_unconfigured_access_key(self):
         """
         Tests to execute a command but noone configured a management command access key
         """
-        url = reverse('management_command')
+        url = reverse("management_command")
 
         data = {
-            'command_name': 'cleartoken',
+            "command_name": "cleartoken",
         }
 
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + '')
+        client.credentials(HTTP_AUTHORIZATION="Token " + "")
 
         response = client.post(url, json.dumps(data), content_type="application/json")
 
@@ -77,18 +79,18 @@ class ManagementCommandTest(APITestCaseExtended):
         """
         Tests to execute a command but noone configured a management command access key
         """
-        url = reverse('management_command')
+        url = reverse("management_command")
 
-        username = 'demo@example.com'
-        password = 'demo'
-        email = 'demo@example.com'
+        username = "demo@example.com"
+        password = "demo"
+        email = "demo@example.com"
         data = {
-            'command_name': 'createuser',
-            'command_args': [username, password, email],
+            "command_name": "createuser",
+            "command_args": [username, password, email],
         }
 
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + MANAGEMENT_COMMAND_ACCESS_KEY)
+        client.credentials(HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY)
 
         response = client.post(url, json.dumps(data), content_type="application/json")
 

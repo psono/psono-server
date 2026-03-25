@@ -5,11 +5,10 @@ from io import StringIO
 
 
 class CommandGenerateserverkeysTestCase(TestCase):
-
     def test_generateserverkeys(self):
 
         args = []
         opts = {}
 
         out = StringIO()
-        call_command('generateserverkeys', stdout=out, *args, **opts)
+        call_command("generateserverkeys", stdout=out, *args, **opts)

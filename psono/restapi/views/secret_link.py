@@ -10,11 +10,10 @@ from ..app_settings import (
     DeleteSecretLinkSerializer,
 )
 
-from ..models import (
-    Secret_Link
-)
+from ..models import Secret_Link
 
 from ..authentication import TokenAuthentication
+
 
 def create_secret_link(link_id, secret_id, parent_share_id, parent_datastore_id):
     """
@@ -36,12 +35,13 @@ def create_secret_link(link_id, secret_id, parent_share_id, parent_datastore_id)
             link_id=link_id,
             secret_id=secret_id,
             parent_datastore_id=parent_datastore_id,
-            parent_share_id=parent_share_id
+            parent_share_id=parent_share_id,
         )
     except:
         return False
 
     return True
+
 
 def delete_secret_link(link_id):
     """
@@ -54,7 +54,6 @@ def delete_secret_link(link_id):
     Secret_Link.objects.filter(link_id=link_id).delete()
 
 
-
 class SecretLinkView(GenericAPIView):
     """
     Secret Link View:
@@ -62,14 +61,14 @@ class SecretLinkView(GenericAPIView):
     Accepted Methods: POST, DELETE
     """
 
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('POST', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return MoveSecretLinkSerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteSecretLinkSerializer
         return Serializer
 
@@ -90,26 +89,27 @@ class SecretLinkView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = MoveSecretLinkSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = MoveSecretLinkSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        link_id = serializer.validated_data['link_id']
-        new_parent_share_id = serializer.validated_data['new_parent_share_id']
-        new_parent_datastore_id = serializer.validated_data['new_parent_datastore_id']
-        secrets = serializer.validated_data['secrets']
+        link_id = serializer.validated_data["link_id"]
+        new_parent_share_id = serializer.validated_data["new_parent_share_id"]
+        new_parent_datastore_id = serializer.validated_data["new_parent_datastore_id"]
+        secrets = serializer.validated_data["secrets"]
 
         # all checks passed, lets move the link with a delete and create at the new location
         delete_secret_link(link_id)
 
         for secret_id in secrets:
-            create_secret_link(link_id, secret_id, new_parent_share_id, new_parent_datastore_id)
+            create_secret_link(
+                link_id, secret_id, new_parent_share_id, new_parent_datastore_id
+            )
 
         return Response({}, status=status.HTTP_200_OK)
-
-
 
     def delete(self, request, *args, **kwargs):
         """
@@ -125,13 +125,14 @@ class SecretLinkView(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteSecretLinkSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteSecretLinkSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        link_id = serializer.validated_data['link_id']
+        link_id = serializer.validated_data["link_id"]
 
         delete_secret_link(link_id)
 

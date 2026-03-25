@@ -10,18 +10,18 @@ from ..app_settings import NewGASerializer, ActivateGASerializer, DeleteGASerial
 from ..authentication import TokenAuthentication
 from ..utils import encrypt_with_db_secret
 
-class UserGA(GenericAPIView):
 
-    authentication_classes = (TokenAuthentication, )
+class UserGA(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return NewGASerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ActivateGASerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteGASerializer
         return Serializer
 
@@ -42,16 +42,17 @@ class UserGA(GenericAPIView):
         google_authenticators = []
 
         for ga in Google_Authenticator.objects.filter(user=request.user).all():
-            google_authenticators.append({
-                'id': ga.id,
-                'active': ga.active,
-                'title': ga.title,
-            })
+            google_authenticators.append(
+                {
+                    "id": ga.id,
+                    "active": ga.active,
+                    "title": ga.title,
+                }
+            )
 
-        return Response({
-            "google_authenticators": google_authenticators
-        },
-            status=status.HTTP_200_OK)
+        return Response(
+            {"google_authenticators": google_authenticators}, status=status.HTTP_200_OK
+        )
 
     def put(self, request, *args, **kwargs):
         """
@@ -70,23 +71,20 @@ class UserGA(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         secret = pyotp.random_base32()
 
         new_ga = Google_Authenticator.objects.create(
             user=request.user,
-            title= serializer.validated_data.get('title'),
-            secret = encrypt_with_db_secret(str(secret)),
-            active=False
+            title=serializer.validated_data.get("title"),
+            secret=encrypt_with_db_secret(str(secret)),
+            active=False,
         )
 
-        return Response({
-            "id": new_ga.id,
-            "secret": str(secret)
-        },
-            status=status.HTTP_201_CREATED)
+        return Response(
+            {"id": new_ga.id, "secret": str(secret)}, status=status.HTTP_201_CREATED
+        )
 
     def post(self, request, *args, **kwargs):
         """
@@ -102,15 +100,14 @@ class UserGA(GenericAPIView):
         :rtype:
         """
 
-        serializer = ActivateGASerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ActivateGASerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        google_authenticator = serializer.validated_data.get('google_authenticator')
+        google_authenticator = serializer.validated_data.get("google_authenticator")
 
         google_authenticator.active = True
         google_authenticator.save()
@@ -130,16 +127,17 @@ class UserGA(GenericAPIView):
         :return: 200 / 400
         """
 
-        serializer = DeleteGASerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteGASerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        google_authenticator = serializer.validated_data.get('google_authenticator')
-        google_authenticator_count = serializer.validated_data.get('google_authenticator_count')
+        google_authenticator = serializer.validated_data.get("google_authenticator")
+        google_authenticator_count = serializer.validated_data.get(
+            "google_authenticator_count"
+        )
 
         # Update the user attribute if we only had 1 yubikey
         if google_authenticator_count < 2 and google_authenticator.active:

@@ -11,10 +11,9 @@ from restapi.models import Token
 
 
 class StatsBrowserView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
         return Serializer
@@ -24,7 +23,12 @@ class StatsBrowserView(GenericAPIView):
         Returns the statistics of used devices
         """
 
-        browsers = Token.objects.filter(valid_till__gt=timezone.now()).values('device_description').annotate(total=Count('device_description')).order_by()
+        browsers = (
+            Token.objects.filter(valid_till__gt=timezone.now())
+            .values("device_description")
+            .annotate(total=Count("device_description"))
+            .order_by()
+        )
 
         other = 0
         firefox = 0
@@ -36,33 +40,36 @@ class StatsBrowserView(GenericAPIView):
         opera = 0
 
         for browser in browsers:
-            if 'chrome' in browser['device_description'].lower():
-                chrome = chrome + browser['total']
-            elif 'firefox' in browser['device_description'].lower():
-                firefox = firefox + browser['total']
-            elif 'safari' in browser['device_description'].lower():
-                safari = safari + browser['total']
-            elif 'edge' in browser['device_description'].lower():
-                edge = edge + browser['total']
-            elif 'vivaldi' in browser['device_description'].lower():
-                vivaldi = vivaldi + browser['total']
-            elif 'brave' in browser['device_description'].lower():
-                brave = brave + browser['total']
-            elif 'opera' in browser['device_description'].lower():
-                opera = opera + browser['total']
+            if "chrome" in browser["device_description"].lower():
+                chrome = chrome + browser["total"]
+            elif "firefox" in browser["device_description"].lower():
+                firefox = firefox + browser["total"]
+            elif "safari" in browser["device_description"].lower():
+                safari = safari + browser["total"]
+            elif "edge" in browser["device_description"].lower():
+                edge = edge + browser["total"]
+            elif "vivaldi" in browser["device_description"].lower():
+                vivaldi = vivaldi + browser["total"]
+            elif "brave" in browser["device_description"].lower():
+                brave = brave + browser["total"]
+            elif "opera" in browser["device_description"].lower():
+                opera = opera + browser["total"]
             else:
-                other = other + browser['total']
+                other = other + browser["total"]
 
-        return Response({
-            'other': other,
-            'firefox': firefox,
-            'chrome': chrome,
-            'safari': safari,
-            'vivaldi': vivaldi,
-            'edge': edge,
-            'brave': brave,
-            'opera': opera,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "other": other,
+                "firefox": firefox,
+                "chrome": chrome,
+                "safari": safari,
+                "vivaldi": vivaldi,
+                "edge": edge,
+                "brave": brave,
+                "opera": opera,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def put(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

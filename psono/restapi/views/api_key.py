@@ -9,136 +9,143 @@ from ..app_settings import (
     UpdateAPIKeySerializer,
     DeleteAPIKeySerializer,
 )
-from ..models import (
-    API_Key
-)
+from ..models import API_Key
 from ..authentication import TokenAuthentication
 
-class APIKeyView(GenericAPIView):
 
+class APIKeyView(GenericAPIView):
     """
     Check the REST Token and returns a list of all api_keys or the specified api_keys details
     """
 
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return CreateAPIKeySerializer
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return UpdateAPIKeySerializer
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteAPIKeySerializer
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return Serializer
 
-
-    def get(self, request, api_key_id = None, *args, **kwargs):
+    def get(self, request, api_key_id=None, *args, **kwargs):
         """
         Returns either a list of all api_keys with own access privileges or the members specified api_key
         """
 
         if not api_key_id:
-
             api_keys = []
 
             for api_key in API_Key.objects.filter(user=request.user):
-                api_keys.append({
-                    'id': api_key.id,
-                    'title': api_key.title,
-                    'read': api_key.read,
-                    'write': api_key.write,
-                    'restrict_to_secrets': api_key.restrict_to_secrets,
-                    'allow_insecure_access': api_key.allow_insecure_access,
-                    'active': api_key.active,
-                })
+                api_keys.append(
+                    {
+                        "id": api_key.id,
+                        "title": api_key.title,
+                        "read": api_key.read,
+                        "write": api_key.write,
+                        "restrict_to_secrets": api_key.restrict_to_secrets,
+                        "allow_insecure_access": api_key.allow_insecure_access,
+                        "active": api_key.active,
+                    }
+                )
 
-            return Response({'api_keys': api_keys},
-                status=status.HTTP_200_OK)
+            return Response({"api_keys": api_keys}, status=status.HTTP_200_OK)
         else:
             # Returns the specified api_key if the user has any rights for it
             try:
                 api_key = API_Key.objects.get(id=api_key_id, user=request.user)
             except API_Key.DoesNotExist:
-                return Response({"message":"NO_PERMISSION_OR_NOT_EXIST",
-                                 "resource_id": api_key_id}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        "message": "NO_PERMISSION_OR_NOT_EXIST",
+                        "resource_id": api_key_id,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             response = {
-                'id': api_key.id,
-                'title': api_key.title,
-                'public_key': api_key.public_key,
-                'private_key': api_key.private_key,
-                'private_key_nonce': api_key.private_key_nonce,
-                'secret_key': api_key.secret_key,
-                'secret_key_nonce': api_key.secret_key_nonce,
-                'read': api_key.read,
-                'write': api_key.write,
-                'restrict_to_secrets': api_key.restrict_to_secrets,
-                'allow_insecure_access': api_key.allow_insecure_access,
-                'active': api_key.active,
+                "id": api_key.id,
+                "title": api_key.title,
+                "public_key": api_key.public_key,
+                "private_key": api_key.private_key,
+                "private_key_nonce": api_key.private_key_nonce,
+                "secret_key": api_key.secret_key,
+                "secret_key_nonce": api_key.secret_key_nonce,
+                "read": api_key.read,
+                "write": api_key.write,
+                "restrict_to_secrets": api_key.restrict_to_secrets,
+                "allow_insecure_access": api_key.allow_insecure_access,
+                "active": api_key.active,
             }
 
-
-            return Response(response,
-                status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         """
         Creates an api_key
         """
 
-        serializer = CreateAPIKeySerializer(data=request.data, context=self.get_serializer_context())
-
-        if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        api_key = API_Key.objects.create(
-            user = request.user,
-            title = str(serializer.validated_data.get('title')),
-            public_key = str(serializer.validated_data.get('public_key')),
-            private_key = str(serializer.validated_data.get('private_key')),
-            private_key_nonce = str(serializer.validated_data.get('private_key_nonce')),
-            secret_key = str(serializer.validated_data.get('secret_key')),
-            secret_key_nonce = str(serializer.validated_data.get('secret_key_nonce')),
-            user_private_key = str(serializer.validated_data.get('user_private_key')),
-            user_private_key_nonce = str(serializer.validated_data.get('user_private_key_nonce')),
-            user_secret_key = str(serializer.validated_data.get('user_secret_key')),
-            user_secret_key_nonce = str(serializer.validated_data.get('user_secret_key_nonce')),
-            verify_key = str(serializer.validated_data.get('verify_key')),
-            read = serializer.validated_data.get('read'),
-            write = serializer.validated_data.get('write'),
-            restrict_to_secrets = serializer.validated_data.get('restrict_to_secrets'),
-            allow_insecure_access = serializer.validated_data.get('allow_insecure_access'),
+        serializer = CreateAPIKeySerializer(
+            data=request.data, context=self.get_serializer_context()
         )
 
-        return Response({
-            "api_key_id": api_key.id,
-        }, status=status.HTTP_201_CREATED)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = API_Key.objects.create(
+            user=request.user,
+            title=str(serializer.validated_data.get("title")),
+            public_key=str(serializer.validated_data.get("public_key")),
+            private_key=str(serializer.validated_data.get("private_key")),
+            private_key_nonce=str(serializer.validated_data.get("private_key_nonce")),
+            secret_key=str(serializer.validated_data.get("secret_key")),
+            secret_key_nonce=str(serializer.validated_data.get("secret_key_nonce")),
+            user_private_key=str(serializer.validated_data.get("user_private_key")),
+            user_private_key_nonce=str(
+                serializer.validated_data.get("user_private_key_nonce")
+            ),
+            user_secret_key=str(serializer.validated_data.get("user_secret_key")),
+            user_secret_key_nonce=str(
+                serializer.validated_data.get("user_secret_key_nonce")
+            ),
+            verify_key=str(serializer.validated_data.get("verify_key")),
+            read=serializer.validated_data.get("read"),
+            write=serializer.validated_data.get("write"),
+            restrict_to_secrets=serializer.validated_data.get("restrict_to_secrets"),
+            allow_insecure_access=serializer.validated_data.get(
+                "allow_insecure_access"
+            ),
+        )
+
+        return Response(
+            {
+                "api_key_id": api_key.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def post(self, request, *args, **kwargs):
         """
         Updates a api_key
         """
 
-        serializer = UpdateAPIKeySerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UpdateAPIKeySerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        api_key = serializer.validated_data.get('api_key')
-        title = serializer.validated_data.get('title')
-        read = serializer.validated_data.get('read')
-        write = serializer.validated_data.get('write')
-        restrict_to_secrets = serializer.validated_data.get('restrict_to_secrets')
-        allow_insecure_access = serializer.validated_data.get('allow_insecure_access')
+        api_key = serializer.validated_data.get("api_key")
+        title = serializer.validated_data.get("title")
+        read = serializer.validated_data.get("read")
+        write = serializer.validated_data.get("write")
+        restrict_to_secrets = serializer.validated_data.get("restrict_to_secrets")
+        allow_insecure_access = serializer.validated_data.get("allow_insecure_access")
 
         if title is not None:
             api_key.title = title
@@ -170,15 +177,14 @@ class APIKeyView(GenericAPIView):
         Deletes an api_key
         """
 
-        serializer = DeleteAPIKeySerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteAPIKeySerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        api_key = serializer.validated_data.get('api_key')
+        api_key = serializer.validated_data.get("api_key")
 
         # delete it
         api_key.delete()

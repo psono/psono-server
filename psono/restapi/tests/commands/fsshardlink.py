@@ -10,7 +10,6 @@ from io import StringIO
 
 
 class CommandFSShardLinkTestCase(TestCase):
-
     def setUp(self):
         box = PrivateKey.generate()
         private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
@@ -20,15 +19,15 @@ class CommandFSShardLinkTestCase(TestCase):
         public_key_hex = encrypt_with_db_secret(public_key_hex.decode())
 
         self.cluster = models.Fileserver_Cluster.objects.create(
-            title='Some Title',
+            title="Some Title",
             auth_public_key=public_key_hex,
             auth_private_key=private_key_hex,
             file_size_limit=0,
         )
 
         self.shard = models.Fileserver_Shard.objects.create(
-            title='Some Title',
-            description='Some description',
+            title="Some Title",
+            description="Some description",
         )
 
     def test_link_shard(self):
@@ -40,9 +39,6 @@ class CommandFSShardLinkTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('fsshardlink', stdout=out, *args, **opts)
+        call_command("fsshardlink", stdout=out, *args, **opts)
 
         self.assertTrue(models.Fileserver_Cluster_Shard_Link.objects.exists())
-
-
-

@@ -9,13 +9,12 @@ from typing import List, Tuple
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [] # type: List[Tuple]
+    dependencies = []  # type: List[Tuple]
 
     operations = [
         migrations.RunSQL("""CREATE EXTENSION IF NOT EXISTS "pgcrypto";"""),
         migrations.RunSQL("""CREATE EXTENSION IF NOT EXISTS ltree;"""),
-        #migrations.RunSQL("CREATE INDEX IF NOT EXISTS restapi_share_tree_path_6dcc1339 ON restapi_share_tree USING GIST(path);"),
+        # migrations.RunSQL("CREATE INDEX IF NOT EXISTS restapi_share_tree_path_6dcc1339 ON restapi_share_tree USING GIST(path);"),
     ]

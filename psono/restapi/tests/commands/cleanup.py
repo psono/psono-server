@@ -17,19 +17,38 @@ from io import StringIO
 
 import hashlib
 
+
 class CommandCleartokenTestCase(TestCase):
     #
     def setUp(self):
-        self.test_email = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@example.com'
-        self.test_email_bcrypt = 'a'
-        self.test_username = ''.join(random.choice(string.ascii_lowercase) for _ in range(10)) + 'test@psono.pw'
-        self.test_authkey = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678'
-        self.test_public_key = binascii.hexlify(os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key = binascii.hexlify(os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)).decode()
-        self.test_private_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_secret_key = binascii.hexlify(os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)).decode()
-        self.test_secret_key_nonce = binascii.hexlify(os.urandom(settings.NONCE_LENGTH_BYTES)).decode()
-        self.test_user_sauce = 'd22f5797cfd438f212bb0830da488f0555487697ad4041bbcbf5b08bc297e117'
+        self.test_email = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test@example.com"
+        )
+        self.test_email_bcrypt = "a"
+        self.test_username = (
+            "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test@psono.pw"
+        )
+        self.test_authkey = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
+        self.test_public_key = binascii.hexlify(
+            os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key = binascii.hexlify(
+            os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_private_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key = binascii.hexlify(
+            os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES)
+        ).decode()
+        self.test_secret_key_nonce = binascii.hexlify(
+            os.urandom(settings.NONCE_LENGTH_BYTES)
+        ).decode()
+        self.test_user_sauce = (
+            "d22f5797cfd438f212bb0830da488f0555487697ad4041bbcbf5b08bc297e117"
+        )
         self.test_user_obj = models.User.objects.create(
             email=self.test_email,
             email_bcrypt=self.test_email_bcrypt,
@@ -41,56 +60,63 @@ class CommandCleartokenTestCase(TestCase):
             secret_key=self.test_secret_key,
             secret_key_nonce=self.test_secret_key_nonce,
             user_sauce=self.test_user_sauce,
-            is_email_active=True
+            is_email_active=True,
         )
 
         self.test_datastore_obj = models.Data_Store.objects.create(
             user_id=self.test_user_obj.id,
             type="my-type",
-            description= "my-description",
-            data='12345'.encode(),
-            data_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            secret_key= ''.join(random.choice(string.ascii_lowercase) for _ in range(256)),
-            secret_key_nonce= ''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            description="my-description",
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            secret_key="".join(
+                random.choice(string.ascii_lowercase) for _ in range(256)
+            ),
+            secret_key_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
         )
 
         self.test_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         self.secret_link_obj = models.Secret_Link.objects.create(
-            link_id = '0493017f-47b0-446e-9a41-6533721ade71',
-            secret_id = self.test_secret_obj.id,
-            parent_datastore_id = self.test_datastore_obj.id,
-            parent_share_id = None
+            link_id="0493017f-47b0-446e-9a41-6533721ade71",
+            secret_id=self.test_secret_obj.id,
+            parent_datastore_id=self.test_datastore_obj.id,
+            parent_share_id=None,
         )
-
 
     def test_expired_token(self):
 
         # Lets put one tokens validity into the future, and one into the past
-        self.token = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+        self.token = "".join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
-            key= hashlib.sha512(self.token.encode()).hexdigest(),
+            key=hashlib.sha512(self.token.encode()).hexdigest(),
             user=self.test_user_obj,
-            valid_till=timezone.now() + timedelta(seconds=10)
+            valid_till=timezone.now() + timedelta(seconds=10),
         )
 
-        self.token2 = ''.join(random.choice(string.ascii_lowercase) for _ in range(64))
+        self.token2 = "".join(random.choice(string.ascii_lowercase) for _ in range(64))
         models.Token.objects.create(
-            key= hashlib.sha512(self.token2.encode()).hexdigest(),
+            key=hashlib.sha512(self.token2.encode()).hexdigest(),
             user=self.test_user_obj,
-            valid_till = timezone.now() - timedelta(seconds=10)
+            valid_till=timezone.now() - timedelta(seconds=10),
         )
 
         args = []
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         self.assertEqual(models.Token.objects.count(), 1)
 
@@ -100,9 +126,11 @@ class CommandCleartokenTestCase(TestCase):
             secret=self.test_secret_obj,
             file_id=None,
             allowed_reads=True,
-            public_title='A public title',
-            node=b'kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi',
-            node_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            public_title="A public title",
+            node=b"kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi",
+            node_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
             passphrase=None,
             valid_till=timezone.now() + timedelta(seconds=10),
         )
@@ -113,9 +141,11 @@ class CommandCleartokenTestCase(TestCase):
             secret=self.test_secret_obj,
             file_id=None,
             allowed_reads=True,
-            public_title='A public title',
-            node=b'kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi',
-            node_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
+            public_title="A public title",
+            node=b"kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi",
+            node_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
             passphrase=None,
             valid_till=timezone.now() - timedelta(seconds=10),
         )
@@ -124,26 +154,26 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         self.assertEqual(models.Link_Share.objects.count(), 1)
         self.assertTrue(models.Link_Share.objects.filter(pk=link_share1.id).exists())
         self.assertFalse(models.Link_Share.objects.filter(pk=link_share2.id).exists())
 
     def test_inaccessible_shares(self):
-        share_link_id = '1515a857-0bb9-46e0-9a84-97787b3d8ec6'
+        share_link_id = "1515a857-0bb9-46e0-9a84-97787b3d8ec6"
         test_share1_obj = models.Share.objects.create(
             user_id=self.test_user_obj.id,
             data=b"my-data",
             data_nonce="12345",
         )
-        test_share1_obj.create_date=timezone.now() - timedelta(days=30)
+        test_share1_obj.create_date = timezone.now() - timedelta(days=30)
         test_share1_obj.save()
 
         models.Share_Tree.objects.create(
             share_id=test_share1_obj.id,
             parent_datastore_id=self.test_datastore_obj.id,
-            path=str(share_link_id).replace("-", "")
+            path=str(share_link_id).replace("-", ""),
         )
 
         # share with missing share tree entry
@@ -152,40 +182,152 @@ class CommandCleartokenTestCase(TestCase):
             data=b"my-data",
             data_nonce="12345",
         )
-        test_share2_obj.create_date=timezone.now() - timedelta(days=30)
+        test_share2_obj.create_date = timezone.now() - timedelta(days=30)
         test_share2_obj.save()
 
         args = []
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         self.assertEqual(models.Share.objects.count(), 1)
         self.assertTrue(models.Share.objects.filter(pk=test_share1_obj.id).exists())
         self.assertFalse(models.Share.objects.filter(pk=test_share2_obj.id).exists())
 
+    def test_inaccessible_share_cleans_up_orphaned_shard_file(self):
+        share = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345",
+        )
+        share.create_date = timezone.now() - timedelta(days=30)
+        share.save()
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
+
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        models.File_Chunk.objects.create(
+            file=file,
+            hash_checksum="cleanup-share-orphan-chunk",
+            position=0,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        link_id = "fdb5f5db-4fdb-43ee-95fa-a45482e92be3"
+        models.File_Link.objects.create(
+            link_id=link_id,
+            file_id=file.id,
+            parent_datastore_id=None,
+            parent_share_id=share.id,
+        )
+
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertFalse(models.Share.objects.filter(pk=share.id).exists())
+        self.assertFalse(models.File_Link.objects.filter(link_id=link_id).exists())
+
+        file.refresh_from_db()
+        self.assertIsNotNone(file.delete_date)
+        self.assertLessEqual(file.delete_date, timezone.now())
+
+    def test_inaccessible_share_deletes_file_with_active_link_share(self):
+        share = models.Share.objects.create(
+            user_id=self.test_user_obj.id,
+            data=b"my-data",
+            data_nonce="12345",
+        )
+        share.create_date = timezone.now() - timedelta(days=30)
+        share.save()
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
+
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+        )
+
+        link_id = "698037f3-603f-4f8e-9ad1-cb78dc1263f8"
+        models.File_Link.objects.create(
+            link_id=link_id,
+            file_id=file.id,
+            parent_datastore_id=None,
+            parent_share_id=share.id,
+        )
+
+        models.Link_Share.objects.create(
+            user=self.test_user_obj,
+            secret=None,
+            file=file,
+            allowed_reads=5,
+            public_title="A public title",
+            node=b"kbixmnfhbzmelpujlulqtlulvcvptmauciygeyoipmlehhyuaizhqzzrtjhemdoi",
+            node_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            passphrase=None,
+            valid_till=timezone.now() + timedelta(days=1),
+        )
+
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertFalse(models.Share.objects.filter(pk=share.id).exists())
+        self.assertFalse(models.File_Link.objects.filter(link_id=link_id).exists())
+
+        file.refresh_from_db()
+        self.assertIsNotNone(file.delete_date)
+        self.assertLessEqual(file.delete_date, timezone.now())
+
     def test_inaccessible_secrets(self):
 
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         args = []
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         self.assertEqual(models.Secret.objects.count(), 1)
-        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id).exists())
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertTrue(
+            models.Secret.objects.filter(pk=self.test_secret_obj.id).exists()
+        )
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
-    @patch('restapi.utils.gcs_delete')
-    def test_inaccessible_secret_with_gcs_file_repository_cleanup(self, mock_gcs_delete):
+    @patch("restapi.utils.gcs_delete")
+    def test_inaccessible_secret_with_gcs_file_repository_cleanup(
+        self, mock_gcs_delete
+    ):
         """
         Tests that cleanup command properly deletes files in GCS file repository
         when deleting orphaned secrets
@@ -193,12 +335,12 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create a GCS file repository
         file_repository_data = {
-            'gcp_cloud_storage_bucket': 'test-bucket',
-            'gcp_cloud_storage_json_key': '{"key": "value"}',
+            "gcp_cloud_storage_bucket": "test-bucket",
+            "gcp_cloud_storage_json_key": '{"key": "value"}',
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test GCS Repository',
-            type='gcp_cloud_storage',
+            title="Test GCS Repository",
+            type="gcp_cloud_storage",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -206,9 +348,11 @@ class CommandCleartokenTestCase(TestCase):
         # Create an orphaned secret (no Secret_Link)
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         # Create a file attached to the orphaned secret using GCS file repository
@@ -224,14 +368,14 @@ class CommandCleartokenTestCase(TestCase):
         # Create chunks
         chunk1 = models.File_Chunk.objects.create(
             file=file,
-            hash_checksum='abcdef123456',
+            hash_checksum="abcdef123456",
             position=0,
             size=512,
             user=self.test_user_obj,
         )
         chunk2 = models.File_Chunk.objects.create(
             file=file,
-            hash_checksum='fedcba654321',
+            hash_checksum="fedcba654321",
             position=1,
             size=512,
             user=self.test_user_obj,
@@ -241,13 +385,15 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify gcs_delete was called for each chunk
         self.assertEqual(mock_gcs_delete.call_count, 2)
 
         # Verify secret was deleted
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
         # Verify file was deleted
         self.assertFalse(models.File.objects.filter(pk=file.id).exists())
@@ -260,16 +406,18 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create a shard
         shard = models.Fileserver_Shard.objects.create(
-            title='Test Shard',
-            description='Test Shard Description',
+            title="Test Shard",
+            description="Test Shard Description",
         )
 
         # Create an orphaned secret (no Secret_Link)
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         # Create a file attached to the orphaned secret using shard
@@ -285,7 +433,7 @@ class CommandCleartokenTestCase(TestCase):
         # Create chunk
         chunk = models.File_Chunk.objects.create(
             file=file,
-            hash_checksum='abcdef123456',
+            hash_checksum="abcdef123456",
             position=0,
             size=512,
             user=self.test_user_obj,
@@ -295,18 +443,22 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify secret was deleted
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
         # Verify file was soft-deleted (delete_date set)
         file_after = models.File.objects.get(pk=file.id)
         self.assertIsNotNone(file_after.delete_date)
         self.assertLessEqual(file_after.delete_date, timezone.now())
 
-    @patch('restapi.utils.aws_delete')
-    def test_inaccessible_secret_with_aws_s3_file_repository_cleanup(self, mock_aws_delete):
+    @patch("restapi.utils.aws_delete")
+    def test_inaccessible_secret_with_aws_s3_file_repository_cleanup(
+        self, mock_aws_delete
+    ):
         """
         Tests that cleanup command properly deletes files in AWS S3 file repository
         when deleting orphaned secrets
@@ -314,14 +466,14 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create an AWS S3 file repository
         file_repository_data = {
-            'aws_s3_bucket': 'test-aws-bucket',
-            'aws_s3_region': 'us-east-1',
-            'aws_s3_access_key_id': 'AKIAIOSFODNN7EXAMPLE',
-            'aws_s3_secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+            "aws_s3_bucket": "test-aws-bucket",
+            "aws_s3_region": "us-east-1",
+            "aws_s3_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+            "aws_s3_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test AWS S3 Repository',
-            type='aws_s3',
+            title="Test AWS S3 Repository",
+            type="aws_s3",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -329,9 +481,11 @@ class CommandCleartokenTestCase(TestCase):
         # Create an orphaned secret (no Secret_Link)
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         # Create a file attached to the orphaned secret
@@ -347,7 +501,7 @@ class CommandCleartokenTestCase(TestCase):
         # Create chunk
         chunk = models.File_Chunk.objects.create(
             file=file,
-            hash_checksum='abcdef123456',
+            hash_checksum="abcdef123456",
             position=0,
             size=512,
             user=self.test_user_obj,
@@ -357,19 +511,23 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify aws_delete was called
         self.assertEqual(mock_aws_delete.call_count, 1)
 
         # Verify secret was deleted
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
         # Verify file was deleted
         self.assertFalse(models.File.objects.filter(pk=file.id).exists())
 
-    @patch('restapi.utils.azure_blob_delete')
-    def test_inaccessible_secret_with_azure_blob_file_repository_cleanup(self, mock_azure_delete):
+    @patch("restapi.utils.azure_blob_delete")
+    def test_inaccessible_secret_with_azure_blob_file_repository_cleanup(
+        self, mock_azure_delete
+    ):
         """
         Tests that cleanup command properly deletes files in Azure Blob file repository
         when deleting orphaned secrets
@@ -377,13 +535,13 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create an Azure Blob file repository
         file_repository_data = {
-            'azure_blob_storage_account_name': 'testaccount',
-            'azure_blob_storage_account_primary_key': 'test-primary-key',
-            'azure_blob_storage_account_container_name': 'test-container',
+            "azure_blob_storage_account_name": "testaccount",
+            "azure_blob_storage_account_primary_key": "test-primary-key",
+            "azure_blob_storage_account_container_name": "test-container",
         }
         file_repository = models.File_Repository.objects.create(
-            title='Test Azure Blob Repository',
-            type='azure_blob',
+            title="Test Azure Blob Repository",
+            type="azure_blob",
             data=encrypt_with_db_secret(json.dumps(file_repository_data)).encode(),
             active=True,
         )
@@ -391,9 +549,11 @@ class CommandCleartokenTestCase(TestCase):
         # Create an orphaned secret (no Secret_Link)
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         # Create a file attached to the orphaned secret
@@ -409,7 +569,7 @@ class CommandCleartokenTestCase(TestCase):
         # Create chunk
         chunk = models.File_Chunk.objects.create(
             file=file,
-            hash_checksum='abcdef123456',
+            hash_checksum="abcdef123456",
             position=0,
             size=512,
             user=self.test_user_obj,
@@ -419,13 +579,15 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify azure_blob_delete was called
         self.assertEqual(mock_azure_delete.call_count, 1)
 
         # Verify secret was deleted
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
         # Verify file was deleted
         self.assertFalse(models.File.objects.filter(pk=file.id).exists())
@@ -437,16 +599,18 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create a shard
         shard = models.Fileserver_Shard.objects.create(
-            title='Test Shard',
-            description='Test Shard Description',
+            title="Test Shard",
+            description="Test Shard Description",
         )
 
         # Create an orphaned secret (no Secret_Link)
         inaccessible_secret_obj = models.Secret.objects.create(
             user_id=self.test_user_obj.id,
-            data='12345'.encode(),
-            data_nonce=''.join(random.choice(string.ascii_lowercase) for _ in range(64)),
-            type="dummy"
+            data="12345".encode(),
+            data_nonce="".join(
+                random.choice(string.ascii_lowercase) for _ in range(64)
+            ),
+            type="dummy",
         )
 
         # Create multiple files attached to the orphaned secret
@@ -481,10 +645,12 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify secret was deleted
-        self.assertFalse(models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists())
+        self.assertFalse(
+            models.Secret.objects.filter(pk=inaccessible_secret_obj.id).exists()
+        )
 
         # Verify all files were soft-deleted
         file1_after = models.File.objects.get(pk=file1.id)
@@ -503,8 +669,8 @@ class CommandCleartokenTestCase(TestCase):
 
         # Create a shard
         shard = models.Fileserver_Shard.objects.create(
-            title='Test Shard',
-            description='Test Shard Description',
+            title="Test Shard",
+            description="Test Shard Description",
         )
 
         # Create a file attached to the accessible secret (has Secret_Link)
@@ -521,16 +687,43 @@ class CommandCleartokenTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command('cleanup', stdout=out, *args, **opts)
+        call_command("cleanup", stdout=out, *args, **opts)
 
         # Verify secret was NOT deleted (has valid link)
-        self.assertTrue(models.Secret.objects.filter(pk=self.test_secret_obj.id).exists())
+        self.assertTrue(
+            models.Secret.objects.filter(pk=self.test_secret_obj.id).exists()
+        )
 
         # Verify file was NOT deleted or soft-deleted
         self.assertTrue(models.File.objects.filter(pk=file.id).exists())
         file_after = models.File.objects.get(pk=file.id)
         self.assertIsNone(file_after.delete_date)
 
+    def test_cleanup_keeps_already_soft_deleted_orphaned_shard_file(self):
+        """
+        Tests that cleanup command does not hard-delete a shard file that is
+        already soft-deleted and currently orphaned.
+        """
 
+        shard = models.Fileserver_Shard.objects.create(
+            title="Test Shard",
+            description="Test Shard Description",
+        )
 
+        soft_delete_date = timezone.now() - timedelta(days=1)
+        file = models.File.objects.create(
+            shard=shard,
+            file_repository=None,
+            secret=None,
+            chunk_count=1,
+            size=512,
+            user=self.test_user_obj,
+            delete_date=soft_delete_date,
+        )
 
+        out = StringIO()
+        call_command("cleanup", stdout=out)
+
+        self.assertTrue(models.File.objects.filter(pk=file.id).exists())
+        file_after = models.File.objects.get(pk=file.id)
+        self.assertEqual(file_after.delete_date, soft_delete_date)

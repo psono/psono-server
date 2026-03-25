@@ -4,25 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0011_auto_20180114_1304'),
+        ("restapi", "0011_auto_20180114_1304"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='duo',
-            name='active',
-            field=models.BooleanField(default=True, help_text='Designates whether this 2FA is active or not.', verbose_name='Is Active?'),
+            model_name="duo",
+            name="active",
+            field=models.BooleanField(
+                default=True,
+                help_text="Designates whether this 2FA is active or not.",
+                verbose_name="Is Active?",
+            ),
         ),
         migrations.AddField(
-            model_name='google_authenticator',
-            name='active',
-            field=models.BooleanField(default=True, help_text='Designates whether this 2FA is active or not.', verbose_name='Is Active?'),
+            model_name="google_authenticator",
+            name="active",
+            field=models.BooleanField(
+                default=True,
+                help_text="Designates whether this 2FA is active or not.",
+                verbose_name="Is Active?",
+            ),
         ),
         migrations.AddField(
-            model_name='yubikey_otp',
-            name='active',
-            field=models.BooleanField(default=True, help_text='Designates whether this 2FA is active or not.', verbose_name='Is Active?'),
+            model_name="yubikey_otp",
+            name="active",
+            field=models.BooleanField(
+                default=True,
+                help_text="Designates whether this 2FA is active or not.",
+                verbose_name="Is Active?",
+            ),
         ),
     ]

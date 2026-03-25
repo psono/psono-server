@@ -13,15 +13,15 @@ from ..app_settings import (
     FileserverAliveSerializer,
 )
 
-class AliveView(GenericAPIView):
 
-    authentication_classes = (FileserverAliveAuthentication, )
+class AliveView(GenericAPIView):
+    authentication_classes = (FileserverAliveAuthentication,)
     permission_classes = (IsFileserver,)
-    allowed_methods = ('PUT', 'OPTIONS', 'HEAD')
-    throttle_scope = 'fileserver_alive'
+    allowed_methods = ("PUT", "OPTIONS", "HEAD")
+    throttle_scope = "fileserver_alive"
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == "PUT":
             return FileserverAliveSerializer
         return Serializer
 
@@ -33,16 +33,15 @@ class AliveView(GenericAPIView):
         Updates the "alive" value in the database
         """
 
-        serializer = FileserverAliveSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = FileserverAliveSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        fileserver = request.user # A bit hacky, yet DRF stores whatever authenticates as user, yet in our case its a fileserver
-        fileserver.valid_till=timezone.now()+datetime.timedelta(seconds=30)
+        fileserver = request.user  # A bit hacky, yet DRF stores whatever authenticates as user, yet in our case its a fileserver
+        fileserver.valid_till = timezone.now() + datetime.timedelta(seconds=30)
         fileserver.save(update_fields=["valid_till"])
 
         return Response({}, status=status.HTTP_200_OK)

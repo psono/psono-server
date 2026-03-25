@@ -1,5 +1,6 @@
 from PIL import Image
 
+
 def crop_to_aspect(img, target_width, target_height):
     """
     Crop an PIL image to target width and height.
@@ -29,7 +30,8 @@ def crop_to_aspect(img, target_width, target_height):
         right = width
 
     img_cropped = img.crop((left, top, right, bottom))
-    img_resized = img_cropped.resize((target_width, target_height), Image.Resampling.LANCZOS)
+    img_resized = img_cropped.resize(
+        (target_width, target_height), Image.Resampling.LANCZOS
+    )
 
     return img_resized
-

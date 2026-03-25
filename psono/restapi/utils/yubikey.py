@@ -15,7 +15,11 @@ def yubikey_authenticate(yubikey_otp):
     if settings.YUBIKEY_CLIENT_ID is None or settings.YUBIKEY_SECRET_KEY is None:
         return None
 
-    client = Yubico(settings.YUBIKEY_CLIENT_ID, settings.YUBIKEY_SECRET_KEY, api_urls=settings.YUBICO_API_URLS)
+    client = Yubico(
+        settings.YUBIKEY_CLIENT_ID,
+        settings.YUBIKEY_SECRET_KEY,
+        api_urls=settings.YUBICO_API_URLS,
+    )
     try:
         yubikey_is_valid = client.verify(yubikey_otp)
     except:

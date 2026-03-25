@@ -11,17 +11,17 @@ class GAVerifySerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
 
-        ga_token = attrs.get('ga_token', '').lower().strip()
+        ga_token = attrs.get("ga_token", "").lower().strip()
 
         if not ga_token.isdigit():
-            msg = 'GA_TOKENS_ONLY_CONTAIN_DIGITS'
+            msg = "GA_TOKENS_ONLY_CONTAIN_DIGITS"
             raise exceptions.ValidationError(msg)
 
-        token = self.context['request'].auth
+        token = self.context["request"].auth
 
         gas = Google_Authenticator.objects.filter(user_id=token.user_id).all()
         if len(gas) < 1:
-            msg = 'NO_GOOGLE_AUTHENTICATOR_FOUND'
+            msg = "NO_GOOGLE_AUTHENTICATOR_FOUND"
             raise exceptions.ValidationError(msg)
 
         ga_token_correct = False
@@ -33,8 +33,8 @@ class GAVerifySerializer(serializers.Serializer):
                 break
 
         if not ga_token_correct:
-            msg = 'GA_TOKEN_INCORRECT'
+            msg = "GA_TOKEN_INCORRECT"
             raise exceptions.ValidationError(msg)
 
-        attrs['token'] = token
+        attrs["token"] = token
         return attrs

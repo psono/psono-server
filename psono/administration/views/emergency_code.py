@@ -3,9 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 
-from ..app_settings import (
-    DeleteEmergencyCodeSerializer
-)
+from ..app_settings import DeleteEmergencyCodeSerializer
 
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -13,14 +11,13 @@ from restapi.models import Emergency_Code
 
 
 class EmergencyCodeView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
     serializer_class = DeleteEmergencyCodeSerializer
-    allowed_methods = ('DELETE', 'OPTIONS', 'HEAD')
+    allowed_methods = ("DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'DELETE':
+        if self.request.method == "DELETE":
             return DeleteEmergencyCodeSerializer
         return Serializer
 
@@ -30,17 +27,17 @@ class EmergencyCodeView(GenericAPIView):
         """
 
         emergency_codes = []
-        for g in  Emergency_Code.objects.select_related('user').order_by('-create_date'):
-            emergency_codes.append({
-                'id': g.id,
-                'create_date': g.create_date,
-                'user': g.user.username,
-                'description': g.description
-            })
+        for g in Emergency_Code.objects.select_related("user").order_by("-create_date"):
+            emergency_codes.append(
+                {
+                    "id": g.id,
+                    "create_date": g.create_date,
+                    "user": g.user.username,
+                    "description": g.description,
+                }
+            )
 
-        return Response({
-            'emergency_codes': emergency_codes
-        }, status=status.HTTP_200_OK)
+        return Response({"emergency_codes": emergency_codes}, status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -53,15 +50,14 @@ class EmergencyCodeView(GenericAPIView):
         Deletes a Emergency Code
         """
 
-        serializer = DeleteEmergencyCodeSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteEmergencyCodeSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        emergency_code = serializer.validated_data.get('emergency_code')
+        emergency_code = serializer.validated_data.get("emergency_code")
 
         # delete it
         emergency_code.delete()

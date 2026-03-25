@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from ..app_settings import (
     UpdateGroupSerializer,
     DeleteGroupSerializer,
-    ReadGroupSerializer
+    ReadGroupSerializer,
 )
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
@@ -16,85 +16,101 @@ from restapi.models import Group, User_Group_Membership, Group_Share_Right
 
 
 class GroupView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadGroupSerializer
-        elif self.request.method == 'PUT':
+        elif self.request.method == "PUT":
             return UpdateGroupSerializer
-        elif self.request.method == 'DELETE':
+        elif self.request.method == "DELETE":
             return DeleteGroupSerializer
         return Serializer
 
     def get_group_info(self, group):
 
         memberships = []
-        for m in User_Group_Membership.objects.filter(group=group).select_related('user').only("id", "accepted", "group_admin", "share_admin", "create_date", "user__id", "user__username", "user__public_key"):
-            memberships.append({
-                'id': m.id,
-                'create_date': m.create_date,
-                'accepted': m.accepted,
-                'admin': m.group_admin,
-                'share_admin': m.share_admin,
-                'user_id': m.user.id,
-                'username': m.user.username,
-            })
+        for m in (
+            User_Group_Membership.objects.filter(group=group)
+            .select_related("user")
+            .only(
+                "id",
+                "accepted",
+                "group_admin",
+                "share_admin",
+                "create_date",
+                "user__id",
+                "user__username",
+                "user__public_key",
+            )
+        ):
+            memberships.append(
+                {
+                    "id": m.id,
+                    "create_date": m.create_date,
+                    "accepted": m.accepted,
+                    "admin": m.group_admin,
+                    "share_admin": m.share_admin,
+                    "user_id": m.user.id,
+                    "username": m.user.username,
+                }
+            )
 
         share_rights = []
-        for m in Group_Share_Right.objects.filter(group=group).only("id", "create_date", "read", "write", "grant", "share_id"):
-            share_rights.append({
-                'id': m.id,
-                'create_date': m.create_date,
-                'read': m.read,
-                'write': m.write,
-                'grant': m.grant,
-                'share_id': m.share_id,
-                'share_title': '',
-                'share_type': '',
-            })
+        for m in Group_Share_Right.objects.filter(group=group).only(
+            "id", "create_date", "read", "write", "grant", "share_id"
+        ):
+            share_rights.append(
+                {
+                    "id": m.id,
+                    "create_date": m.create_date,
+                    "read": m.read,
+                    "write": m.write,
+                    "grant": m.grant,
+                    "share_id": m.share_id,
+                    "share_title": "",
+                    "share_type": "",
+                }
+            )
 
         return {
-            'id': group.id,
-            'name': group.name,
-            'is_managed': False,
-            'forced_membership': group.forced_membership,
-            'create_date': group.create_date,
-            'public_key': group.public_key,
-
-            'memberships': memberships,
-            'share_rights': share_rights,
+            "id": group.id,
+            "name": group.name,
+            "is_managed": False,
+            "forced_membership": group.forced_membership,
+            "create_date": group.create_date,
+            "public_key": group.public_key,
+            "memberships": memberships,
+            "share_rights": share_rights,
         }
 
-    def get(self, request, group_id = None, *args, **kwargs):
+    def get(self, request, group_id=None, *args, **kwargs):
         """
         Returns a list of all groups
         """
 
-        serializer = ReadGroupSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadGroupSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if group_id:
-            group = serializer.validated_data.get('group')
+            group = serializer.validated_data.get("group")
             group_info = self.get_group_info(group)
 
             return Response(group_info, status=status.HTTP_200_OK)
 
         else:
-            page = serializer.validated_data.get('page')
-            page_size = serializer.validated_data.get('page_size')
-            ordering = serializer.validated_data.get('ordering')
-            search = serializer.validated_data.get('search')
+            page = serializer.validated_data.get("page")
+            page_size = serializer.validated_data.get("page_size")
+            ordering = serializer.validated_data.get("ordering")
+            search = serializer.validated_data.get("search")
 
-            group_qs = Group.objects.annotate(member_count=Count('members__id'))
+            group_qs = Group.objects.annotate(member_count=Count("members__id"))
 
             if search:
                 group_qs = group_qs.filter(Q(name__icontains=search))
@@ -110,34 +126,34 @@ class GroupView(GenericAPIView):
 
             groups = []
             for g in group_qs:
-                groups.append({
-                    'id': g.id,
-                    'create_date': g.create_date,
-                    'name': g.name,
-                    'member_count': g.member_count,
-                    'is_managed': False,
-                })
+                groups.append(
+                    {
+                        "id": g.id,
+                        "create_date": g.create_date,
+                        "name": g.name,
+                        "member_count": g.member_count,
+                        "is_managed": False,
+                    }
+                )
 
-            return Response({
-                'count': count,
-                'groups': groups
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {"count": count, "groups": groups}, status=status.HTTP_200_OK
+            )
 
     def put(self, request, *args, **kwargs):
         """
         Updates a group
         """
 
-        serializer = UpdateGroupSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UpdateGroupSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        group = serializer.validated_data.get('group')
-        name = serializer.validated_data.get('name')
+        group = serializer.validated_data.get("group")
+        name = serializer.validated_data.get("name")
 
         group.name = name
         group.save()
@@ -147,21 +163,19 @@ class GroupView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
     def delete(self, request, *args, **kwargs):
         """
         Deletes a group
         """
 
-        serializer = DeleteGroupSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = DeleteGroupSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        group = serializer.validated_data.get('group')
+        group = serializer.validated_data.get("group")
 
         # delete it
         group.delete()

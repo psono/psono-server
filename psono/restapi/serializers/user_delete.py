@@ -5,16 +5,20 @@ from rest_framework import serializers, exceptions
 
 
 class UserDeleteSerializer(serializers.Serializer):
-
-    authkey = serializers.CharField(style={'input_type': 'password'}, required=True,
-                                    max_length=settings.AUTH_KEY_LENGTH_BYTES*2,
-                                    min_length=settings.AUTH_KEY_LENGTH_BYTES*2)
+    authkey = serializers.CharField(
+        style={"input_type": "password"},
+        required=True,
+        max_length=settings.AUTH_KEY_LENGTH_BYTES * 2,
+        min_length=settings.AUTH_KEY_LENGTH_BYTES * 2,
+    )
 
     def validate(self, attrs: dict) -> dict:
 
-        authkey = attrs.get('authkey', '')
+        authkey = attrs.get("authkey", "")
 
-        user, error_code = authenticate(username=self.context['request'].user.username, authkey=authkey)
+        user, error_code = authenticate(
+            username=self.context["request"].user.username, authkey=authkey
+        )
 
         if not user:
             msg = "PASSWORD_INCORRECT"

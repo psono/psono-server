@@ -6,13 +6,12 @@ from ..models import User_Share_Right, Group_Share_Right, User_Group_Membership
 
 
 class DeleteShareRightSerializer(serializers.Serializer):
-
     user_share_right_id = UUIDField(required=False)
     group_share_right_id = UUIDField(required=False)
 
     def validate(self, attrs: dict) -> dict:
-        user_share_right_id = attrs.get('user_share_right_id', None)
-        group_share_right_id = attrs.get('group_share_right_id', None)
+        user_share_right_id = attrs.get("user_share_right_id", None)
+        group_share_right_id = attrs.get("group_share_right_id", None)
 
         if user_share_right_id is None and group_share_right_id is None:
             msg = "Either user or group share right needs to be specified."
@@ -31,7 +30,9 @@ class DeleteShareRightSerializer(serializers.Serializer):
                 raise exceptions.ValidationError(msg)
 
             # check if the user has grant rights on this share
-            if not user_has_rights_on_share(self.context['request'].user.id, share_right.share_id, grant=True):
+            if not user_has_rights_on_share(
+                self.context["request"].user.id, share_right.share_id, grant=True
+            ):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
         else:
@@ -42,14 +43,17 @@ class DeleteShareRightSerializer(serializers.Serializer):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
-            #check Permissions on group
+            # check Permissions on group
             try:
-                User_Group_Membership.objects.get(group_id=share_right.group_id, user_id=self.context['request'].user.id, share_admin=True)
+                User_Group_Membership.objects.get(
+                    group_id=share_right.group_id,
+                    user_id=self.context["request"].user.id,
+                    share_admin=True,
+                )
             except User_Group_Membership.DoesNotExist:
-                msg = 'You don\'t have the necessary rights to share with this group.'
+                msg = "You don't have the necessary rights to share with this group."
                 raise exceptions.ValidationError(msg)
 
-        attrs['share_right'] = share_right
+        attrs["share_right"] = share_right
 
         return attrs
-

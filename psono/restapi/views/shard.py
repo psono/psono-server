@@ -12,34 +12,27 @@ from ..authentication import TokenAuthentication
 
 
 class ShardView(GenericAPIView):
-
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    allowed_methods = ('GET', 'OPTIONS', 'HEAD')
+    allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return ReadShardSerializer
         return Serializer
 
     def get(self, request, *args, **kwargs):
 
-
-        serializer = ReadShardSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = ReadShardSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
 
         if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+        shards = serializer.validated_data.get("shards")
 
-        shards = serializer.validated_data.get('shards')
-
-        return Response({
-            'shards': shards
-        }, status=status.HTTP_200_OK)
-
-
+        return Response({"shards": shards}, status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
 

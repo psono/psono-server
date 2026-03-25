@@ -3,12 +3,13 @@ from restapi.fields import UUIDField
 
 from restapi.models import Emergency_Code
 
+
 class DeleteEmergencyCodeSerializer(serializers.Serializer):
     emergency_code_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        emergency_code_id = attrs.get('emergency_code_id')
+        emergency_code_id = attrs.get("emergency_code_id")
 
         try:
             emergency_code = Emergency_Code.objects.get(pk=emergency_code_id)
@@ -16,6 +17,6 @@ class DeleteEmergencyCodeSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['emergency_code'] = emergency_code
+        attrs["emergency_code"] = emergency_code
 
         return attrs

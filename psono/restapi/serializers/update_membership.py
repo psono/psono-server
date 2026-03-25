@@ -2,15 +2,15 @@ from rest_framework import serializers, exceptions
 from ..fields import UUIDField, BooleanField
 from ..models import User_Group_Membership
 
-class UpdateMembershipSerializer(serializers.Serializer):
 
+class UpdateMembershipSerializer(serializers.Serializer):
     membership_id = UUIDField(required=True)
     group_admin = BooleanField(default=False)
     share_admin = BooleanField(default=True)
 
     def validate(self, attrs: dict) -> dict:
 
-        membership_id = attrs.get('membership_id')
+        membership_id = attrs.get("membership_id")
 
         # Lets check if the membership exists
         try:
@@ -20,10 +20,15 @@ class UpdateMembershipSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         # Lets check if the current user can do that
-        if not User_Group_Membership.objects.filter(user=self.context['request'].user, group=membership.group, group_admin=True, accepted=True).exists():
+        if not User_Group_Membership.objects.filter(
+            user=self.context["request"].user,
+            group=membership.group,
+            group_admin=True,
+            accepted=True,
+        ).exists():
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        attrs['membership'] = membership
+        attrs["membership"] = membership
 
         return attrs

@@ -13,16 +13,26 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import get_current_span
 from django.conf import settings
 
+
 def is_opentelemetry_enabled():
     return bool(os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", ""))
+
 
 def setup_telemetry():
     if not is_opentelemetry_enabled():
         return
-    trace_provider = TracerProvider(resource=Resource.create({
-        ResourceAttributes.SERVICE_NAME: os.getenv("PSONO_OTEL_RESOURCE_SERVICE_NAME", "psono-server"),
-        ResourceAttributes.SERVICE_VERSION: os.getenv("PSONO_OTEL_RESOURCE_SERVICE_VERSION", settings.VERSION),
-    }))
+    trace_provider = TracerProvider(
+        resource=Resource.create(
+            {
+                ResourceAttributes.SERVICE_NAME: os.getenv(
+                    "PSONO_OTEL_RESOURCE_SERVICE_NAME", "psono-server"
+                ),
+                ResourceAttributes.SERVICE_VERSION: os.getenv(
+                    "PSONO_OTEL_RESOURCE_SERVICE_VERSION", settings.VERSION
+                ),
+            }
+        )
+    )
     trace.set_tracer_provider(trace_provider)
     trace.get_tracer_provider().add_span_processor(
         BatchSpanProcessor(OTLPSpanExporter())
@@ -31,6 +41,7 @@ def setup_telemetry():
     RedisInstrumentor().instrument()
     RequestsInstrumentor().instrument()
     DjangoInstrumentor().instrument()
+
 
 def setup_user_in_baggage_and_spans(user, token):
     if not is_opentelemetry_enabled():

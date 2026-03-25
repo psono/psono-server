@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0015_auto_20180310_1334'),
+        ("restapi", "0015_auto_20180310_1334"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='email_bcrypt',
-            field=models.CharField(db_index=True, max_length=60, verbose_name='bcrypt of email address'),
+            model_name="user",
+            name="email_bcrypt",
+            field=models.CharField(
+                db_index=True, max_length=60, verbose_name="bcrypt of email address"
+            ),
         ),
     ]

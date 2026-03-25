@@ -4,20 +4,22 @@ from rest_framework import serializers, exceptions
 from ..utils import authenticate
 from ..fields import BooleanField
 
-class CreateSecurityReportSerializer(serializers.Serializer):
 
+class CreateSecurityReportSerializer(serializers.Serializer):
     entries = serializers.ListField(child=serializers.DictField())
     check_haveibeenpwned = BooleanField()
-    authkey = serializers.CharField(style={'input_type': 'password'})
+    authkey = serializers.CharField(style={"input_type": "password"})
 
     def validate(self, attrs: dict) -> dict:
-        authkey = attrs.get('authkey')
+        authkey = attrs.get("authkey")
 
         if settings.DISABLE_CENTRAL_SECURITY_REPORTS:
             msg = "CENTRAL_SECURITY_REPORTS_DISABLED"
             raise exceptions.ValidationError(msg)
 
-        user, error_code = authenticate(username=self.context['request'].user.username, authkey=str(authkey))
+        user, error_code = authenticate(
+            username=self.context["request"].user.username, authkey=str(authkey)
+        )
 
         if not user:
             msg = "PASSWORD_INCORRECT"

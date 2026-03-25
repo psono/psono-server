@@ -6,39 +6,85 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0030_auto_20220210_2101'),
+        ("restapi", "0030_auto_20220210_2101"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='webauthn_2fa',
-            field=models.BooleanField(default=False, help_text='Specifies if Webauthn is required or not', verbose_name='Webauthn Required'),
+            model_name="token",
+            name="webauthn_2fa",
+            field=models.BooleanField(
+                default=False,
+                help_text="Specifies if Webauthn is required or not",
+                verbose_name="Webauthn Required",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='webauthn_enabled',
-            field=models.BooleanField(default=False, help_text='True once webauthn 2fa is enabled', verbose_name='Webauthn 2FA enabled'),
+            model_name="user",
+            name="webauthn_enabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="True once webauthn 2fa is enabled",
+                verbose_name="Webauthn 2FA enabled",
+            ),
         ),
         migrations.CreateModel(
-            name='Webauthn',
+            name="Webauthn",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('create_date', models.DateTimeField(auto_now_add=True)),
-                ('write_date', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=256, verbose_name='title')),
-                ('origin', models.CharField(max_length=512, verbose_name='origin')),
-                ('rp_id', models.CharField(max_length=512, verbose_name='rp_id')),
-                ('credential_id', models.TextField(default='', verbose_name='The credential id as passed from the frontend')),
-                ('credential_public_key', models.TextField(default='', verbose_name='The credential public key as passed from the frontend')),
-                ('challenge', models.TextField(verbose_name='The challenge encrypted with the db secret')),
-                ('active', models.BooleanField(default=True, help_text='Designates whether this 2FA is active or not.', verbose_name='Is Active?')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='webauthn', to='restapi.user')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("create_date", models.DateTimeField(auto_now_add=True)),
+                ("write_date", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=256, verbose_name="title")),
+                ("origin", models.CharField(max_length=512, verbose_name="origin")),
+                ("rp_id", models.CharField(max_length=512, verbose_name="rp_id")),
+                (
+                    "credential_id",
+                    models.TextField(
+                        default="",
+                        verbose_name="The credential id as passed from the frontend",
+                    ),
+                ),
+                (
+                    "credential_public_key",
+                    models.TextField(
+                        default="",
+                        verbose_name="The credential public key as passed from the frontend",
+                    ),
+                ),
+                (
+                    "challenge",
+                    models.TextField(
+                        verbose_name="The challenge encrypted with the db secret"
+                    ),
+                ),
+                (
+                    "active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Designates whether this 2FA is active or not.",
+                        verbose_name="Is Active?",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="webauthn",
+                        to="restapi.user",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

@@ -6,15 +6,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0006_auto_20170625_0723'),
+        ("restapi", "0006_auto_20170625_0723"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='data_store',
-            name='is_default',
-            field=models.BooleanField(default=True, help_text='Designates whether this is the default datastore for this type or not', verbose_name='default'),
+            model_name="data_store",
+            name="is_default",
+            field=models.BooleanField(
+                default=True,
+                help_text="Designates whether this is the default datastore for this type or not",
+                verbose_name="default",
+            ),
         ),
     ]

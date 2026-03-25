@@ -6,13 +6,21 @@ from ..models import User
 
 
 class CreateUnregisterSerializer(serializers.Serializer):
-    username = serializers.EmailField(required=False, allow_blank=True, error_messages={ 'invalid': 'INVALID_USERNAME_FORMAT' })
-    email = serializers.EmailField(required=False, allow_blank=True, error_messages={ 'invalid': 'INVALID_EMAIL_FORMAT' })
+    username = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        error_messages={"invalid": "INVALID_USERNAME_FORMAT"},
+    )
+    email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        error_messages={"invalid": "INVALID_EMAIL_FORMAT"},
+    )
 
     def validate(self, attrs: dict) -> dict:
 
-        username = attrs.get('username', '').lower().strip()
-        email = attrs.get('email', '').lower().strip()
+        username = attrs.get("username", "").lower().strip()
+        email = attrs.get("email", "").lower().strip()
 
         if not settings.WEB_CLIENT_URL:
             msg = "UNREGISTRATION_HAS_BEEN_DISABLED"
@@ -30,25 +38,26 @@ class CreateUnregisterSerializer(serializers.Serializer):
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                msg = 'USER_WITH_USERNAME_DOESNT_EXIST'
+                msg = "USER_WITH_USERNAME_DOESNT_EXIST"
                 raise exceptions.ValidationError(msg)
         else:
-            email_bcrypt_full = bcrypt.hashpw(email.encode(), settings.EMAIL_SECRET_SALT.encode())
-            email_bcrypt = email_bcrypt_full.decode().replace(settings.EMAIL_SECRET_SALT, '', 1)
+            email_bcrypt_full = bcrypt.hashpw(
+                email.encode(), settings.EMAIL_SECRET_SALT.encode()
+            )
+            email_bcrypt = email_bcrypt_full.decode().replace(
+                settings.EMAIL_SECRET_SALT, "", 1
+            )
 
             try:
                 user = User.objects.get(email_bcrypt=email_bcrypt)
             except User.DoesNotExist:
-                msg = 'USER_WITH_EMAIL_DOESNT_EXIST'
+                msg = "USER_WITH_EMAIL_DOESNT_EXIST"
                 raise exceptions.ValidationError(msg)
 
         if not user.email:
-            msg = 'USER_HAS_NO_EMAIL_ADDRESS_ASSOCIATED'
+            msg = "USER_HAS_NO_EMAIL_ADDRESS_ASSOCIATED"
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
+        attrs["user"] = user
 
         return attrs
-
-
-        

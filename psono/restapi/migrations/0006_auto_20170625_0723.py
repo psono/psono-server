@@ -6,20 +6,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0005_auto_20170502_1808'),
+        ("restapi", "0005_auto_20170502_1808"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='client_date',
+            model_name="token",
+            name="client_date",
             field=models.DateTimeField(null=True),
         ),
         migrations.AddField(
-            model_name='token',
-            name='write_date',
+            model_name="token",
+            name="write_date",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

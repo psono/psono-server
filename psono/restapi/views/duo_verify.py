@@ -4,26 +4,22 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
-from ..models import (
-    Token
-)
+from ..models import Token
 
-from ..app_settings import (
-    DuoVerifySerializer
-)
+from ..app_settings import DuoVerifySerializer
 from ..authentication import TokenAuthenticationAllowInactive
 
-class DuoVerifyView(GenericAPIView):
 
-    authentication_classes = (TokenAuthenticationAllowInactive, )
+class DuoVerifyView(GenericAPIView):
+    authentication_classes = (TokenAuthenticationAllowInactive,)
     permission_classes = (IsAuthenticated,)
     serializer_class = DuoVerifySerializer
     token_model = Token
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'duo_verify'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "duo_verify"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return DuoVerifySerializer
         return Serializer
 
@@ -41,12 +37,10 @@ class DuoVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Duo challenge has been solved, so lets update the token
-        token = serializer.validated_data['token']
+        token = serializer.validated_data["token"]
         token.duo_2fa = False
 
         if settings.MULTIFACTOR_ENABLED:

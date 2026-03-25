@@ -4,26 +4,22 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
-from ..models import (
-    Token
-)
+from ..models import Token
 
-from ..app_settings import (
-    GAVerifySerializer
-)
+from ..app_settings import GAVerifySerializer
 from ..authentication import TokenAuthenticationAllowInactive
 
-class GAVerifyView(GenericAPIView):
 
-    authentication_classes = (TokenAuthenticationAllowInactive, )
+class GAVerifyView(GenericAPIView):
+    authentication_classes = (TokenAuthenticationAllowInactive,)
     permission_classes = (IsAuthenticated,)
     serializer_class = GAVerifySerializer
     token_model = Token
-    allowed_methods = ('POST', 'OPTIONS', 'HEAD')
-    throttle_scope = 'ga_verify'
+    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "ga_verify"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return GAVerifySerializer
         return Serializer
 
@@ -41,13 +37,10 @@ class GAVerifyView(GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
-
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Google Authenticator challenge has been solved, so lets update the token
-        token = serializer.validated_data['token']
+        token = serializer.validated_data["token"]
 
         if settings.MULTIFACTOR_ENABLED:
             # only mark google authenticator challenge as solved and the others potentially open

@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
+from django.db.models import Q
+from django.utils import timezone
 from django_countries import countries
 from urllib.parse import urlparse
 
@@ -28,10 +30,19 @@ import binascii
 import ipaddress
 
 from ..models import User, User_Share_Right, Group_Share_Right, Secret_Link
-from ..models import File_Link, Data_Store, Share_Tree, Duo, Google_Authenticator, Yubikey_OTP, default_hashing_parameters
+from ..models import (
+    File_Link,
+    Data_Store,
+    Share_Tree,
+    Duo,
+    Google_Authenticator,
+    Yubikey_OTP,
+    default_hashing_parameters,
+)
 from ..models import Ivalt
 from ..models import File_Repository_Right
 from .avatar import delete_avatar_storage_of_user
+
 
 def generate_verification_code(email: str, verification_secret: str) -> str:
     """
@@ -52,9 +63,12 @@ def generate_verification_code(email: str, verification_secret: str) -> str:
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
     secret_key = hashlib.sha256(verification_secret.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    validation_secret = crypto_box.encrypt((time_stamp + '#' + email).encode("utf-8"),
-                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    validation_secret = crypto_box.encrypt(
+        (time_stamp + "#" + email).encode("utf-8"),
+        nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE),
+    )
     return nacl.encoding.HexEncoder.encode(validation_secret).decode()
+
 
 def generate_activation_code(email: str) -> str:
     """
@@ -69,6 +83,7 @@ def generate_activation_code(email: str) -> str:
 
     return generate_verification_code(email, settings.ACTIVATION_LINK_SECRET)
 
+
 def generate_unregistration_code(email: str) -> str:
     """
     Takes email address and combines it with a timestamp before encrypting everything
@@ -80,7 +95,9 @@ def generate_unregistration_code(email: str) -> str:
     :rtype: str
     """
 
-    return generate_verification_code(email, settings.ACTIVATION_LINK_SECRET + 'unregister')
+    return generate_verification_code(
+        email, settings.ACTIVATION_LINK_SECRET + "unregister"
+    )
 
 
 def get_static_bcrypt_hash_from_email(email):
@@ -98,10 +115,12 @@ def get_static_bcrypt_hash_from_email(email):
     email_salt = settings.EMAIL_SECRET_SALT.encode()
     bcrypt_with_salt = bcrypt.hashpw(email, email_salt).decode()
 
-    return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, '', 1)
+    return bcrypt_with_salt.replace(settings.EMAIL_SECRET_SALT, "", 1)
 
 
-def validate_verification_code(activation_code: str, verification_secret: str) -> Optional[User]:
+def validate_verification_code(
+    activation_code: str, verification_secret: str
+) -> Optional[User]:
     """
     Validate activation codes for the given time specified in settings ACTIVATION_LINK_TIME_VALID
     without database reference, based on salsa20. Returns the user or False in case of a failure
@@ -117,16 +136,17 @@ def validate_verification_code(activation_code: str, verification_secret: str) -
     try:
         secret_key = hashlib.sha256(verification_secret.encode()).hexdigest()
         crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-        validation_secret = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(activation_code)).decode()
+        validation_secret = crypto_box.decrypt(
+            nacl.encoding.HexEncoder.decode(activation_code)
+        ).decode()
 
         time_stamp, email = validation_secret.split("#", 1)
         if int(time_stamp) + settings.ACTIVATION_LINK_TIME_VALID > int(time.time()):
-
             email_bcrypt = get_static_bcrypt_hash_from_email(email)
 
             return User.objects.filter(email_bcrypt=email_bcrypt)[0]
     except:  # nosec
-        #wrong format or whatever could happen
+        # wrong format or whatever could happen
         pass
 
     return None
@@ -143,12 +163,13 @@ def validate_activation_code(activation_code: str) -> Optional[User]:
     :rtype: User or None
     """
 
-    user =  validate_verification_code(activation_code, settings.ACTIVATION_LINK_SECRET)
+    user = validate_verification_code(activation_code, settings.ACTIVATION_LINK_SECRET)
 
     if user is None or user.is_email_active:
         return None
 
     return user
+
 
 def validate_unregister_code(unregistration_code: str) -> Optional[User]:
     """
@@ -161,9 +182,14 @@ def validate_unregister_code(unregistration_code: str) -> Optional[User]:
     :rtype: User or None
     """
 
-    return validate_verification_code(unregistration_code, settings.ACTIVATION_LINK_SECRET+'unregister')
+    return validate_verification_code(
+        unregistration_code, settings.ACTIVATION_LINK_SECRET + "unregister"
+    )
 
-def authenticate(username: str = "", user: User = None, authkey: str = "", password: str = "") -> Tuple: # nosec
+
+def authenticate(
+    username: str = "", user: User = None, authkey: str = "", password: str = ""
+) -> Tuple:  # nosec
     """
     Checks if the authkey for the given user, specified by the email or directly by the user object matches
 
@@ -176,18 +202,20 @@ def authenticate(username: str = "", user: User = None, authkey: str = "", passw
     """
 
     if not username and not user:
-        return False, 'USER_NOT_PROVIDED'
+        return False, "USER_NOT_PROVIDED"
 
     if not authkey:
-        return False, 'AUTHKEY_NOT_PROVIDED'
+        return False, "AUTHKEY_NOT_PROVIDED"
 
-    error_code = 'USER_NOT_FOUND'
+    error_code = "USER_NOT_FOUND"
 
     for method in settings.AUTHENTICATION_METHODS:
-        if 'AUTHKEY' == method:
+        if "AUTHKEY" == method:
             if username and not user:
                 try:
-                    user = User.objects.filter(username=username, is_active=True, authentication='AUTHKEY')[0]
+                    user = User.objects.filter(
+                        username=username, is_active=True, authentication="AUTHKEY"
+                    )[0]
                 except IndexError:
                     continue
 
@@ -195,7 +223,7 @@ def authenticate(username: str = "", user: User = None, authkey: str = "", passw
                 if check_password(authkey, user.authkey):
                     return user, None
                 else:
-                    error_code = 'INCORRECT_PASSWORD'
+                    error_code = "INCORRECT_PASSWORD"
 
     return False, error_code
 
@@ -210,7 +238,8 @@ def get_secret_counts_for_users(user_ids: List[str]):
     from django.db import connection
 
     with connection.cursor() as cursor:
-        cursor.execute("""
+        cursor.execute(
+            """
            WITH user_accessible_shares AS (
                -- Get all shares each user has direct access to
                SELECT DISTINCT usr.user_id,
@@ -220,6 +249,7 @@ def get_secret_counts_for_users(user_ids: List[str]):
                         JOIN restapi_share_tree st ON parent_st.path @> st.path
                WHERE usr.user_id = ANY (%(user_ids)s)
                  AND usr.accepted = true
+                  AND (usr.expiration_date IS NULL OR usr.expiration_date > NOW())
 
                UNION
 
@@ -232,7 +262,8 @@ def get_secret_counts_for_users(user_ids: List[str]):
                         JOIN restapi_share_tree st ON parent_st.path @> st.path
                WHERE ugm.user_id = ANY (%(user_ids)s)
                  AND ugm.accepted = true
-           ),
+                  AND (gsr.expiration_date IS NULL OR gsr.expiration_date > NOW())
+            ),
            user_accessible_secrets AS (
                -- Secrets from accessible shares
                SELECT DISTINCT 
@@ -257,9 +288,9 @@ def get_secret_counts_for_users(user_ids: List[str]):
                     LEFT JOIN user_accessible_secrets uas ON u.user_id = uas.user_id
            GROUP BY u.user_id
            ORDER BY u.user_id
-           """, {
-               'user_ids': user_ids
-           })
+           """,
+            {"user_ids": user_ids},
+        )
 
         results = {}
         for row in cursor.fetchall():
@@ -268,7 +299,9 @@ def get_secret_counts_for_users(user_ids: List[str]):
         return results
 
 
-def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
+def get_all_inherited_rights(
+    user_id: str, share_id: Union[str, List[str]]
+) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
 
     if isinstance(share_id, list):
         if len(share_id) == 0:
@@ -279,7 +312,8 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
             return None
         share_ids = [str(share_id)]
 
-    user_share_rights = User_Share_Right.objects.raw("""SELECT DISTINCT ON (share_id, id) *
+    user_share_rights = User_Share_Right.objects.raw(
+        """SELECT DISTINCT ON (share_id, id) *
             FROM (
                 SELECT DISTINCT ON(t.share_id, t.path)
                     ur.id, t.share_id, ur.read, ur.write, ur.grant
@@ -289,6 +323,7 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
                 WHERE t.share_id = ANY(%(share_ids)s)
                     AND ur.user_id = %(user_id)s
                     AND ur.accepted = true
+                    AND (ur.expiration_date IS NULL OR ur.expiration_date > NOW())
                 ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
             ) a
             UNION
@@ -303,13 +338,15 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
                 WHERE t.share_id = ANY(%(share_ids)s)
                     AND gm.user_id = %(user_id)s
                     AND gm.accepted = true
+                    AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())
                 ORDER BY t.share_id, t.path, nlevel(t.path) - nlevel(t2.path) ASC
             ) b
-            """, {
-            'share_ids': share_ids,
-            'user_id': user_id,
-        })
-
+            """,
+        {
+            "share_ids": share_ids,
+            "user_id": user_id,
+        },
+    )
 
     user_share_rights_dict = {}
     for usr in user_share_rights:
@@ -330,7 +367,9 @@ def get_all_inherited_rights(user_id: str, share_id: Union[str, List[str]]) -> U
     return sorted_user_share_rights[0]
 
 
-def get_all_direct_user_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
+def get_all_direct_user_rights(
+    user_id: str, share_id: Union[str, List[str]]
+) -> Union[User_Share_Right, None, List[Union[User_Share_Right, None]]]:
 
     if isinstance(share_id, list):
         if len(share_id) == 0:
@@ -341,8 +380,10 @@ def get_all_direct_user_rights(user_id: str, share_id: Union[str, List[str]]) ->
             return None
         share_ids = [str(share_id)]
 
-    user_share_rights = User_Share_Right.objects.only("share_id", "read", "write", "grant").filter(
-        user_id=user_id, share_id__in=share_ids, accepted=True
+    user_share_rights = (
+        User_Share_Right.objects.only("share_id", "read", "write", "grant")
+        .filter(user_id=user_id, share_id__in=share_ids, accepted=True)
+        .filter(Q(expiration_date__isnull=True) | Q(expiration_date__gt=timezone.now()))
     )
     user_share_rights_dict = {}
     for usr in user_share_rights:
@@ -363,7 +404,9 @@ def get_all_direct_user_rights(user_id: str, share_id: Union[str, List[str]]) ->
     return sorted_user_share_rights[0]
 
 
-def get_all_direct_group_rights(user_id: str, share_id: Union[str, List[str]]) -> Union[Group_Share_Right, None, List[Union[Group_Share_Right, None]]]:
+def get_all_direct_group_rights(
+    user_id: str, share_id: Union[str, List[str]]
+) -> Union[Group_Share_Right, None, List[Union[Group_Share_Right, None]]]:
 
     if isinstance(share_id, list):
         if len(share_id) == 0:
@@ -374,15 +417,19 @@ def get_all_direct_group_rights(user_id: str, share_id: Union[str, List[str]]) -
             return None
         share_ids = [str(share_id)]
 
-    group_share_rights = Group_Share_Right.objects.raw("""SELECT gr.id, gr.share_id, gr.read, gr.write, gr.grant
+    group_share_rights = Group_Share_Right.objects.raw(
+        """SELECT gr.id, gr.share_id, gr.read, gr.write, gr.grant
         FROM restapi_group_share_right gr
             JOIN restapi_user_group_membership ms ON gr.group_id = ms.group_id
         WHERE gr.share_id = ANY(%(share_ids)s) 
             AND ms.user_id = %(user_id)s
-            AND ms.accepted = true""", {
-        'share_ids': share_ids,
-        'user_id': user_id,
-    })
+            AND ms.accepted = true
+            AND (gr.expiration_date IS NULL OR gr.expiration_date > NOW())""",
+        {
+            "share_ids": share_ids,
+            "user_id": user_id,
+        },
+    )
 
     group_share_rights_dict = {}
     for grp in group_share_rights:
@@ -403,7 +450,9 @@ def get_all_direct_group_rights(user_id: str, share_id: Union[str, List[str]]) -
     return sorted_group_share_rights[0]
 
 
-def calculate_user_rights_on_share(user_id: str, share_id: Union[str, List[str]]) -> Union[dict, List[dict], None]:
+def calculate_user_rights_on_share(
+    user_id: str, share_id: Union[str, List[str]]
+) -> Union[dict, List[dict], None]:
     """
     Calculates the user's rights on a share
 
@@ -426,39 +475,40 @@ def calculate_user_rights_on_share(user_id: str, share_id: Union[str, List[str]]
     user_rights = get_all_direct_user_rights(user_id=user_id, share_id=share_ids)
     group_rights = get_all_direct_group_rights(user_id=user_id, share_id=share_ids)
 
-    grouped_rights = [{
-        "read": False,
-        "write": False,
-        "grant": False,
-        "has_direct_user_share_rights": False,
-        "has_direct_group_share_rights": False,
-    } for s in share_ids]
+    grouped_rights = [
+        {
+            "read": False,
+            "write": False,
+            "grant": False,
+            "has_direct_user_share_rights": False,
+            "has_direct_group_share_rights": False,
+        }
+        for s in share_ids
+    ]
 
     for index, user_right in enumerate(user_rights):
         if user_right is None:
             continue
         for u in user_right:
-            grouped_rights[index]['has_direct_user_share_rights'] = True
-            grouped_rights[index]['read'] = grouped_rights[index]['read'] or u.read
-            grouped_rights[index]['write'] = grouped_rights[index]['write'] or u.write
-            grouped_rights[index]['grant'] = grouped_rights[index]['grant'] or u.grant
-
+            grouped_rights[index]["has_direct_user_share_rights"] = True
+            grouped_rights[index]["read"] = grouped_rights[index]["read"] or u.read
+            grouped_rights[index]["write"] = grouped_rights[index]["write"] or u.write
+            grouped_rights[index]["grant"] = grouped_rights[index]["grant"] or u.grant
 
     for index, group_right in enumerate(group_rights):
         if group_right is None:
             continue
         for s in group_right:
-            grouped_rights[index]['has_direct_group_share_rights'] = True
-            grouped_rights[index]['read'] = grouped_rights[index]['read'] or s.read
-            grouped_rights[index]['write'] = grouped_rights[index]['write'] or s.write
-            grouped_rights[index]['grant'] = grouped_rights[index]['grant'] or s.grant
-
+            grouped_rights[index]["has_direct_group_share_rights"] = True
+            grouped_rights[index]["read"] = grouped_rights[index]["read"] or s.read
+            grouped_rights[index]["write"] = grouped_rights[index]["write"] or s.write
+            grouped_rights[index]["grant"] = grouped_rights[index]["grant"] or s.grant
 
     need_inherited_rights_share_id_index = {}
     for index, sh_id in enumerate(share_ids):
-        if grouped_rights[index]['has_direct_user_share_rights']:
+        if grouped_rights[index]["has_direct_user_share_rights"]:
             continue
-        if grouped_rights[index]['has_direct_group_share_rights']:
+        if grouped_rights[index]["has_direct_group_share_rights"]:
             continue
 
         if sh_id not in need_inherited_rights_share_id_index:
@@ -467,25 +517,31 @@ def calculate_user_rights_on_share(user_id: str, share_id: Union[str, List[str]]
 
     need_inherited_rights_share_ids = list(need_inherited_rights_share_id_index.keys())
     if len(need_inherited_rights_share_ids) > 0:
-
         # maybe the user has inherited rights
-        user_share_rights = get_all_inherited_rights(user_id, need_inherited_rights_share_ids)
+        user_share_rights = get_all_inherited_rights(
+            user_id, need_inherited_rights_share_ids
+        )
 
         for index, user_share_right in enumerate(user_share_rights):
             if user_share_right is None:
                 continue
             for s in user_share_right:
-                for grouped_right in need_inherited_rights_share_id_index[need_inherited_rights_share_ids[index]]:
-                    grouped_right['read'] = grouped_right['read'] or s.read
-                    grouped_right['write'] = grouped_right['write'] or s.write
-                    grouped_right['grant'] = grouped_right['grant'] or s.grant
+                for grouped_right in need_inherited_rights_share_id_index[
+                    need_inherited_rights_share_ids[index]
+                ]:
+                    grouped_right["read"] = grouped_right["read"] or s.read
+                    grouped_right["write"] = grouped_right["write"] or s.write
+                    grouped_right["grant"] = grouped_right["grant"] or s.grant
 
     if isinstance(share_id, list):
-        return [{
+        return [
+            {
                 "read": g["read"],
                 "write": g["write"],
                 "grant": g["grant"],
-        } for g in grouped_rights]
+            }
+            for g in grouped_rights
+        ]
 
     return {
         "read": grouped_rights[0]["read"],
@@ -494,7 +550,13 @@ def calculate_user_rights_on_share(user_id: str, share_id: Union[str, List[str]]
     }
 
 
-def user_has_rights_on_share(user_id: str, share_id: Union[str, List[str]], read: bool = None, write: bool = None, grant: bool = None) -> Union[None, bool, List[bool]]:
+def user_has_rights_on_share(
+    user_id: str,
+    share_id: Union[str, List[str]],
+    read: bool = None,
+    write: bool = None,
+    grant: bool = None,
+) -> Union[None, bool, List[bool]]:
     """
     Checks if the given user has the requested rights for the given share.
     User_share_rights and all Group_share_rights be checked first.
@@ -523,16 +585,14 @@ def user_has_rights_on_share(user_id: str, share_id: Union[str, List[str]], read
             raise Exception
         share_ids = [share_id]
 
-
-
     rights = calculate_user_rights_on_share(user_id, share_ids)
 
     result = []
     for right in rights:
         result.append(
-            (read is None or read == right['read']) \
-            and (write is None or write == right['write']) \
-            and (grant is None or grant == right['grant'])
+            (read is None or read == right["read"])
+            and (write is None or write == right["write"])
+            and (grant is None or grant == right["grant"])
         )
 
     if isinstance(share_id, list):
@@ -541,7 +601,12 @@ def user_has_rights_on_share(user_id: str, share_id: Union[str, List[str]], read
     return result[0]
 
 
-def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], read: bool = None, write: bool = None) -> Union[bool, List[bool]]:  #nosec B105, B107
+def user_has_rights_on_secret(
+    user_id: str,
+    secret_id: Union[str, List[str]],
+    read: bool = None,
+    write: bool = None,
+) -> Union[bool, List[bool]]:  # nosec B105, B107
     """
     Checks if the given user has the requested rights for the given secret
 
@@ -561,7 +626,11 @@ def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], re
         secret_ids = [secret_id]
 
     # get all secret links. Get the ones with datastores as parents first, as they are less expensive to check later
-    secret_links = Secret_Link.objects.only('parent_datastore_id', 'parent_share_id', 'secret_id').filter(secret_id__in=secret_ids).order_by('secret_id', 'parent_datastore_id')
+    secret_links = (
+        Secret_Link.objects.only("parent_datastore_id", "parent_share_id", "secret_id")
+        .filter(secret_id__in=secret_ids)
+        .order_by("secret_id", "parent_datastore_id")
+    )
 
     secret_links_dict = {}
     for link in secret_links:
@@ -579,17 +648,22 @@ def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], re
             continue
 
         for link in secret_links_dict[db_secret_id]:
-
             if link.parent_datastore_id is not None:
                 if not datastores_loaded:
                     try:
-                        datastores = set(Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all())
+                        datastores = set(
+                            Data_Store.objects.filter(user_id=user_id)
+                            .values_list("id", flat=True)
+                            .all()
+                        )
                     except Data_Store.DoesNotExist:
                         datastores = set()
                     datastores_loaded = True
 
                 if link.parent_datastore_id in datastores:
-                    user_rights[db_secret_id] = True # A user has always all permissions for secrets in his datastore
+                    user_rights[db_secret_id] = (
+                        True  # A user has always all permissions for secrets in his datastore
+                    )
                     break
 
     share_ids = []
@@ -604,7 +678,7 @@ def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], re
     share_ids = list(set(share_ids))
 
     share_rights = user_has_rights_on_share(user_id, share_ids, read, write)
-    cached_user_share_rights={}
+    cached_user_share_rights = {}
     for index, share_id in enumerate(share_ids):
         cached_user_share_rights[share_id] = share_rights[index]
 
@@ -620,7 +694,6 @@ def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], re
         if db_secret_id not in user_rights:
             user_rights[db_secret_id] = False
 
-
     sorted_user_rights = []
     for sec_id in secret_ids:
         if sec_id in user_rights:
@@ -634,13 +707,17 @@ def user_has_rights_on_secret(user_id: str, secret_id: Union[str, List[str]], re
     return sorted_user_rights[0]
 
 
-def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_id: str = "") -> Dict:
+def calculate_user_rights_on_file_repository(
+    user_id: str = "", file_repository_id: str = ""
+) -> Dict:
     grouped_shared = False
     grouped_read = False
     grouped_write = False
     grouped_grant = False
 
-    user_rights = File_Repository_Right.objects.filter(user_id=user_id, file_repository_id=file_repository_id, accepted=True).all()
+    user_rights = File_Repository_Right.objects.filter(
+        user_id=user_id, file_repository_id=file_repository_id, accepted=True
+    ).all()
 
     for user_right in user_rights:
         grouped_shared = True
@@ -648,16 +725,18 @@ def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_
         grouped_write = grouped_write or user_right.write
         grouped_grant = grouped_grant or user_right.grant
 
-
-    group_rights = File_Repository_Right.objects.raw("""SELECT gfrr.id, gfrr.read, gfrr.write, gfrr.grant
+    group_rights = File_Repository_Right.objects.raw(
+        """SELECT gfrr.id, gfrr.read, gfrr.write, gfrr.grant
         FROM restapi_group_file_repository_right gfrr
             JOIN restapi_user_group_membership ms ON ms.group_id = gfrr.group_id
         WHERE gfrr.file_repository_id = %(file_repository_id)s
             AND ms.user_id = %(user_id)s
-            AND ms.accepted = true""", {
-        'file_repository_id': file_repository_id,
-        'user_id': user_id,
-    })
+            AND ms.accepted = true""",
+        {
+            "file_repository_id": file_repository_id,
+            "user_id": user_id,
+        },
+    )
 
     for s in group_rights:
         grouped_shared = True
@@ -665,16 +744,21 @@ def calculate_user_rights_on_file_repository(user_id: str = "", file_repository_
         grouped_write = grouped_write or s.write
         grouped_grant = grouped_grant or s.grant
 
-
     return {
-        'shared': grouped_shared,
-        'read': grouped_read,
-        'write': grouped_write,
-        'grant': grouped_grant,
+        "shared": grouped_shared,
+        "read": grouped_read,
+        "write": grouped_write,
+        "grant": grouped_grant,
     }
 
 
-def user_has_rights_on_file_repository(user_id: str = "", file_repository_id: str = "", read: bool = None, write: bool = None, grant: bool = None) -> bool:
+def user_has_rights_on_file_repository(
+    user_id: str = "",
+    file_repository_id: str = "",
+    read: bool = None,
+    write: bool = None,
+    grant: bool = None,
+) -> bool:
     """
     Checks if the given user has the requested rights for the given file repository
 
@@ -688,11 +772,16 @@ def user_has_rights_on_file_repository(user_id: str = "", file_repository_id: st
 
     rights = calculate_user_rights_on_file_repository(user_id, file_repository_id)
 
-    return (read is None or read == rights['read']) \
-           and (write is None or write == rights['write']) \
-           and (grant is None or grant == rights['grant'])
+    return (
+        (read is None or read == rights["read"])
+        and (write is None or write == rights["write"])
+        and (grant is None or grant == rights["grant"])
+    )
 
-def user_has_rights_on_file(user_id: str = "", file = None, read: bool = None, write: bool = None) -> bool:
+
+def user_has_rights_on_file(
+    user_id: str = "", file=None, read: bool = None, write: bool = None
+) -> bool:
     """
     Checks if the given user has the requested rights for the given file
 
@@ -712,24 +801,33 @@ def user_has_rights_on_file(user_id: str = "", file = None, read: bool = None, w
 
     # If file is attached to a secret, delegate to secret permissions
     if file.secret_id:
-        return user_has_rights_on_secret(user_id, file.secret_id, read=read, write=write)
+        return user_has_rights_on_secret(
+            user_id, file.secret_id, read=read, write=write
+        )
 
     # Otherwise, check via File_Links (original logic for standalone files)
     datastores_loaded = False
-    datastores = [] # type: List[str]
+    datastores = []  # type: List[str]
 
     try:
         # get all file links. Get the ones with datastores as parents first, as they are less expensive to check later
-        file_links = File_Link.objects.only('parent_datastore_id', 'parent_share_id').filter(file_id=file.id).order_by('parent_datastore_id')
+        file_links = (
+            File_Link.objects.only("parent_datastore_id", "parent_share_id")
+            .filter(file_id=file.id)
+            .order_by("parent_datastore_id")
+        )
     except File_Link.DoesNotExist:
         return False
 
     for link in file_links:
-
         if link.parent_datastore_id is not None:
             if not datastores_loaded:
                 try:
-                    datastores = Data_Store.objects.filter(user_id=user_id).values_list('id', flat=True).all()
+                    datastores = (
+                        Data_Store.objects.filter(user_id=user_id)
+                        .values_list("id", flat=True)
+                        .all()
+                    )
                 except Data_Store.DoesNotExist:
                     datastores = []
                 datastores_loaded = True
@@ -737,17 +835,20 @@ def user_has_rights_on_file(user_id: str = "", file = None, read: bool = None, w
             if link.parent_datastore_id in datastores:
                 return True
 
-        elif link.parent_share_id is not None and user_has_rights_on_share(user_id, link.parent_share_id, read, write):
+        elif link.parent_share_id is not None and user_has_rights_on_share(
+            user_id, link.parent_share_id, read, write
+        ):
             return True
 
     return False
+
 
 def get_cache(model, pk):
     pk = str(pk)
     try:
         cached_entity = None
         if settings.CACHE_ENABLE:
-            cached_entity = cache.get('psono_' + model._meta.verbose_name + '_' + pk)
+            cached_entity = cache.get("psono_" + model._meta.verbose_name + "_" + pk)
 
         if cached_entity is None:
             entity = model.objects.get(pk=pk)
@@ -760,10 +861,11 @@ def get_cache(model, pk):
 
     return entity
 
+
 def set_cache(obj, timeout=None):
     pk = str(obj.pk)
     if settings.CACHE_ENABLE:
-        cache.set('psono_' + obj._meta.verbose_name + '_' + pk, obj, timeout)
+        cache.set("psono_" + obj._meta.verbose_name + "_" + pk, obj, timeout)
 
 
 def generate_authkey(username, password, u, r, p, l) -> bytes:
@@ -789,12 +891,16 @@ def generate_authkey(username, password, u, r, p, l) -> bytes:
 
     salt = hashlib.sha512(username.lower().encode()).hexdigest()
 
-    return binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
-                                        salt=salt.encode("utf-8"),
-                                        N=pow(2, u),
-                                        r=r,
-                                        p=p,
-                                        buflen=l))
+    return binascii.hexlify(
+        scrypt.hash(
+            password=password.encode("utf-8"),
+            salt=salt.encode("utf-8"),
+            N=pow(2, u),
+            r=r,
+            p=p,
+            buflen=l,
+        )
+    )
 
 
 def get_datastore(datastore_id=None, user=None):
@@ -827,6 +933,7 @@ def get_datastore(datastore_id=None, user=None):
 
     return datastore
 
+
 def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
     """
     DB wrapper to create a link between a share and a datastore or another (parent-)share and the correct creation of
@@ -847,12 +954,13 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
 
     # Prevent malicious (or by bad RNGs generated?) link ids
     # Not doing so could cause access rights problems
-    if Share_Tree.objects.filter(path__match='*.' + link_id + '.*').count() > 0:
+    if Share_Tree.objects.filter(path__match="*." + link_id + ".*").count() > 0:
         return False
 
     cursor = connection.cursor()
 
-    cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
+    cursor.execute(
+        """INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
     SELECT
       gen_random_uuid() id,
       now() create_date,
@@ -880,22 +988,23 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
       LIMIT 1
     ) one_old_parent ON t.path <@ one_old_parent.path
     LEFT JOIN restapi_share_tree new_parent
-      ON new_parent.share_id = %(parent_share_id)s""", {
-        'parent_datastore_id': parent_datastore_id,
-        'link_id': link_id,
-        'share_id': share_id,
-        'parent_share_id': parent_share_id,
-    })
+      ON new_parent.share_id = %(parent_share_id)s""",
+        {
+            "parent_datastore_id": parent_datastore_id,
+            "link_id": link_id,
+            "share_id": share_id,
+            "parent_share_id": parent_share_id,
+        },
+    )
 
     if cursor.rowcount == 0:
         if parent_datastore_id:
             Share_Tree.objects.create(
-                share_id=share_id,
-                parent_datastore_id=parent_datastore_id,
-                path=link_id
+                share_id=share_id, parent_datastore_id=parent_datastore_id, path=link_id
             )
         else:
-            cursor.execute("""INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
+            cursor.execute(
+                """INSERT INTO restapi_share_tree (id, create_date, write_date, path, share_id, parent_share_id, parent_datastore_id)
             SELECT
                 gen_random_uuid() id,
                 now() create_date,
@@ -905,14 +1014,17 @@ def create_share_link(link_id, share_id, parent_share_id, parent_datastore_id):
                 %(parent_share_id)s parent_share_id,
                 %(parent_datastore_id)s parent_datastore_id
                 FROM restapi_share_tree
-                WHERE share_id = %(parent_share_id)s""", {
-                'link_id': link_id,
-                'parent_share_id': parent_share_id,
-                'parent_datastore_id': parent_datastore_id,
-                'share_id': share_id,
-            })
+                WHERE share_id = %(parent_share_id)s""",
+                {
+                    "link_id": link_id,
+                    "parent_share_id": parent_share_id,
+                    "parent_datastore_id": parent_datastore_id,
+                    "share_id": share_id,
+                },
+            )
 
     return True
+
 
 def delete_share_link(link_id):
     """
@@ -924,8 +1036,7 @@ def delete_share_link(link_id):
 
     link_id = str(link_id).replace("-", "")
 
-    Share_Tree.objects.filter(path__match='*.'+link_id+'.*').delete()
-
+    Share_Tree.objects.filter(path__match="*." + link_id + ".*").delete()
 
 
 def encrypt_symmetric(secret_key, msg):
@@ -950,13 +1061,13 @@ def encrypt_symmetric(secret_key, msg):
     encrypted = secret_box.encrypt(msg, nonce)
 
     # cut away the nonce
-    text = encrypted[len(nonce):]
+    text = encrypted[len(nonce) :]
 
     # convert nonce and encrypted msg to hex
     nonce_hex = nacl.encoding.HexEncoder.encode(nonce)
     text_hex = nacl.encoding.HexEncoder.encode(text)
 
-    return {'text': text_hex, 'nonce': nonce_hex}
+    return {"text": text_hex, "nonce": nonce_hex}
 
 
 def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, bytes]:
@@ -984,22 +1095,32 @@ def encrypt_secret(secret, password, user_sauce, u, r, p, l) -> Tuple[bytes, byt
 
     salt = hashlib.sha512(user_sauce).hexdigest()
 
-    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
-                                                    salt=salt.encode("utf-8"),
-                                                    N=pow(2, u),
-                                                    r=r,
-                                                    p=p,
-                                                    buflen=l))).hexdigest()
+    k = hashlib.sha256(
+        binascii.hexlify(
+            scrypt.hash(
+                password=password.encode("utf-8"),
+                salt=salt.encode("utf-8"),
+                N=pow(2, u),
+                r=r,
+                p=p,
+                buflen=l,
+            )
+        )
+    ).hexdigest()
     crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
     encrypted_secret_full = crypto_box.encrypt(secret, nonce)
-    encrypted_secret = encrypted_secret_full[len(nonce):]
+    encrypted_secret = encrypted_secret_full[len(nonce) :]
 
-    return nacl.encoding.HexEncoder.encode(encrypted_secret), nacl.encoding.HexEncoder.encode(nonce)
+    return nacl.encoding.HexEncoder.encode(
+        encrypted_secret
+    ), nacl.encoding.HexEncoder.encode(nonce)
 
 
-def decrypt_secret(encrypted_secret_hex, encrypted_secret_hex_nonce, password, user_sauce, u, r, p, l) -> bytes:
+def decrypt_secret(
+    encrypted_secret_hex, encrypted_secret_hex_nonce, password, user_sauce, u, r, p, l
+) -> bytes:
     """
     Decrypts a secret with a password and a random static user specific key we call "user_sauce"
 
@@ -1026,15 +1147,23 @@ def decrypt_secret(encrypted_secret_hex, encrypted_secret_hex_nonce, password, u
 
     salt = hashlib.sha512(user_sauce).hexdigest()
 
-    k = hashlib.sha256(binascii.hexlify(scrypt.hash(password=password.encode("utf-8"),
-                                                    salt=salt.encode("utf-8"),
-                                                    N=pow(2, u),
-                                                    r=r,
-                                                    p=p,
-                                                    buflen=l))).hexdigest()
+    k = hashlib.sha256(
+        binascii.hexlify(
+            scrypt.hash(
+                password=password.encode("utf-8"),
+                salt=salt.encode("utf-8"),
+                N=pow(2, u),
+                r=r,
+                p=p,
+                buflen=l,
+            )
+        )
+    ).hexdigest()
     crypto_box = nacl.secret.SecretBox(k, encoder=nacl.encoding.HexEncoder)
 
-    decrypted_secret = crypto_box.decrypt(encrypted_secret_hex, encrypted_secret_hex_nonce)
+    decrypted_secret = crypto_box.decrypt(
+        encrypted_secret_hex, encrypted_secret_hex_nonce
+    )
 
     return decrypted_secret
 
@@ -1051,9 +1180,7 @@ def delete_user(username: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
     delete_avatar_storage_of_user(user.id)
 
@@ -1061,24 +1188,22 @@ def delete_user(username: str) -> dict:
 
     return {}
 
+
 def promote_user(username: str, role: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
-    if role == 'superuser':
+    if role == "superuser":
         user.is_superuser = True
         user.is_staff = True
         user.save()
     else:
-        return {
-            'error': 'Role does not exist'
-        }
+        return {"error": "Role does not exist"}
 
     return {}
+
 
 def reset_2fa(username: str) -> dict:
     """
@@ -1093,9 +1218,7 @@ def reset_2fa(username: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
     user.duo_enabled = False
     user.google_authenticator_enabled = False
@@ -1111,63 +1234,58 @@ def reset_2fa(username: str) -> dict:
 
     return {}
 
+
 def demmote_user(username: str, role: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
-    if role == 'superuser':
+    if role == "superuser":
         user.is_superuser = False
         user.is_staff = False
         user.save()
     else:
-        return {
-            'error': 'Role does not exist'
-        }
+        return {"error": "Role does not exist"}
 
     return {}
+
 
 def enable_user(username: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
     user.is_active = True
     user.save()
 
     return {}
 
+
 def disable_user(username: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
     user.is_active = False
     user.save()
 
     return {}
 
+
 def verify_user_email(username: str) -> dict:
     try:
         user = User.objects.get(username=username.lower())
     except User.DoesNotExist:
-        return {
-            'error': 'User does not exist'
-        }
+        return {"error": "User does not exist"}
 
     user.is_email_active = True
     user.save()
 
     return {}
+
 
 def encrypt_with_db_secret(plain_text: str) -> str:
     """
@@ -1180,10 +1298,12 @@ def encrypt_with_db_secret(plain_text: str) -> str:
     """
     secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_data = crypto_box.encrypt(plain_text.encode(),
-                                         nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    encrypted_data = crypto_box.encrypt(
+        plain_text.encode(), nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+    )
 
     return nacl.encoding.HexEncoder.encode(encrypted_data).decode()
+
 
 def decrypt_with_db_secret(encrypted_text: str) -> str:
     """
@@ -1228,7 +1348,12 @@ def is_allowed_url(url: str, url_filter: list) -> bool:
             # prevents https://good.corp being whitelisted and an attacker using https://good.corp.evil.org
             continue
 
-        if parsed_pattern.path and (not parsed_url.path or os.path.abspath(parsed_pattern.path).startswith(os.path.abspath(parsed_url.path))):
+        if parsed_pattern.path and (
+            not parsed_url.path
+            or os.path.abspath(parsed_pattern.path).startswith(
+                os.path.abspath(parsed_url.path)
+            )
+        ):
             # prevents path traversals with https://good.corp/allowed being whitelisted and an attacker using something like "https://good.corp/allowed/../protected"
             continue
 
@@ -1261,19 +1386,24 @@ def is_allowed_other_s3_endpoint_url(url: str) -> bool:
     return is_allowed_url(url, settings.ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX)
 
 
-def create_user(username, password, email, gen_authkey=True, display_name='', language='en'):
+def create_user(
+    username, password, email, gen_authkey=True, display_name="", language="en"
+):
 
     username = username.strip().lower()
     email = email.strip().lower().encode()
 
-    email_bcrypt = bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT.encode()).decode().replace(
-        settings.EMAIL_SECRET_SALT, '', 1)
+    email_bcrypt = (
+        bcrypt.hashpw(email, settings.EMAIL_SECRET_SALT.encode())
+        .decode()
+        .replace(settings.EMAIL_SECRET_SALT, "", 1)
+    )
 
     if User.objects.filter(email_bcrypt=email_bcrypt).exists():
-        return { 'error': 'USER_WITH_EMAIL_ALREADY_EXISTS' }
+        return {"error": "USER_WITH_EMAIL_ALREADY_EXISTS"}
 
     if User.objects.filter(username=username).exists():
-        return { 'error': 'USER_WITH_USERNAME_ALREADY_EXISTS' }
+        return {"error": "USER_WITH_USERNAME_ALREADY_EXISTS"}
 
     user_sauce = binascii.hexlify(os.urandom(32))
 
@@ -1281,7 +1411,14 @@ def create_user(username, password, email, gen_authkey=True, display_name='', la
 
     authkey_hashed = None
     if gen_authkey:
-        authkey = generate_authkey(username, password, u=hashing_params['u'], r=hashing_params['r'], p=hashing_params['p'], l=hashing_params['l']).decode()
+        authkey = generate_authkey(
+            username,
+            password,
+            u=hashing_params["u"],
+            r=hashing_params["r"],
+            p=hashing_params["p"],
+            l=hashing_params["l"],
+        ).decode()
         authkey_hashed = make_password(authkey)
 
     box = PrivateKey.generate()
@@ -1291,10 +1428,10 @@ def create_user(username, password, email, gen_authkey=True, display_name='', la
         private_key_decrypted,
         password,
         user_sauce,
-        u=hashing_params['u'],
-        r=hashing_params['r'],
-        p=hashing_params['p'],
-        l=hashing_params['l'],
+        u=hashing_params["u"],
+        r=hashing_params["r"],
+        p=hashing_params["p"],
+        l=hashing_params["l"],
     )
 
     secret_key_decrypted = binascii.hexlify(os.urandom(32))
@@ -1302,16 +1439,18 @@ def create_user(username, password, email, gen_authkey=True, display_name='', la
         secret_key_decrypted,
         password,
         user_sauce,
-        u=hashing_params['u'],
-        r=hashing_params['r'],
-        p=hashing_params['p'],
-        l=hashing_params['l'],
+        u=hashing_params["u"],
+        r=hashing_params["r"],
+        p=hashing_params["p"],
+        l=hashing_params["l"],
     )
 
     # normally encrypt emails, so they are not stored in plaintext with a random nonce
     db_secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(db_secret_key, encoder=nacl.encoding.HexEncoder)
-    encrypted_email = crypto_box.encrypt(email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE))
+    encrypted_email = crypto_box.encrypt(
+        email, nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+    )
     email = nacl.encoding.HexEncoder.encode(encrypted_email)
 
     user = User.objects.create(
@@ -1333,10 +1472,11 @@ def create_user(username, password, email, gen_authkey=True, display_name='', la
     )
 
     return {
-        'user': user,
-        'private_key_decrypted': private_key_decrypted,
-        'secret_key_decrypted': secret_key_decrypted,
+        "user": user,
+        "private_key_decrypted": private_key_decrypted,
+        "secret_key_decrypted": secret_key_decrypted,
     }
+
 
 def filter_as_json(data, filter):
     """
@@ -1353,7 +1493,7 @@ def filter_as_json(data, filter):
     try:
         decrypted_data = json.loads(data)
     except TypeError:
-        return ''
+        return ""
 
     for f in filter:
         try:
@@ -1368,13 +1508,14 @@ def filter_as_json(data, filter):
             # Key is not present
             pass
 
-        decrypted_data = ''
+        decrypted_data = ""
         break
 
     if isinstance(decrypted_data, str):
         return decrypted_data
     else:
         return json.dumps(decrypted_data)
+
 
 def get_ip(request):
     """
@@ -1383,23 +1524,28 @@ def get_ip(request):
     :param request:
     :return:
     """
-    if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None):
+    if settings.TRUSTED_IP_HEADER_OVERWRITE and request.META.get(
+        settings.TRUSTED_IP_HEADER_OVERWRITE, None
+    ):
         return request.META.get(settings.TRUSTED_IP_HEADER_OVERWRITE, None)
-    elif settings.TRUSTED_IP_HEADER and request.META.get(settings.TRUSTED_IP_HEADER, None):
+    elif settings.TRUSTED_IP_HEADER and request.META.get(
+        settings.TRUSTED_IP_HEADER, None
+    ):
         return request.META.get(settings.TRUSTED_IP_HEADER, None)
     else:
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        remote_addr = request.META.get('REMOTE_ADDR')
+        xff = request.META.get("HTTP_X_FORWARDED_FOR")
+        remote_addr = request.META.get("REMOTE_ADDR")
         num_proxies = settings.NUM_PROXIES
 
         if num_proxies is not None:
             if num_proxies == 0 or xff is None:
                 return remote_addr
-            addrs = xff.split(',')
+            addrs = xff.split(",")
             client_addr = addrs[-min(num_proxies, len(addrs))]
             return client_addr.strip()
 
         return remote_addr
+
 
 def get_country(request):
     if settings.TRUSTED_COUNTRY_HEADER:
@@ -1408,6 +1554,7 @@ def get_country(request):
             header_country = countries.alpha2(header_country) or None
         return header_country
     return None
+
 
 def in_networks(ip_address, networks):
     """
@@ -1429,6 +1576,7 @@ def in_networks(ip_address, networks):
 
     return False
 
+
 def get_uuid_start_and_end(count, position):
     """
     Divides 128 bit into count amount of chunks and returns the borders for the given position (smallest and biggest
@@ -1441,10 +1589,10 @@ def get_uuid_start_and_end(count, position):
     :return:
     :rtype:
     """
-    max = int('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',16)
+    max = int("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16)
 
     start = UUID(int=int(position * float(max) / count))
-    end = UUID(int=int((position + 1) * float(max) / count)-1)
+    end = UUID(int=int((position + 1) * float(max) / count) - 1)
 
     return start, end
 
