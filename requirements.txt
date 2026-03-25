@@ -43,7 +43,7 @@ botocore==1.34.162
     # via
     #   boto3
     #   s3transfer
-cbor2==5.8.0
+cbor2==5.9.0
     # via
     #   autobahn
     #   webauthn
