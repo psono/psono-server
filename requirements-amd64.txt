@@ -42,7 +42,7 @@ opentelemetry-instrumentation-logging==0.60b1
     # via -r requirements-amd64.in
 opentelemetry-instrumentation-redis==0.60b1
     # via -r requirements-amd64.in
-opentelemetry-instrumentation-requests==2.33.0
+opentelemetry-instrumentation-requests==0.60b1
     # via -r requirements-amd64.in
 opentelemetry-instrumentation-wsgi==0.60b1
     # via
