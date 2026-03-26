@@ -218,7 +218,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.33.0
     # via
     #   -r requirements.in
     #   apache-libcloud
