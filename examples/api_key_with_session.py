@@ -19,7 +19,7 @@ server_url = "https://browserplugins.chickahoona.com/server"
 server_public_key = "02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b"
 server_signature = "4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1"
 
-SSL_VERIFY = False
+SSL_VERIFY = True
 
 
 def get_device_description():

@@ -15,6 +15,7 @@ from typing import Set
 from typing import Dict
 
 import os
+import posixpath
 import bcrypt
 import time
 from uuid import UUID
@@ -1348,14 +1349,22 @@ def is_allowed_url(url: str, url_filter: list) -> bool:
             # prevents https://good.corp being whitelisted and an attacker using https://good.corp.evil.org
             continue
 
-        if parsed_pattern.path and (
-            not parsed_url.path
-            or os.path.abspath(parsed_pattern.path).startswith(
-                os.path.abspath(parsed_url.path)
-            )
-        ):
-            # prevents path traversals with https://good.corp/allowed being whitelisted and an attacker using something like "https://good.corp/allowed/../protected"
-            continue
+        if parsed_pattern.path:
+            pattern_path = posixpath.normpath(parsed_pattern.path)
+            url_path = posixpath.normpath(parsed_url.path or "/")
+
+            if not pattern_path.startswith("/"):
+                pattern_path = "/" + pattern_path
+
+            if not url_path.startswith("/"):
+                url_path = "/" + url_path
+
+            if url_path != pattern_path and not url_path.startswith(
+                pattern_path.rstrip("/") + "/"
+            ):
+                # prevents path traversals with https://good.corp/allowed being whitelisted and an attacker using something like "https://good.corp/allowed/../protected"
+                # and path appending attacks like https://good.corp/allowed-evil-escape
+                continue
 
         return True
 
