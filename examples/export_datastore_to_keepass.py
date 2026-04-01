@@ -11,13 +11,20 @@ import nacl.utils
 from nacl.public import PrivateKey, PublicKey, Box
 import binascii
 import socket
+from pykeepass import PyKeePass, create_database
+import pprint
 
-api_key_id = "1794337d-de80-4aa0-8509-7070448221e6"
-api_key_private_key = "5c315e95703afd125d59bd26e5d7013683707a7671957b997b6cf11bb5670999"
-api_key_secret_key = "06f97520b4462565713851435c297ae8f70ee87fa6a8a4072bad87ccdb6d8d89"
-server_url = "https://psonoclient.chickahoona.com/server"
-server_public_key = "02da2ad857321d701d754a7e60d0a147cdbc400ff4465e1f57bc2d9fbfeddf0b"
-server_signature = "4ce9e761e1d458fe18af577c50eb8249a0de535c9bd6b7a97885c331b46dcbd1"
+keepass_database_path = "/path/to/export.kdbx"
+keepass_database_password = "save_and_secure_password"
+
+api_key_id = ""
+api_key_private_key = ""
+api_key_secret_key = ""
+server_url = "https://psono-server/server"
+server_public_key = ""
+server_signature = ""
+fileserver_url = "https://psono-server/fileserver"
+fileserver_shard_id = ""
 
 SSL_VERIFY = True
 
@@ -139,11 +146,13 @@ def decrypt_symmetric(text_hex, nonce_hex, secret):
     """
 
     text = nacl.encoding.HexEncoder.decode(text_hex)
-    nonce = nacl.encoding.HexEncoder.decode(nonce_hex)
-
     secret_box = nacl.secret.SecretBox(secret, encoder=nacl.encoding.HexEncoder)
 
-    return secret_box.decrypt(text, nonce)
+    if nonce_hex is not None:
+        nonce = nacl.encoding.HexEncoder.decode(nonce_hex)
+        return secret_box.decrypt(text, nonce)
+
+    return secret_box.decrypt(text)
 
 
 def encrypt_symmetric(msg, secret):
@@ -504,7 +513,221 @@ def filter_datastore_export(folder, include_trash_bin_items=False):
     return folder
 
 
+def escape_for_xpath(string=""):
+    return string.replace(r'"', r"'")
+
+
+def create_keepass_database(
+    keepass, datastore_content, base_group, token, session_secret_key
+):
+    for folder in datastore_content.get("folders", []):
+        current_group = create_keepass_database_group(
+            keepass, folder.get("name", "Unnamed Entry"), base_group
+        )
+        create_keepass_database(
+            keepass, folder, current_group, token, session_secret_key
+        )
+    for item in datastore_content.get("items", []):
+        create_keepass_database_entry(
+            keepass, item, base_group, token, session_secret_key
+        )
+
+
+def create_keepass_database_group(keepass, folder_name, base_group):
+    return keepass.add_group(base_group, escape_for_xpath(folder_name))
+
+
+def create_keepass_database_entry(keepass, item, base_group, token, session_secret_key):
+    if item.get("type", "") == "website_password":
+        entry = keepass.add_entry(
+            base_group,
+            escape_for_xpath(item.get("name", "Unnamed Entry") or "Unnamed Entry"),
+            item.get("website_password_username", "") or "",
+            item.get("website_password_password", "") or "",
+            item.get("website_password_url", "") or "",
+            item.get("website_password_notes", "") or "",
+            None,
+            None,
+            None,
+            None,
+            True,
+        )
+
+        for attachment in item.get("attachments", []):
+            file_name = (
+                attachment.get("filename", "unnamed_binary.bin") or "unnamed_binary.bin"
+            )
+            downloaded_file = download_file(attachment, token, session_secret_key)
+            binary_id = keepass.add_binary(downloaded_file)
+            entry.add_attachment(binary_id, file_name)
+
+        return entry
+
+    if item.get("type", "") == "application_password":
+        entry = keepass.add_entry(
+            base_group,
+            escape_for_xpath(item.get("name", "Unnamed Entry") or "Unnamed Entry"),
+            item.get("application_password_username", "") or "",
+            item.get("application_password_password", "") or "",
+            "",
+            item.get("application_password_notes", "") or "",
+            None,
+            None,
+            None,
+            None,
+            True,
+        )
+
+        for attachment in item.get("attachments", []):
+            file_name = (
+                attachment.get("filename", "unnamed_binary.bin") or "unnamed_binary.bin"
+            )
+            downloaded_file = download_file(attachment, token, session_secret_key)
+            binary_id = keepass.add_binary(downloaded_file)
+            entry.add_attachment(binary_id, file_name)
+
+        return entry
+
+    if item.get("type", "") == "file":
+        entry = keepass.add_entry(
+            base_group,
+            escape_for_xpath(item.get("name", "Unnamed Entry") or "Unnamed Entry"),
+            "",
+            "",
+            "",
+            "",
+            None,
+            None,
+            None,
+            None,
+            True,
+        )
+
+        file_name = item.get("filename", "unnamed_binary.bin") or "unnamed_binary.bin"
+        downloaded_file = download_file(item, token, session_secret_key)
+        binary_id = keepass.add_binary(downloaded_file)
+        entry.add_attachment(binary_id, file_name)
+
+        return entry
+
+    if item.get("type", "") == "elster_certificate":
+        entry = keepass.add_entry(
+            base_group,
+            escape_for_xpath(item.get("name", "Unnamed Entry") or "Unnamed Entry"),
+            "",
+            item.get("elster_certificate_password", "") or "",
+            "",
+            "",
+            None,
+            None,
+            None,
+            None,
+            True,
+        )
+
+        file_name = (
+            item.get("name", "unnamed_certificate") or "unnamed_binary.bin"
+        ) + ".pfx"
+        binary_id = keepass.add_binary(
+            nacl.encoding.HexEncoder.decode(
+                item.get("elster_certificate_file_content", "")
+            )
+        )
+        entry.add_attachment(binary_id, file_name)
+
+        return entry
+
+    return
+
+
+def write_keepass_database(
+    datastore_content, file_path, password, token, session_secret_key
+):
+    keepass = create_database(file_path, password, keyfile=None, transformed_key=None)
+    create_keepass_database(
+        keepass, datastore_content, keepass.root_group, token, session_secret_key
+    )
+    return keepass.save()
+
+
+def api_read_file_transfer_ids(token, session_secret_key, file_id):
+    """
+    Reads the content of a specific share
+
+    :param token:
+    :type token:
+    :param session_secret_key:
+    :type session_secret_key:
+    :param file_id:
+    :type file_id:
+    :return:
+    :rtype:
+    """
+
+    method = "GET"
+    endpoint = "/file/" + file_id + "/"
+
+    return api_request(
+        method, endpoint, token=token, session_secret_key=session_secret_key
+    )
+
+
+def api_download_file(data=None):
+    headers = {"content-type": "application/json"}
+    return requests.request(
+        "POST",
+        fileserver_url + "/download/",
+        data=json.dumps(data),
+        headers=headers,
+        verify=SSL_VERIFY,
+        stream=True,
+    ).content
+
+
+def download_file(file_data, token, session_secret_key):
+
+    file_transfer_ids = {}
+
+    try:
+        file_transfer_ids = api_read_file_transfer_ids(
+            token, session_secret_key, file_data.get("file_id", "")
+        )
+    except:
+        pprint.pprint(file_data)
+        return
+
+    print("download file: " + file_data.get("name", file_data.get("file_id", "")))
+
+    if len(file_data.get("file_chunks", [])) > 35:
+        print("skipped due to size limit")
+        return None
+
+    downloaded_chunks = b""
+
+    for file_chunk in file_data.get("file_chunks", []):
+        ticket_decrypted = {"hash_checksum": file_chunk.get("hash", "")}
+        ticket_encrypted = encrypt_symmetric(
+            json.dumps(ticket_decrypted),
+            file_transfer_ids.get("file_transfer_secret_key", ""),
+        )
+
+        request_data = {
+            "file_transfer_id": file_transfer_ids.get("file_transfer_id", ""),
+            "ticket": ticket_encrypted.get("text", ""),
+            "ticket_nonce": ticket_encrypted.get("nonce", ""),
+        }
+
+        downloaded_chunks += decrypt_symmetric(
+            api_download_file(request_data).hex(),
+            None,
+            file_data.get("file_secret_key", ""),
+        )
+
+    return downloaded_chunks
+
+
 def main():
+
     # 1. Generate the login info including the private key for PFS
     session_private_key, client_login_info = generate_client_login_info()
 
@@ -583,12 +806,17 @@ def main():
     # 9. Filter the datastore content to remove unnecessary data
     datastore_content = filter_datastore_export(datastore_content)
 
-    # 10. Logout
-    api_logout(token, session_secret_key)
+    # 10. Write Keepass Database
+    write_keepass_database(
+        datastore_content,
+        keepass_database_path,
+        keepass_database_password,
+        token,
+        session_secret_key,
+    )
 
-    # 11. Write export.json
-    with open("export.json", "w") as outfile:
-        json.dump(datastore_content, outfile)
+    # 11. Logout
+    api_logout(token, session_secret_key)
 
 
 if __name__ == "__main__":
