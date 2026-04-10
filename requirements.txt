@@ -60,7 +60,7 @@ charset-normalizer==3.4.4
     # via requests
 constantly==23.10.4
     # via twisted
-cryptography==46.0.6
+cryptography==46.0.7
     # via
     #   autobahn
     #   azure-storage-blob
@@ -73,7 +73,7 @@ daphne==4.1.2
     # via -r requirements.in
 dj-database-url==2.1.0
     # via -r requirements.in
-django==5.2.12
+django==5.2.13
     # via
     #   -r requirements.in
     #   dj-database-url
