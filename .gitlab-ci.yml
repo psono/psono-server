@@ -300,7 +300,10 @@ build-sbom:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker pull $CONTAINER_TEST_IMAGE
-    - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+#    - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+    - curl -fSL "https://dev.psono.com/anchore/syft/syft_1.43.0_linux_amd64.tar.gz" -o syft.tar.gz
+    - echo "7b98251d2d08926bb5d4639b56b1f0996a58ef6667c5830e3fe3cd3ad5f4214a syft.tar.gz" | sha256sum -c -
+    - tar -xzf syft.tar.gz syft && install -m 0755 syft /usr/local/bin/syft && rm -f syft syft.tar.gz
     - syft scan $CONTAINER_TEST_IMAGE -o cyclonedx-json > sbom.json
     - mv ./sbom.json ../
     - rm -Rf *
