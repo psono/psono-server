@@ -1,7 +1,5 @@
 variables:
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  CONTAINER_TEST_ARTIFACTORY_IMAGE: psono-docker.jfrog.io/psono/psono-server:$CI_COMMIT_REF_SLUG
-  CONTAINER_LATEST_IMAGE: psono-docker.jfrog.io/psono/psono-server:latest
 
 stages:
   - translate
@@ -14,7 +12,7 @@ upload-translations:
   except:
     - schedules
   stage: translate
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   services:
     - name: docker:25-dind
       alias: docker
@@ -43,7 +41,7 @@ create-translations:
   except:
     - schedules
   stage: translate
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   script:
     - apt-get update && apt-get install -y python3 python3-pip
     - pip3 install requests openai==1.55.3
@@ -55,7 +53,7 @@ build-container-alpine:
   except:
     - schedules
   stage: build
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   services:
     - name: docker:25-dind
       alias: docker
@@ -89,7 +87,7 @@ run-unittests-ubuntu:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   services:
     - name: docker:25-dind
       alias: docker
@@ -118,7 +116,7 @@ run-unittests-alpine:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   services:
     - name: docker:25-dind
       alias: docker
@@ -149,7 +147,7 @@ run-unittests-alpine-arm64:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   tags:
     - saas-linux-small-arm64
   services:
@@ -192,7 +190,7 @@ scan-docker-image-trivy:
   stage: test
   except:
     - schedules
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   services:
     - name: docker:25-dind
       alias: docker
@@ -230,7 +228,7 @@ run-vulnerability-scan:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   services:
     - name: docker:25-dind
       alias: docker
@@ -256,7 +254,7 @@ run-vulnerability-scan:
 #  except:
 #    - schedules
 #  stage: deploy
-#  image: psono-docker.jfrog.io/docker:25.0.3-git
+#  image: docker:25.0.3-git
 #  services:
 #    - name: docker:25-dind
 #      alias: docker
@@ -268,7 +266,6 @@ run-vulnerability-scan:
 #  script:
 #    - docker info
 #    - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-#    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
 #    - docker pull $CONTAINER_TEST_IMAGE
 #    - docker tag $CONTAINER_TEST_IMAGE psono/security-scans:psono-server-ce-$CI_COMMIT_REF_SLUG
 #    - docker push psono/security-scans:psono-server-ce-$CI_COMMIT_REF_SLUG
@@ -279,7 +276,7 @@ build-sbom:
   except:
     - schedules
   stage: test
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   services:
     - name: docker:25-dind
       alias: docker
@@ -318,35 +315,11 @@ build-sbom:
     - /^v[0-9]*\.[0-9]*\.[0-9]*$/
 
 
-release-container:
-  except:
-    - schedules
-  stage: release
-  image: psono-docker.jfrog.io/docker:25.0.3-git
-  services:
-    - name: docker:25-dind
-      alias: docker
-      command: ["--tls=false"]
-  variables:
-    DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - apk add skopeo
-    - docker info
-    - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
-    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
-    - skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://$CONTAINER_LATEST_IMAGE
-    - skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://$CONTAINER_TEST_ARTIFACTORY_IMAGE
-  only:
-    - /^v[0-9]*\.[0-9]*\.[0-9]*$/
-
 release-version-bump:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   script:
     - mkdir -p /root/.ssh
     - echo "$github_deploy_key" > /root/.ssh/id_rsa
@@ -370,7 +343,7 @@ deploy:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/docker:25.0.3-git
+  image: docker:25.0.3-git
   services:
     - name: docker:25-dind
       alias: docker
@@ -382,7 +355,6 @@ deploy:
   script:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
-    - echo $artifactory_credentials | docker login --username=gitlab --password-stdin psono-docker.jfrog.io
     - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - sh ./var/deploy.sh
   environment:
@@ -396,7 +368,7 @@ deploy-changelog:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   script:
     - sh ./var/deploy_changelog.sh
   environment:
@@ -410,7 +382,7 @@ deploy-nightlyartifacts:
   except:
     - schedules
   stage: release
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   dependencies:
     - build-sbom
   script:
@@ -426,7 +398,7 @@ deploy-releaseartifacts:
   except:
     - schedules
   stage: deploy
-  image: psono-docker.jfrog.io/ubuntu:22.04
+  image: ubuntu:22.04
   dependencies:
     - build-sbom
   script:

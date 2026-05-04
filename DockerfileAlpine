@@ -1,5 +1,5 @@
 # PSONO Dockerfile for Alpine
-FROM psono-docker.jfrog.io/python:3.14.2-alpine3.23
+FROM python:3.14.2-alpine3.23
 
 LABEL maintainer="Sascha Pfeiffer <sascha.pfeiffer@psono.com>"
 COPY psono/static/email /var/www/html/static/email
@@ -12,9 +12,6 @@ WORKDIR /root
 ARG TARGETARCH
 
 RUN apk upgrade && \
-    mkdir -p /root/.pip && \
-    echo '[global]' >> /root/.pip/pip.conf && \
-    echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apk add \
         gettext \
         ca-certificates \

@@ -3,10 +3,10 @@ apk upgrade --no-cache
 apk add --update curl skopeo
 
 # Deploy to Docker Hub
-skopeo copy --all docker://psono-docker.jfrog.io/psono/psono-server:latest docker://docker.io/psono/psono-server:latest
+skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://docker.io/psono/psono-server:latest
 
 export docker_version_tag=$(echo $CI_COMMIT_TAG | awk  '{ string=substr($0, 2, 100); print string; }' )
-skopeo copy --all docker://psono-docker.jfrog.io/psono/psono-server:latest docker://docker.io/psono/psono-server:$docker_version_tag
+skopeo copy --all docker://$CONTAINER_TEST_IMAGE docker://docker.io/psono/psono-server:$docker_version_tag
 
 # Deploy to GitHub
 echo "Cloning gitlab.com/psono/psono-server.git"
