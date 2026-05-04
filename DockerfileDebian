@@ -8,7 +8,6 @@ WORKDIR /root
 RUN mkdir -p /root/.pip && \
     echo '[global]' >> /root/.pip/pip.conf && \
     echo 'break-system-packages = true' >> /root/.pip/pip.conf && \
-    echo 'index-url = https://psono.jfrog.io/psono/api/pypi/pypi/simple' >> /root/.pip/pip.conf && \
     apt-get update && \
     apt-get install -y \
         build-essential \
