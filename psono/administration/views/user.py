@@ -306,6 +306,7 @@ class UserView(GenericAPIView):
                 "create_date",
                 "last_login",
                 "username",
+                "is_superuser",
                 "is_active",
                 "is_email_active",
                 "duo_enabled",
@@ -334,12 +335,19 @@ class UserView(GenericAPIView):
             user_ids = []
             for u in user_qs:
                 user_ids.append(u.id)
+
+                roles = []
+                if u.is_superuser:
+                    roles.append("superuser")
+                else:
+                    roles.append("user")
                 users.append(
                     {
                         "id": u.id,
                         "create_date": u.create_date,
                         "last_login": u.last_login,
                         "username": u.username,
+                        "roles": roles,
                         "is_active": u.is_active,
                         "is_email_active": u.is_email_active,
                         "duo_enabled": u.duo_enabled,
