@@ -73,7 +73,7 @@ daphne==4.1.2
     # via -r requirements.in
 dj-database-url==2.1.0
     # via -r requirements.in
-django==5.2.13
+django==5.2.14
     # via
     #   -r requirements.in
     #   dj-database-url
@@ -144,6 +144,8 @@ incremental==24.11.0
     # via twisted
 inflection==0.5.1
     # via drf-spectacular
+invoke==3.0.3
+    # via paramiko
 isodate==0.7.2
     # via azure-storage-blob
 jmespath==1.1.0
@@ -162,7 +164,7 @@ ntplib==0.3.4
     # via -r requirements.in
 packaging==26.0
     # via incremental
-paramiko==3.4.0
+paramiko==5.0.0
     # via
     #   -r requirements.in
     #   django-storages
@@ -247,8 +249,10 @@ sqlparse==0.5.5
     # via django
 toml==0.10.2
     # via -r requirements.in
-twisted[tls]==25.5.0
-    # via daphne
+twisted[tls]==26.4.0rc2
+    # via
+    #   -r requirements.in
+    #   daphne
 txaio==25.12.2
     # via autobahn
 typing-extensions==4.15.0
