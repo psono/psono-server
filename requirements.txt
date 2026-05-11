@@ -144,6 +144,8 @@ incremental==24.11.0
     # via twisted
 inflection==0.5.1
     # via drf-spectacular
+invoke==3.0.3
+    # via paramiko
 isodate==0.7.2
     # via azure-storage-blob
 jmespath==1.1.0
@@ -162,7 +164,7 @@ ntplib==0.3.4
     # via -r requirements.in
 packaging==26.0
     # via incremental
-paramiko==3.4.0
+paramiko==5.0.0
     # via
     #   -r requirements.in
     #   django-storages
