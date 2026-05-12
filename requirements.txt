@@ -249,10 +249,8 @@ sqlparse==0.5.5
     # via django
 toml==0.10.2
     # via -r requirements.in
-twisted[tls]==26.4.0rc2
-    # via
-    #   -r requirements.in
-    #   daphne
+twisted[tls]==26.4.0
+    # via daphne
 txaio==25.12.2
     # via autobahn
 typing-extensions==4.15.0
