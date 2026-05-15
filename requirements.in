@@ -33,4 +33,3 @@ tzdata==2026.2
 django-timezone-field==7.1.0
 django-countries==8.2.0
 drf-spectacular==0.28.0
-twisted[tls]==26.4.0rc2
