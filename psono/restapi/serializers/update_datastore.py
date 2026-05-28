@@ -12,6 +12,7 @@ class UpdateDatastoreSerializer(serializers.Serializer):
     secret_key_nonce = serializers.CharField(required=False, max_length=64)
     description = serializers.CharField(max_length=64, required=False)
     is_default = BooleanField(required=False)
+    old_write_date = serializers.DateTimeField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -20,6 +21,11 @@ class UpdateDatastoreSerializer(serializers.Serializer):
         datastore = get_datastore(datastore_id, self.context["request"].user)
         if not datastore:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
+        old_write_date = attrs.get("old_write_date")
+        if old_write_date is not None and old_write_date != datastore.write_date:
+            msg = "WRITE_DATE_MISMATCH"
             raise exceptions.ValidationError(msg)
 
         attrs["datastore"] = datastore

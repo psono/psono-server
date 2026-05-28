@@ -148,7 +148,13 @@ class DatastoreView(GenericAPIView):
                 pk=datastore.pk
             ).update(is_default=False)
 
-        return Response({"success": "Data updated."}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "success": "Data updated.",
+                "write_date": datastore.write_date.isoformat(),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, request, *args, **kwargs):
         """

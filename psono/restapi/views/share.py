@@ -162,7 +162,10 @@ class ShareView(GenericAPIView):
 
         share.save()
 
-        return Response({"success": "Data updated."}, status=status.HTTP_200_OK)
+        return Response(
+            {"success": "Data updated.", "write_date": share.write_date.isoformat()},
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         """

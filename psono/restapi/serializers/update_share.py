@@ -9,6 +9,7 @@ class UpdateShareSerializer(serializers.Serializer):
     share_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
+    old_write_date = serializers.DateTimeField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -25,6 +26,11 @@ class UpdateShareSerializer(serializers.Serializer):
             self.context["request"].user.id, share_id, write=True
         ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
+        old_write_date = attrs.get("old_write_date")
+        if old_write_date is not None and old_write_date != share.write_date:
+            msg = "WRITE_DATE_MISMATCH"
             raise exceptions.ValidationError(msg)
 
         attrs["share"] = share

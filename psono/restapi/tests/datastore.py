@@ -732,6 +732,50 @@ class UpdateDatastoreTests(APITestCaseExtended):
         response = self.client.post(url, updated_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_update_datastore_with_stale_old_write_date(self):
+        """
+        Tests that stale datastore updates are rejected if old_write_date is provided.
+        """
+
+        datastore = models.Data_Store.objects.create(
+            type="my-sexy-type",
+            description="my-sexy-description",
+            data=b"12345",
+            data_nonce="a" * 64,
+            secret_key="b" * 256,
+            secret_key_nonce="c" * 64,
+            user=self.test_user_obj,
+        )
+        old_write_date = datastore.write_date.isoformat()
+        url = reverse("datastore")
+
+        updated_data = {
+            "datastore_id": str(datastore.id),
+            "data": "123456",
+            "data_nonce": "d" * 64,
+            "old_write_date": old_write_date,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data.get("write_date", False), False)
+
+        stale_update_data = {
+            "datastore_id": str(datastore.id),
+            "data": "stale-data",
+            "data_nonce": "e" * 64,
+            "old_write_date": old_write_date,
+        }
+
+        response = self.client.post(url, stale_update_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        datastore.refresh_from_db()
+        self.assertEqual(datastore.data.decode(), updated_data["data"])
+
     def test_change_datastore_type_or_description(self):
         """
         Tests to update the datastore with a type or description which should not work, because its not allwed to change
