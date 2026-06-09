@@ -976,6 +976,41 @@ class UpdateShareTests(APITestCaseExtended):
 
         self.assertEqual(response.data, target_store)
 
+    def test_update_share_with_stale_old_write_date(self):
+        """
+        Tests that stale share updates are rejected if old_write_date is provided.
+        """
+
+        old_write_date = self.test_share1_obj.write_date.isoformat()
+        url = reverse("share")
+
+        updated_data = {
+            "share_id": str(self.test_share1_obj.id),
+            "data": "123456",
+            "data_nonce": "d" * 64,
+            "old_write_date": old_write_date,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data.get("write_date", False), False)
+
+        stale_update_data = {
+            "share_id": str(self.test_share1_obj.id),
+            "data": "stale-data",
+            "data_nonce": "e" * 64,
+            "old_write_date": old_write_date,
+        }
+
+        response = self.client.put(url, stale_update_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.test_share1_obj.refresh_from_db()
+        self.assertEqual(self.test_share1_obj.data.decode(), updated_data["data"])
+
 
 class MoreUpdateShareTests(APITestCaseExtended):
     def setUp(self):
