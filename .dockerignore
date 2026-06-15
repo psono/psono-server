@@ -3,6 +3,10 @@ demo
 .coverage
 .htmlcov
 *.deb
+.venv
+venv
+__pycache__
+.pytest_cache
 .docs
 .dockerignore
 .git
@@ -18,5 +22,3 @@ docu
 .gitmodules
 Dockerfile*
 README.md
-
-

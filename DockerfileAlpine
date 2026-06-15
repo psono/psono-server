@@ -16,16 +16,17 @@ RUN apk upgrade && \
         gettext \
         ca-certificates \
         curl \
-        postgresql-dev && \
+        libpq && \
     apk add --virtual .build-deps \
         build-base \
+        postgresql-dev \
         openssl-dev \
         libffi-dev \
         linux-headers && \
-    pip3 install --upgrade setuptools pip && \
-    pip3 install -r requirements.txt && \
+    pip3 install --no-cache-dir --upgrade setuptools pip && \
+    pip3 install --no-cache-dir -r requirements.txt && \
     if [ "$TARGETARCH" = "amd64" ]; then \
-    pip3 install -r requirements-amd64.txt ; \
+    pip3 install --no-cache-dir -r requirements-amd64.txt ; \
     fi; \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
@@ -35,6 +36,7 @@ RUN apk upgrade && \
         -e "s/YourPostgresHost/postgres/g" \
         -e "s/YourPostgresPort/5432/g" \
         -e "s,path/to/psono-server,root,g" && \
+    find /usr/local/lib/python3.14/site-packages -type d -name .mypy_cache -prune -exec rm -rf {} + && \
     apk del .build-deps && \
     rm -Rf \
         /root/.cache \
