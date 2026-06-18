@@ -8,14 +8,14 @@ apache-libcloud==3.8.0
     # via
     #   -r requirements.in
     #   django-storages
-asgiref==3.11.0
+asgiref==3.11.1
     # via
     #   daphne
     #   django
     #   django-countries
 asn1crypto==1.5.1
     # via webauthn
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
@@ -25,11 +25,11 @@ autobahn==25.12.2
     # via daphne
 automat==25.4.16
     # via twisted
-azure-core==1.38.0
+azure-core==1.41.0
     # via
     #   azure-storage-blob
     #   django-storages
-azure-storage-blob==12.28.0
+azure-storage-blob==12.30.0
     # via django-storages
 bcrypt==4.3.0
     # via
@@ -43,11 +43,11 @@ botocore==1.34.162
     # via
     #   boto3
     #   s3transfer
-cbor2==5.9.0
+cbor2==6.1.2
     # via
     #   autobahn
     #   webauthn
-certifi==2026.1.4
+certifi==2026.6.17
     # via
     #   requests
     #   sentry-sdk
@@ -56,11 +56,11 @@ cffi==2.0.0
     #   autobahn
     #   cryptography
     #   pynacl
-charset-normalizer==3.4.4
+charset-normalizer==3.4.7
     # via requests
 constantly==23.10.4
     # via twisted
-cryptography==46.0.7
+cryptography==49.0.0
     # via
     #   autobahn
     #   azure-storage-blob
@@ -69,7 +69,7 @@ cryptography==46.0.7
     #   pyopenssl
     #   service-identity
     #   webauthn
-daphne==4.1.2
+daphne==4.2.2
     # via -r requirements.in
 dj-database-url==2.1.0
     # via -r requirements.in
@@ -108,16 +108,16 @@ drf-spectacular==0.28.0
     # via -r requirements.in
 duo-client==5.5.0
     # via -r requirements.in
-google-api-core==2.29.0
+google-api-core==2.31.0
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.48.0rc0
+google-auth==2.55.0
     # via
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
-google-cloud-core==2.5.0
+google-cloud-core==2.6.0
     # via google-cloud-storage
 google-cloud-storage==2.14.0
     # via
@@ -127,15 +127,15 @@ google-crc32c==1.8.0
     # via
     #   google-cloud-storage
     #   google-resumable-media
-google-resumable-media==2.8.0
+google-resumable-media==2.10.0
     # via google-cloud-storage
-googleapis-common-protos==1.72.0
+googleapis-common-protos==1.75.0
     # via google-api-core
 hyperlink==21.0.0
     # via
     #   autobahn
     #   twisted
-idna==3.15
+idna==3.18
     # via
     #   hyperlink
     #   requests
@@ -158,11 +158,11 @@ jsonschema-specifications==2025.9.1
     # via jsonschema
 more-itertools==8.2.0
     # via -r requirements.in
-msgpack==1.1.2
+msgpack==1.2.0
     # via autobahn
 ntplib==0.3.4
     # via -r requirements.in
-packaging==26.0
+packaging==26.2
     # via incremental
 paramiko==5.0.0
     # via
@@ -170,9 +170,9 @@ paramiko==5.0.0
     #   django-storages
 pillow==12.2.0
     # via -r requirements.in
-proto-plus==1.27.0
+proto-plus==1.28.0
     # via google-api-core
-protobuf==6.33.5
+protobuf==7.35.1
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -184,14 +184,9 @@ psycopg-binary==3.3.2
 py-ubjson==0.16.1
     # via autobahn
 pyasn1==0.6.3
-    # via
-    #   pyasn1-modules
-    #   rsa
-    #   service-identity
+    # via pyasn1-modules
 pyasn1-modules==0.4.2
-    # via
-    #   google-auth
-    #   service-identity
+    # via google-auth
 pycparser==3.0
     # via cffi
 pycryptodomex==3.19.1
@@ -200,7 +195,7 @@ pynacl==1.6.2
     # via
     #   -r requirements.in
     #   paramiko
-pyopenssl==26.0.0
+pyopenssl==26.3.0
     # via
     #   twisted
     #   webauthn
@@ -214,7 +209,7 @@ pyyaml==6.0.1
     # via
     #   -r requirements.in
     #   drf-spectacular
-redis==7.1.0
+redis==8.0.0
     # via django-redis
 referencing==0.37.0
     # via
@@ -229,19 +224,17 @@ requests==2.33.0
     #   google-api-core
     #   google-cloud-storage
     #   yubico-client
-rpds-py==0.30.0
+rpds-py==2026.5.1
     # via
     #   jsonschema
     #   referencing
-rsa==4.9.1
-    # via google-auth
 s3transfer==0.10.4
     # via boto3
 scrypt==0.8.27
     # via -r requirements.in
 sentry-sdk[django]==2.48.0
     # via -r requirements.in
-service-identity==24.2.0
+service-identity==26.1.0
     # via twisted
 six==1.17.0
     # via python-dateutil
@@ -262,7 +255,7 @@ typing-extensions==4.15.0
     #   twisted
 tzdata==2026.2
     # via -r requirements.in
-ujson==5.12.1
+ujson==5.13.0
     # via autobahn
 uritemplate==4.2.0
     # via drf-spectacular
@@ -276,7 +269,7 @@ webauthn==2.7.0
     # via -r requirements.in
 yubico-client==1.12.0
     # via -r requirements.in
-zope-interface==8.2
+zope-interface==8.5
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
