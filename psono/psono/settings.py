@@ -865,6 +865,15 @@ if (
 ):
     DOMAIN_SYNONYMS = [DOMAIN_SYNONYMS]
 
+DOMAIN_EXCLUDED_DOMAINS = config_get("DOMAIN_EXCLUDED_DOMAINS", [])
+if isinstance(DOMAIN_EXCLUDED_DOMAINS, str) and DOMAIN_EXCLUDED_DOMAINS:
+    DOMAIN_EXCLUDED_DOMAINS = [
+        domain_excluded_domain.strip()
+        for domain_excluded_domain in DOMAIN_EXCLUDED_DOMAINS.split(",")
+    ]
+elif isinstance(DOMAIN_EXCLUDED_DOMAINS, str):
+    DOMAIN_EXCLUDED_DOMAINS = []
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
@@ -903,6 +912,7 @@ def generate_signature():
         "public_key": PUBLIC_KEY,
         "authentication_methods": AUTHENTICATION_METHODS,
         "domain_synonyms": DOMAIN_SYNONYMS,
+        "excluded_domains": DOMAIN_EXCLUDED_DOMAINS,
         "web_client": web_client,
         "management": MANAGEMENT_ENABLED,
         "files": FILES_ENABLED,
