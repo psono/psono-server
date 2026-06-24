@@ -9,6 +9,7 @@ import os
 from mock import patch
 
 from restapi.utils import encrypt_with_db_secret
+from restapi.utils import create_user as create_user_util
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
@@ -258,6 +259,7 @@ class CreateUserTests(APITestCaseExtended):
             + "test1@example.com",
             "password": "123456",
             "language": "de",
+            "require_password_change": True,
         }
 
         self.client.force_authenticate(user=self.admin)
@@ -267,6 +269,41 @@ class CreateUserTests(APITestCaseExtended):
         self.assertTrue(models.User.objects.filter(username=data["username"]).exists())
         user = models.User.objects.get(username=data["username"])
         self.assertEqual(user.language, data["language"])
+        self.assertTrue(user.require_password_change)
+
+    @patch("administration.views.user.create_user")
+    def test_successful_with_require_password_change_false(self, mocked_create_user):
+        """
+        Tests to create a user with require_password_change explicitly disabled
+        """
+
+        def create_user_with_required_password_change(*args, **kwargs):
+            user_details = create_user_util(*args, **kwargs)
+            user_details["user"].require_password_change = True
+            user_details["user"].save(update_fields=["require_password_change"])
+            return user_details
+
+        mocked_create_user.side_effect = create_user_with_required_password_change
+
+        url = reverse("admin_user")
+
+        data = {
+            "username": "".join(
+                random.choice(string.ascii_lowercase) for _ in range(10)
+            )
+            + "test1@psono.pw",
+            "email": "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+            + "test1@example.com",
+            "password": "123456",
+            "require_password_change": False,
+        }
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = models.User.objects.get(username=data["username"])
+        self.assertFalse(user.require_password_change)
 
 
 class UpdateUserTests(APITestCaseExtended):

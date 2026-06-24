@@ -441,6 +441,9 @@ class UserView(GenericAPIView):
         language = (
             serializer.validated_data.get("language") or settings.DEFAULT_LANGUAGE
         )
+        require_password_change = serializer.validated_data.get(
+            "require_password_change"
+        )
 
         if not password:
             password = "".join(
@@ -460,6 +463,10 @@ class UserView(GenericAPIView):
                 {"non_field_errors": [user_details["error"]]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if require_password_change is not None:
+            user_details["user"].require_password_change = require_password_change
+            user_details["user"].save(update_fields=["require_password_change"])
 
         return Response(
             {

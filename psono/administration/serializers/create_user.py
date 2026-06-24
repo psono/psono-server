@@ -1,5 +1,6 @@
 from django.conf import settings
 from rest_framework import serializers, exceptions
+from restapi.fields import BooleanField
 import bcrypt
 
 from restapi.models import User
@@ -14,6 +15,7 @@ class CreateUserSerializer(serializers.Serializer):
     )
     password = serializers.CharField(required=False)
     language = serializers.CharField(required=False, allow_null=True, max_length=16)
+    require_password_change = BooleanField(required=False)
 
     def validate(self, attrs: dict) -> dict:
 
