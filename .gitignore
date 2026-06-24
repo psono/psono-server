@@ -1,4 +1,5 @@
 .idea
+.claude
 .mypy_cache
 *.py[cod]
 problemtest

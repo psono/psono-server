@@ -17,6 +17,7 @@ class UpdateUserSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=False, error_messages={"invalid": "INVALID_EMAIL_FORMAT"}
     )
+    language = serializers.CharField(required=False, allow_null=True, max_length=16)
 
     def validate(self, attrs: dict) -> dict:
 

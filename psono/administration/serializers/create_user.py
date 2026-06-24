@@ -13,6 +13,7 @@ class CreateUserSerializer(serializers.Serializer):
         required=True, error_messages={"invalid": "INVALID_EMAIL_FORMAT"}
     )
     password = serializers.CharField(required=False)
+    language = serializers.CharField(required=False, allow_null=True, max_length=16)
 
     def validate(self, attrs: dict) -> dict:
 

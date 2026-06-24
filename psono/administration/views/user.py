@@ -253,6 +253,7 @@ class UserView(GenericAPIView):
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
             "require_password_change": user.require_password_change,
+            "language": user.language,
             "authentication": user.authentication,
             "memberships": memberships,
             "duos": duos,
@@ -391,6 +392,7 @@ class UserView(GenericAPIView):
             "require_password_change"
         )
         email = serializer.validated_data.get("email")
+        language = serializer.validated_data.get("language")
 
         if is_active is not None:
             user.is_active = is_active
@@ -413,6 +415,9 @@ class UserView(GenericAPIView):
         if require_password_change is not None:
             user.require_password_change = require_password_change
 
+        if language is not None:
+            user.language = language
+
         # saves it
         user.save()
 
@@ -433,6 +438,9 @@ class UserView(GenericAPIView):
         username = serializer.validated_data.get("username")
         email = serializer.validated_data.get("email")
         password = serializer.validated_data.get("password")
+        language = (
+            serializer.validated_data.get("language") or settings.DEFAULT_LANGUAGE
+        )
 
         if not password:
             password = "".join(
@@ -444,7 +452,7 @@ class UserView(GenericAPIView):
             username=username,
             password=password,
             email=email,
-            language=settings.DEFAULT_LANGUAGE,
+            language=language,
         )
 
         if "error" in user_details:
