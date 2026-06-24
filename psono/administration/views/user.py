@@ -253,6 +253,7 @@ class UserView(GenericAPIView):
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
             "require_password_change": user.require_password_change,
+            "language": user.language,
             "authentication": user.authentication,
             "memberships": memberships,
             "duos": duos,
@@ -391,6 +392,7 @@ class UserView(GenericAPIView):
             "require_password_change"
         )
         email = serializer.validated_data.get("email")
+        language = serializer.validated_data.get("language")
 
         if is_active is not None:
             user.is_active = is_active
@@ -413,6 +415,9 @@ class UserView(GenericAPIView):
         if require_password_change is not None:
             user.require_password_change = require_password_change
 
+        if language is not None:
+            user.language = language
+
         # saves it
         user.save()
 
@@ -433,6 +438,12 @@ class UserView(GenericAPIView):
         username = serializer.validated_data.get("username")
         email = serializer.validated_data.get("email")
         password = serializer.validated_data.get("password")
+        language = (
+            serializer.validated_data.get("language") or settings.DEFAULT_LANGUAGE
+        )
+        require_password_change = serializer.validated_data.get(
+            "require_password_change"
+        )
 
         if not password:
             password = "".join(
@@ -444,7 +455,7 @@ class UserView(GenericAPIView):
             username=username,
             password=password,
             email=email,
-            language=settings.DEFAULT_LANGUAGE,
+            language=language,
         )
 
         if "error" in user_details:
@@ -452,6 +463,10 @@ class UserView(GenericAPIView):
                 {"non_field_errors": [user_details["error"]]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if require_password_change is not None:
+            user_details["user"].require_password_change = require_password_change
+            user_details["user"].save(update_fields=["require_password_change"])
 
         return Response(
             {
