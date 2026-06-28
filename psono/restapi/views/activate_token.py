@@ -198,6 +198,7 @@ class ActivateTokenView(GenericAPIView):
                     else "",
                     "secret_key": request.user.secret_key,
                     "secret_key_nonce": request.user.secret_key_nonce,
+                    "registration_date": request.user.create_date.isoformat(),
                     "require_password_change": request.user.require_password_change,
                 }
             },
