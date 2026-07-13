@@ -622,6 +622,7 @@ class UserActivateTokenTests(APITestCaseExtended):
                 "id": self.test_user_obj.id,
                 "authentication": "AUTHKEY",
                 "email": self.test_email,
+                "registration_date": self.test_user_obj.create_date.isoformat(),
                 "require_password_change": False,
             },
         )
