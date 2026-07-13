@@ -168,7 +168,7 @@ paramiko==5.0.0
     # via
     #   -r requirements.in
     #   django-storages
-pillow==12.2.0
+pillow==12.3.0
     # via -r requirements.in
 proto-plus==1.28.0
     # via google-api-core
