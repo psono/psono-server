@@ -73,7 +73,7 @@ daphne==4.2.2
     # via -r requirements.in
 dj-database-url==2.1.0
     # via -r requirements.in
-django==5.2.15
+django==5.2.16
     # via
     #   -r requirements.in
     #   dj-database-url
