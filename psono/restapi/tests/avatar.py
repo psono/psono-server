@@ -12,6 +12,9 @@ import random
 import string
 import os
 import binascii
+import struct
+import zlib
+from unittest.mock import patch
 
 
 class CreateAvatarTest(APITestCaseExtended):
@@ -152,7 +155,8 @@ class CreateAvatarTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     @override_settings(AVATAR_DIMENSION_X=1, AVATAR_DIMENSION_Y=1, AVATAR_MAX_SIZE_KB=0)
-    def test_create_invalid_image_size(self):
+    @patch("restapi.serializers.create_avatar.Image.open")
+    def test_create_invalid_image_size(self, image_open):
         """
         Tests to create an avatar with invalid size
         """
@@ -168,6 +172,38 @@ class CreateAvatarTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["non_field_errors"], ["SIZE_EXCEEDED"])
+        image_open.assert_not_called()
+
+    @override_settings(AVATAR_MAX_PIXELS=4096 * 4096)
+    @patch("PIL.Image.Image.load")
+    def test_create_excessive_dimensions_before_decode(self, image_load):
+        png = bytearray(
+            base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNg+A8AAQIBAEK+vGgAAAAASUVORK5CYII="
+            )
+        )
+        png[16:20] = struct.pack(">I", 8192)
+        png[20:24] = struct.pack(">I", 4096)
+        png[29:33] = struct.pack(">I", zlib.crc32(png[12:29]))
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("avatar"),
+            {"data_base64": base64.b64encode(png).decode()},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["non_field_errors"], ["DIMENSIONS_EXCEEDED"])
+        image_load.assert_not_called()
+
+    def test_avatar_throttle_is_configured(self):
+        from restapi.views.avatar import AvatarView
+
+        self.assertEqual(AvatarView.throttle_scope, "avatar")
+        self.assertEqual(
+            settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["avatar"],
+            "10/minute",
+        )
 
     @override_settings(AVATAR_DIMENSION_X=1, AVATAR_DIMENSION_Y=1)
     def test_create_pdf(self):

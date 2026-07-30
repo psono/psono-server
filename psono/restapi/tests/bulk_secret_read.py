@@ -1,20 +1,20 @@
-from http.cookiejar import request_port
-
 from django.urls import reverse
 from django.conf import settings
+from django.test import override_settings
+from django.utils import timezone
 
 from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
 
 from uuid import uuid4
-from mock import patch
 
 import json
 import random
 import string
 import binascii
 import os
+from datetime import timedelta
 
 
 class BulkReadSecretTest(APITestCaseExtended):
@@ -265,6 +265,43 @@ class BulkReadSecretTest(APITestCaseExtended):
         self.assertIn(
             str(self.test_secret_obj2.id), [s["id"] for s in response_data["secrets"]]
         )
+
+    @override_settings(ROOT_URLCONF="restapi.tests.urls_with_prefix")
+    def test_prefixed_bulk_read_rejects_write_only_token(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+            read=False,
+            write=True,
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        response = self.client.post(
+            reverse("bulk_secret_read"),
+            {"secret_ids": [str(self.test_secret_obj1.id)]},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @override_settings(ROOT_URLCONF="restapi.tests.urls_with_prefix")
+    def test_prefixed_bulk_read_allows_read_only_token(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+            read=True,
+            write=False,
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        response = self.client.post(
+            reverse("bulk_secret_read"),
+            {"secret_ids": [str(self.test_secret_obj1.id)]},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["secrets"][0]["data"], "12345")
 
     def test_read_secret_unauthenticated(self):
         """

@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers, exceptions
 
-from ..utils import duo_auth_check, duo_auth_enroll
+from ..utils import duo_auth_check, duo_auth_enroll, is_allowed_duo_host
 from ..fields import BooleanField
 from ..models import Duo
 
@@ -35,6 +35,10 @@ class NewDuoSerializer(serializers.Serializer):
             and "duo" not in settings.ALLOWED_SECOND_FACTORS
         ):
             msg = "SERVER_NOT_SUPPORT_DUO"
+            raise exceptions.ValidationError(msg)
+
+        if not use_system_wide_duo and not is_allowed_duo_host(host):
+            msg = "DUO_HOST_NOT_ALLOWED"
             raise exceptions.ValidationError(msg)
 
         check = duo_auth_check(integration_key, secret_key, host)

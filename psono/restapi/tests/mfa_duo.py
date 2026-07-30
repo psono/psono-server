@@ -84,7 +84,7 @@ class DuoVerifyTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -217,6 +217,26 @@ class DuoVerifyTests(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch("restapi.serializers.duo_verify.duo_auth_auth")
+    def test_post_authentication_duo_verify_rejects_stored_disallowed_host(
+        self, duo_auth_auth
+    ):
+        duo = models.Duo.objects.get(user=self.test_user_obj)
+        duo.duo_host = "internal.example.com"
+        duo.save(update_fields=["duo_host", "write_date"])
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + self.token,
+            HTTP_AUTHORIZATION_VALIDATOR=self.authorization_validator,
+        )
+
+        response = self.client.post(
+            reverse("authentication_duo_verify"),
+            {"token": self.token, "duo_token": "123456"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        duo_auth_auth.assert_not_called()
 
     @patch("duo_client.Auth.check", mock_check)
     @patch("duo_client.Auth.auth", mock_auth_valid)
@@ -387,7 +407,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -440,7 +460,7 @@ class DuoTests(APITestCaseExtended):
             "title": "asdu5zz53",
             "integration_key": "integration_key",
             "secret_key": "secret_key",
-            "host": "host",
+            "host": "api-test.duosecurity.com",
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -449,6 +469,38 @@ class DuoTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(response.data.get("id", False), False)
         self.assertNotEqual(response.data.get("activation_code", False), False)
+
+    @patch("restapi.serializers.new_duo.duo_auth_enroll")
+    @patch("restapi.serializers.new_duo.duo_auth_check")
+    def test_put_user_duo_rejects_disallowed_host_without_request(
+        self, duo_auth_check, duo_auth_enroll
+    ):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        for host in [
+            "localhost",
+            "127.0.0.1",
+            "internal.example.com",
+            "api-test.duosecurity.com.evil",
+            "api-test.duosecurity.com:443",
+            "user@api-test.duosecurity.com",
+        ]:
+            with self.subTest(host=host):
+                response = self.client.put(
+                    reverse("user_duo"),
+                    {
+                        "title": "Test",
+                        "integration_key": "integration_key",
+                        "secret_key": "secret_key",
+                        "host": host,
+                    },
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        duo_auth_check.assert_not_called()
+        duo_auth_enroll.assert_not_called()
+        self.assertFalse(models.Duo.objects.filter(user=self.test_user_obj).exists())
 
     @patch("duo_client.Auth.check", mock_check_error)
     @patch("duo_client.Auth.enroll", mock_enroll)
@@ -464,7 +516,7 @@ class DuoTests(APITestCaseExtended):
             "title": "asdu5zz53",
             "integration_key": "integration_key",
             "secret_key": "secret_key",
-            "host": "host",
+            "host": "api-test.duosecurity.com",
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -486,7 +538,7 @@ class DuoTests(APITestCaseExtended):
             "title": "asdu5zz53",
             "integration_key": "integration_key",
             "secret_key": "secret_key",
-            "host": "host",
+            "host": "api-test.duosecurity.com",
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -507,7 +559,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -608,7 +660,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -643,7 +695,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -677,7 +729,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -708,7 +760,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -739,7 +791,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -790,7 +842,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -822,7 +874,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),
@@ -851,7 +903,7 @@ class DuoTests(APITestCaseExtended):
             title="My Sweet Title",
             duo_integration_key="duo_integration_key",
             duo_secret_key=encrypt_with_db_secret("duo_secret_key"),
-            duo_host="duo_secret_key",
+            duo_host="api-test.duosecurity.com",
             enrollment_user_id="enrollment_user_id",
             enrollment_activation_code="enrollment_activation_code",
             enrollment_expiration_date=timezone.now() + timedelta(seconds=600),

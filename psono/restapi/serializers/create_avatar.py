@@ -11,30 +11,39 @@ class CreateAvatarSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         data_base64 = attrs.get("data_base64", "")
+        max_size_bytes = settings.AVATAR_MAX_SIZE_KB * 1024
+        max_base64_size = ((max_size_bytes + 2) // 3) * 4
+
+        if len(data_base64) > max_base64_size:
+            raise exceptions.ValidationError("SIZE_EXCEEDED")
 
         try:
             img_data = base64.b64decode(data_base64, validate=True)
         except (base64.binascii.Error, ValueError):
             raise exceptions.ValidationError("INVALID_BASE64")
 
+        if len(img_data) > max_size_bytes:
+            raise exceptions.ValidationError("SIZE_EXCEEDED")
+
         file = io.BytesIO(img_data)
         mime_type = None
 
         try:
-            # Load the image and verify it's not corrupted
             image = Image.open(file, formats=["JPEG", "PNG"])
+            if image.width * image.height > settings.AVATAR_MAX_PIXELS:
+                raise exceptions.ValidationError("DIMENSIONS_EXCEEDED")
+
+            # Verify integrity before decoding the pixel data.
             image.verify()  # Verify the image (checks integrity but not decoded)
             file.seek(0)
             image = Image.open(file, formats=["JPEG", "PNG"])
             image.load()
             format = image.format
             mime_type = Image.MIME.get(format)
-        except Exception as exc:
+        except exceptions.ValidationError:
+            raise
+        except Exception:
             raise exceptions.ValidationError("DATA_NO_IMAGE")
-
-        # Calculate the size of image data in bytes to check against the 100KB limit
-        if len(img_data) > settings.AVATAR_MAX_SIZE_KB * 1024:
-            raise exceptions.ValidationError("SIZE_EXCEEDED")
 
         # Check image dimensions
         if (

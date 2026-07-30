@@ -61,7 +61,6 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
             user_sauce=nacl.encoding.HexEncoder.encode(nacl.utils.random(32)).decode(),
             is_email_active=True,
         )
-
         # User 2 (other user)
         self.other_email = "other@example.com"
         self.other_email_bcrypt = "b"
@@ -299,6 +298,82 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
             self.fail(
                 "Failed to decrypt credentials from response using server key context."
             )
+
+    def test_claim_device_code_rejects_read_only_token(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            active=True,
+            read=True,
+            write=False,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        url = reverse(
+            "device_code_claim",
+            kwargs={"device_code": str(self.pending_device_code.id)},
+        )
+        response = self.client.put(
+            url,
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": self.valid_nonce_hex,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(
+            self.pending_device_code.state, models.DeviceCode.DeviceCodeState.PENDING
+        )
+        self.assertIsNone(self.pending_device_code.user)
+
+    def test_claim_device_code_rejects_api_key_session(self):
+        api_key = models.API_Key.objects.create(
+            user=self.test_user_obj,
+            title="Device claim test",
+            public_key="a",
+            private_key="a",
+            private_key_nonce="api-key-private-key-nonce",
+            secret_key="a",
+            secret_key_nonce="api-key-secret-key-nonce",
+            user_private_key="a",
+            user_private_key_nonce="api-key-user-private-key-nonce",
+            user_secret_key="a",
+            user_secret_key_nonce="api-key-user-secret-key-nonce",
+            verify_key="a",
+            read=True,
+            write=True,
+        )
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=api_key,
+            active=True,
+            read=True,
+            write=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        url = reverse(
+            "device_code_claim",
+            kwargs={"device_code": str(self.pending_device_code.id)},
+        )
+        response = self.client.put(
+            url,
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": self.valid_nonce_hex,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_SESSION_NOT_ALLOWED"})
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(
+            self.pending_device_code.state, models.DeviceCode.DeviceCodeState.PENDING
+        )
+        self.assertIsNone(self.pending_device_code.user)
 
     def test_claim_device_code_unauthenticated(self):
         """

@@ -248,6 +248,29 @@ class FileRepositryUploadTest(APITestCaseExtended):
         "restapi.views.file_repository_upload.gcs_construct_signed_upload_url",
         side_effect=gcs_construct_signed_upload_url_side_effect,
     )
+    def test_download_transfer_is_rejected(self, fake_gcs_construct_signed_upload_url):
+        self.file_transfer.type = "download"
+        self.file_transfer.save(update_fields=["type", "write_date"])
+
+        response = self.client.put(
+            reverse("file_repository_upload"),
+            {
+                "chunk_size": 512,
+                "chunk_position": 0,
+                "hash_checksum": "abc",
+            },
+            HTTP_AUTHORIZATION=f"Filetransfer {self.file_transfer.id}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "FILE_TRANSFER_TYPE_INVALID"})
+        self.assertFalse(models.File_Chunk.objects.filter(file=self.file).exists())
+        fake_gcs_construct_signed_upload_url.assert_not_called()
+
+    @patch(
+        "restapi.views.file_repository_upload.gcs_construct_signed_upload_url",
+        side_effect=gcs_construct_signed_upload_url_side_effect,
+    )
     def test_malformed_checksum(self, fake_gcs_construct_signed_upload_url):
         """
         Tests a file repository upload with a malformed checksum that isn't hex

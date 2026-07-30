@@ -10,42 +10,43 @@ class IsAuthenticated(BasePermission):
     """
 
     PASSWORD_CHANGE_GATE_START_DATE = date(2026, 10, 1)
-    PASSWORD_CHANGE_GATE_ALLOWED_PATHS = {
-        "/authentication/logout/",
-        "/authentication/activate-token/",
-        "/authentication/ga-verify/",
-        "/authentication/duo-verify/",
-        "/authentication/webauthn-verify/",
-        "/authentication/yubikey-otp-verify/",
-        "/authentication/ivalt-verify/",
-        "/user/update/",
-        "/user/ga/",
-        "/user/duo/",
-        "/user/webauthn/",
-        "/user/yubikey-otp/",
-        "/user/ivalt/",
+    PASSWORD_CHANGE_GATE_ALLOWED_URL_NAMES = {
+        "authentication_logout",
+        "authentication_activate_token",
+        "authentication_ga_verify",
+        "authentication_duo_verify",
+        "authentication_webauthn_verify",
+        "authentication_yubikey_otp_verify",
+        "authentication_ivalt_verify",
+        "user_update",
+        "user_ga",
+        "user_duo",
+        "user_webauthn",
+        "user_yubikey_otp",
+        "user_ivalt",
     }
 
     def has_permission(self, request, view):
-        path = request.path
+        resolver_match = getattr(request, "resolver_match", None)
+        url_name = resolver_match.url_name if resolver_match else None
 
         if request.user and request.user.is_authenticated:
             if date.today() >= self.PASSWORD_CHANGE_GATE_START_DATE:
                 if getattr(request.user, "require_password_change", False):
-                    if path not in self.PASSWORD_CHANGE_GATE_ALLOWED_PATHS:
+                    if url_name not in self.PASSWORD_CHANGE_GATE_ALLOWED_URL_NAMES:
                         return False
 
         # Allow logout
-        if path == "/authentication/logout/" and request.method == "POST":
+        if url_name == "authentication_logout" and request.method == "POST":
             return request.user and request.user.is_authenticated
 
         # bulk-secret-read uses a POST request to read the data
-        if path == "/bulk-secret-read/" and request.auth and not request.auth.read:
+        if url_name == "bulk_secret_read":
+            if request.auth and not request.auth.read:
+                return False
+        elif request.method == "GET" and request.auth and not request.auth.read:
             return False
-
-        if request.method == "GET" and request.auth and not request.auth.read:
-            return False
-        if request.method != "GET" and request.auth and not request.auth.write:
+        elif request.method != "GET" and request.auth and not request.auth.write:
             return False
 
         return request.user and request.user.is_authenticated
