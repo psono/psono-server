@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -123,6 +124,24 @@ class ForcePasswordChangeGateTests(APITestCaseExtended):
                 status.HTTP_403_FORBIDDEN,
                 f"Unexpected 403 for {method} {url}",
             )
+
+    @override_settings(ROOT_URLCONF="restapi.tests.urls_with_prefix")
+    @patch.object(IsAuthenticated, "PASSWORD_CHANGE_GATE_START_DATE", date(2000, 1, 1))
+    def test_prefixed_password_change_endpoint_is_allowed(self):
+        response = self.client.put(reverse("user_update"), {})
+
+        self.assertNotEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @override_settings(ROOT_URLCONF="restapi.tests.urls_with_prefix")
+    @patch.object(IsAuthenticated, "PASSWORD_CHANGE_GATE_START_DATE", date(2000, 1, 1))
+    def test_prefixed_logout_is_allowed_for_read_only_token(self):
+        self.token.write = False
+        self.token.save(update_fields=["write", "write_date"])
+
+        response = self.client.post(reverse("authentication_logout"), {})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.Token.objects.filter(pk=self.token.pk).exists())
 
 
 class ForcePasswordChangeDefaultTests(APITestCaseExtended):
