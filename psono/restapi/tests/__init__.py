@@ -64,3 +64,4 @@ from .user_policy import *
 from .user_status import *
 from .verify_email import *
 from .mfa_ivalt import *
+from .webauthn_verify import *

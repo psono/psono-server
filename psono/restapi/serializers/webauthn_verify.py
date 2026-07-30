@@ -1,5 +1,6 @@
 import json
 
+from django.db import transaction
 from rest_framework import serializers, exceptions
 import nacl.encoding
 from webauthn import verify_authentication_response
@@ -24,13 +25,22 @@ class WebauthnVerifySerializer(serializers.Serializer):
             base64url_to_bytes(parsed_credential["rawId"])
         ).decode()
 
-        try:
-            webauthn = Webauthn.objects.get(
-                credential_id=credential_id, user=self.context["request"].user
-            )
-        except Webauthn.DoesNotExist:
-            msg = "NO_PERMISSION_OR_NOT_EXIST"
-            raise exceptions.ValidationError(msg)
+        with transaction.atomic():
+            try:
+                webauthn = Webauthn.objects.select_for_update().get(
+                    credential_id=credential_id, user=self.context["request"].user
+                )
+            except Webauthn.DoesNotExist:
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+
+            if not webauthn.challenge:
+                msg = "NO_PERMISSION_OR_NOT_EXIST"
+                raise exceptions.ValidationError(msg)
+
+            encrypted_challenge = webauthn.challenge
+            webauthn.challenge = ""
+            webauthn.save(update_fields=["challenge", "write_date"])
 
         if webauthn.origin.startswith("https://"):
             # we have a website so the parameters should look like:
@@ -48,7 +58,7 @@ class WebauthnVerifySerializer(serializers.Serializer):
         try:
             verify_authentication_response(
                 credential=credential,
-                expected_challenge=decrypt_with_db_secret(webauthn.challenge).encode(),
+                expected_challenge=decrypt_with_db_secret(encrypted_challenge).encode(),
                 expected_rp_id=expected_rp_id,
                 expected_origin=expected_origin,
                 credential_public_key=nacl.encoding.HexEncoder.decode(
