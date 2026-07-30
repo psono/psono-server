@@ -14,6 +14,9 @@ class FileRepositoryDownloadSerializer(serializers.Serializer):
 
         file_transfer = self.context["request"].auth
 
+        if file_transfer.type != "download":
+            raise exceptions.PermissionDenied("FILE_TRANSFER_TYPE_INVALID")
+
         if not re.match("^[0-9a-f]*$", hash_checksum, re.IGNORECASE):
             msg = "HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION"
             raise exceptions.ValidationError(msg)
