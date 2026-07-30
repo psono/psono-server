@@ -74,6 +74,48 @@ class WebauthnVerifySerializerTest(APITestCaseExtended):
         )
         self.assertEqual(verify_authentication_response.call_count, 1)
 
+    @patch("restapi.serializers.webauthn_verify.verify_authentication_response")
+    def test_inactive_credential_is_rejected(self, verify_authentication_response):
+        self.webauthn.active = False
+        self.webauthn.save(update_fields=["active", "write_date"])
+
+        serializer = self.get_serializer()
+
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(
+            serializer.errors["non_field_errors"][0], "NO_PERMISSION_OR_NOT_EXIST"
+        )
+        self.webauthn.refresh_from_db()
+        self.assertNotEqual(self.webauthn.challenge, "")
+        verify_authentication_response.assert_not_called()
+
+    @patch("restapi.serializers.webauthn_verify.verify_authentication_response")
+    def test_duplicate_credential_is_rejected(self, verify_authentication_response):
+        models.Webauthn.objects.create(
+            user=self.user,
+            title="Duplicate authenticator",
+            origin=self.webauthn.origin,
+            rp_id=self.webauthn.rp_id,
+            credential_id=self.webauthn.credential_id,
+            credential_public_key=self.webauthn.credential_public_key,
+            challenge=encrypt_with_db_secret(self.challenge),
+            active=True,
+        )
+
+        serializer = self.get_serializer()
+
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(
+            serializer.errors["non_field_errors"][0], "NO_PERMISSION_OR_NOT_EXIST"
+        )
+        self.assertTrue(
+            all(
+                webauthn.challenge
+                for webauthn in models.Webauthn.objects.filter(user=self.user)
+            )
+        )
+        verify_authentication_response.assert_not_called()
+
     @patch(
         "restapi.serializers.webauthn_verify.verify_authentication_response",
         side_effect=InvalidAuthenticationResponse("Invalid assertion"),

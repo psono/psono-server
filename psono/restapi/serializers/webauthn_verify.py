@@ -28,9 +28,11 @@ class WebauthnVerifySerializer(serializers.Serializer):
         with transaction.atomic():
             try:
                 webauthn = Webauthn.objects.select_for_update().get(
-                    credential_id=credential_id, user=self.context["request"].user
+                    credential_id=credential_id,
+                    user=self.context["request"].user,
+                    active=True,
                 )
-            except Webauthn.DoesNotExist:
+            except (Webauthn.DoesNotExist, Webauthn.MultipleObjectsReturned):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
 
