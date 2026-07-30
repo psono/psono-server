@@ -2,7 +2,7 @@ from typing import cast
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from ..permissions import IsAuthenticated
 
 from ..models import DeviceCode
 from ..serializers.claim_device_code import (
@@ -35,9 +35,7 @@ class DeviceCodeClaimView(GenericAPIView):
 
         serializer = cast(
             ClaimDeviceCodeSerializer,
-            self.get_serializer(
-                instance, data=request.data, context={"user": request.user}
-            ),
+            self.get_serializer(instance, data=request.data),
         )
 
         try:

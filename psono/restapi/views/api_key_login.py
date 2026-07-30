@@ -60,6 +60,7 @@ class APIKeyLoginView(GenericAPIView):
 
         token = Token.objects.create(
             user=api_key.user,
+            api_key=api_key,
             google_authenticator_2fa=False,
             duo_2fa=False,
             yubikey_otp_2fa=False,

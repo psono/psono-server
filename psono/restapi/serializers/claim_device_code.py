@@ -71,13 +71,16 @@ class ClaimDeviceCodeSerializer(serializers.Serializer):
 
     def validate(self, data):
         instance = self.instance
-        user = self.context.get("user")
+        user = self.context["request"].user
 
         if not instance:
             raise ValidationError("DEVICE_CODE_INSTANCE_REQUIRED")
 
         if not user:
             raise ValidationError("USER_AUTHENTICATION_REQUIRED")
+
+        if getattr(self.context["request"].auth, "api_key_id", None) is not None:
+            raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
 
         # Validate encrypted_credentials_input field
         credentials_input = data.get("encrypted_credentials_input", "")
