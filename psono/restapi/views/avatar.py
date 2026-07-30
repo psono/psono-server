@@ -1,7 +1,6 @@
 from django.db import transaction
 from django.conf import settings
 from django.core.files.base import ContentFile
-import base64
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -26,6 +25,7 @@ class AvatarView(GenericAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     allowed_methods = ("GET", "POST", "DELETE", "OPTIONS", "HEAD")
+    throttle_scope = "avatar"
 
     def get_serializer_class(self):
         if self.request.method == "GET":

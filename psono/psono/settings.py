@@ -377,6 +377,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_THROTTLE_RATES": {
         "anon": config_get("THROTTLE_RATE_ANON", "14400/day"),
+        "avatar": config_get("THROTTLE_RATE_AVATAR", "10/minute"),
         "avatar_image": config_get("THROTTLE_RATE_AVATAR_IMAGE", "100/day"),
         "prelogin": config_get("THROTTLE_RATE_PRE_LOGIN", "48/day"),
         "login": config_get("THROTTLE_RATE_LOGIN", "48/day"),
@@ -732,6 +733,7 @@ AVAILABLE_AVATAR_STORAGES = {
 AVATAR_DIMENSION_X = int(config_get("AVATAR_DIMENSION_X", 256))
 AVATAR_DIMENSION_Y = int(config_get("AVATAR_DIMENSION_Y", 256))
 AVATAR_MAX_SIZE_KB = int(config_get("AVATAR_MAX_SIZE_KB", 100))
+AVATAR_MAX_PIXELS = int(config_get("AVATAR_MAX_PIXELS", 4096 * 4096))
 
 FILESERVER_ALIVE_TIMEOUT = int(config_get("FILESERVER_ALIVE_TIMEOUT", 30))
 AUTH_KEY_LENGTH_BYTES = int(config_get("AUTH_KEY_LENGTH_BYTES", 64))
