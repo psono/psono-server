@@ -41,6 +41,7 @@ class Command(BaseCommand):
                 ikey=integration_key,
                 skey=secret_key,
                 host=host,
+                timeout=settings.DUO_TIMEOUT,
             )
             if settings.DUO_PROXY_TYPE:
                 auth_api.set_proxy(
@@ -93,6 +94,7 @@ class Command(BaseCommand):
                     ikey=integration_key,
                     skey=secret_key,
                     host=host,
+                    timeout=settings.DUO_TIMEOUT,
                 )
                 if settings.DUO_PROXY_TYPE:
                     auth_api.set_proxy(

@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from socket import gaierror
 
 from ssl import SSLError
@@ -9,6 +9,7 @@ from restapi.utils import (
     duo_auth_enroll,
     duo_auth_enroll_status,
     duo_auth_auth,
+    is_allowed_duo_host,
 )
 
 
@@ -40,6 +41,20 @@ class TestDuoAuthCheckUtils(TestCase):
         result = duo_auth_check("integration_key", "secret_key", "host")
 
         self.assertTrue("time" in result)
+
+    @override_settings(DUO_TIMEOUT=300)
+    @patch("restapi.utils.duo.duo_client.Auth")
+    def test_duo_auth_check_uses_configured_timeout(self, auth):
+        auth.return_value.check.return_value = {"time": int(time.time())}
+
+        duo_auth_check("integration_key", "secret_key", "host")
+
+        auth.assert_called_once_with(
+            ikey="integration_key",
+            skey="secret_key",
+            host="host",
+            timeout=300,
+        )
 
     @patch("duo_client.Auth.check", mock_invalid_host)
     def test_duo_auth_check_invalid_host(self):
@@ -76,6 +91,35 @@ class TestDuoAuthCheckUtils(TestCase):
         result = duo_auth_check("integration_key", "secret_key", "host")
         self.assertTrue("error" in result)
         self.assertEqual(result["error"], "Duo offline. Try again later.")
+
+
+class TestAllowedDuoHost(TestCase):
+    @override_settings(
+        DUO_ALLOWED_HOST_SUFFIXES=[".duosecurity.com", ".duofederal.com"]
+    )
+    def test_allowed_hosts(self):
+        self.assertTrue(is_allowed_duo_host("api-1234.duosecurity.com"))
+        self.assertTrue(is_allowed_duo_host("API-1234.DUOFEDERAL.COM"))
+
+    @override_settings(
+        DUO_ALLOWED_HOST_SUFFIXES=[".duosecurity.com", ".duofederal.com"]
+    )
+    def test_disallowed_hosts(self):
+        hosts = [
+            "localhost",
+            "127.0.0.1",
+            "api-1234.duosecurity.com.evil.example",
+            "duosecurity.com",
+            "api-1234.duosecurity.com:443",
+            "api-1234.duosecurity.com/path",
+            "user@api-1234.duosecurity.com",
+            "api-1234.duosecurity.com.",
+            "-api.duosecurity.com",
+        ]
+
+        for host in hosts:
+            with self.subTest(host=host):
+                self.assertFalse(is_allowed_duo_host(host))
 
 
 class TestDuoAuthEnrollUtils(TestCase):

@@ -3,7 +3,12 @@ from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 from urllib.parse import urlencode
 
-from ..utils import decrypt_with_db_secret, duo_auth_auth, duo_auth_enroll_status
+from ..utils import (
+    decrypt_with_db_secret,
+    duo_auth_auth,
+    duo_auth_enroll_status,
+    is_allowed_duo_host,
+)
 from ..models import Duo
 
 
@@ -30,6 +35,9 @@ class ActivateDuoSerializer(serializers.Serializer):
             duo_host = settings.DUO_API_HOSTNAME
 
         else:
+            if not is_allowed_duo_host(duo.duo_host):
+                msg = "DUO_HOST_NOT_ALLOWED"
+                raise exceptions.ValidationError(msg)
             duo_integration_key = duo.duo_integration_key
             duo_secret_key = decrypt_with_db_secret(duo.duo_secret_key)
             duo_host = duo.duo_host

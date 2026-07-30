@@ -243,6 +243,16 @@ ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL = (
 DUO_INTEGRATION_KEY = config_get("DUO_INTEGRATION_KEY", "")
 DUO_SECRET_KEY = config_get("DUO_SECRET_KEY", "")
 DUO_API_HOSTNAME = config_get("DUO_API_HOSTNAME", "")
+DUO_ALLOWED_HOST_SUFFIXES = config_get(
+    "DUO_ALLOWED_HOST_SUFFIXES", [".duosecurity.com", ".duofederal.com"]
+)
+if isinstance(DUO_ALLOWED_HOST_SUFFIXES, str):
+    DUO_ALLOWED_HOST_SUFFIXES = [
+        suffix.strip()
+        for suffix in DUO_ALLOWED_HOST_SUFFIXES.split(",")
+        if suffix.strip()
+    ]
+DUO_TIMEOUT = int(config_get("DUO_TIMEOUT", 300))
 
 DUO_PROXY_HOST = config_get("DUO_PROXY_HOST", None)
 DUO_PROXY_PORT = config_get("DUO_PROXY_PORT", None)

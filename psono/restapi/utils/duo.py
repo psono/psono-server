@@ -1,14 +1,54 @@
 from django.conf import settings
 
 import duo_client
+import re
 from socket import gaierror
 from ssl import SSLError
-from typing import Dict
 
 # import the logging
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def is_allowed_duo_host(host: str) -> bool:
+    if not isinstance(host, str):
+        return False
+
+    host = host.strip().lower()
+    if not host or len(host) > 253 or host.endswith("."):
+        return False
+
+    labels = host.split(".")
+    if any(
+        len(label) > 63 or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", label)
+        for label in labels
+    ):
+        return False
+
+    for suffix in settings.DUO_ALLOWED_HOST_SUFFIXES:
+        normalized_suffix = str(suffix).strip().lower().lstrip(".")
+        if normalized_suffix and host.endswith("." + normalized_suffix):
+            return True
+
+    return False
+
+
+def _create_duo_auth_client(integration_key: str, secret_key: str, host: str):
+    auth_api = duo_client.Auth(
+        ikey=integration_key,
+        skey=secret_key,
+        host=host,
+        timeout=settings.DUO_TIMEOUT,
+    )
+    if settings.DUO_PROXY_TYPE:
+        auth_api.set_proxy(
+            host=settings.DUO_PROXY_HOST,
+            port=settings.DUO_PROXY_PORT,
+            headers=settings.DUO_PROXY_HEADERS,
+            proxy_type=settings.DUO_PROXY_TYPE,
+        )
+    return auth_api
 
 
 def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
@@ -26,18 +66,7 @@ def duo_auth_check(integration_key: str, secret_key: str, host: str) -> dict:
     """
 
     try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-        if settings.DUO_PROXY_TYPE:
-            auth_api.set_proxy(
-                host=settings.DUO_PROXY_HOST,
-                port=settings.DUO_PROXY_PORT,
-                headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE,
-            )
+        auth_api = _create_duo_auth_client(integration_key, secret_key, host)
         check = auth_api.check()
     except gaierror:
         return {"error": "Host incorrect: Could not be found"}
@@ -77,25 +106,14 @@ def duo_auth_enroll(
     """
 
     try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-        if settings.DUO_PROXY_TYPE:
-            auth_api.set_proxy(
-                host=settings.DUO_PROXY_HOST,
-                port=settings.DUO_PROXY_PORT,
-                headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE,
-            )
+        auth_api = _create_duo_auth_client(integration_key, secret_key, host)
 
         pre_auth = auth_api.preauth(username=username)
 
         if pre_auth["result"] == "deny":
             return {"error": "User denied by DUO"}
 
-        enrollment = {}  # type: Dict
+        enrollment = {}
         if pre_auth["result"] == "enroll":
             enrollment = auth_api.enroll(username=username)
 
@@ -141,19 +159,7 @@ def duo_auth_enroll_status(
     """
 
     try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-
-        if settings.DUO_PROXY_TYPE:
-            auth_api.set_proxy(
-                host=settings.DUO_PROXY_HOST,
-                port=settings.DUO_PROXY_PORT,
-                headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE,
-            )
+        auth_api = _create_duo_auth_client(integration_key, secret_key, host)
 
         enrollment_status = auth_api.enroll_status(
             user_id=user_id, activation_code=activation_code
@@ -214,19 +220,7 @@ def duo_auth_auth(
     """
 
     try:
-        auth_api = duo_client.Auth(
-            ikey=integration_key,
-            skey=secret_key,
-            host=host,
-        )
-
-        if settings.DUO_PROXY_TYPE:
-            auth_api.set_proxy(
-                host=settings.DUO_PROXY_HOST,
-                port=settings.DUO_PROXY_PORT,
-                headers=settings.DUO_PROXY_HEADERS,
-                proxy_type=settings.DUO_PROXY_TYPE,
-            )
+        auth_api = _create_duo_auth_client(integration_key, secret_key, host)
 
         auth = auth_api.auth(
             username=username,
