@@ -12,6 +12,7 @@ from .promoteuser import *
 from .fsclustercreate import *
 from .fsclusterdelete import *
 from .fsclusterlist import *
+from .fsclustershow import *
 from .fsclustershowconfig import *
 from .fsshardcreate import *
 from .fssharddelete import *
