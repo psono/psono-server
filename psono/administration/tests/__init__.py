@@ -17,3 +17,4 @@ from .user import *
 from .webauthn import *
 from .yubikey import *
 from .ivalt import *
+from .fileserver import *

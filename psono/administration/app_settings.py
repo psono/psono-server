@@ -25,6 +25,19 @@ from .serializers import (
     DeleteGroupShareRightSerializer as DefaultDeleteGroupShareRightSerializer,
     ReadSecurityReportSerializer as DefaultReadSecurityReportSerializer,
     DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
+    CreateFileserverClusterSerializer as DefaultCreateFileserverClusterSerializer,
+    CreateFileserverClusterShardLinkSerializer as DefaultCreateFileserverClusterShardLinkSerializer,
+    CreateFileserverShardSerializer as DefaultCreateFileserverShardSerializer,
+    DeleteFileserverClusterSerializer as DefaultDeleteFileserverClusterSerializer,
+    DeleteFileserverClusterShardLinkSerializer as DefaultDeleteFileserverClusterShardLinkSerializer,
+    DeleteFileserverShardSerializer as DefaultDeleteFileserverShardSerializer,
+    GenerateFileserverClusterConfigSerializer as DefaultGenerateFileserverClusterConfigSerializer,
+    ReadFileserverClusterSerializer as DefaultReadFileserverClusterSerializer,
+    ReadFileserverSerializer as DefaultReadFileserverSerializer,
+    ReadFileserverShardSerializer as DefaultReadFileserverShardSerializer,
+    UpdateFileserverClusterSerializer as DefaultUpdateFileserverClusterSerializer,
+    UpdateFileserverClusterShardLinkSerializer as DefaultUpdateFileserverClusterShardLinkSerializer,
+    UpdateFileserverShardSerializer as DefaultUpdateFileserverShardSerializer,
 )
 
 
@@ -134,4 +147,75 @@ ReadSecurityReportSerializer = import_callable(
 
 DeleteIvaltSerializer = import_callable(
     serializers.get("DELETE_IVALT_SERIALIZER", DefaultDeleteIvaltSerializer)
+)
+
+ReadFileserverClusterSerializer = import_callable(
+    serializers.get(
+        "READ_FILESERVER_CLUSTER_SERIALIZER", DefaultReadFileserverClusterSerializer
+    )
+)
+CreateFileserverClusterSerializer = import_callable(
+    serializers.get(
+        "CREATE_FILESERVER_CLUSTER_SERIALIZER",
+        DefaultCreateFileserverClusterSerializer,
+    )
+)
+UpdateFileserverClusterSerializer = import_callable(
+    serializers.get(
+        "UPDATE_FILESERVER_CLUSTER_SERIALIZER",
+        DefaultUpdateFileserverClusterSerializer,
+    )
+)
+DeleteFileserverClusterSerializer = import_callable(
+    serializers.get(
+        "DELETE_FILESERVER_CLUSTER_SERIALIZER",
+        DefaultDeleteFileserverClusterSerializer,
+    )
+)
+ReadFileserverShardSerializer = import_callable(
+    serializers.get(
+        "READ_FILESERVER_SHARD_SERIALIZER", DefaultReadFileserverShardSerializer
+    )
+)
+CreateFileserverShardSerializer = import_callable(
+    serializers.get(
+        "CREATE_FILESERVER_SHARD_SERIALIZER", DefaultCreateFileserverShardSerializer
+    )
+)
+UpdateFileserverShardSerializer = import_callable(
+    serializers.get(
+        "UPDATE_FILESERVER_SHARD_SERIALIZER", DefaultUpdateFileserverShardSerializer
+    )
+)
+DeleteFileserverShardSerializer = import_callable(
+    serializers.get(
+        "DELETE_FILESERVER_SHARD_SERIALIZER", DefaultDeleteFileserverShardSerializer
+    )
+)
+CreateFileserverClusterShardLinkSerializer = import_callable(
+    serializers.get(
+        "CREATE_FILESERVER_CLUSTER_SHARD_LINK_SERIALIZER",
+        DefaultCreateFileserverClusterShardLinkSerializer,
+    )
+)
+UpdateFileserverClusterShardLinkSerializer = import_callable(
+    serializers.get(
+        "UPDATE_FILESERVER_CLUSTER_SHARD_LINK_SERIALIZER",
+        DefaultUpdateFileserverClusterShardLinkSerializer,
+    )
+)
+DeleteFileserverClusterShardLinkSerializer = import_callable(
+    serializers.get(
+        "DELETE_FILESERVER_CLUSTER_SHARD_LINK_SERIALIZER",
+        DefaultDeleteFileserverClusterShardLinkSerializer,
+    )
+)
+ReadFileserverSerializer = import_callable(
+    serializers.get("READ_FILESERVER_SERIALIZER", DefaultReadFileserverSerializer)
+)
+GenerateFileserverClusterConfigSerializer = import_callable(
+    serializers.get(
+        "GENERATE_FILESERVER_CLUSTER_CONFIG_SERIALIZER",
+        DefaultGenerateFileserverClusterConfigSerializer,
+    )
 )

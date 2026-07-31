@@ -97,6 +97,46 @@ if settings.MANAGEMENT_ENABLED:
         ),
         re_path(r"^stats/os/$", views.StatsOsView.as_view(), name="stats_os"),
         re_path(
+            r"^fileserver-cluster/configuration/$",
+            views.FileserverClusterConfigView.as_view(),
+            name="admin_fileserver_cluster_configuration",
+        ),
+        re_path(
+            r"^fileserver-cluster/(?P<cluster_id>[^/]+)/$",
+            views.FileserverClusterView.as_view(),
+            name="admin_fileserver_cluster",
+        ),
+        re_path(
+            r"^fileserver-cluster/$",
+            views.FileserverClusterView.as_view(),
+            name="admin_fileserver_cluster",
+        ),
+        re_path(
+            r"^fileserver-shard/(?P<shard_id>[^/]+)/$",
+            views.FileserverShardView.as_view(),
+            name="admin_fileserver_shard",
+        ),
+        re_path(
+            r"^fileserver-shard/$",
+            views.FileserverShardView.as_view(),
+            name="admin_fileserver_shard",
+        ),
+        re_path(
+            r"^fileserver-cluster-shard-link/$",
+            views.FileserverClusterShardLinkView.as_view(),
+            name="admin_fileserver_cluster_shard_link",
+        ),
+        re_path(
+            r"^fileserver/(?P<fileserver_id>[^/]+)/$",
+            views.FileserverView.as_view(),
+            name="admin_fileserver",
+        ),
+        re_path(
+            r"^fileserver/$",
+            views.FileserverView.as_view(),
+            name="admin_fileserver",
+        ),
+        re_path(
             r"^stats/two-factor/$",
             views.StatsTwoFactorView.as_view(),
             name="stats_two_factor",
