@@ -60,7 +60,7 @@ charset-normalizer==3.4.7
     # via requests
 constantly==23.10.4
     # via twisted
-cryptography==49.0.0
+cryptography==50.0.0
     # via
     #   autobahn
     #   azure-storage-blob
@@ -195,7 +195,7 @@ pynacl==1.6.2
     # via
     #   -r requirements.in
     #   paramiko
-pyopenssl==26.3.0
+pyopenssl==26.4.0
     # via
     #   twisted
     #   webauthn
