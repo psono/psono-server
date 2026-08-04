@@ -20,3 +20,24 @@ from .update_user import UpdateUserSerializer
 from .delete_group_share_right import DeleteGroupShareRightSerializer
 from .update_group_share_right import UpdateGroupShareRightSerializer
 from .delete_ivalt import DeleteIvaltSerializer
+from .create_fileserver_cluster import CreateFileserverClusterSerializer
+from .create_fileserver_cluster_shard_link import (
+    CreateFileserverClusterShardLinkSerializer,
+)
+from .create_fileserver_shard import CreateFileserverShardSerializer
+from .delete_fileserver_cluster import DeleteFileserverClusterSerializer
+from .delete_fileserver_cluster_shard_link import (
+    DeleteFileserverClusterShardLinkSerializer,
+)
+from .delete_fileserver_shard import DeleteFileserverShardSerializer
+from .generate_fileserver_cluster_config import (
+    GenerateFileserverClusterConfigSerializer,
+)
+from .read_fileserver import ReadFileserverSerializer
+from .read_fileserver_cluster import ReadFileserverClusterSerializer
+from .read_fileserver_shard import ReadFileserverShardSerializer
+from .update_fileserver_cluster import UpdateFileserverClusterSerializer
+from .update_fileserver_cluster_shard_link import (
+    UpdateFileserverClusterShardLinkSerializer,
+)
+from .update_fileserver_shard import UpdateFileserverShardSerializer

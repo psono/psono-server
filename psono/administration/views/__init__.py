@@ -17,3 +17,8 @@ from .membership import MembershipView
 from .recovery_code import RecoveryCodeView
 from .emergency_code import EmergencyCodeView
 from .ivalt import IvaltView
+from .fileserver_cluster import FileserverClusterView
+from .fileserver_cluster_config import FileserverClusterConfigView
+from .fileserver_cluster_shard_link import FileserverClusterShardLinkView
+from .fileserver import FileserverView
+from .fileserver_shard import FileserverShardView
