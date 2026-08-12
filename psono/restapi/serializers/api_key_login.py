@@ -68,6 +68,9 @@ class APIKeyLoginSerializer(serializers.Serializer):
             msg = "Signature invalid."
             raise exceptions.ValidationError(msg)
 
+        if api_key.restrict_to_secrets:
+            raise exceptions.PermissionDenied("API_KEY_RESTRICTED_TO_SECRETS")
+
         attrs["api_key"] = api_key
         attrs["user_session_public_key"] = session_public_key
         attrs["session_duration"] = session_duration

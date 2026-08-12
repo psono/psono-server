@@ -1853,10 +1853,12 @@ class Token(models.Model):
 @receiver(post_save, sender=Token)
 def token_post_save_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
-        pk = str(kwargs["instance"].pk)
-        cache.set(
-            "psono_token_" + pk, kwargs["instance"], kwargs["instance"].get_cache_time()
-        )
+        token = kwargs["instance"]
+        pk = str(token.pk)
+        if token.api_key_id is None or "api_key" in token._state.fields_cache:
+            cache.set("psono_token_" + pk, token, token.get_cache_time())
+        else:
+            cache.delete("psono_token_" + pk)
 
 
 @receiver(post_delete, sender=Token)
@@ -1885,12 +1887,19 @@ def user_post_delete_receiver(sender, **kwargs):
 @receiver(post_save, sender=API_Key)
 def api_key_post_save_receiver(sender, **kwargs):
     if settings.CACHE_ENABLE:
-        pk = str(kwargs["instance"].pk)
+        api_key = kwargs["instance"]
+        pk = str(api_key.pk)
         cache.set(
             "psono_api_key_" + pk,
-            kwargs["instance"],
-            kwargs["instance"].get_cache_time(),
+            api_key,
+            api_key.get_cache_time(),
         )
+        token_cache_keys = [
+            "psono_token_" + str(token_pk)
+            for token_pk in api_key.tokens.values_list("pk", flat=True)
+        ]
+        if token_cache_keys:
+            cache.delete_many(token_cache_keys)
 
 
 @receiver(post_delete, sender=API_Key)
