@@ -139,6 +139,31 @@ class PreLoginTests(APITestCaseExtended):
         )
         self.assertEqual(response.data.get("hashing_algorithm"), "something")
 
+    def test_prelogin_user_exists_with_unicode_username(self):
+        self.user_obj.username = "j\u00f6rg@example.com"
+        self.user_obj.save()
+
+        url = reverse("authentication_prelogin")
+        response = self.client.post(url, {"username": self.user_obj.username})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data.get("hashing_parameters"), {"l": 65, "p": 2, "r": 9, "u": 15}
+        )
+        self.assertEqual(response.data.get("hashing_algorithm"), "something")
+
+    def test_prelogin_rejects_malformed_username(self):
+        url = reverse("authentication_prelogin")
+
+        for username in ["missing-at", "@example.com", "user@", "user@@example.com"]:
+            with self.subTest(username=username):
+                response = self.client.post(url, {"username": username})
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(
+                    response.data.get("username"), ["INVALID_USERNAME_FORMAT"]
+                )
+
     def test_prelogin_user_notexists(self):
         """
         Tests prelogin with a user that doesn't exists

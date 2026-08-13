@@ -74,3 +74,27 @@ class APIKeyLoginTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         token = models.Token.objects.get(user=self.user)
         self.assertEqual(token.api_key, self.api_key)
+
+    def test_login_rejects_api_key_restricted_to_secrets(self):
+        self.api_key.restrict_to_secrets = True
+        self.api_key.save()
+        session_private_key = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session_private_key.public_key.encode(
+                    encoder=nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        signature = binascii.hexlify(
+            self.signing_key.sign(info.encode()).signature
+        ).decode()
+
+        response = self.client.post(
+            reverse("api_key_login"), {"info": info, "signature": signature}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_RESTRICTED_TO_SECRETS"})
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())

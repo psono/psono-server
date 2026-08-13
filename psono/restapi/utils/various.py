@@ -844,7 +844,7 @@ def user_has_rights_on_file(
     return False
 
 
-def get_cache(model, pk):
+def get_cache(model, pk, queryset=None):
     pk = str(pk)
     try:
         cached_entity = None
@@ -852,7 +852,8 @@ def get_cache(model, pk):
             cached_entity = cache.get("psono_" + model._meta.verbose_name + "_" + pk)
 
         if cached_entity is None:
-            entity = model.objects.get(pk=pk)
+            manager = queryset if queryset is not None else model.objects
+            entity = manager.get(pk=pk)
             if entity.is_cachable:
                 set_cache(entity, entity.get_cache_time())
         else:

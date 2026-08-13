@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from rest_framework.exceptions import PermissionDenied
 from datetime import date
 
 
@@ -39,6 +40,17 @@ class IsAuthenticated(BasePermission):
         # Allow logout
         if url_name == "authentication_logout" and request.method == "POST":
             return request.user and request.user.is_authenticated
+
+        api_key = getattr(request.auth, "api_key", None)
+        if api_key is not None and api_key.restrict_to_secrets:
+            raise PermissionDenied("API_KEY_RESTRICTED_TO_SECRETS")
+
+        if (
+            api_key is not None
+            and url_name == "api_key"
+            and request.method in {"PUT", "POST"}
+        ):
+            raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
 
         # bulk-secret-read uses a POST request to read the data
         if url_name == "bulk_secret_read":

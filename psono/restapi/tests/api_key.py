@@ -1,10 +1,15 @@
 from django.urls import reverse
 from django.conf import settings
+from django.core.cache import cache
+from django.test.utils import override_settings
+from django.utils import timezone
 
 from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
+from restapi.authentication import TokenAuthentication
 
+from datetime import timedelta
 import json
 import random
 import string
@@ -86,6 +91,50 @@ class CreateApiKeyTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        self.assertEqual(models.API_Key.objects.count(), 1)
+
+    def test_create_failure_api_key_session(self):
+        api_key = models.API_Key.objects.create(
+            user=self.test_user_obj,
+            title="Authenticating API key",
+            public_key="a123",
+            private_key="a123",
+            private_key_nonce="api-key-private-key-nonce",
+            secret_key="a123",
+            secret_key_nonce="api-key-secret-key-nonce",
+            user_private_key="a123",
+            user_private_key_nonce="api-key-user-private-key-nonce",
+            user_secret_key="a123",
+            user_secret_key_nonce="api-key-user-secret-key-nonce",
+            verify_key="a123",
+            read=True,
+            write=True,
+        )
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=api_key,
+            read=True,
+            write=True,
+        )
+        data = {
+            "title": "New API key",
+            "secret_key": "a123",
+            "secret_key_nonce": "B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            "private_key": "a123",
+            "private_key_nonce": "D5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884",
+            "public_key": "a123",
+            "user_private_key_nonce": "C5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884",
+            "user_private_key": "a123",
+            "user_secret_key_nonce": "A5BD6D7FCC2E086CFC28B2B2648ECA591D9F8201608A2D173E167D5B27ECA884",
+            "user_secret_key": "a123",
+            "verify_key": "a123",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        response = self.client.put(reverse("api_key"), data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_SESSION_NOT_ALLOWED"})
         self.assertEqual(models.API_Key.objects.count(), 1)
 
     def test_create_failure_no_title(self):
@@ -958,6 +1007,100 @@ class ReadApiKeyTest(APITestCaseExtended):
         )
         self.assertEqual(api_key.get("active"), self.test_api_key_obj.active)
 
+    def test_restricted_api_key_session_cannot_access_authenticated_endpoint(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=self.test_api_key_obj,
+            active=True,
+            read=True,
+            write=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.clear_text_key}")
+        response = self.client.get(reverse("api_key"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_RESTRICTED_TO_SECRETS"})
+
+    def test_authentication_loads_api_key_relation(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=self.test_api_key_obj,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+
+        with self.assertNumQueries(1):
+            authenticated_token = TokenAuthentication().get_db_token(token.pk)
+
+        with self.assertNumQueries(0):
+            self.assertTrue(authenticated_token.api_key.restrict_to_secrets)
+
+    @override_settings(
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            }
+        },
+    )
+    def test_authentication_caches_api_key_relation_and_invalidates_on_update(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=self.test_api_key_obj,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        cache.clear()
+        authentication = TokenAuthentication()
+
+        with self.assertNumQueries(1):
+            authenticated_token = authentication.get_db_token(token.pk)
+
+        with self.assertNumQueries(0):
+            cached_token = authentication.get_db_token(token.pk)
+            self.assertTrue(cached_token.api_key.restrict_to_secrets)
+
+        self.test_api_key_obj.restrict_to_secrets = False
+        self.test_api_key_obj.save()
+
+        with self.assertNumQueries(1):
+            refreshed_token = authentication.get_db_token(token.pk)
+
+        with self.assertNumQueries(0):
+            self.assertFalse(refreshed_token.api_key.restrict_to_secrets)
+
+    @override_settings(
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            }
+        },
+    )
+    def test_authentication_replaces_cached_token_without_api_key_relation(self):
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=self.test_api_key_obj,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        cached_token = models.Token.objects.get(pk=token.pk)
+        cache.set(
+            "psono_token_" + str(token.pk),
+            cached_token,
+            cached_token.get_cache_time(),
+        )
+
+        with self.assertNumQueries(1):
+            authenticated_token = TokenAuthentication().get_db_token(token.pk)
+
+        with self.assertNumQueries(0):
+            self.assertTrue(authenticated_token.api_key.restrict_to_secrets)
+            cached_token = TokenAuthentication().get_db_token(token.pk)
+            self.assertTrue(cached_token.api_key.restrict_to_secrets)
+
     def test_read_api_keys_success_without_permission(self):
         """
         Tests to read all api_keys with a user that has no permissions
@@ -1208,6 +1351,53 @@ class UpdateApiKeyTest(APITestCaseExtended):
 
         self.assertEqual(token.read, data.get("read"))
         self.assertEqual(token.write, data.get("write"))
+
+    def test_update_api_key_failure_api_key_cannot_update_itself(self):
+        self.test_api_key_obj.restrict_to_secrets = False
+        self.test_api_key_obj.save()
+        url = reverse("api_key")
+        data = {
+            "api_key_id": self.test_api_key_obj.id,
+            "title": "Changed title",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token)
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_SESSION_NOT_ALLOWED"})
+        self.test_api_key_obj.refresh_from_db()
+        self.assertEqual(self.test_api_key_obj.title, "Test Title")
+
+    def test_update_api_key_failure_api_key_cannot_update_another_key(self):
+        self.test_api_key_obj.restrict_to_secrets = False
+        self.test_api_key_obj.save()
+        other_api_key = models.API_Key.objects.create(
+            user=self.test_user_obj,
+            title="Other API key",
+            public_key="a123",
+            private_key="a123",
+            private_key_nonce="other-api-key-private-key-nonce",
+            secret_key="a123",
+            secret_key_nonce="other-api-key-secret-key-nonce",
+            user_private_key="a123",
+            user_private_key_nonce="other-api-key-user-private-key-nonce",
+            user_secret_key="a123",
+            user_secret_key_nonce="other-api-key-user-secret-key-nonce",
+            verify_key="a123",
+        )
+        data = {
+            "api_key_id": other_api_key.id,
+            "title": "Changed title",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token)
+        response = self.client.post(reverse("api_key"), data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_SESSION_NOT_ALLOWED"})
+        other_api_key.refresh_from_db()
+        self.assertEqual(other_api_key.title, "Other API key")
 
     # def test_update_api_keys_failure_with_no_actual_data(self):
     #     """

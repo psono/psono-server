@@ -23,7 +23,7 @@ from .models import (
     Fileserver_Cluster_Member_Shard_Link,
     File_Transfer,
 )
-from .utils import get_cache, decrypt_with_db_secret, get_ip
+from .utils import get_cache, set_cache, decrypt_with_db_secret, get_ip
 
 
 import nacl.exceptions
@@ -214,10 +214,16 @@ class TokenAuthentication(BaseAuthentication):
 
     def get_db_token(self, token_hash):
 
-        token = get_cache(Token, token_hash)
+        token = get_cache(
+            Token, token_hash, queryset=Token.objects.select_related("api_key")
+        )
 
         if token is None:
             raise exceptions.AuthenticationFailed("Invalid token or not yet activated.")
+
+        if token.api_key_id is not None and "api_key" not in token._state.fields_cache:
+            token = Token.objects.select_related("api_key").get(pk=token_hash)
+            set_cache(token, token.get_cache_time())
 
         if not self.allow_inactive and not token.active:
             raise exceptions.AuthenticationFailed("Invalid token or not yet activated.")

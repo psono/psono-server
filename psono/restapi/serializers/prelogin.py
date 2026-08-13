@@ -4,9 +4,13 @@ from rest_framework import serializers
 
 
 class PreLoginSerializer(serializers.Serializer):
-    username = serializers.EmailField(
-        required=True, error_messages={"invalid": "INVALID_USERNAME_FORMAT"}
-    )
+    username = serializers.CharField(required=True, max_length=254)
+
+    def validate_username(self, value: str) -> str:
+        username_parts = value.split("@")
+        if len(username_parts) != 2 or not all(username_parts):
+            raise serializers.ValidationError("INVALID_USERNAME_FORMAT")
+        return value
 
     def validate(self, attrs: dict) -> dict:
 
