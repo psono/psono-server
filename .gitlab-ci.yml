@@ -76,7 +76,7 @@ build-container-alpine:
     - docker info
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
     - docker context create builder
-    - docker buildx create builder --use
+    - docker buildx create --driver docker-container --driver-opt image=moby/buildkit:v0.31.2 builder --use
     - docker buildx build -f DockerfileAlpine --platform linux/amd64,linux/arm64 -t $CONTAINER_TEST_IMAGE --push --pull .
   only:
     - branches@esaqa/psono/psono-server
