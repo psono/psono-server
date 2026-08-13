@@ -6,6 +6,7 @@ import random
 import string
 import binascii
 import os
+from types import SimpleNamespace
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
@@ -419,6 +420,48 @@ class DeleteSessionTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_session_failure_read_only_api_key_admin(self):
+        """
+        Tests that a read-only API key cannot mutate administration resources.
+        """
+
+        url = reverse("admin_session")
+        data = {"session_id": self.token.id}
+        api_key_token = SimpleNamespace(
+            api_key_id="499d3c84-e8ae-4a6b-a4c2-43c79beb069a",
+            api_key=SimpleNamespace(restrict_to_secrets=False),
+            read=True,
+            write=False,
+            secret_key="",
+        )
+
+        self.client.force_authenticate(user=self.admin, token=api_key_token)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(models.Token.objects.filter(pk=self.token.pk).exists())
+
+    def test_delete_session_success_write_api_key_admin(self):
+        """
+        Tests that a write-enabled API key can mutate administration resources.
+        """
+
+        url = reverse("admin_session")
+        data = {"session_id": self.token.id}
+        api_key_token = SimpleNamespace(
+            api_key_id="499d3c84-e8ae-4a6b-a4c2-43c79beb069a",
+            api_key=SimpleNamespace(restrict_to_secrets=False),
+            read=True,
+            write=True,
+            secret_key="",
+        )
+
+        self.client.force_authenticate(user=self.admin, token=api_key_token)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.Token.objects.filter(pk=self.token.pk).exists())
 
     def test_delete_session_failure_no_session_id(self):
         """
