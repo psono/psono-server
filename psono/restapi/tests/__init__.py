@@ -51,6 +51,7 @@ from .secret import *
 from .secret_link import *
 from .session import *
 from .session_key import *
+from .shard import *
 from .share import *
 from .share_link import *
 from .share_right import *

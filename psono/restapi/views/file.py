@@ -3,8 +3,8 @@ from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.serializers import Serializer
+from ..permissions import IsAuthenticated
 
 from decimal import Decimal
 
