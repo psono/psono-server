@@ -1,9 +1,13 @@
 examples
 demo
+.claude
+.idea
+.vscode
 .coverage
 .htmlcov
 *.deb
-.venv
+.trivycache
+.venv*
 venv
 __pycache__
 .pytest_cache

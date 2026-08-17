@@ -19,8 +19,10 @@ RUN mkdir -p /root/.pip && \
         libffi-dev \
         libssl-dev \
         postgresql-client && \
+    pip3 install --no-cache-dir --upgrade setuptools pip && \
     pip3 install -r requirements.txt && \
     pip3 install -r requirements-amd64.txt && \
+    python3 -m pip uninstall --yes --root-user-action=ignore pip && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i s/YourPostgresDatabase/postgres/g /root/.psono_server/settings.yaml && \

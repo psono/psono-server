@@ -553,6 +553,78 @@ class FileTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def _create_api_key_session_token(self, restrict_to_secrets=False, read=True, write=True):
+        api_key = models.API_Key.objects.create(
+            user=self.test_user_obj,
+            title="Test API Key",
+            public_key="B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            private_key="a123",
+            private_key_nonce="B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            secret_key="a123",
+            secret_key_nonce="B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            user_private_key="a123",
+            user_private_key_nonce="B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            user_secret_key="a123",
+            user_secret_key_nonce="B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            verify_key="a123",
+            read=True,
+            write=True,
+            restrict_to_secrets=restrict_to_secrets,
+            allow_insecure_access=True,
+        )
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=api_key,
+            active=True,
+            read=read,
+            write=write,
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        return token
+
+    def test_read_with_restricted_api_key_session(self):
+        """
+        Tests that a session of an API key restricted to secrets cannot read files
+        """
+
+        token = self._create_api_key_session_token(restrict_to_secrets=True)
+
+        url = reverse("file", kwargs={"file_id": str(self.file.id)})
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.clear_text_key}")
+        response = self.client.get(url, {})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_RESTRICTED_TO_SECRETS"})
+
+    def test_read_with_api_key_session_without_read_permission(self):
+        """
+        Tests that an API key session token without read permission cannot read files
+        """
+
+        token = self._create_api_key_session_token(read=False)
+
+        url = reverse("file", kwargs={"file_id": str(self.file.id)})
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.clear_text_key}")
+        response = self.client.get(url, {})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_write_with_api_key_session_without_write_permission(self):
+        """
+        Tests that an API key session token without write permission cannot create files
+        """
+
+        token = self._create_api_key_session_token(write=False)
+
+        url = reverse("file")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.clear_text_key}")
+        response = self.client.put(url, {})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_read_unauthenticated(self):
         """
         Tests GET on file unauthenticated
