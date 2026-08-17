@@ -1,6 +1,7 @@
 .idea
 .claude
 .mypy_cache
+.trivycache
 *.py[cod]
 problemtest
 .coverage*

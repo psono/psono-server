@@ -27,7 +27,8 @@ RUN apk upgrade && \
     pip3 install --no-cache-dir -r requirements.txt && \
     if [ "$TARGETARCH" = "amd64" ]; then \
     pip3 install --no-cache-dir -r requirements-amd64.txt ; \
-    fi; \
+    fi && \
+    python3 -m pip uninstall --yes --root-user-action=ignore pip && \
     mkdir -p /root/.psono_server && \
     cp /root/configs/mainconfig/settings.yaml /root/.psono_server/settings.yaml && \
     sed -i /root/.psono_server/settings.yaml \

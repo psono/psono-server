@@ -109,7 +109,7 @@ run-unittests-ubuntu:
     - docker build -f DockerfileDebian -t testimage --pull .
     - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
-    - docker run --link db:postgres -e "PSONO_THROTTLING=False" testimage bash -c "apt-get update && apt-get install -y python3-pip && pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
+    - docker run --link db:postgres -e "PSONO_THROTTLING=False" testimage bash -c "python3 -m ensurepip --upgrade && python3 -m pip install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && coverage3 run --source='.' ./psono/manage.py test restapi.tests administration.tests fileserver.tests && coverage3 report --omit=psono/restapi/migrations/*,psono/administration/tests*,psono/administration/migrations/*,psono/restapi/tests*,psono/fileserver/migrations/*,psono/fileserver/tests*"
 
 
 run-unittests-alpine:
@@ -138,7 +138,7 @@ run-unittests-alpine:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
-    - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test restapi.tests administration.tests fileserver.tests"
+    - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "python3 -m ensurepip --upgrade && python3 -m pip install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test restapi.tests administration.tests fileserver.tests"
   only:
     - branches@esaqa/psono/psono-server
     - tags@esaqa/psono/psono-server
@@ -171,7 +171,7 @@ run-unittests-alpine-arm64:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run -d -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:15.5-alpine
     - sleep 20
-    - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "pip3 install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test restapi.tests administration.tests fileserver.tests"
+    - docker run --link db:postgres -e "PSONO_THROTTLING=False" $CONTAINER_TEST_IMAGE /bin/sh -c "python3 -m ensurepip --upgrade && python3 -m pip install -r requirements-dev.txt && python3 ./psono/manage.py presetup && python3 ./psono/manage.py migrate && python3 ./psono/manage.py test restapi.tests administration.tests fileserver.tests"
   only:
     - branches@esaqa/psono/psono-server
     - tags@esaqa/psono/psono-server
@@ -242,7 +242,7 @@ run-vulnerability-scan:
     - echo $CI_JOB_TOKEN | docker login --username=gitlab-ci-token --password-stdin registry.gitlab.com
 #    - echo $docker_hub_credentials | docker login --username=psonogitlab --password-stdin
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "pip3 install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
+    - docker run -e "LANG=C.UTF-8" $CONTAINER_TEST_IMAGE sh -c "python3 -m ensurepip --upgrade && python3 -m pip install bandit && bandit -r /root -x /root/examples,/root/psono/restapi/tests,/root/psono/administration/tests,/root/psono/fileserver/tests"
   only:
     - branches@esaqa/psono/psono-server
     - tags@esaqa/psono/psono-server
