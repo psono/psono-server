@@ -238,7 +238,7 @@ service-identity==26.1.0
     # via twisted
 six==1.17.0
     # via python-dateutil
-sqlparse==0.5.5
+sqlparse==0.6.0
     # via django
 toml==0.10.2
     # via -r requirements.in
