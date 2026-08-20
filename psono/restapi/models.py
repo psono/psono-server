@@ -325,6 +325,16 @@ class API_Key(models.Model):
         default=False,
         help_text="Allows API access insecurely without transport encryption or even server side decryption",
     )
+    allow_api_key_management = models.BooleanField(
+        "Allow API key management",
+        default=False,
+        help_text="Allows managing API keys and their secret assignments",
+    )
+    allow_admin_access = models.BooleanField(
+        "Allow admin access",
+        default=False,
+        help_text="Allows access to administration API endpoints",
+    )
     active = models.BooleanField(
         "Is Active?",
         default=True,

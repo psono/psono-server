@@ -12,6 +12,8 @@ class CreateAPIKeySerializer(serializers.Serializer):
     write = BooleanField(required=False, default=False)
     restrict_to_secrets = BooleanField(required=False, default=False)
     allow_insecure_access = BooleanField(required=False, default=False)
+    allow_api_key_management = BooleanField(required=False, default=False)
+    allow_admin_access = BooleanField(required=False, default=False)
     public_key = serializers.CharField(required=True)
     private_key = serializers.CharField(required=True)
     private_key_nonce = serializers.CharField(max_length=64, required=True)

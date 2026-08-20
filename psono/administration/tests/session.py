@@ -430,7 +430,7 @@ class DeleteSessionTests(APITestCaseExtended):
         data = {"session_id": self.token.id}
         api_key_token = SimpleNamespace(
             api_key_id="499d3c84-e8ae-4a6b-a4c2-43c79beb069a",
-            api_key=SimpleNamespace(restrict_to_secrets=False),
+            api_key=SimpleNamespace(restrict_to_secrets=False, allow_admin_access=True),
             read=True,
             write=False,
             secret_key="",
@@ -442,16 +442,35 @@ class DeleteSessionTests(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(models.Token.objects.filter(pk=self.token.pk).exists())
 
-    def test_delete_session_success_write_api_key_admin(self):
+    def test_delete_session_failure_write_api_key_admin_without_permission(self):
         """
-        Tests that a write-enabled API key can mutate administration resources.
+        Tests that admin API access must be explicitly granted to an API key.
         """
 
         url = reverse("admin_session")
         data = {"session_id": self.token.id}
         api_key_token = SimpleNamespace(
             api_key_id="499d3c84-e8ae-4a6b-a4c2-43c79beb069a",
-            api_key=SimpleNamespace(restrict_to_secrets=False),
+            api_key=SimpleNamespace(
+                restrict_to_secrets=False, allow_admin_access=False
+            ),
+            read=True,
+            write=True,
+            secret_key="",
+        )
+
+        self.client.force_authenticate(user=self.admin, token=api_key_token)
+        response = self.client.delete(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(models.Token.objects.filter(pk=self.token.pk).exists())
+
+    def test_delete_session_success_write_api_key_admin_with_permission(self):
+        url = reverse("admin_session")
+        data = {"session_id": self.token.id}
+        api_key_token = SimpleNamespace(
+            api_key_id="499d3c84-e8ae-4a6b-a4c2-43c79beb069a",
+            api_key=SimpleNamespace(restrict_to_secrets=False, allow_admin_access=True),
             read=True,
             write=True,
             secret_key="",
