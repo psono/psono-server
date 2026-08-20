@@ -93,6 +93,8 @@ class APIKeyLoginView(GenericAPIView):
             "session_secret_key": token.secret_key,
             "api_key_restrict_to_secrets": api_key.restrict_to_secrets,
             "api_key_allow_insecure_access": api_key.allow_insecure_access,
+            "api_key_allow_api_key_management": api_key.allow_api_key_management,
+            "api_key_allow_admin_access": api_key.allow_admin_access,
             "api_key_read": api_key.read,
             "api_key_write": api_key.write,
             "user": {

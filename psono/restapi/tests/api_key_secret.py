@@ -177,6 +177,29 @@ class CreateApiKeySecretTest(APITestCaseExtended):
 
         self.assertEqual(models.API_Key_Secret.objects.count(), 1)
 
+    def test_api_key_session_requires_management_permission(self):
+        self.test_api_key_obj.restrict_to_secrets = False
+        self.test_api_key_obj.save()
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            api_key=self.test_api_key_obj,
+            read=True,
+            write=True,
+        )
+        url = reverse("api_key_secret", kwargs={"api_key_id": self.test_api_key_obj.id})
+
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {"detail": "API_KEY_SESSION_NOT_ALLOWED"})
+
+        self.test_api_key_obj.allow_api_key_management = True
+        self.test_api_key_obj.save()
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_create_failure_duplicate(self):
         """
         Tests to create an api key secret twice, producing a duplicate

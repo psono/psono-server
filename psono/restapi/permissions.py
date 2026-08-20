@@ -47,8 +47,8 @@ class IsAuthenticated(BasePermission):
 
         if (
             api_key is not None
-            and url_name == "api_key"
-            and request.method in {"PUT", "POST"}
+            and url_name in {"api_key", "api_key_secret"}
+            and not api_key.allow_api_key_management
         ):
             raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
 

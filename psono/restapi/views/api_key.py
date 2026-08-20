@@ -49,6 +49,8 @@ class APIKeyView(GenericAPIView):
                         "write": api_key.write,
                         "restrict_to_secrets": api_key.restrict_to_secrets,
                         "allow_insecure_access": api_key.allow_insecure_access,
+                        "allow_api_key_management": api_key.allow_api_key_management,
+                        "allow_admin_access": api_key.allow_admin_access,
                         "active": api_key.active,
                     }
                 )
@@ -79,6 +81,8 @@ class APIKeyView(GenericAPIView):
                 "write": api_key.write,
                 "restrict_to_secrets": api_key.restrict_to_secrets,
                 "allow_insecure_access": api_key.allow_insecure_access,
+                "allow_api_key_management": api_key.allow_api_key_management,
+                "allow_admin_access": api_key.allow_admin_access,
                 "active": api_key.active,
             }
 
@@ -119,6 +123,10 @@ class APIKeyView(GenericAPIView):
             allow_insecure_access=serializer.validated_data.get(
                 "allow_insecure_access"
             ),
+            allow_api_key_management=serializer.validated_data.get(
+                "allow_api_key_management"
+            ),
+            allow_admin_access=serializer.validated_data.get("allow_admin_access"),
         )
 
         return Response(
@@ -146,6 +154,10 @@ class APIKeyView(GenericAPIView):
         write = serializer.validated_data.get("write")
         restrict_to_secrets = serializer.validated_data.get("restrict_to_secrets")
         allow_insecure_access = serializer.validated_data.get("allow_insecure_access")
+        allow_api_key_management = serializer.validated_data.get(
+            "allow_api_key_management"
+        )
+        allow_admin_access = serializer.validated_data.get("allow_admin_access")
 
         if title is not None:
             api_key.title = title
@@ -167,6 +179,12 @@ class APIKeyView(GenericAPIView):
 
         if allow_insecure_access is not None:
             api_key.allow_insecure_access = allow_insecure_access
+
+        if allow_api_key_management is not None:
+            api_key.allow_api_key_management = allow_api_key_management
+
+        if allow_admin_access is not None:
+            api_key.allow_admin_access = allow_admin_access
 
         api_key.save()
 
