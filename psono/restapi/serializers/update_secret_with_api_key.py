@@ -17,6 +17,7 @@ class UpdateSecretWithAPIKeySerializer(serializers.Serializer):
 
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
+    old_write_date = serializers.DateTimeField(required=False)
     callback_url = serializers.CharField(
         required=False, max_length=2048, allow_blank=True
     )
@@ -38,6 +39,7 @@ class UpdateSecretWithAPIKeySerializer(serializers.Serializer):
 
         data = attrs.get("data", False)
         data_nonce = attrs.get("data_nonce", False)
+        old_write_date = attrs.get("old_write_date")
 
         try:
             api_key_secret = API_Key_Secret.objects.select_related(
@@ -74,14 +76,14 @@ class UpdateSecretWithAPIKeySerializer(serializers.Serializer):
                     nacl.encoding.HexEncoder.decode(api_key_secret.secret_key),
                     nacl.encoding.HexEncoder.decode(api_key_secret.secret_key_nonce),
                 )
-            except:
+            except Exception:
                 msg = "API_KEY_SECRET_KEY_INVALID"
                 raise exceptions.ValidationError(msg)
 
             if insecure_data:
                 try:
                     json.loads(insecure_data)
-                except:
+                except Exception:
                     msg = "API_KEY_SECRET_KEY_SPECIFIED_YET_INSECURE_DATA_NO_JSON"
                     raise exceptions.ValidationError(msg)
 
@@ -103,5 +105,6 @@ class UpdateSecretWithAPIKeySerializer(serializers.Serializer):
         attrs["data"] = data
         attrs["data_nonce"] = data_nonce
         attrs["secret_key"] = secret_key
+        attrs["old_write_date"] = old_write_date
 
         return attrs

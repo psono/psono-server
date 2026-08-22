@@ -1,10 +1,15 @@
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
+from uuid import uuid4
 
 from rest_framework import status
 from .base import APITestCaseExtended
-from ..utils import encrypt_with_db_secret
+from ..utils import (
+    calculate_user_rights_on_share,
+    encrypt_with_db_secret,
+    user_has_rights_on_secret,
+)
 from restapi import models
 
 import random
@@ -549,3 +554,215 @@ class UserShareRightsWithInheritedRightTest(APITestCaseExtended):
 
     # TODO Test everything with write
     # TODO Test everything with grant
+
+
+class NestedItemShareInheritanceTest(APITestCaseExtended):
+    def create_user(self, name):
+        return models.User.objects.create(
+            username=f"{name}@example.com",
+            email=f"{name}@example.com",
+            email_bcrypt=name,
+            authkey="abc",
+            public_key=f"{name}-public-key",
+            private_key=f"{name}-private-key",
+            private_key_nonce=str(uuid4()),
+            secret_key=f"{name}-secret-key",
+            secret_key_nonce=str(uuid4()),
+            user_sauce=f"{name}-user-sauce",
+            is_email_active=True,
+        )
+
+    def create_datastore(self, user):
+        return models.Data_Store.objects.create(
+            user=user,
+            data=b"datastore-data",
+            data_nonce=str(uuid4()),
+            secret_key="datastore-secret-key",
+            secret_key_nonce=str(uuid4()),
+        )
+
+    def create_share(self, parent_share_id=None, parent_datastore_id=None):
+        data = {
+            "data": "share-data",
+            "data_nonce": str(uuid4()),
+            "key": "share-key",
+            "key_nonce": str(uuid4()),
+            "key_type": "symmetric",
+            "link_id": str(uuid4()),
+        }
+        if parent_share_id:
+            data["parent_share_id"] = str(parent_share_id)
+        else:
+            data["parent_datastore_id"] = str(parent_datastore_id)
+
+        response = self.client.post(reverse("share"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return models.Share.objects.get(pk=response.data["share_id"])
+
+    def assert_hugo_can_read(self, hugo, item_share, secret):
+        self.assertTrue(calculate_user_rights_on_share(hugo.id, item_share.id)["read"])
+        self.assertTrue(
+            user_has_rights_on_secret(hugo.id, secret.id, read=True, write=None)
+        )
+
+        self.client.force_authenticate(user=hugo)
+        response = self.client.get(
+            reverse("share", kwargs={"share_id": str(item_share.id)})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(
+            reverse("secret", kwargs={"secret_id": str(secret.id)})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def accept_and_link_share(self, user, datastore, share_right):
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            reverse("share_right_accept"),
+            {
+                "share_right_id": str(share_right.id),
+                "key": "accepted-key",
+                "key_nonce": str(uuid4()),
+                "key_type": "symmetric",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.put(
+            reverse("share_link"),
+            {
+                "link_id": str(uuid4()),
+                "share_id": str(share_right.share_id),
+                "parent_datastore_id": str(datastore.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_other_users_accepting_item_share_keeps_hugos_inherited_access(self):
+        owner = self.create_user("owner")
+        hugo = self.create_user("hugo")
+        inge = self.create_user("inge")
+        petra = self.create_user("petra")
+
+        owner_datastore = self.create_datastore(owner)
+        inge_datastore = self.create_datastore(inge)
+        petra_datastore = self.create_datastore(petra)
+
+        self.client.force_authenticate(user=owner)
+        klaus = self.create_share(parent_datastore_id=owner_datastore.id)
+        bernd = self.create_share(parent_share_id=klaus.id)
+
+        hugo_klaus_right = models.User_Share_Right.objects.create(
+            creator=owner,
+            user=hugo,
+            share=klaus,
+            key="hugo-klaus-key",
+            key_nonce=str(uuid4()),
+            key_type="symmetric",
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
+        )
+
+        meier = models.Group.objects.create(name="meier", public_key="group-key")
+        models.User_Group_Membership.objects.create(
+            creator=owner,
+            user=hugo,
+            group=meier,
+            accepted=True,
+        )
+        meier_bernd_right = models.Group_Share_Right.objects.create(
+            creator=owner,
+            group=meier,
+            share=bernd,
+            key="group-share-key",
+            key_nonce=str(uuid4()),
+            read=True,
+            write=False,
+            grant=False,
+        )
+
+        secret_link_id = uuid4()
+        secret = models.Secret.objects.create(
+            user=owner,
+            data=b"secret-data",
+            data_nonce=str(uuid4()),
+        )
+        models.Secret_Link.objects.create(
+            secret=secret,
+            link_id=secret_link_id,
+            parent_share=bernd,
+        )
+        self.assertTrue(
+            user_has_rights_on_secret(hugo.id, secret.id, read=True, write=None)
+        )
+
+        self.client.force_authenticate(user=owner)
+        item_share = self.create_share(parent_share_id=bernd.id)
+        response = self.client.post(
+            reverse("secret_link"),
+            {
+                "link_id": str(secret_link_id),
+                "new_parent_share_id": str(item_share.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(models.Secret_Link.objects.filter(secret=secret).count(), 1)
+        self.assertEqual(
+            models.Secret_Link.objects.get(secret=secret).parent_share_id,
+            item_share.id,
+        )
+        self.assert_hugo_can_read(hugo, item_share, secret)
+
+        recipient_rights = []
+        for recipient in [inge, petra]:
+            recipient_rights.append(
+                models.User_Share_Right.objects.create(
+                    creator=owner,
+                    user=recipient,
+                    share=item_share,
+                    key="recipient-key",
+                    key_nonce=str(uuid4()),
+                    key_type="asymmetric",
+                    title="item",
+                    title_nonce=str(uuid4()),
+                    type="website_password",
+                    type_nonce=str(uuid4()),
+                    read=True,
+                    write=False,
+                    grant=False,
+                    accepted=None,
+                )
+            )
+
+        self.accept_and_link_share(inge, inge_datastore, recipient_rights[0])
+        self.assert_hugo_can_read(hugo, item_share, secret)
+
+        self.accept_and_link_share(petra, petra_datastore, recipient_rights[1])
+        self.assert_hugo_can_read(hugo, item_share, secret)
+
+        item_paths = models.Share_Tree.objects.filter(share=item_share)
+        self.assertEqual(item_paths.count(), 3)
+        self.assertEqual(item_paths.filter(parent_share=bernd).count(), 1)
+        self.assertTrue(item_paths.filter(parent_datastore=inge_datastore).exists())
+        self.assertTrue(item_paths.filter(parent_datastore=petra_datastore).exists())
+
+        # Either ancestor path is sufficient on its own after recipient acceptance.
+        hugo_klaus_right.delete()
+        self.assert_hugo_can_read(hugo, item_share, secret)
+        models.User_Share_Right.objects.create(
+            creator=owner,
+            user=hugo,
+            share=klaus,
+            key="hugo-klaus-key",
+            key_nonce=str(uuid4()),
+            key_type="symmetric",
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
+        )
+        meier_bernd_right.delete()
+        self.assert_hugo_can_read(hugo, item_share, secret)

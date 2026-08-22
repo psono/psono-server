@@ -1,19 +1,18 @@
-from django.urls import reverse
-from django.conf import settings
-
-from rest_framework import status
-from .base import APITestCaseExtended
-from restapi import models
-
-import random
-import string
 import binascii
 import json
 import os
+import random
+import string
 
+import nacl.encoding
 import nacl.secret
 import nacl.utils
-import nacl.encoding
+from django.conf import settings
+from django.urls import reverse
+from rest_framework import status
+from restapi import models
+
+from .base import APITestCaseExtended
 
 
 class CreateApiAccessSecretKeyTest(APITestCaseExtended):
@@ -234,6 +233,13 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = json.loads(response.data)
+        self.assertEqual(
+            response_data["write_date"],
+            models.Secret.objects.get(
+                id=self.test_secret_obj.id
+            ).write_date.isoformat(),
+        )
 
         self.assertTrue(
             models.Secret.objects.filter(
@@ -244,6 +250,72 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
             models.Secret_History.objects.filter(
                 secret_id=self.test_secret_obj.id
             ).exists()
+        )
+
+    def test_put_with_stale_old_write_date(self):
+        url = reverse("api_key_access_secret")
+        old_write_date = self.test_secret_obj.write_date.isoformat()
+        self.test_secret_obj.type = "changed"
+        self.test_secret_obj.save()
+        self.test_secret_obj.refresh_from_db()
+        current_write_date = self.test_secret_obj.write_date
+        history_count = models.Secret_History.objects.filter(
+            secret_id=self.test_secret_obj.id
+        ).count()
+
+        response = self.client.put(
+            url,
+            {
+                "api_key_id": self.test_api_key_obj.id,
+                "secret_id": self.test_secret_obj.id,
+                "data": "abc",
+                "data_nonce": "def",
+                "old_write_date": old_write_date,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            json.loads(response.content),
+            {"non_field_errors": ["WRITE_DATE_MISMATCH"]},
+        )
+        self.test_secret_obj.refresh_from_db()
+        self.assertNotEqual(self.test_secret_obj.data, b"abc")
+        self.assertNotEqual(self.test_secret_obj.data_nonce, "def")
+        self.assertEqual(self.test_secret_obj.write_date, current_write_date)
+        self.assertEqual(
+            models.Secret_History.objects.filter(
+                secret_id=self.test_secret_obj.id
+            ).count(),
+            history_count,
+        )
+
+    def test_only_one_put_succeeds_with_the_same_old_write_date(self):
+        url = reverse("api_key_access_secret")
+        old_write_date = self.test_secret_obj.write_date.isoformat()
+        request_data = {
+            "api_key_id": self.test_api_key_obj.id,
+            "secret_id": self.test_secret_obj.id,
+            "data_nonce": "def",
+            "old_write_date": old_write_date,
+        }
+
+        first_response = self.client.put(url, {**request_data, "data": "first"})
+        second_response = self.client.put(url, {**request_data, "data": "second"})
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            json.loads(second_response.content),
+            {"non_field_errors": ["WRITE_DATE_MISMATCH"]},
+        )
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(self.test_secret_obj.data, b"first")
+        self.assertEqual(
+            models.Secret_History.objects.filter(
+                secret_id=self.test_secret_obj.id
+            ).count(),
+            1,
         )
 
     def test_put_no_write_permission(self):
@@ -394,6 +466,10 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = json.loads(response.data)
+        self.assertEqual(
+            response_data["write_date"], self.test_secret_obj.write_date.isoformat()
+        )
 
     def test_read_secret_read_count(self):
         """
