@@ -80,6 +80,47 @@ class CreateGroupTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_group_creation_snapshot_excludes_inactive_tenants(self):
+        self.tenant_a = models.Tenant.objects.create(name="Tenant A")
+        self.tenant_b = models.Tenant.objects.create(name="Tenant B")
+        inactive_tenant = models.Tenant.objects.create(
+            name="Inactive Tenant", is_active=False
+        )
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_a,
+            user=self.test_user_obj,
+            created_by=self.test_user_obj,
+        )
+        models.TenantUserMembership.objects.create(
+            tenant=inactive_tenant,
+            user=self.test_user_obj,
+            created_by=self.test_user_obj,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        with self.settings(
+            DEFAULT_GROUP_TENANTS=[str(self.tenant_a.id), str(self.tenant_b.id)]
+        ):
+            response = self.client.put(
+                reverse("group"),
+                {
+                    "name": "Snapshot Group",
+                    "secret_key": "aa",
+                    "secret_key_nonce": "aa",
+                    "private_key": "aa",
+                    "private_key_nonce": "aa",
+                    "public_key": "aa",
+                },
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        tenant_ids = set(
+            models.TenantGroupMembership.objects.filter(
+                group_id=response.data["group_id"]
+            ).values_list("tenant_id", flat=True)
+        )
+        self.assertEqual(tenant_ids, {self.tenant_a.id, self.tenant_b.id})
+
     def test_create_failure_no_name(self):
         """
         Tests to create a group without a name

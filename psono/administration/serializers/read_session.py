@@ -1,20 +1,12 @@
 from rest_framework import serializers, exceptions
-from restapi.models import Group
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class ReadSessionSerializer(serializers.Serializer):
+class ReadSessionSerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "users.sessions.read"
+
     def validate(self, attrs: dict) -> dict:
-        group_id = (
-            self.context["request"].parser_context["kwargs"].get("group_id", False)
-        )
-
-        if group_id:
-            try:
-                Group.objects.get(pk=group_id)
-            except Group.DoesNotExist:
-                field = "group_id"
-                msg = "NO_PERMISSION_OR_NOT_EXIST"
-                raise exceptions.ValidationError({field: msg})
+        access = self.validate_administrative_access()
 
         page = self.context["request"].query_params.get("page", False)
         if page and not page.isdigit():
@@ -43,5 +35,6 @@ class ReadSessionSerializer(serializers.Serializer):
         attrs["page_size"] = int(page_size)
         attrs["ordering"] = ordering
         attrs["search"] = search
+        attrs["admin_access"] = access
 
         return attrs

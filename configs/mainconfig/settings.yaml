@@ -33,6 +33,10 @@ ALLOWED_DOMAINS: ['example.com']
 # If you want to restrict registration to some email addresses you can specify here a list of domains to filter
 # REGISTRATION_EMAIL_FILTER: ['company1.com', 'company2.com']
 
+# Automatically assign every new user or group to these tenants
+# DEFAULT_USER_TENANTS: ['00000000-0000-0000-0000-000000000001']
+# DEFAULT_GROUP_TENANTS: ['00000000-0000-0000-0000-000000000001']
+
 # Should be the URL of the host under which the server is reachable
 # If you open the url you should have a text similar to {"detail":"Authentication credentials were not provided."}
 HOST_URL: 'http://example.com'

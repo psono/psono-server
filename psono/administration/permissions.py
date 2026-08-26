@@ -1,15 +1,18 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+
+from .utils.access import user_has_administrative_capabilities
 
 
 class AdminPermission(BasePermission):
     """
-    Allows access only to superusers or staff that has the necessary object level permissions.
+    Allows access to superusers and users with active administrative capabilities.
     """
 
+    message = "INSUFFICIENT_PERMISSIONS"
+
     def has_permission(self, request, view):
-        # TODO implement logic for "is_staff" users that checks permissions on the endpoint / METHOD to allow / deny access
-        is_admin = request.user and (request.user.is_superuser or request.user.is_staff)
+        is_admin = user_has_administrative_capabilities(request.user)
 
         if not is_admin:
             return False
@@ -22,6 +25,9 @@ class AdminPermission(BasePermission):
 
         if api_key is not None and not api_key.allow_admin_access:
             raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
+
+        if request.user.is_superuser and api_key is None:
+            return True
 
         if request.method in SAFE_METHODS and token and not token.read:
             return False

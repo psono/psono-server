@@ -2,9 +2,12 @@ from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField
 
 from restapi.models import Group
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class UpdateGroupSerializer(serializers.Serializer):
+class UpdateGroupSerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "groups.update"
+
     group_id = UUIDField(required=True)
     name = serializers.CharField(max_length=64, required=True)
 
@@ -18,6 +21,8 @@ class UpdateGroupSerializer(serializers.Serializer):
         except Group.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
+
+        self.validate_administrative_access(group=group)
 
         if len(name) < 3:
             msg = "NAME_TOO_SHORT"

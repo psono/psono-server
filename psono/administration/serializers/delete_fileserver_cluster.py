@@ -2,12 +2,18 @@ from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField
 
 from restapi.models import Fileserver_Cluster
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class DeleteFileserverClusterSerializer(serializers.Serializer):
+class DeleteFileserverClusterSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "fileservers.manage"
+
     cluster_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
+        self.validate_global_administrative_access()
         cluster_id = attrs.get("cluster_id")
 
         try:

@@ -8,6 +8,7 @@ from ..app_settings import DeleteEmergencyCodeSerializer
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import Emergency_Code
+from administration.serializers.read_administration import ReadRecoveryCodeSerializer
 
 
 class EmergencyCodeView(GenericAPIView):
@@ -19,15 +20,25 @@ class EmergencyCodeView(GenericAPIView):
     def get_serializer_class(self):
         if self.request.method == "DELETE":
             return DeleteEmergencyCodeSerializer
-        return Serializer
+        return ReadRecoveryCodeSerializer
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
         Returns a list of all emergency codes
         """
 
+        serializer = ReadRecoveryCodeSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        access = serializer.validated_data["admin_access"]
+        queryset = Emergency_Code.objects.select_related("user").order_by(
+            "-create_date"
+        )
+        queryset = access.filter_user_relations(queryset)
         emergency_codes = []
-        for g in Emergency_Code.objects.select_related("user").order_by("-create_date"):
+        for g in queryset:
             emergency_codes.append(
                 {
                     "id": g.id,

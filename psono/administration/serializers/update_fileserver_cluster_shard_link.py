@@ -2,9 +2,14 @@ from rest_framework import serializers, exceptions
 from restapi.fields import BooleanField, UUIDField
 
 from restapi.models import Fileserver_Cluster_Shard_Link
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class UpdateFileserverClusterShardLinkSerializer(serializers.Serializer):
+class UpdateFileserverClusterShardLinkSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "fileservers.manage"
+
     link_id = UUIDField(required=True)
     read = BooleanField(required=True)
     write = BooleanField(required=True)
@@ -12,6 +17,7 @@ class UpdateFileserverClusterShardLinkSerializer(serializers.Serializer):
     allow_link_shares = BooleanField(required=True)
 
     def validate(self, attrs: dict) -> dict:
+        self.validate_global_administrative_access()
         link_id = attrs.get("link_id")
 
         try:

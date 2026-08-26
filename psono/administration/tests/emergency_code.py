@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadEmergencyCodeTests(APITestCaseExtended):
     def setUp(self):
@@ -505,3 +507,46 @@ class DeleteEmergencyCodeTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedEmergencyCodeTests(AdministrativeAccessTestCase):
+    def create_emergency_code(self, user, nonce):
+        return models.Emergency_Code.objects.create(
+            user=user,
+            description="Emergency code",
+            activation_delay=240,
+            emergency_authkey="authkey",
+            emergency_data=b"emergency-data",
+            emergency_data_nonce=nonce,
+            emergency_sauce="sauce",
+        )
+
+    def test_tenant_scoped_emergency_code_list_excludes_other_tenant(self):
+        code_a = self.create_emergency_code(self.user_a, "nonce-a")
+        self.create_emergency_code(self.user_b, "nonce-b")
+        self.grant("users.recovery.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_emergency_code"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [code["id"] for code in response.data["emergency_codes"]], [code_a.id]
+        )
+
+    def test_tenant_scoped_emergency_code_delete_rejects_other_tenant(self):
+        code_a = self.create_emergency_code(self.user_a, "nonce-a")
+        code_b = self.create_emergency_code(self.user_b, "nonce-b")
+        self.grant("users.recovery.delete")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(
+            reverse("admin_emergency_code"), {"emergency_code_id": code_a.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_emergency_code"), {"emergency_code_id": code_b.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Emergency_Code.objects.filter(pk=code_b.id).exists())

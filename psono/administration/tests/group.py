@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadGroupTests(APITestCaseExtended):
     def setUp(self):
@@ -597,3 +599,114 @@ class DeleteGroupTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class AdministrativeGroupAccessTests(AdministrativeAccessTestCase):
+    def test_tenant_scoped_group_list_excludes_other_tenant(self):
+        group_a = self.create_group("Group A", self.tenant_a)
+        self.create_group("Group B", self.tenant_b)
+        self.grant("groups.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_group"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [group["id"] for group in response.data["groups"]], [group_a.id]
+        )
+
+    def test_tenant_scoped_group_detail_rejects_other_tenant(self):
+        group_b = self.create_group("Group B", self.tenant_b)
+        self.grant("groups.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(
+            reverse("admin_group", kwargs={"group_id": group_b.id})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_tenant_scoped_group_update_allows_own_and_rejects_other_tenant(self):
+        group_a = self.create_group("Group A", self.tenant_a)
+        group_b = self.create_group("Group B", self.tenant_b)
+        self.grant("groups.update")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.put(
+            reverse("admin_group"),
+            {"group_id": group_a.id, "name": "Updated Group A"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.put(
+            reverse("admin_group"),
+            {"group_id": group_b.id, "name": "Updated Group B"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        group_b.refresh_from_db()
+        self.assertEqual(group_b.name, "Group B")
+
+    def test_tenant_scoped_group_delete_allows_own_and_rejects_other_tenant(self):
+        group_a = self.create_group("Group A", self.tenant_a)
+        group_b = self.create_group("Group B", self.tenant_b)
+        self.grant("groups.delete")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(reverse("admin_group"), {"group_id": group_a.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(reverse("admin_group"), {"group_id": group_b.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Group.objects.filter(pk=group_b.id).exists())
+
+    def test_group_detail_memberships_require_membership_read_capability(self):
+        group = models.Group.objects.create(name="Group A", public_key="public-key")
+        models.TenantGroupMembership.objects.create(
+            tenant=self.tenant_a, group=group, created_by=self.superuser
+        )
+        models.User_Group_Membership.objects.create(user=self.user_b, group=group)
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="groups.read"
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+        url = reverse("admin_group", kwargs={"group_id": group.id})
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("memberships", response.data)
+
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="groups.memberships.read"
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["memberships"][0]["user_id"], self.user_b.id)
+
+    def test_shared_group_deletion_requires_confirmation_from_owner(self):
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="groups.delete"
+        )
+        group = models.Group.objects.create(
+            name="Shared Group", public_key="public-key"
+        )
+        models.TenantGroupMembership.objects.create(
+            tenant=self.tenant_a, group=group, created_by=self.superuser
+        )
+        models.TenantGroupMembership.objects.create(
+            tenant=self.tenant_b, group=group, created_by=self.superuser
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+        url = reverse("admin_group")
+
+        response = self.client.delete(url, {"group_id": group.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Group.objects.filter(pk=group.id).exists())
+
+        response = self.client.delete(
+            url,
+            {"group_id": group.id, "confirm_shared_ownership": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.Group.objects.filter(pk=group.id).exists())

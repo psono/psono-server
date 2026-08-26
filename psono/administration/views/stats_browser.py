@@ -1,13 +1,13 @@
+from administration.serializers.stats_browser_read import StatsBrowserReadSerializer
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
-
-from ..permissions import AdminPermission
+from rest_framework.response import Response
 from restapi.authentication import TokenAuthentication
 from restapi.models import Token
+
+from ..permissions import AdminPermission
 
 
 class StatsBrowserView(GenericAPIView):
@@ -16,12 +16,18 @@ class StatsBrowserView(GenericAPIView):
     allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        return Serializer
+        return StatsBrowserReadSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Returns the statistics of used devices
         """
+
+        serializer = StatsBrowserReadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         browsers = (
             Token.objects.filter(valid_till__gt=timezone.now())

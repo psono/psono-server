@@ -41,6 +41,7 @@ class SessionView(GenericAPIView):
         page_size = serializer.validated_data.get("page_size")
         ordering = serializer.validated_data.get("ordering")
         search = serializer.validated_data.get("search")
+        admin_access = serializer.validated_data["admin_access"]
 
         session_qs = (
             Token.objects.select_related("user")
@@ -56,6 +57,7 @@ class SessionView(GenericAPIView):
                 "device_fingerprint",
             )
         )
+        session_qs = admin_access.filter_user_relations(session_qs)
 
         if search:
             session_qs = session_qs.filter(

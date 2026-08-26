@@ -1,16 +1,17 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
+from datetime import timedelta
+
+from administration.serializers.info_read import InfoReadSerializer
 from django.conf import settings
 from django.db.models import Count
-from django.db.models.functions import TruncMonth, TruncDay
-from datetime import timedelta
+from django.db.models.functions import TruncDay, TruncMonth
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from restapi.authentication import TokenAuthentication
+from restapi.models import Fileserver_Cluster_Members, Token, User
 
 from ..permissions import AdminPermission
-from restapi.authentication import TokenAuthentication
-from restapi.models import User, Token, Fileserver_Cluster_Members
 
 
 class InfoView(GenericAPIView):
@@ -19,12 +20,18 @@ class InfoView(GenericAPIView):
     allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        return Serializer
+        return InfoReadSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Returns the Server's signed information and some additional data for a nice dashboard
         """
+
+        serializer = InfoReadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         info = settings.SIGNATURE.copy()
 

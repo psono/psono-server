@@ -9,6 +9,8 @@ import os
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase
 from restapi.utils import encrypt_with_db_secret
 
 
@@ -442,3 +444,18 @@ class DeleteIvaltTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedIvaltTests(AdministrativeAccessTestCase):
+    def test_tenant_scoped_ivalt_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_ivalt",
+            "ivalt_id",
+            models.Ivalt.objects.create(
+                user=self.user_a, mobile=encrypt_with_db_secret("1111111111")
+            ),
+            models.Ivalt.objects.create(
+                user=self.user_b, mobile=encrypt_with_db_secret("2222222222")
+            ),
+            "users.mfa.delete",
+        )

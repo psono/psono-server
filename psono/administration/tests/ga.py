@@ -10,6 +10,8 @@ import os
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase
 from restapi.utils import encrypt_with_db_secret
 
 
@@ -459,3 +461,21 @@ class DeleteGATests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedGoogleAuthenticatorTests(AdministrativeAccessTestCase):
+    def create_authenticator(self, user, title):
+        return models.Google_Authenticator.objects.create(
+            user=user,
+            title=title,
+            secret=encrypt_with_db_secret("secret"),
+        )
+
+    def test_tenant_scoped_authenticator_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_google_authenticator",
+            "google_authenticator_id",
+            self.create_authenticator(self.user_a, "Authenticator A"),
+            self.create_authenticator(self.user_b, "Authenticator B"),
+            "users.mfa.delete",
+        )

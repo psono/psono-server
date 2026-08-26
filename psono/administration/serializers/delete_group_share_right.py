@@ -2,9 +2,14 @@ from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField
 
 from restapi.models import Group_Share_Right
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class DeleteGroupShareRightSerializer(serializers.Serializer):
+class DeleteGroupShareRightSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "groups.shares.manage"
+
     group_share_right_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -16,6 +21,8 @@ class DeleteGroupShareRightSerializer(serializers.Serializer):
         except Group_Share_Right.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
+
+        self.validate_administrative_access(group=group_share_right.group)
 
         attrs["group_share_right"] = group_share_right
 

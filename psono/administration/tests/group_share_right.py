@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadGroupShareRightTests(APITestCaseExtended):
     def setUp(self):
@@ -541,3 +543,65 @@ class DeleteGroupShareRightTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedGroupShareRightTests(AdministrativeAccessTestCase):
+    def create_group_share_right(self, group, user):
+        share = models.Share.objects.create(
+            user=user, data=b"share-data", data_nonce="nonce"
+        )
+        return models.Group_Share_Right.objects.create(
+            creator=user,
+            share=share,
+            group=group,
+            read=True,
+            write=True,
+            grant=True,
+        )
+
+    def test_tenant_scoped_share_right_update_rejects_other_tenant(self):
+        right_a = self.create_group_share_right(
+            self.create_group("Share Group A", self.tenant_a), self.user_a
+        )
+        right_b = self.create_group_share_right(
+            self.create_group("Share Group B", self.tenant_b), self.user_b
+        )
+        self.grant("groups.shares.manage")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.put(
+            reverse("admin_group_share_right"),
+            {"group_share_right_id": right_a.id, "write": False},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.put(
+            reverse("admin_group_share_right"),
+            {"group_share_right_id": right_b.id, "write": False},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        right_b.refresh_from_db()
+        self.assertTrue(right_b.write)
+
+    def test_tenant_scoped_share_right_delete_rejects_other_tenant(self):
+        right_a = self.create_group_share_right(
+            self.create_group("Share Group A", self.tenant_a), self.user_a
+        )
+        right_b = self.create_group_share_right(
+            self.create_group("Share Group B", self.tenant_b), self.user_b
+        )
+        self.grant("groups.shares.manage")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(
+            reverse("admin_group_share_right"),
+            {"group_share_right_id": right_a.id},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_group_share_right"),
+            {"group_share_right_id": right_b.id},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Group_Share_Right.objects.filter(pk=right_b.id).exists())

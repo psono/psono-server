@@ -214,6 +214,21 @@ SERVICE_NAME = config_get("SERVICE_NAME", "Psono")
 
 ALLOW_REGISTRATION = str(config_get("ALLOW_REGISTRATION", True)).lower() == "true"
 ALLOW_LOST_PASSWORD = str(config_get("ALLOW_LOST_PASSWORD", True)).lower() == "true"
+DEFAULT_USER_TENANTS = config_get("DEFAULT_USER_TENANTS", [])
+if isinstance(DEFAULT_USER_TENANTS, str) and DEFAULT_USER_TENANTS:
+    DEFAULT_USER_TENANTS = [
+        tenant_id.strip() for tenant_id in DEFAULT_USER_TENANTS.split(",")
+    ]
+elif isinstance(DEFAULT_USER_TENANTS, str):
+    DEFAULT_USER_TENANTS = []
+
+DEFAULT_GROUP_TENANTS = config_get("DEFAULT_GROUP_TENANTS", [])
+if isinstance(DEFAULT_GROUP_TENANTS, str) and DEFAULT_GROUP_TENANTS:
+    DEFAULT_GROUP_TENANTS = [
+        tenant_id.strip() for tenant_id in DEFAULT_GROUP_TENANTS.split(",")
+    ]
+elif isinstance(DEFAULT_GROUP_TENANTS, str):
+    DEFAULT_GROUP_TENANTS = []
 ENFORCE_MATCHING_USERNAME_AND_EMAIL = (
     str(config_get("ENFORCE_MATCHING_USERNAME_AND_EMAIL", False)).lower() == "true"
 )

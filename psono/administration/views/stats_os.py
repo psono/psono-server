@@ -1,13 +1,13 @@
+from administration.serializers.stats_os_read import StatsOsReadSerializer
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
-
-from ..permissions import AdminPermission
+from rest_framework.response import Response
 from restapi.authentication import TokenAuthentication
 from restapi.models import Token
+
+from ..permissions import AdminPermission
 
 
 class StatsOsView(GenericAPIView):
@@ -16,12 +16,18 @@ class StatsOsView(GenericAPIView):
     allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        return Serializer
+        return StatsOsReadSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Returns the statistics of used operations_systems
         """
+
+        serializer = StatsOsReadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         operations_systems = (
             Token.objects.filter(valid_till__gt=timezone.now())

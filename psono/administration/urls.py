@@ -25,6 +25,47 @@ urlpatterns = []  # type: List[URLPattern]
 if settings.MANAGEMENT_ENABLED:
     # URLs for management servers purposes only
     urlpatterns += [
+        re_path(
+            r"^authorization/$",
+            views.AuthorizationView.as_view(),
+            name="admin_authorization",
+        ),
+        re_path(
+            r"^capability/$",
+            views.CapabilityView.as_view(),
+            name="admin_capability",
+        ),
+        re_path(
+            r"^tenant/(?P<tenant_id>[^/]+)/$",
+            views.TenantView.as_view(),
+            name="admin_tenant",
+        ),
+        re_path(r"^tenant/$", views.TenantView.as_view(), name="admin_tenant"),
+        re_path(
+            r"^tenant-membership/$",
+            views.TenantMembershipView.as_view(),
+            name="admin_tenant_membership",
+        ),
+        re_path(
+            r"^administrative-role/(?P<role_id>[^/]+)/$",
+            views.AdministrativeRoleView.as_view(),
+            name="admin_administrative_role",
+        ),
+        re_path(
+            r"^administrative-role/$",
+            views.AdministrativeRoleView.as_view(),
+            name="admin_administrative_role",
+        ),
+        re_path(
+            r"^administrative-role-assignment/(?P<assignment_id>[^/]+)/$",
+            views.AdministrativeRoleAssignmentView.as_view(),
+            name="admin_administrative_role_assignment",
+        ),
+        re_path(
+            r"^administrative-role-assignment/$",
+            views.AdministrativeRoleAssignmentView.as_view(),
+            name="admin_administrative_role_assignment",
+        ),
         re_path(r"^info/$", views.InfoView.as_view(), name="admin_info"),
         re_path(
             r"^user/(?P<user_id>[^/]+)/$", views.UserView.as_view(), name="admin_user"

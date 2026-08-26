@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, post_delete, pre_delete
 from django.db import models
 from django.dispatch import receiver
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.utils import timezone
 from timezone_field import TimeZoneField
@@ -1880,6 +1881,14 @@ def token_post_delete_receiver(sender, **kwargs):
 
 @receiver(post_save, sender=User)
 def user_post_save_receiver(sender, **kwargs):
+    if kwargs.get("created") and not kwargs.get("raw"):
+        create_default_tenant_memberships(
+            instance=kwargs["instance"],
+            tenant_ids=settings.DEFAULT_USER_TENANTS,
+            membership_model=TenantUserMembership,
+            relation_field="user_id",
+            using=kwargs.get("using"),
+        )
     if settings.CACHE_ENABLE:
         pk = str(kwargs["instance"].pk)
         cache.set(
@@ -1929,3 +1938,184 @@ def secret_pre_delete_receiver(sender, **kwargs):
     # Manually delete each attached file to trigger custom delete() method
     for file in secret.attached_files.all():
         file.delete()
+
+
+class Tenant(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=128, unique=True)
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+
+
+class TenantUserMembership(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    tenant = models.ForeignKey(
+        "restapi.Tenant",
+        on_delete=models.PROTECT,
+        related_name="user_memberships",
+    )
+    user = models.ForeignKey(
+        "restapi.User",
+        on_delete=models.CASCADE,
+        related_name="tenant_memberships",
+    )
+    created_by = models.ForeignKey(
+        "restapi.User",
+        on_delete=models.SET_NULL,
+        related_name="created_tenant_user_memberships",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("tenant", "user"), name="unique_tenant_user_membership"
+            )
+        ]
+
+
+class TenantGroupMembership(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    tenant = models.ForeignKey(
+        "restapi.Tenant",
+        on_delete=models.PROTECT,
+        related_name="group_memberships",
+    )
+    group = models.ForeignKey(
+        "restapi.Group",
+        on_delete=models.CASCADE,
+        related_name="tenant_memberships",
+    )
+    created_by = models.ForeignKey(
+        "restapi.User",
+        on_delete=models.SET_NULL,
+        related_name="created_tenant_group_memberships",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("tenant", "group"), name="unique_tenant_group_membership"
+            )
+        ]
+
+
+class AdministrativeRole(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=128, unique=True)
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    is_system = models.BooleanField(default=False)
+    is_full_access = models.BooleanField(default=False)
+    system_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
+
+
+class AdministrativeRoleCapability(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    role = models.ForeignKey(
+        "restapi.AdministrativeRole",
+        on_delete=models.CASCADE,
+        related_name="capabilities",
+    )
+    capability = models.CharField(max_length=128)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("role", "capability"), name="unique_role_capability"
+            )
+        ]
+
+
+class AdministrativeRoleAssignment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    create_date = models.DateTimeField(auto_now_add=True)
+    write_date = models.DateTimeField(auto_now=True)
+    role = models.ForeignKey(
+        "restapi.AdministrativeRole",
+        on_delete=models.CASCADE,
+        related_name="assignments",
+    )
+    user = models.ForeignKey(
+        "restapi.User",
+        on_delete=models.CASCADE,
+        related_name="administrative_role_assignments",
+    )
+    is_global = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        "restapi.User",
+        on_delete=models.SET_NULL,
+        related_name="created_administrative_role_assignments",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("role", "user"), name="unique_administrative_role_assignment"
+            )
+        ]
+
+    def clean(self):
+        if self.pk and self.is_global and self.tenants.exists():
+            raise ValidationError("A global role assignment cannot have tenant scopes.")
+
+
+class AdministrativeRoleAssignmentTenant(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(
+        "restapi.AdministrativeRoleAssignment",
+        on_delete=models.CASCADE,
+        related_name="tenants",
+    )
+    tenant = models.ForeignKey(
+        "restapi.Tenant",
+        on_delete=models.PROTECT,
+        related_name="administrative_role_assignments",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("assignment", "tenant"),
+                name="unique_administrative_assignment_tenant",
+            )
+        ]
+
+
+def create_default_tenant_memberships(
+    instance, tenant_ids, membership_model, relation_field, using
+):
+    if not tenant_ids:
+        return
+    existing_tenant_ids = (
+        Tenant.objects.using(using)
+        .filter(id__in=tenant_ids)
+        .values_list("id", flat=True)
+    )
+    membership_model.objects.using(using).bulk_create(
+        (
+            membership_model(tenant_id=tenant_id, **{relation_field: instance.pk})
+            for tenant_id in existing_tenant_ids
+        ),
+        ignore_conflicts=True,
+    )
+
+
+@receiver(post_save, sender=Group)
+def group_default_tenants_post_save_receiver(sender, **kwargs):
+    if kwargs.get("created") and not kwargs.get("raw"):
+        create_default_tenant_memberships(
+            instance=kwargs["instance"],
+            tenant_ids=settings.DEFAULT_GROUP_TENANTS,
+            membership_model=TenantGroupMembership,
+            relation_field="group_id",
+            using=kwargs.get("using"),
+        )

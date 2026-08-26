@@ -11,6 +11,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadRecoveryCodeTests(APITestCaseExtended):
     def setUp(self):
@@ -526,3 +528,48 @@ class DeleteRecoveryCodeTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedRecoveryCodeTests(AdministrativeAccessTestCase):
+    verifier = "verifier"
+
+    def create_recovery_code(self, user, nonce):
+        return models.Recovery_Code.objects.create(
+            user=user,
+            recovery_authkey="authkey",
+            recovery_data=b"recovery-data",
+            recovery_data_nonce=nonce,
+            verifier=self.verifier,
+            verifier_issue_date=timezone.now(),
+            recovery_sauce="sauce",
+        )
+
+    def test_tenant_scoped_recovery_code_list_excludes_other_tenant(self):
+        code_a = self.create_recovery_code(self.user_a, "nonce-a")
+        self.create_recovery_code(self.user_b, "nonce-b")
+        self.grant("users.recovery.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_recovery_code"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [code["id"] for code in response.data["recovery_codes"]], [code_a.id]
+        )
+
+    def test_tenant_scoped_recovery_code_delete_rejects_other_tenant(self):
+        code_a = self.create_recovery_code(self.user_a, "nonce-a")
+        code_b = self.create_recovery_code(self.user_b, "nonce-b")
+        self.grant("users.recovery.delete")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(
+            reverse("admin_recovery_code"), {"recovery_code_id": code_a.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_recovery_code"), {"recovery_code_id": code_b.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Recovery_Code.objects.filter(pk=code_b.id).exists())

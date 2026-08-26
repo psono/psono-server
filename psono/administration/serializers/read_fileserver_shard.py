@@ -2,10 +2,16 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers, exceptions
 
 from restapi.models import Fileserver_Shard
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class ReadFileserverShardSerializer(serializers.Serializer):
+class ReadFileserverShardSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "fileservers.read"
+
     def validate(self, attrs: dict) -> dict:
+        self.validate_global_administrative_access()
         shard_id = (
             self.context["request"].parser_context["kwargs"].get("shard_id", False)
         )

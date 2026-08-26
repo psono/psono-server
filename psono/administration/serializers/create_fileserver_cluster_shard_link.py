@@ -6,9 +6,14 @@ from restapi.models import (
     Fileserver_Cluster_Shard_Link,
     Fileserver_Shard,
 )
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class CreateFileserverClusterShardLinkSerializer(serializers.Serializer):
+class CreateFileserverClusterShardLinkSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "fileservers.manage"
+
     cluster_id = UUIDField(required=True)
     shard_id = UUIDField(required=True)
     read = BooleanField(required=False, default=True)
@@ -17,6 +22,7 @@ class CreateFileserverClusterShardLinkSerializer(serializers.Serializer):
     allow_link_shares = BooleanField(required=False, default=True)
 
     def validate(self, attrs: dict) -> dict:
+        self.validate_global_administrative_access()
         cluster_id = attrs.get("cluster_id")
         shard_id = attrs.get("shard_id")
 

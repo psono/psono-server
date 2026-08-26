@@ -2,10 +2,16 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers, exceptions
 
 from restapi.models import Fileserver_Cluster
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class ReadFileserverClusterSerializer(serializers.Serializer):
+class ReadFileserverClusterSerializer(
+    AdminCapabilitySerializerMixin, serializers.Serializer
+):
+    required_capability = "fileservers.read"
+
     def validate(self, attrs: dict) -> dict:
+        self.validate_global_administrative_access()
         cluster_id = (
             self.context["request"].parser_context["kwargs"].get("cluster_id", False)
         )

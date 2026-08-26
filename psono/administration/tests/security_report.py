@@ -8,6 +8,8 @@ import binascii
 import os
 from restapi import models
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadSecurityReportTest(APITestCaseExtended):
     """
@@ -288,3 +290,56 @@ class ReadSecurityReportTest(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class TenantScopedSecurityReportTests(AdministrativeAccessTestCase):
+    def create_security_report(self, user):
+        return models.SecurityReport.objects.create(
+            user=user,
+            recovery_code_exists=False,
+            two_factor_exists=False,
+            website_password_count=1,
+            breached_password_count=0,
+            duplicate_password_count=0,
+            check_haveibeenpwned=True,
+            master_password_breached=False,
+            master_password_duplicate=False,
+            master_password_length=16,
+            master_password_variation_count=4,
+        )
+
+    def test_tenant_scoped_security_report_list_excludes_other_tenant(self):
+        report_a = self.create_security_report(self.user_a)
+        self.create_security_report(self.user_b)
+        self.grant("security_reports.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_security_report"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [report["id"] for report in response.data["security_reports"]],
+            [report_a.id],
+        )
+
+    def test_tenant_scoped_security_report_detail_rejects_other_tenant(self):
+        report_a = self.create_security_report(self.user_a)
+        report_b = self.create_security_report(self.user_b)
+        self.grant("security_reports.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(
+            reverse(
+                "admin_security_report",
+                kwargs={"security_report_id": report_a.id},
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(
+            reverse(
+                "admin_security_report",
+                kwargs={"security_report_id": report_b.id},
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

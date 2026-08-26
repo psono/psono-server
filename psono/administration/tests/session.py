@@ -1,5 +1,7 @@
+from datetime import timedelta
 from django.urls import reverse
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import status
 
 import random
@@ -10,6 +12,8 @@ from types import SimpleNamespace
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase
 
 
 class ReadSessionTests(APITestCaseExtended):
@@ -509,3 +513,37 @@ class DeleteSessionTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedSessionTests(AdministrativeAccessTestCase):
+    def test_tenant_scoped_session_list_excludes_other_tenant(self):
+        valid_till = timezone.now() + timedelta(minutes=5)
+        token_a = models.Token.objects.create(user=self.user_a, valid_till=valid_till)
+        models.Token.objects.create(user=self.user_b, valid_till=valid_till)
+        self.grant("users.sessions.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_session"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [session["id"] for session in response.data["sessions"]], [token_a.id]
+        )
+
+    def test_tenant_scoped_session_delete_rejects_other_tenant(self):
+        valid_till = timezone.now() + timedelta(minutes=5)
+        token_a = models.Token.objects.create(user=self.user_a, valid_till=valid_till)
+        token_b = models.Token.objects.create(user=self.user_b, valid_till=valid_till)
+        self.grant("users.sessions.delete")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(
+            reverse("admin_session"), {"session_id": token_a.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_session"), {"session_id": token_b.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Token.objects.filter(id=token_b.id).exists())

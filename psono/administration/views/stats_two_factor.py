@@ -1,11 +1,13 @@
+from administration.serializers.stats_two_factor_read import (
+    StatsTwoFactorReadSerializer,
+)
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
-
-from ..permissions import AdminPermission
+from rest_framework.response import Response
 from restapi.authentication import TokenAuthentication
 from restapi.models import User
+
+from ..permissions import AdminPermission
 
 
 class StatsTwoFactorView(GenericAPIView):
@@ -14,12 +16,18 @@ class StatsTwoFactorView(GenericAPIView):
     allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        return Serializer
+        return StatsTwoFactorReadSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Returns the statistics of used two factors
         """
+
+        serializer = StatsTwoFactorReadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user_count = User.objects.count()
         user_google_authenticator_enabled_count = User.objects.filter(

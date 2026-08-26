@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadWebauthnTests(APITestCaseExtended):
     def setUp(self):
@@ -461,3 +463,25 @@ class DeleteWebauthnTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedWebAuthnTests(AdministrativeAccessTestCase):
+    def create_webauthn(self, user, suffix):
+        return models.Webauthn.objects.create(
+            user=user,
+            title=f"WebAuthn {suffix}",
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id=f"credential-{suffix}",
+            credential_public_key="public-key",
+            challenge=f"challenge-{suffix}",
+        )
+
+    def test_tenant_scoped_webauthn_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_webauthn",
+            "webauthn_id",
+            self.create_webauthn(self.user_a, "a"),
+            self.create_webauthn(self.user_b, "b"),
+            "users.mfa.delete",
+        )

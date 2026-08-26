@@ -11,6 +11,8 @@ import os
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase
 from restapi.utils import encrypt_with_db_secret
 
 
@@ -468,3 +470,23 @@ class DeleteDuoTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedDuoTests(AdministrativeAccessTestCase):
+    def create_duo(self, user, title):
+        return models.Duo.objects.create(
+            user=user,
+            title=title,
+            duo_integration_key="integration-key",
+            duo_secret_key=encrypt_with_db_secret("secret-key"),
+            duo_host="duo.example.com",
+        )
+
+    def test_tenant_scoped_duo_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_duo",
+            "duo_id",
+            self.create_duo(self.user_a, "Duo A"),
+            self.create_duo(self.user_b, "Duo B"),
+            "users.mfa.delete",
+        )
