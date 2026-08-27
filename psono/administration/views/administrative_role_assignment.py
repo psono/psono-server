@@ -11,7 +11,10 @@ from administration.permissions import AdminPermission
 from administration.serializers.administrative_role import (
     AdministrativeRoleAssignmentSerializer,
 )
-from administration.views.administrative_role_info import assignment_info
+from administration.views.administrative_role_info import (
+    assignment_info,
+    assignment_tenants_prefetch,
+)
 from restapi.authentication import TokenAuthentication
 
 
@@ -28,9 +31,18 @@ class AdministrativeRoleAssignmentView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         if assignment_id:
             return Response(assignment_info(serializer.validated_data["assignment"]))
-        assignments = AdministrativeRoleAssignment.objects.select_related(
-            "role", "user"
-        ).prefetch_related("tenants")
+        assignments = (
+            AdministrativeRoleAssignment.objects.select_related("role", "user")
+            .only(
+                "id",
+                "role_id",
+                "role__name",
+                "user_id",
+                "user__username",
+                "is_global",
+            )
+            .prefetch_related(assignment_tenants_prefetch())
+        )
         return Response(
             {"assignments": [assignment_info(assignment) for assignment in assignments]}
         )

@@ -69,3 +69,19 @@ class AdministrativeRoleAssignmentTests(AdministrativeAccessTestCase):
             assignment_data,
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_assignment_list_query_count_is_constant(self):
+        second_role = models.AdministrativeRole.objects.create(name="Second Role")
+        second_assignment = models.AdministrativeRoleAssignment.objects.create(
+            role=second_role, user=self.user_a, is_global=False
+        )
+        models.AdministrativeRoleAssignmentTenant.objects.create(
+            assignment=second_assignment, tenant=self.tenant_b
+        )
+        self.client.force_authenticate(user=self.superuser)
+
+        with self.assertNumQueries(2):
+            response = self.client.get(reverse("admin_administrative_role_assignment"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["assignments"]), 2)

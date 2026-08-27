@@ -87,6 +87,19 @@ class AdministrativeRoleTests(AdministrativeAccessTestCase):
                 expected[role.system_key] or set(),
             )
 
+    def test_role_list_query_count_is_constant(self):
+        second_role = models.AdministrativeRole.objects.create(name="Second Role")
+        models.AdministrativeRoleCapability.objects.create(
+            role=second_role, capability="groups.read"
+        )
+        self.client.force_authenticate(user=self.superuser)
+
+        with self.assertNumQueries(2):
+            response = self.client.get(reverse("admin_administrative_role"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data["roles"]), 2)
+
     def test_only_custom_roles_can_be_modified(self):
         self.client.force_authenticate(user=self.superuser)
         default_role = models.AdministrativeRole.objects.get(

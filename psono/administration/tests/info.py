@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.urls import reverse
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import status
 from restapi.tests.base import APITestCaseExtended
 import random
@@ -101,9 +104,12 @@ class ReadInfoTest(APITestCaseExtended):
         data = {}
 
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url, data)
+        with self.assertNumQueries(5):
+            response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user_count_active"], 2)
+        self.assertEqual(response.data["user_count_total"], 2)
         self.assertNotEqual(response.data.get("token_count_user", None), None)
         self.assertNotEqual(response.data.get("token_count_device", None), None)
         self.assertNotEqual(response.data.get("user_count_active", None), None)
@@ -144,6 +150,55 @@ class ReadInfoTest(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_read_info_counts_only_active_unexpired_tokens(self):
+        token_defaults = {
+            "secret_key": "secret-key",
+            "valid_till": timezone.now() + timedelta(hours=1),
+            "active": True,
+        }
+        models.Token.objects.create(
+            key="active-null-device",
+            user=self.test_user_obj,
+            device_fingerprint=None,
+            **token_defaults,
+        )
+        models.Token.objects.create(
+            key="active-device-one",
+            user=self.test_user_obj,
+            device_fingerprint="device-one",
+            **token_defaults,
+        )
+        models.Token.objects.create(
+            key="active-device-two",
+            user=self.admin,
+            device_fingerprint="device-two",
+            **token_defaults,
+        )
+        models.Token.objects.create(
+            key="inactive-token",
+            user=self.admin,
+            device_fingerprint="ignored-device",
+            active=False,
+            valid_till=timezone.now() + timedelta(hours=1),
+            secret_key="secret-key",
+        )
+        models.Token.objects.create(
+            key="expired-token",
+            user=self.admin,
+            device_fingerprint="ignored-device",
+            active=True,
+            valid_till=timezone.now() - timedelta(hours=1),
+            secret_key="secret-key",
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get(reverse("admin_info"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["token_count_total"], 3)
+        self.assertEqual(response.data["token_count_device"], 3)
+        self.assertEqual(response.data["token_count_user"], 2)
 
     def test_read_info_failure_no_authorization(self):
         """
