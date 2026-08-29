@@ -1,8 +1,11 @@
 from rest_framework import serializers, exceptions
 from restapi.models import User
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class ReadUserSerializer(serializers.Serializer):
+class ReadUserSerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "users.read"
+
     def validate(self, attrs: dict) -> dict:
         user_id = self.context["request"].parser_context["kwargs"].get("user_id", False)
 
@@ -15,6 +18,8 @@ class ReadUserSerializer(serializers.Serializer):
                 raise exceptions.ValidationError({field: msg})
 
             attrs["user"] = user
+
+        access = self.validate_administrative_access(user=attrs.get("user"))
 
         page = self.context["request"].query_params.get("page", False)
         if page and not page.isdigit():
@@ -43,5 +48,6 @@ class ReadUserSerializer(serializers.Serializer):
         attrs["page_size"] = int(page_size)
         attrs["ordering"] = ordering
         attrs["search"] = search
+        attrs["admin_access"] = access
 
         return attrs

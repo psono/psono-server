@@ -10,6 +10,7 @@ from ..app_settings import (
 from ..permissions import AdminPermission
 from restapi.authentication import TokenAuthentication
 from restapi.models import User_Group_Membership
+from administration.serializers.read_administration import ReadMembershipSerializer
 
 
 class MembershipView(GenericAPIView):
@@ -22,17 +23,29 @@ class MembershipView(GenericAPIView):
             return UpdateMembershipSerializer
         elif self.request.method == "DELETE":
             return DeleteMembershipSerializer
-        return Serializer
+        return ReadMembershipSerializer
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
         Returns a list of all memberships
         """
 
+        serializer = ReadMembershipSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        access = serializer.validated_data["admin_access"]
+        queryset = User_Group_Membership.objects.select_related(
+            "user", "group"
+        ).order_by("-create_date")
+        if not access.is_global:
+            queryset = queryset.filter(
+                group__tenant_memberships__tenant_id__in=access.tenant_ids,
+                group__tenant_memberships__tenant__is_active=True,
+            ).distinct()
         memberships = []
-        for g in User_Group_Membership.objects.select_related("user", "group").order_by(
-            "-create_date"
-        ):
+        for g in queryset:
             memberships.append(
                 {
                     "id": g.id,

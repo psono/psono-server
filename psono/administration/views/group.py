@@ -1,18 +1,19 @@
-from django.db.models import Q, Count
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
+from administration.utils.access import resolve_administrative_access
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework.serializers import Serializer
+from restapi.authentication import TokenAuthentication
+from restapi.models import Group, Group_Share_Right, User_Group_Membership
 
 from ..app_settings import (
-    UpdateGroupSerializer,
     DeleteGroupSerializer,
     ReadGroupSerializer,
+    UpdateGroupSerializer,
 )
 from ..permissions import AdminPermission
-from restapi.authentication import TokenAuthentication
-from restapi.models import Group, User_Group_Membership, Group_Share_Right
 
 
 class GroupView(GenericAPIView):
@@ -29,34 +30,38 @@ class GroupView(GenericAPIView):
             return DeleteGroupSerializer
         return Serializer
 
-    def get_group_info(self, group):
+    def get_group_info(self, request, group, admin_access):
 
         memberships = []
-        for m in (
-            User_Group_Membership.objects.filter(group=group)
-            .select_related("user")
-            .only(
-                "id",
-                "accepted",
-                "group_admin",
-                "share_admin",
-                "create_date",
-                "user__id",
-                "user__username",
-                "user__public_key",
-            )
-        ):
-            memberships.append(
-                {
-                    "id": m.id,
-                    "create_date": m.create_date,
-                    "accepted": m.accepted,
-                    "admin": m.group_admin,
-                    "share_admin": m.share_admin,
-                    "user_id": m.user.id,
-                    "username": m.user.username,
-                }
-            )
+        membership_access = resolve_administrative_access(
+            request.user, "groups.memberships.read"
+        )
+        if membership_access is not None and membership_access.allows_group(group):
+            for m in (
+                User_Group_Membership.objects.filter(group=group)
+                .select_related("user")
+                .only(
+                    "id",
+                    "accepted",
+                    "group_admin",
+                    "share_admin",
+                    "create_date",
+                    "user__id",
+                    "user__username",
+                    "user__public_key",
+                )
+            ):
+                memberships.append(
+                    {
+                        "id": m.id,
+                        "create_date": m.create_date,
+                        "accepted": m.accepted,
+                        "admin": m.group_admin,
+                        "share_admin": m.share_admin,
+                        "user_id": m.user.id,
+                        "username": m.user.username,
+                    }
+                )
 
         share_rights = []
         for m in Group_Share_Right.objects.filter(group=group).only(
@@ -75,16 +80,21 @@ class GroupView(GenericAPIView):
                 }
             )
 
-        return {
+        result = {
             "id": group.id,
             "name": group.name,
             "is_managed": False,
             "forced_membership": group.forced_membership,
             "create_date": group.create_date,
             "public_key": group.public_key,
-            "memberships": memberships,
             "share_rights": share_rights,
+            "tenant_ids": admin_access.visible_tenant_ids(
+                group.tenant_memberships.values_list("tenant_id", flat=True)
+            ),
         }
+        if membership_access is not None and membership_access.allows_group(group):
+            result["memberships"] = memberships
+        return result
 
     def get(self, request, group_id=None, *args, **kwargs):
         """
@@ -100,7 +110,9 @@ class GroupView(GenericAPIView):
 
         if group_id:
             group = serializer.validated_data.get("group")
-            group_info = self.get_group_info(group)
+            group_info = self.get_group_info(
+                request, group, serializer.validated_data["admin_access"]
+            )
 
             return Response(group_info, status=status.HTTP_200_OK)
 
@@ -109,8 +121,12 @@ class GroupView(GenericAPIView):
             page_size = serializer.validated_data.get("page_size")
             ordering = serializer.validated_data.get("ordering")
             search = serializer.validated_data.get("search")
+            admin_access = serializer.validated_data["admin_access"]
 
-            group_qs = Group.objects.annotate(member_count=Count("members__id"))
+            group_qs = Group.objects.annotate(
+                member_count=Count("members__id", distinct=True)
+            )
+            group_qs = admin_access.filter_groups(group_qs)
 
             if search:
                 group_qs = group_qs.filter(Q(name__icontains=search))
@@ -133,6 +149,9 @@ class GroupView(GenericAPIView):
                         "name": g.name,
                         "member_count": g.member_count,
                         "is_managed": False,
+                        "tenant_ids": admin_access.visible_tenant_ids(
+                            g.tenant_memberships.values_list("tenant_id", flat=True)
+                        ),
                     }
                 )
 

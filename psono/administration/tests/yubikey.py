@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadYubikeyTests(APITestCaseExtended):
     def setUp(self):
@@ -437,3 +439,18 @@ class DeleteYubikeyOTPTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedYubikeyTests(AdministrativeAccessTestCase):
+    def test_tenant_scoped_yubikey_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_yubikey_otp",
+            "yubikey_otp_id",
+            models.Yubikey_OTP.objects.create(
+                user=self.user_a, title="Yubikey A", yubikey_id="yubikey-a"
+            ),
+            models.Yubikey_OTP.objects.create(
+                user=self.user_b, title="Yubikey B", yubikey_id="yubikey-b"
+            ),
+            "users.mfa.delete",
+        )

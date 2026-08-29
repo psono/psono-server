@@ -2,9 +2,12 @@ from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField
 
 from restapi.models import Google_Authenticator
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class DeleteGASerializer(serializers.Serializer):
+class DeleteGASerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "users.mfa.delete"
+
     google_authenticator_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -18,6 +21,8 @@ class DeleteGASerializer(serializers.Serializer):
         except Google_Authenticator.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
+
+        self.validate_administrative_access(user=google_authenticator.user)
 
         attrs["google_authenticator"] = google_authenticator
 

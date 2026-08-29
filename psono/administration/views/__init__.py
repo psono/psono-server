@@ -22,3 +22,9 @@ from .fileserver_cluster_config import FileserverClusterConfigView
 from .fileserver_cluster_shard_link import FileserverClusterShardLinkView
 from .fileserver import FileserverView
 from .fileserver_shard import FileserverShardView
+from .tenant import TenantView
+from .tenant_membership import TenantMembershipView
+from .administrative_role import AdministrativeRoleView
+from .administrative_role_assignment import AdministrativeRoleAssignmentView
+from .authorization import AuthorizationView
+from .capability import CapabilityView

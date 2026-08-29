@@ -2,7 +2,6 @@ from django.urls import reverse
 from django.conf import settings
 from rest_framework import status
 
-import pyotp
 import random
 import string
 import binascii
@@ -10,6 +9,8 @@ import os
 
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase
 
 
 class ReadGATests(APITestCaseExtended):
@@ -580,3 +581,22 @@ class DeleteLinkShareTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TenantScopedLinkShareTests(AdministrativeAccessTestCase):
+    def create_link_share(self, user, suffix):
+        return models.Link_Share.objects.create(
+            user=user,
+            public_title=f"Link share {suffix}",
+            node=b"node",
+            node_nonce=f"nonce-{suffix}",
+        )
+
+    def test_tenant_scoped_link_share_delete_rejects_other_tenant(self):
+        self.assert_tenant_scoped_delete(
+            "admin_link_share",
+            "link_share_id",
+            self.create_link_share(self.user_a, "a"),
+            self.create_link_share(self.user_b, "b"),
+            "users.link_shares.delete",
+        )

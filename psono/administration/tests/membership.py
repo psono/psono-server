@@ -10,6 +10,8 @@ import os
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
 
+from .helpers import AdministrativeAccessTestCase
+
 
 class ReadMembershipTests(APITestCaseExtended):
     def setUp(self):
@@ -612,3 +614,67 @@ class DeleteMembershipTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TenantScopedMembershipTests(AdministrativeAccessTestCase):
+    def create_memberships(self):
+        group_a = self.create_group("Membership Group A", self.tenant_a)
+        group_b = self.create_group("Membership Group B", self.tenant_b)
+        return (
+            models.User_Group_Membership.objects.create(
+                user=self.user_a, group=group_a
+            ),
+            models.User_Group_Membership.objects.create(
+                user=self.user_b, group=group_b
+            ),
+        )
+
+    def test_tenant_scoped_membership_list_excludes_other_tenant(self):
+        membership_a, _ = self.create_memberships()
+        self.grant("groups.memberships.read")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_membership"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [membership["id"] for membership in response.data["memberships"]],
+            [membership_a.id],
+        )
+
+    def test_tenant_scoped_membership_update_rejects_other_tenant(self):
+        membership_a, membership_b = self.create_memberships()
+        self.grant("groups.memberships.manage")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.put(
+            reverse("admin_membership"),
+            {"membership_id": membership_a.id, "group_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.put(
+            reverse("admin_membership"),
+            {"membership_id": membership_b.id, "group_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        membership_b.refresh_from_db()
+        self.assertFalse(membership_b.group_admin)
+
+    def test_tenant_scoped_membership_delete_rejects_other_tenant(self):
+        membership_a, membership_b = self.create_memberships()
+        self.grant("groups.memberships.manage")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(
+            reverse("admin_membership"), {"membership_id": membership_a.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_membership"), {"membership_id": membership_b.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            models.User_Group_Membership.objects.filter(pk=membership_b.id).exists()
+        )

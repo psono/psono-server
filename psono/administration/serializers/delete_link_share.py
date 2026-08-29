@@ -2,9 +2,12 @@ from rest_framework import serializers, exceptions
 from restapi.fields import UUIDField
 
 from restapi.models import Link_Share
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class DeleteLinkShareSerializer(serializers.Serializer):
+class DeleteLinkShareSerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "users.link_shares.delete"
+
     link_share_id = UUIDField(required=True)
 
     def validate(self, attrs: dict) -> dict:
@@ -16,6 +19,8 @@ class DeleteLinkShareSerializer(serializers.Serializer):
         except Link_Share.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
+
+        self.validate_administrative_access(user=link_share.user)
 
         attrs["link_share"] = link_share
 

@@ -15,6 +15,7 @@ from ..app_settings import (
 )
 from ..models import Group, User_Group_Membership
 from ..authentication import TokenAuthentication
+from restapi.models import TenantGroupMembership
 
 
 class GroupView(GenericAPIView):
@@ -205,6 +206,18 @@ class GroupView(GenericAPIView):
         group = Group.objects.create(
             name=str(request.data["name"]),
             public_key=str(request.data["public_key"]),
+        )
+
+        TenantGroupMembership.objects.bulk_create(
+            (
+                TenantGroupMembership(
+                    tenant_id=tenant_id, group=group, created_by=request.user
+                )
+                for tenant_id in request.user.tenant_memberships.filter(
+                    tenant__is_active=True
+                ).values_list("tenant_id", flat=True)
+            ),
+            ignore_conflicts=True,
         )
 
         User_Group_Membership.objects.create(  # nosec B105, B106

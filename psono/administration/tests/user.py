@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
+from django.db import IntegrityError
 from rest_framework import status
 
 import random
@@ -12,6 +13,8 @@ from restapi.utils import encrypt_with_db_secret
 from restapi.utils import create_user as create_user_util
 from restapi import models
 from restapi.tests.base import APITestCaseExtended
+
+from .helpers import AdministrativeAccessTestCase, create_user
 
 
 class ReadUserTests(APITestCaseExtended):
@@ -732,3 +735,238 @@ class DeleteUserTests(APITestCaseExtended):
         response = self.client.delete(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class AdministrativeUserAccessTests(AdministrativeAccessTestCase):
+    def test_is_staff_without_role_is_forbidden(self):
+        self.client.force_authenticate(user=self.staff_without_role)
+        response = self.client.get(reverse("admin_user"))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "INSUFFICIENT_PERMISSIONS")
+
+    def test_tenant_scoped_user_list(self):
+        self.client.force_authenticate(user=self.delegated_admin)
+        response = self.client.get(reverse("admin_user"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [item["id"] for item in response.data["users"]], [self.user_a.id]
+        )
+
+    def test_tenant_scoped_user_list_excludes_protected_administrators(self):
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_a, user=self.superuser, created_by=self.superuser
+        )
+        protected_admin = create_user("protected-admin")
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_a, user=protected_admin, created_by=self.superuser
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=self.role,
+            user=protected_admin,
+            is_global=True,
+            created_by=self.superuser,
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.get(reverse("admin_user"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [item["id"] for item in response.data["users"]], [self.user_a.id]
+        )
+
+    def test_user_detail_nested_memberships_are_capability_and_tenant_scoped(self):
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_b, user=self.user_a, created_by=self.superuser
+        )
+        group_a = models.Group.objects.create(name="Group A", public_key="public-key")
+        group_b = models.Group.objects.create(name="Group B", public_key="public-key")
+        models.TenantGroupMembership.objects.create(
+            tenant=self.tenant_a, group=group_a, created_by=self.superuser
+        )
+        models.TenantGroupMembership.objects.create(
+            tenant=self.tenant_b, group=group_b, created_by=self.superuser
+        )
+        models.User_Group_Membership.objects.create(user=self.user_a, group=group_a)
+        models.User_Group_Membership.objects.create(user=self.user_a, group=group_b)
+        self.client.force_authenticate(user=self.delegated_admin)
+        url = reverse("admin_user", kwargs={"user_id": self.user_a.id})
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("memberships", response.data)
+        self.assertEqual(response.data["tenant_ids"], [self.tenant_a.id])
+
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="groups.memberships.read"
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [membership["group_id"] for membership in response.data["memberships"]],
+            [group_a.id],
+        )
+
+    def test_tenant_scoped_user_creation_assigns_ownership(self):
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="users.create"
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        with self.settings(DEFAULT_USER_TENANTS=[str(self.tenant_a.id)]):
+            response = self.client.post(
+                reverse("admin_user"),
+                {
+                    "username": "created-user@example.com",
+                    "email": "created-user@example.com",
+                    "password": "password",
+                    "tenant_ids": [str(self.tenant_a.id)],
+                },
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            models.TenantUserMembership.objects.filter(
+                tenant=self.tenant_a, user_id=response.data["id"]
+            ).count(),
+            1,
+        )
+
+    def test_duplicate_user_tenant_scope_returns_bad_request(self):
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="users.create"
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.post(
+            reverse("admin_user"),
+            {
+                "username": "duplicate-scope@example.com",
+                "email": "duplicate-scope@example.com",
+                "password": "password",
+                "tenant_ids": [str(self.tenant_a.id), str(self.tenant_a.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            models.User.objects.filter(username="duplicate-scope@example.com").exists()
+        )
+
+    def test_shared_user_deletion_requires_confirmation_from_owner(self):
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="users.delete"
+        )
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_b, user=self.user_a, created_by=self.superuser
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+        url = reverse("admin_user")
+
+        response = self.client.delete(url, {"user_id": self.user_a.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.User.objects.filter(pk=self.user_a.id).exists())
+
+        response = self.client.delete(
+            url,
+            {"user_id": self.user_a.id, "confirm_shared_ownership": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.User.objects.filter(pk=self.user_a.id).exists())
+
+    def test_out_of_scope_user_is_not_disclosed(self):
+        self.client.force_authenticate(user=self.delegated_admin)
+        response = self.client.get(
+            reverse("admin_user", kwargs={"user_id": self.user_b.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_operation_capability_returns_bad_request(self):
+        self.client.force_authenticate(user=self.delegated_admin)
+        response = self.client.put(
+            reverse("admin_user"), {"user_id": self.user_a.id, "is_active": False}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user_a.refresh_from_db()
+        self.assertTrue(self.user_a.is_active)
+
+    def test_admin_user_creation_rolls_back_when_tenant_membership_fails(self):
+        models.AdministrativeRoleCapability.objects.create(
+            role=self.role, capability="users.create"
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+        username = "rolled-back-user@example.com"
+
+        with (
+            patch(
+                "administration.views.user.TenantUserMembership.objects.bulk_create",
+                side_effect=IntegrityError,
+            ),
+            self.assertRaises(IntegrityError),
+        ):
+            self.client.post(
+                reverse("admin_user"),
+                {
+                    "username": username,
+                    "email": username,
+                    "password": "password",
+                    "tenant_ids": [self.tenant_a.id],
+                },
+            )
+
+        self.assertFalse(models.User.objects.filter(username=username).exists())
+
+    def test_tenant_scoped_user_creation_rejects_out_of_scope_tenant(self):
+        self.grant("users.create")
+        self.client.force_authenticate(user=self.delegated_admin)
+        username = "out-of-scope-user@example.com"
+
+        response = self.client.post(
+            reverse("admin_user"),
+            {
+                "username": username,
+                "email": username,
+                "password": "password",
+                "tenant_ids": [self.tenant_b.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(models.User.objects.filter(username=username).exists())
+
+    def test_tenant_scoped_user_update_allows_own_and_rejects_other_tenant(self):
+        self.grant("users.update")
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.user_a.id, "is_active": False},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.user_b.id, "is_active": False},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user_b.refresh_from_db()
+        self.assertTrue(self.user_b.is_active)
+
+    def test_tenant_scoped_user_delete_allows_own_and_rejects_other_tenant(self):
+        self.grant("users.delete")
+        user_a = create_user("delete-user-a")
+        models.TenantUserMembership.objects.create(
+            tenant=self.tenant_a, user=user_a, created_by=self.superuser
+        )
+        self.client.force_authenticate(user=self.delegated_admin)
+
+        response = self.client.delete(reverse("admin_user"), {"user_id": user_a.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.delete(
+            reverse("admin_user"), {"user_id": self.user_b.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.User.objects.filter(pk=self.user_b.id).exists())

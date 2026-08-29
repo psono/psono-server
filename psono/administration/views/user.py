@@ -1,44 +1,46 @@
+import secrets
+import string
+
+from administration.utils.access import resolve_administrative_access
 from django.conf import settings
-from django.db.models import Q, Exists, OuterRef
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
 from django.core.paginator import Paginator
-
-from ..app_settings import (
-    ReadUserSerializer,
-    DeleteUserSerializer,
-    UpdateUserSerializer,
-    CreateUserSerializer,
-)
-
-from ..permissions import AdminPermission
+from django.db import transaction
+from django.db.models import Exists, OuterRef, Q
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from restapi.authentication import TokenAuthentication
 from restapi.models import (
+    Duo,
+    Emergency_Code,
+    Google_Authenticator,
+    Ivalt,
+    Link_Share,
+    Recovery_Code,
+    TenantUserMembership,
+    Token,
     User,
     User_Group_Membership,
-    Duo,
-    Google_Authenticator,
-    Yubikey_OTP,
-    Recovery_Code,
-    Emergency_Code,
-    Token,
     User_Share_Right,
     Webauthn,
-    Ivalt,
+    Yubikey_OTP,
 )
-from restapi.models import Link_Share
 from restapi.utils import (
-    decrypt_with_db_secret,
     create_user,
+    decrypt_with_db_secret,
+    get_secret_counts_for_users,
     get_static_bcrypt_hash_from_email,
 )
 from restapi.utils.avatar import delete_avatar_storage_of_user
-from restapi.utils import get_secret_counts_for_users
 
-import secrets
-import string
+from ..app_settings import (
+    CreateUserSerializer,
+    DeleteUserSerializer,
+    ReadUserSerializer,
+    UpdateUserSerializer,
+)
+from ..permissions import AdminPermission
 
 
 class UserView(GenericAPIView):
@@ -57,35 +59,40 @@ class UserView(GenericAPIView):
             return DeleteUserSerializer
         return Serializer
 
-    def get_user_info(self, user):
+    def get_user_info(self, request, user, admin_access):
 
         memberships = []
-        for m in (
-            User_Group_Membership.objects.filter(user=user)
-            .select_related("group")
-            .only(
-                "id",
-                "accepted",
-                "group_admin",
-                "share_admin",
-                "create_date",
-                "group__id",
-                "group__name",
-                "group__create_date",
-                "group__public_key",
+        membership_access = resolve_administrative_access(
+            request.user, "groups.memberships.read"
+        )
+        if membership_access is not None:
+            membership_qs = (
+                User_Group_Membership.objects.filter(user=user)
+                .select_related("group")
+                .only(
+                    "id",
+                    "accepted",
+                    "group_admin",
+                    "share_admin",
+                    "create_date",
+                    "group__id",
+                    "group__name",
+                    "group__create_date",
+                    "group__public_key",
+                )
             )
-        ):
-            memberships.append(
-                {
-                    "id": m.id,
-                    "create_date": m.create_date,
-                    "accepted": m.accepted,
-                    "admin": m.group_admin,
-                    "group_id": m.group.id,
-                    "group_name": m.group.name,
-                    "share_admin": m.share_admin,
-                }
-            )
+            for m in membership_access.filter_group_relations(membership_qs):
+                memberships.append(
+                    {
+                        "id": m.id,
+                        "create_date": m.create_date,
+                        "accepted": m.accepted,
+                        "admin": m.group_admin,
+                        "group_id": m.group.id,
+                        "group_name": m.group.name,
+                        "share_admin": m.share_admin,
+                    }
+                )
 
         duos = []
         for d in Duo.objects.filter(user=user).only(
@@ -159,26 +166,29 @@ class UserView(GenericAPIView):
             )
 
         recovery_codes = []
-        for r in Recovery_Code.objects.filter(user=user).only("id", "create_date"):
-            recovery_codes.append(
-                {
-                    "id": r.id,
-                    "create_date": r.create_date,
-                }
-            )
-
         emergency_codes = []
-        for r in Emergency_Code.objects.filter(user=user).only(
-            "id", "create_date", "description"
-        ):
-            emergency_codes.append(
-                {
-                    "id": r.id,
-                    "create_date": r.create_date,
-                    "description": r.description,
-                    "activation_delay": r.activation_delay,
-                }
-            )
+        recovery_access = resolve_administrative_access(
+            request.user, "users.recovery.read"
+        )
+        if recovery_access is not None and recovery_access.allows_user(user):
+            for r in Recovery_Code.objects.filter(user=user).only("id", "create_date"):
+                recovery_codes.append(
+                    {
+                        "id": r.id,
+                        "create_date": r.create_date,
+                    }
+                )
+            for r in Emergency_Code.objects.filter(user=user).only(
+                "id", "create_date", "description"
+            ):
+                emergency_codes.append(
+                    {
+                        "id": r.id,
+                        "create_date": r.create_date,
+                        "description": r.description,
+                        "activation_delay": r.activation_delay,
+                    }
+                )
 
         link_shares = []
         for r in Link_Share.objects.filter(user=user).only(
@@ -201,28 +211,32 @@ class UserView(GenericAPIView):
             )
 
         sessions = []
-        for u in (
-            Token.objects.filter(user=user)
-            .only(
-                "id",
-                "create_date",
-                "active",
-                "valid_till",
-                "device_description",
-                "device_fingerprint",
-            )
-            .order_by("-create_date")
-        ):
-            sessions.append(
-                {
-                    "id": u.id,
-                    "create_date": u.create_date,
-                    "active": u.active,
-                    "valid_till": u.valid_till,
-                    "device_description": u.device_description,
-                    "device_fingerprint": u.device_fingerprint,
-                }
-            )
+        session_access = resolve_administrative_access(
+            request.user, "users.sessions.read"
+        )
+        if session_access is not None and session_access.allows_user(user):
+            for u in (
+                Token.objects.filter(user=user)
+                .only(
+                    "id",
+                    "create_date",
+                    "active",
+                    "valid_till",
+                    "device_description",
+                    "device_fingerprint",
+                )
+                .order_by("-create_date")
+            ):
+                sessions.append(
+                    {
+                        "id": u.id,
+                        "create_date": u.create_date,
+                        "active": u.active,
+                        "valid_till": u.valid_till,
+                        "device_description": u.device_description,
+                        "device_fingerprint": u.device_fingerprint,
+                    }
+                )
 
         share_rights = []
         for m in User_Share_Right.objects.filter(user=user).only(
@@ -240,7 +254,7 @@ class UserView(GenericAPIView):
                 }
             )
 
-        return {
+        result = {
             "id": user.id,
             "username": user.username,
             "is_managed": False,
@@ -255,18 +269,25 @@ class UserView(GenericAPIView):
             "require_password_change": user.require_password_change,
             "language": user.language,
             "authentication": user.authentication,
-            "memberships": memberships,
             "duos": duos,
             "google_authenticators": google_authenticators,
             "yubikey_otps": yubikey_otps,
             "webauthns": webauthns,
             "ivalts": ivalts,
-            "recovery_codes": recovery_codes,
-            "emergency_codes": emergency_codes,
             "link_shares": link_shares,
-            "sessions": sessions,
             "share_rights": share_rights,
+            "tenant_ids": admin_access.visible_tenant_ids(
+                user.tenant_memberships.values_list("tenant_id", flat=True)
+            ),
         }
+        if membership_access is not None:
+            result["memberships"] = memberships
+        if recovery_access is not None and recovery_access.allows_user(user):
+            result["recovery_codes"] = recovery_codes
+            result["emergency_codes"] = emergency_codes
+        if session_access is not None and session_access.allows_user(user):
+            result["sessions"] = sessions
+        return result
 
     def get(self, request, user_id=None, *args, **kwargs):
         """
@@ -282,7 +303,9 @@ class UserView(GenericAPIView):
 
         if user_id:
             user = serializer.validated_data.get("user")
-            user_info = self.get_user_info(user)
+            user_info = self.get_user_info(
+                request, user, serializer.validated_data["admin_access"]
+            )
 
             return Response(user_info, status=status.HTTP_200_OK)
 
@@ -298,6 +321,7 @@ class UserView(GenericAPIView):
             page_size = serializer.validated_data.get("page_size")
             ordering = serializer.validated_data.get("ordering")
             search = serializer.validated_data.get("search")
+            admin_access = serializer.validated_data["admin_access"]
 
             user_qs = User.objects.annotate(
                 recovery_code_exist=Exists(recovery_codes),
@@ -316,6 +340,7 @@ class UserView(GenericAPIView):
                 "yubikey_otp_enabled",
                 "require_password_change",
             )
+            user_qs = admin_access.filter_users(user_qs)
 
             if search:
                 user_qs = user_qs.filter(
@@ -358,6 +383,9 @@ class UserView(GenericAPIView):
                         "require_password_change": u.require_password_change,
                         "recovery_code_exist": u.recovery_code_exist,
                         "emergency_code_exist": u.emergency_code_exist,
+                        "tenant_ids": admin_access.visible_tenant_ids(
+                            u.tenant_memberships.values_list("tenant_id", flat=True)
+                        ),
                     }
                 )
 
@@ -444,6 +472,7 @@ class UserView(GenericAPIView):
         require_password_change = serializer.validated_data.get(
             "require_password_change"
         )
+        tenants = serializer.validated_data.get("tenants", [])
 
         if not password:
             password = "".join(
@@ -451,22 +480,35 @@ class UserView(GenericAPIView):
                 for _ in range(12)
             )
 
-        user_details = create_user(
-            username=username,
-            password=password,
-            email=email,
-            language=language,
-        )
-
-        if "error" in user_details:
-            return Response(
-                {"non_field_errors": [user_details["error"]]},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            user_details = create_user(
+                username=username,
+                password=password,
+                email=email,
+                language=language,
             )
 
-        if require_password_change is not None:
-            user_details["user"].require_password_change = require_password_change
-            user_details["user"].save(update_fields=["require_password_change"])
+            if "error" in user_details:
+                return Response(
+                    {"non_field_errors": [user_details["error"]]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if require_password_change is not None:
+                user_details["user"].require_password_change = require_password_change
+                user_details["user"].save(update_fields=["require_password_change"])
+
+            TenantUserMembership.objects.bulk_create(
+                (
+                    TenantUserMembership(
+                        tenant=tenant,
+                        user=user_details["user"],
+                        created_by=request.user,
+                    )
+                    for tenant in tenants
+                ),
+                ignore_conflicts=True,
+            )
 
         return Response(
             {

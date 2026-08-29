@@ -1,16 +1,17 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
-from django.conf import settings
-from django.db.models import Count
-from django.db.models.functions import TruncMonth, TruncDay
 from datetime import timedelta
+
+from administration.serializers.info_read import InfoReadSerializer
+from django.conf import settings
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDay, TruncMonth
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from restapi.authentication import TokenAuthentication
+from restapi.models import Fileserver_Cluster_Members, Token, User
 
 from ..permissions import AdminPermission
-from restapi.authentication import TokenAuthentication
-from restapi.models import User, Token, Fileserver_Cluster_Members
 
 
 class InfoView(GenericAPIView):
@@ -19,44 +20,52 @@ class InfoView(GenericAPIView):
     allowed_methods = ("GET", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
-        return Serializer
+        return InfoReadSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Returns the Server's signed information and some additional data for a nice dashboard
         """
 
-        info = settings.SIGNATURE.copy()
+        serializer = InfoReadSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        info["user_count_active"] = User.objects.filter(is_active=True).count()
-        info["user_count_total"] = User.objects.count()
-        info["token_count_total"] = Token.objects.filter(
-            valid_till__gt=timezone.now(), active=True
-        ).count()
-        info["token_count_device"] = (
-            Token.objects.filter(valid_till__gt=timezone.now(), active=True)
-            .values("device_fingerprint")
-            .annotate(num_sessions=Count("device_fingerprint"))
-            .count()
+        info = settings.SIGNATURE.copy()
+        now = timezone.now()
+
+        token_counts = Token.objects.filter(valid_till__gt=now, active=True).aggregate(
+            token_count_total=Count("pk"),
+            token_count_device=Count("device_fingerprint", distinct=True),
+            token_count_device_null=Count(
+                "pk", filter=Q(device_fingerprint__isnull=True)
+            ),
+            token_count_user=Count("user_id", distinct=True),
         )
-        info["token_count_user"] = (
-            Token.objects.filter(valid_till__gt=timezone.now(), active=True)
-            .values("user_id")
-            .annotate(num_sessions=Count("user_id"))
-            .count()
+        info["token_count_total"] = token_counts["token_count_total"]
+        info["token_count_device"] = token_counts["token_count_device"] + int(
+            token_counts["token_count_device_null"] > 0
         )
+        info["token_count_user"] = token_counts["token_count_user"]
 
         monthly_registrations = (
             User.objects.annotate(month=TruncMonth("create_date"))
             .values("month")
-            .annotate(counter=Count("id"))
-            .values("month", "counter")
+            .annotate(
+                counter=Count("id"),
+                active_counter=Count("id", filter=Q(is_active=True)),
+            )
+            .values("month", "counter", "active_counter")
             .order_by("month")
         )
         registrations_over_month = []
         count_total_month = 0
+        user_count_active = 0
         for r in monthly_registrations:
             count_total_month = count_total_month + r["counter"]
+            user_count_active = user_count_active + r["active_counter"]
             registrations_over_month.append(
                 {
                     "count_new": r["counter"],
@@ -64,21 +73,23 @@ class InfoView(GenericAPIView):
                     "month": r["month"].strftime("%b %y"),
                 }
             )
+        info["user_count_active"] = user_count_active
+        info["user_count_total"] = count_total_month
         info["registrations_over_month"] = registrations_over_month
 
-        daily_registrations_offset = User.objects.filter(
-            create_date__lt=timezone.now() - timedelta(days=16)
-        ).count()
-        daily_registrations = (
-            User.objects.filter(create_date__gte=timezone.now() - timedelta(days=16))
+        daily_registrations = list(
+            User.objects.filter(create_date__gte=now - timedelta(days=16))
             .annotate(day=TruncDay("create_date"))
             .values("day")
             .annotate(count_new=Count("id"))
             .values("day", "count_new")
             .order_by("day")
         )
+        daily_registrations_offset = count_total_month - sum(
+            registration["count_new"] for registration in daily_registrations
+        )
 
-        end_date = timezone.now()
+        end_date = now
         d = end_date - timedelta(days=16)
         registrations_over_day_index = {}
         while d <= end_date:
@@ -108,7 +119,7 @@ class InfoView(GenericAPIView):
 
         fileserver_cluster_members = (
             Fileserver_Cluster_Members.objects.filter(
-                valid_till__gt=timezone.now()
+                valid_till__gt=now
                 - timedelta(seconds=settings.FILESERVER_ALIVE_TIMEOUT)
             )
             .select_related("fileserver_cluster")
@@ -128,14 +139,16 @@ class InfoView(GenericAPIView):
 
         info["fileserver"] = fileserver
 
-        past_registrations = User.objects.order_by("-create_date")[:10]
+        past_registrations = User.objects.order_by("-create_date").values(
+            "create_date", "username", "is_active"
+        )[:10]
         registrations = []
         for r in past_registrations:
             registrations.append(
                 {
-                    "date": r.create_date,
-                    "username": r.username,
-                    "active": r.is_active,
+                    "date": r["create_date"],
+                    "username": r["username"],
+                    "active": r["is_active"],
                 }
             )
         info["registrations"] = registrations

@@ -5,9 +5,12 @@ import bcrypt
 
 from restapi.utils import encrypt_with_db_secret
 from restapi.models import User
+from .admin_access import AdminCapabilitySerializerMixin
 
 
-class UpdateUserSerializer(serializers.Serializer):
+class UpdateUserSerializer(AdminCapabilitySerializerMixin, serializers.Serializer):
+    required_capability = "users.update"
+
     user_id = UUIDField(required=True)
     is_active = BooleanField(required=False)
     is_email_active = BooleanField(required=False)
@@ -34,6 +37,10 @@ class UpdateUserSerializer(serializers.Serializer):
         except User.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
+
+        self.validate_administrative_access(user=user)
+        if is_superuser is not None or is_staff is not None:
+            self.validate_superuser()
 
         if email is not None:
             email = email.lower().strip()

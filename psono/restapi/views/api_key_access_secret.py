@@ -4,9 +4,9 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.serializers import Serializer
 from rest_framework.parsers import JSONParser
-from rest_framework.parsers import MultiPartParser
 from django.conf import settings
 from django.db.models import F
+from django.db import transaction
 
 import nacl.secret
 import nacl.encoding
@@ -16,6 +16,7 @@ import requests
 
 from ..renderers import PlainJSONRenderer
 from ..models import (
+    Secret,
     Secret_History,
 )
 from ..utils import filter_as_json, decrypt_with_db_secret, encrypt_with_db_secret
@@ -31,14 +32,14 @@ class APIKeyAccessSecretView(GenericAPIView):
     permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
-        if self.request.method == "GET":
-            return ReadSecretWithAPIKeySerializer
         if self.request.method == "POST":
+            return ReadSecretWithAPIKeySerializer
+        if self.request.method == "PUT":
             return UpdateSecretWithAPIKeySerializer
         return Serializer
 
     parser_classes = [JSONParser]
-    allowed_methods = ("POST", "OPTIONS", "HEAD")
+    allowed_methods = ("POST", "PUT", "OPTIONS", "HEAD")
 
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -55,35 +56,44 @@ class APIKeyAccessSecretView(GenericAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        secret = serializer.validated_data.get("secret")
         user = serializer.validated_data.get("user")
-
-        Secret_History.objects.create(
-            secret=secret,
-            data=secret.data,
-            data_nonce=secret.data_nonce,
-            user=user,
-            type=secret.type,
-            callback_url=secret.callback_url,
-            callback_user=secret.callback_user,
-            callback_pass=secret.callback_pass,
-        )
-
-        if serializer.validated_data["data"]:
-            secret.data = serializer.validated_data["data"].encode()
-        if serializer.validated_data["data_nonce"]:
-            secret.data_nonce = str(serializer.validated_data["data_nonce"])
-
-        if serializer.validated_data.get("callback_url", None) is not None:
-            secret.callback_url = serializer.validated_data["callback_url"]
-        if serializer.validated_data.get("callback_user", None) is not None:
-            secret.callback_user = serializer.validated_data["callback_user"]
-        if serializer.validated_data.get("callback_pass", None) is not None:
-            secret.callback_pass = encrypt_with_db_secret(
-                serializer.validated_data["callback_pass"]
+        with transaction.atomic():
+            secret = Secret.objects.select_for_update().get(
+                pk=serializer.validated_data["secret"].id
             )
 
-        secret.save()
+            old_write_date = serializer.validated_data.get("old_write_date")
+            if old_write_date is not None and old_write_date != secret.write_date:
+                return Response(
+                    json.dumps({"non_field_errors": ["WRITE_DATE_MISMATCH"]}),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            Secret_History.objects.create(
+                secret=secret,
+                data=secret.data,
+                data_nonce=secret.data_nonce,
+                user=user,
+                type=secret.type,
+                callback_url=secret.callback_url,
+                callback_user=secret.callback_user,
+                callback_pass=secret.callback_pass,
+            )
+
+            if serializer.validated_data["data"]:
+                secret.data = serializer.validated_data["data"].encode()
+            if serializer.validated_data["data_nonce"]:
+                secret.data_nonce = str(serializer.validated_data["data_nonce"])
+            if serializer.validated_data.get("callback_url", None) is not None:
+                secret.callback_url = serializer.validated_data["callback_url"]
+            if serializer.validated_data.get("callback_user", None) is not None:
+                secret.callback_user = serializer.validated_data["callback_user"]
+            if serializer.validated_data.get("callback_pass", None) is not None:
+                secret.callback_pass = encrypt_with_db_secret(
+                    serializer.validated_data["callback_pass"]
+                )
+
+            secret.save()
 
         if (
             secret.callback_url
@@ -100,7 +110,7 @@ class APIKeyAccessSecretView(GenericAPIView):
             if secret.callback_user and secret.callback_pass:
                 try:
                     callback_pass = decrypt_with_db_secret(secret.callback_pass)
-                except:
+                except Exception:
                     callback_pass = secret.callback_pass
 
             if secret.callback_user and callback_pass:
@@ -116,10 +126,13 @@ class APIKeyAccessSecretView(GenericAPIView):
                     auth=auth,
                     timeout=5.0,
                 )
-            except:  # nosec
+            except Exception:  # nosec
                 pass
 
-        return Response(json.dumps({}), status=status.HTTP_200_OK)
+        return Response(
+            json.dumps({"write_date": secret.write_date.isoformat()}),
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         """
@@ -151,6 +164,7 @@ class APIKeyAccessSecretView(GenericAPIView):
                         "secret_key": api_key_secret.secret_key,
                         "secret_key_nonce": api_key_secret.secret_key_nonce,
                         "read_count": read_count + 1,
+                        "write_date": secret.write_date.isoformat(),
                     }
                 ),
                 status=status.HTTP_200_OK,

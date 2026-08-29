@@ -79,13 +79,20 @@ class SecurityReportView(GenericAPIView):
             return Response(security_report_info, status=status.HTTP_200_OK)
 
         else:
+            admin_access = serializer.validated_data["admin_access"]
             security_reports = []
-            for security_report in (
+            security_report_qs = (
                 SecurityReport.objects.select_related("user")
                 .filter(user__is_active=True, user__is_email_active=True)
                 .order_by("user__username", "-create_date")
                 .distinct("user__username")
-            ):
+            )
+            user_qs = User.objects.filter(is_active=True, is_email_active=True)
+            security_report_qs = admin_access.filter_user_relations(
+                security_report_qs, apply_distinct=False
+            )
+            user_qs = admin_access.filter_users(user_qs)
+            for security_report in security_report_qs:
                 security_reports.append(
                     {
                         "id": security_report.id,
@@ -105,10 +112,8 @@ class SecurityReportView(GenericAPIView):
                 )
 
             users_missing_reports = []
-            for user in (
-                User.objects.filter(is_active=True, is_email_active=True)
-                .filter(security_reports__isnull=True)
-                .order_by("username", "-create_date")
+            for user in user_qs.filter(security_reports__isnull=True).order_by(
+                "username", "-create_date"
             ):
                 users_missing_reports.append(
                     {
@@ -121,9 +126,7 @@ class SecurityReportView(GenericAPIView):
             return Response(
                 {
                     "security_reports": security_reports,
-                    "user_count": User.objects.filter(
-                        is_active=True, is_email_active=True
-                    ).count(),
+                    "user_count": user_qs.count(),
                     "users_missing_reports": users_missing_reports,
                 },
                 status=status.HTTP_200_OK,
