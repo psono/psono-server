@@ -11,6 +11,13 @@ def main():
     box = PrivateKey.generate()
     private_key_hex = box.encode(encoder=nacl.encoding.HexEncoder)
     public_key_hex = box.public_key.encode(encoder=nacl.encoding.HexEncoder)
+    admin_recovery_box = PrivateKey.generate()
+    admin_recovery_private_key_hex = admin_recovery_box.encode(
+        encoder=nacl.encoding.HexEncoder
+    )
+    admin_recovery_public_key_hex = admin_recovery_box.public_key.encode(
+        encoder=nacl.encoding.HexEncoder
+    )
 
     print("")
     print(
@@ -38,6 +45,28 @@ def main():
     print("EMAIL_SECRET_SALT: " + repr(str(bcrypt.gensalt().decode())))
     print("PRIVATE_KEY: " + repr(str(private_key_hex.decode())))
     print("PUBLIC_KEY: " + repr(str(public_key_hex.decode())))
+    print(
+        "ADMIN_RECOVERY_PUBLIC_KEY: "
+        + repr(str(admin_recovery_public_key_hex.decode()))
+    )
+    print("")
+    print(
+        "# ============================================================================"
+    )
+    print("# OFFLINE ADMIN RECOVERY PRIVATE KEY")
+    print("#")
+    print(
+        "# IMPORTANT: Print this private key and store the printout securely offline."
+    )
+    print("# Do NOT copy it into settings.yml or keep it on the server.")
+    print("# Anyone with this key may be able to decrypt protected recovery data.")
+    print(
+        "# ============================================================================"
+    )
+    print(
+        "ADMIN_RECOVERY_PRIVATE_KEY: "
+        + repr(str(admin_recovery_private_key_hex.decode()))
+    )
     print("")
 
 

@@ -22,7 +22,7 @@ from uuid import UUID
 import scrypt
 import json
 
-from nacl.public import PrivateKey
+from nacl.public import PrivateKey, PublicKey, SealedBox
 import nacl.secret
 import nacl.encoding
 import nacl.utils
@@ -1318,6 +1318,37 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     """
     secret_key = hashlib.sha256(settings.DB_SECRET.encode()).hexdigest()
     crypto_box = nacl.secret.SecretBox(secret_key, encoder=nacl.encoding.HexEncoder)
+    plaintext = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(encrypted_text))
+
+    return plaintext.decode()
+
+
+def encrypt_with_admin_recovery_public_key(plain_text: str) -> str:
+    """Encrypt plain text with the configured admin recovery public key."""
+    if not settings.ADMIN_RECOVERY_PUBLIC_KEY:
+        raise ValueError("ADMIN_RECOVERY_PUBLIC_KEY is not configured")
+
+    crypto_box = SealedBox(
+        PublicKey(
+            settings.ADMIN_RECOVERY_PUBLIC_KEY,
+            encoder=nacl.encoding.HexEncoder,
+        )
+    )
+    encrypted_data = crypto_box.encrypt(plain_text.encode())
+
+    return nacl.encoding.HexEncoder.encode(encrypted_data).decode()
+
+
+def decrypt_with_admin_recovery_private_key(
+    encrypted_text: str, admin_recovery_private_key: str
+) -> str:
+    """Decrypt admin recovery data with an explicitly provided private key."""
+    crypto_box = SealedBox(
+        PrivateKey(
+            admin_recovery_private_key,
+            encoder=nacl.encoding.HexEncoder,
+        )
+    )
     plaintext = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(encrypted_text))
 
     return plaintext.decode()

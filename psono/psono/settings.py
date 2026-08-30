@@ -190,6 +190,7 @@ with open(os.path.join(BASE_DIR, "VERSION.txt")) as f:
 SECRET_KEY = config_get("SECRET_KEY")
 PRIVATE_KEY = config_get("PRIVATE_KEY")
 PUBLIC_KEY = config_get("PUBLIC_KEY")
+ADMIN_RECOVERY_PUBLIC_KEY = config_get("ADMIN_RECOVERY_PUBLIC_KEY", "")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(config_get("DEBUG", False)).lower() == "true"
