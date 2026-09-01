@@ -938,6 +938,7 @@ def generate_signature():
         "api": 1,
         "log_audit": False,
         "public_key": PUBLIC_KEY,
+        "admin_recovery_public_key": ADMIN_RECOVERY_PUBLIC_KEY,
         "authentication_methods": AUTHENTICATION_METHODS,
         "domain_synonyms": DOMAIN_SYNONYMS,
         "excluded_domains": DOMAIN_EXCLUDED_DOMAINS,
