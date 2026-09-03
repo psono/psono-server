@@ -84,6 +84,8 @@ class GroupView(GenericAPIView):
             "id": group.id,
             "name": group.name,
             "is_managed": False,
+            "admin_recovery_exists": False,
+            "db_secret_exists": False,
             "forced_membership": group.forced_membership,
             "create_date": group.create_date,
             "public_key": group.public_key,

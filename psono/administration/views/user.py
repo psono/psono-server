@@ -258,6 +258,8 @@ class UserView(GenericAPIView):
             "id": user.id,
             "username": user.username,
             "is_managed": False,
+            "admin_recovery_exists": False,
+            "db_secret_exists": False,
             "email": decrypt_with_db_secret(user.email) if user.email else "",
             "create_date": user.create_date,
             "last_login": user.last_login,
