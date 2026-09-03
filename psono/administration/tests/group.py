@@ -113,6 +113,8 @@ class ReadGroupTests(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIs(response.data["admin_recovery_exists"], False)
+        self.assertIs(response.data["db_secret_exists"], False)
 
     def test_read_specific_group_failure_not_exist(self):
         """

@@ -100,7 +100,7 @@ django-storages[azure,boto3,google,libcloud,sftp]==1.14.2
     # via -r requirements.in
 django-timezone-field==7.1
     # via -r requirements.in
-djangorestframework==3.16.1
+djangorestframework==3.18.0
     # via
     #   -r requirements.in
     #   drf-spectacular

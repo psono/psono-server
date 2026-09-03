@@ -108,6 +108,8 @@ class ReadUserTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["language"], self.test_user_obj.language)
+        self.assertIs(response.data["admin_recovery_exists"], False)
+        self.assertIs(response.data["db_secret_exists"], False)
 
     def test_read_specific_user_failure_not_exist(self):
         """
