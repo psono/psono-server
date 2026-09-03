@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.conf import settings
+from django.http import HttpRequest
 from django.utils import timezone
 from django.forms.models import model_to_dict
 from django.test.utils import override_settings
@@ -36,12 +37,7 @@ class AuthenticationTests(APITestCaseExtended):
         )
 
     def test_get_token_hash_success_full(self):
-
-        class Object(object):
-            pass
-
-        request = Object()
-
+        request = HttpRequest()
         request.META = {"HTTP_AUTHORIZATION": b"token 1234"}
 
         self.assertEqual(
@@ -50,56 +46,25 @@ class AuthenticationTests(APITestCaseExtended):
         )
 
     def test_get_token_hash_success_error(self):
-
-        class Object(object):
-            pass
-
-        request = Object()
-
+        request = HttpRequest()
         request.META = {"HTTP_AUTHORIZATION": b"123"}
 
-        try:
+        with self.assertRaises(AuthenticationFailed):
             TokenAuthentication.get_token_hash(request)
-            self.assertTrue(
-                False,
-                "get_token_hash should throw an error, so this should not be reached",
-            )
-        except:
-            pass
 
     def test_get_token_hash_success_error_no_token_hash(self):
-
-        class Object(object):
-            pass
-
-        request = Object()
-
+        request = HttpRequest()
         request.META = {"HTTP_AUTHORIZATION": b"Token "}
-        try:
+
+        with self.assertRaises(AuthenticationFailed):
             TokenAuthentication.get_token_hash(request)
-            self.assertTrue(
-                False,
-                "get_token_hash should throw an error, so this should not be reached",
-            )
-        except AuthenticationFailed:
-            pass
 
     def test_get_token_hash_success_error_too_many_spaces(self):
-
-        class Object(object):
-            pass
-
-        request = Object()
-
+        request = HttpRequest()
         request.META = {"HTTP_AUTHORIZATION": b"Token 1234 56"}
-        try:
+
+        with self.assertRaises(AuthenticationFailed):
             TokenAuthentication.get_token_hash(request)
-            self.assertTrue(
-                False,
-                "get_token_hash should throw an error, so this should not be reached",
-            )
-        except AuthenticationFailed:
-            pass
 
 
 class AuthenticateTests(APITestCaseExtended):
