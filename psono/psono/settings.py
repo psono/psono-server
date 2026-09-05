@@ -314,6 +314,10 @@ if isinstance(ALLOWED_MANAGEMENT_COMMANDS, str) and ALLOWED_MANAGEMENT_COMMANDS:
 
 HOST_URL = config_get("HOST_URL")
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(
+    config_get("DATA_UPLOAD_MAX_MEMORY_SIZE", 256 * 1024 * 1024)
+)
+
 # Application definition
 
 INSTALLED_APPS = [

@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.conf import settings
 from django.test.utils import override_settings
 from django.contrib.auth.hashers import make_password
 
@@ -671,6 +672,34 @@ class UpdateDatastoreTests(APITestCaseExtended):
                 ).write_date.isoformat(),
             },
         )
+
+    def test_update_datastore_larger_than_django_default_upload_limit(self):
+        previous_default_upload_limit = 2_621_440
+        self.assertGreater(
+            settings.DATA_UPLOAD_MAX_MEMORY_SIZE, previous_default_upload_limit
+        )
+
+        datastore = models.Data_Store.objects.create(
+            type="my-sexy-type",
+            description="my-sexy-description",
+            data=b"12345",
+            data_nonce="a" * 64,
+            secret_key="b" * 256,
+            secret_key_nonce="c" * 64,
+            user=self.test_user_obj,
+        )
+        updated_data = {
+            "datastore_id": str(datastore.id),
+            "data": "d" * previous_default_upload_limit,
+            "data_nonce": "e" * 64,
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(reverse("datastore"), updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        datastore.refresh_from_db()
+        self.assertEqual(len(datastore.data), previous_default_upload_limit)
 
     def test_update_datastore_no_datastore_id(self):
         """
