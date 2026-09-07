@@ -577,6 +577,9 @@ def user_has_rights_on_share(
     :param grant:
     :return:
     """
+    if read is None and write is None and grant is None:
+        raise ValueError("At least one permission must be specified")
+
     if isinstance(share_id, list):
         if len(share_id) == 0:
             return []
@@ -617,6 +620,8 @@ def user_has_rights_on_secret(
     :param write:
     :return:
     """
+    if read is None and write is None:
+        raise ValueError("At least one permission must be specified")
 
     datastores_loaded = False
     datastores = set()  # type: Set[str]

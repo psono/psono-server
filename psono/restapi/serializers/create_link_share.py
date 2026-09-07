@@ -59,7 +59,10 @@ class CreateLinkShareSerializer(serializers.Serializer):
             write_required = True
 
         if secret_id and not user_has_rights_on_secret(
-            self.context["request"].user.id, secret_id, write=write_required
+            self.context["request"].user.id,
+            secret_id,
+            read=True,
+            write=write_required,
         ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

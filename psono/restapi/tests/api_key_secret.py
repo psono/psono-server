@@ -503,6 +503,45 @@ class CreateApiKeySecretTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_failure_no_permission_on_shared_secret(self):
+        """
+        Tests to create an api key secret for a shared secret without permission
+        """
+
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"my-data", data_nonce="12345"
+        )
+        models.User_Share_Right.objects.create(
+            share=share,
+            creator=self.test_user_obj,
+            user=self.test_user_obj,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
+        )
+        self.secret_link_obj.parent_datastore = None
+        self.secret_link_obj.parent_share = share
+        self.secret_link_obj.save()
+        self.test_api_key_obj.user = self.test_user_obj2
+        self.test_api_key_obj.save()
+
+        url = reverse("api_key_secret")
+        data = {
+            "api_key_id": self.test_api_key_obj.id,
+            "secret_id": self.test_secret_obj.id,
+            "secret_key": "a123",
+            "secret_key_nonce": "B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+            "title": "a123",
+            "title_nonce": "B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj2)
+        response = self.client.put(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.API_Key_Secret.objects.count(), 0)
+
     def test_create_failure_secret_not_exist(self):
         """
         Tests to create an api key secret for a secret that does not exist
