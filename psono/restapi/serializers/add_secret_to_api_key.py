@@ -80,7 +80,9 @@ class AddSecretToAPIKeySerializer(serializers.Serializer):
             msg = "API_KEY_SECRET_ALREADY_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if not user_has_rights_on_secret(self.context["request"].user.id, secret.id):
+        if not user_has_rights_on_secret(
+            self.context["request"].user.id, secret.id, read=True
+        ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 

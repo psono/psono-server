@@ -9,6 +9,8 @@ from restapi.utils import (
     yubikey_authenticate,
     yubikey_get_yubikey_id,
     calculate_user_rights_on_share,
+    user_has_rights_on_secret,
+    user_has_rights_on_share,
     get_datastore,
     is_allowed_url,
 )
@@ -446,6 +448,14 @@ class TestCalculateShareRightsOnShare(TestCase):
             calculate_user_rights_on_share(self.user1.id, self.share1.id),
             {"read": False, "grant": False, "write": False},
         )
+
+    def test_user_has_rights_on_share_requires_permission(self):
+        with self.assertRaises(ValueError):
+            user_has_rights_on_share(self.user1.id, self.share1.id)
+
+    def test_user_has_rights_on_secret_requires_permission(self):
+        with self.assertRaises(ValueError):
+            user_has_rights_on_secret(self.user1.id, uuid4())
 
     def test_direct_user_rights(self):
 

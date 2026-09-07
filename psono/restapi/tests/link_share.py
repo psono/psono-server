@@ -328,7 +328,7 @@ class UserCreateLinkShareTest(APITestCaseExtended):
         url = reverse("link_share")
 
         data = {
-            "secret_id": str(self.test_secret2_obj.id),
+            "secret_id": str(self.test_secret_in_share_obj.id),
             "node": "12345",
             "node_nonce": "".join(
                 random.choice(string.ascii_lowercase) for _ in range(64)
@@ -338,10 +338,11 @@ class UserCreateLinkShareTest(APITestCaseExtended):
             "passphrase": "",
         }
 
-        self.client.force_authenticate(user=self.test_user_obj)
+        self.client.force_authenticate(user=self.test_user3_obj)
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.Link_Share.objects.count(), 0)
 
     def test_create_link_share_with_valid_till_already_expired(self):
         """
