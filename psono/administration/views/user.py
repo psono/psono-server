@@ -259,7 +259,7 @@ class UserView(GenericAPIView):
             "username": user.username,
             "is_managed": False,
             "admin_recovery_exists": False,
-            "db_secret_exists": False,
+            "db_secret_exists": False,  # nosec -- not [B105:hardcoded_password_string]
             "email": decrypt_with_db_secret(user.email) if user.email else "",
             "create_date": user.create_date,
             "last_login": user.last_login,
