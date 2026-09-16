@@ -9,6 +9,7 @@ class UpdateSecretSerializer(serializers.Serializer):
     secret_id = UUIDField(required=True)
     data = serializers.CharField(required=False)
     data_nonce = serializers.CharField(required=False, max_length=64)
+    old_write_date = serializers.DateTimeField(required=False)
     callback_url = serializers.CharField(
         required=False, max_length=2048, allow_blank=True
     )
@@ -33,6 +34,11 @@ class UpdateSecretSerializer(serializers.Serializer):
             self.context["request"].user.id, secret.id, None, True
         ):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
+            raise exceptions.ValidationError(msg)
+
+        old_write_date = attrs.get("old_write_date")
+        if old_write_date is not None and old_write_date != secret.write_date:
+            msg = "WRITE_DATE_MISMATCH"
             raise exceptions.ValidationError(msg)
 
         attrs["secret"] = secret
