@@ -846,6 +846,79 @@ class UserUpdateSecretTest(APITestCaseExtended):
             models.Secret_History.objects.filter(secret=updated_secret).count(), 1
         )
 
+        self.assertEqual(
+            response.data["write_date"], updated_secret.write_date.isoformat()
+        )
+
+    @override_settings(DISABLE_CALLBACKS=False)
+    @override_settings(ALLOWED_CALLBACK_URL_PREFIX=["https://example.com"])
+    @patch("requests.post", side_effect=mock_request_post)
+    def test_update_secret_with_stale_old_write_date(self, mock_request_post):
+        """
+        Tests that stale updates do not modify the secret or trigger side effects.
+        """
+
+        secret = models.Secret.objects.get(pk=self.secret_id)
+        url = reverse("secret")
+        updated_data = {
+            "secret_id": str(self.secret_id),
+            "data": "123456",
+            "data_nonce": "d" * 64,
+            "callback_url": "https://example.com",
+            "old_write_date": secret.write_date.isoformat(),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(url, updated_data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        secret.refresh_from_db()
+        current_write_date = secret.write_date
+        self.assertEqual(response.data["write_date"], current_write_date.isoformat())
+        self.assertEqual(mock_request_post.call_count, 1)
+
+        stale_update_data = {
+            **updated_data,
+            "data": "stale-data",
+            "data_nonce": "e" * 64,
+            "callback_url": "https://example.com/stale",
+        }
+        response = self.client.post(url, stale_update_data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"non_field_errors": ["WRITE_DATE_MISMATCH"]})
+        secret.refresh_from_db()
+        self.assertEqual(secret.data.decode(), updated_data["data"])
+        self.assertEqual(secret.data_nonce, updated_data["data_nonce"])
+        self.assertEqual(secret.callback_url, updated_data["callback_url"])
+        self.assertEqual(secret.write_date, current_write_date)
+        self.assertEqual(models.Secret_History.objects.filter(secret=secret).count(), 1)
+        self.assertEqual(mock_request_post.call_count, 1)
+
+    def test_update_secret_with_invalid_old_write_date(self):
+        """
+        Tests that malformed write dates are rejected before modifying the secret.
+        """
+
+        secret = models.Secret.objects.get(pk=self.secret_id)
+        old_write_date = secret.write_date
+        data = {
+            "secret_id": str(self.secret_id),
+            "data": "invalid-update",
+            "data_nonce": "d" * 64,
+            "old_write_date": "not-a-datetime",
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(reverse("secret"), data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("old_write_date", response.data)
+        secret.refresh_from_db()
+        self.assertEqual(secret.data.decode(), "12345")
+        self.assertEqual(secret.write_date, old_write_date)
+        self.assertFalse(models.Secret_History.objects.filter(secret=secret).exists())
+
     @override_settings(DISABLE_CALLBACKS=False)
     @override_settings(ALLOWED_CALLBACK_URL_PREFIX=["https://example.com"])
     @patch("requests.post", side_effect=mock_request_post)

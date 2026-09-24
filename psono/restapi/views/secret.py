@@ -206,7 +206,10 @@ class SecretView(GenericAPIView):
             except:  # nosec
                 pass
 
-        return Response({"success": "Data updated."}, status=status.HTTP_200_OK)
+        return Response(
+            {"success": "Data updated.", "write_date": secret.write_date.isoformat()},
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

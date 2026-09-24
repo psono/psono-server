@@ -85,7 +85,7 @@ class GroupView(GenericAPIView):
             "name": group.name,
             "is_managed": False,
             "admin_recovery_exists": False,
-            "db_secret_exists": False,
+            "db_secret_exists": False,  # nosec -- not [B105:hardcoded_password_string]
             "forced_membership": group.forced_membership,
             "create_date": group.create_date,
             "public_key": group.public_key,
