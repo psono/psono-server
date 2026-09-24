@@ -21,7 +21,7 @@ attrs==26.1.0
     #   referencing
     #   service-identity
     #   twisted
-autobahn==25.12.2
+autobahn==26.7.1
     # via daphne
 automat==25.4.16
     # via twisted
@@ -69,7 +69,7 @@ cryptography==50.0.0
     #   pyopenssl
     #   service-identity
     #   webauthn
-daphne==4.2.2
+daphne==4.2.3
     # via -r requirements.in
 dj-database-url==2.1.0
     # via -r requirements.in
@@ -181,8 +181,6 @@ psycopg[binary]==3.3.2
     # via -r requirements.in
 psycopg-binary==3.3.2
     # via psycopg
-py-ubjson==0.16.1
-    # via autobahn
 pyasn1==0.6.4
     # via pyasn1-modules
 pyasn1-modules==0.4.2
