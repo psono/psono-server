@@ -32,7 +32,7 @@ class WebauthnVerifyView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     token_model = Token
     allowed_methods = ("POST", "PUT", "OPTIONS", "HEAD")
-    throttle_scope = "duo_verify"
+    throttle_scope = "webauthn_verify"
 
     def get_serializer_class(self):
         if self.request.method == "POST":

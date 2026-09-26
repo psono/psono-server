@@ -410,6 +410,7 @@ REST_FRAMEWORK = {
         "status_check": config_get("THROTTLE_RATE_STATUS_CHECK", "61/minute"),
         "ga_verify": config_get("THROTTLE_RATE_GA_VERIFY", "6/minute"),
         "duo_verify": config_get("THROTTLE_RATE_DUO_VERIFY", "6/minute"),
+        "webauthn_verify": config_get("THROTTLE_RATE_WEBAUTHN_VERIFY", "6/minute"),
         "yubikey_otp_verify": config_get(
             "THROTTLE_RATE_YUBIKEY_OTP_VERIFY", "6/minute"
         ),
