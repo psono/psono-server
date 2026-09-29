@@ -336,6 +336,16 @@ class API_Key(models.Model):
         default=False,
         help_text="Allows access to administration API endpoints",
     )
+    allow_recovery_access = models.BooleanField(
+        "Allow recovery access",
+        default=False,
+        help_text="Allows replacing account recovery credentials",
+    )
+    allow_emergency_access = models.BooleanField(
+        "Allow emergency access",
+        default=False,
+        help_text="Allows managing emergency codes",
+    )
     active = models.BooleanField(
         "Is Active?",
         default=True,

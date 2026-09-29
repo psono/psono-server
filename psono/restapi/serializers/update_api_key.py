@@ -12,6 +12,8 @@ class UpdateAPIKeySerializer(serializers.Serializer):
     allow_insecure_access = BooleanField(required=False, allow_null=True)
     allow_api_key_management = BooleanField(required=False, allow_null=True)
     allow_admin_access = BooleanField(required=False, allow_null=True)
+    allow_recovery_access = BooleanField(required=False, allow_null=True)
+    allow_emergency_access = BooleanField(required=False, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
 
@@ -23,6 +25,8 @@ class UpdateAPIKeySerializer(serializers.Serializer):
         allow_insecure_access = attrs.get("allow_insecure_access", None)
         allow_api_key_management = attrs.get("allow_api_key_management", None)
         allow_admin_access = attrs.get("allow_admin_access", None)
+        allow_recovery_access = attrs.get("allow_recovery_access", None)
+        allow_emergency_access = attrs.get("allow_emergency_access", None)
 
         # Lets check if the current user can do that
         try:
@@ -41,6 +45,8 @@ class UpdateAPIKeySerializer(serializers.Serializer):
             and allow_insecure_access is None
             and allow_api_key_management is None
             and allow_admin_access is None
+            and allow_recovery_access is None
+            and allow_emergency_access is None
         ):
             msg = "NOTHING_TO_UPDATE"
             raise exceptions.ValidationError(msg)
@@ -53,5 +59,7 @@ class UpdateAPIKeySerializer(serializers.Serializer):
         attrs["allow_insecure_access"] = allow_insecure_access
         attrs["allow_api_key_management"] = allow_api_key_management
         attrs["allow_admin_access"] = allow_admin_access
+        attrs["allow_recovery_access"] = allow_recovery_access
+        attrs["allow_emergency_access"] = allow_emergency_access
 
         return attrs
