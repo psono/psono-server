@@ -7,6 +7,7 @@ from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import UserUpdateSerializer
+from ..models import Token
 
 
 from ..authentication import TokenAuthentication
@@ -83,6 +84,11 @@ class UserUpdate(GenericAPIView):
             request.user.hashing_algorithm = hashing_algorithm
 
         request.user.save()
+
+        if serializer.validated_data.get("authkey") is not None:
+            Token.objects.filter(user=request.user).exclude(
+                pk=getattr(request.auth, "pk", None)
+            ).delete()
 
         return Response({"success": "User updated."}, status=status.HTTP_200_OK)
 

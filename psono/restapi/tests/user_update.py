@@ -3,6 +3,8 @@ from django.conf import settings
 from django.test.utils import override_settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status
 
 from restapi import models
@@ -280,6 +282,54 @@ class UserModificationTests(APITestCaseExtended):
         user = models.User.objects.get(pk=self.test_user_obj.pk)
 
         self.assertEqual(user.language, data["language"])
+
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
+    def test_password_change_logs_out_other_sessions(self):
+        valid_till = timezone.now() + timedelta(hours=1)
+        current_token = models.Token.objects.create(
+            user=self.test_user_obj, active=True, valid_till=valid_till
+        )
+        other_token = models.Token.objects.create(
+            user=self.test_user_obj, active=True, valid_till=valid_till
+        )
+        unrelated_token = models.Token.objects.create(
+            user=self.test_user_obj2, active=True, valid_till=valid_till
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {current_token.clear_text_key}"
+        )
+
+        response = self.client.put(reverse("user_update"), {"language": "de"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(models.Token.objects.filter(pk=other_token.pk).exists())
+
+        new_authkey = binascii.hexlify(
+            os.urandom(settings.AUTH_KEY_LENGTH_BYTES)
+        ).decode()
+        response = self.client.put(
+            reverse("user_update"),
+            {"authkey_old": self.test_authkey, "authkey": new_authkey},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(models.Token.objects.filter(pk=current_token.pk).exists())
+        self.assertFalse(models.Token.objects.filter(pk=other_token.pk).exists())
+        self.assertTrue(models.Token.objects.filter(pk=unrelated_token.pk).exists())
+        self.test_user_obj.refresh_from_db()
+        self.assertTrue(check_password(new_authkey, self.test_user_obj.authkey))
+
+        self.assertEqual(
+            self.client.get(reverse("session_key")).status_code, status.HTTP_200_OK
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {other_token.clear_text_key}"
+        )
+        self.assertEqual(
+            self.client.get(reverse("session_key")).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
