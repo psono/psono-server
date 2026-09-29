@@ -3,9 +3,10 @@ from django.utils import timezone
 from django.conf import settings
 
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 
 from restapi.tests.base import APITestCaseExtended
-from restapi.authentication import TokenAuthentication
+from restapi.authentication import FileserverAliveAuthentication, TokenAuthentication
 
 from restapi.models import (
     Fileserver_Cluster,
@@ -187,3 +188,26 @@ class FileserverAlive(APITestCaseExtended):
         updated_fs = Fileserver_Cluster_Members.objects.get(pk=self.fileserver1.pk)
 
         self.assertGreater(updated_fs.valid_till, old_valid_till)
+
+    def test_cluster_shard_link_share_access_cannot_be_exceeded(self):
+        self.link1.allow_link_shares = False
+        self.link1.save(update_fields=["allow_link_shares"])
+        shard = {
+            "shard_id": str(self.shard1.id),
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
+
+        for announced in ({**shard, "allow_link_shares": True}, shard):
+            with self.subTest(announced=announced):
+                with self.assertRaisesMessage(
+                    AuthenticationFailed, "No link share permission for shard."
+                ):
+                    FileserverAliveAuthentication.validate_cluster_shard_access(
+                        self.cluster1.id, [announced]
+                    )
+
+        FileserverAliveAuthentication.validate_cluster_shard_access(
+            self.cluster1.id, [{**shard, "allow_link_shares": False}]
+        )

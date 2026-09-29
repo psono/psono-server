@@ -259,6 +259,46 @@ class AuthorizeUploadTests(APITestCaseExtended):
             refreshed_file_transfer.chunk_count_transferred,
         )
 
+    def test_failure_without_write_capability(self):
+        url = reverse("fileserver_authorize_upload")
+        hash_checksum = "ABC"
+        ticket_encrypted = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"chunk_position": 1, "hash_checksum": hash_checksum}).encode(),
+        )
+        data = {
+            "file_transfer_id": self.file_transfer.id,
+            "chunk_size": self.file_size,
+            "hash_checksum": hash_checksum,
+            "ip_address": "127.0.0.1",
+            "ticket": ticket_encrypted["text"].decode(),
+            "ticket_nonce": ticket_encrypted["nonce"].decode(),
+        }
+        self.client.force_authenticate(user=self.fileserver1)
+
+        for field in ("write", "member__write"):
+            with self.subTest(field=field):
+                if field == "write":
+                    models.Fileserver_Cluster_Member_Shard_Link.objects.filter(
+                        member=self.fileserver1, shard=self.shard1
+                    ).update(write=False)
+                else:
+                    models.Fileserver_Cluster_Member_Shard_Link.objects.filter(
+                        member=self.fileserver1, shard=self.shard1
+                    ).update(write=True)
+                    models.Fileserver_Cluster_Members.objects.filter(
+                        pk=self.fileserver1.pk
+                    ).update(write=False)
+
+                response = self.client.put(url, data)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("Permission denied.", response.data["non_field_errors"])
+                self.assertFalse(models.File_Chunk.objects.exists())
+                self.file_transfer.refresh_from_db()
+                self.assertEqual(self.file_transfer.chunk_count_transferred, 0)
+                self.assertEqual(self.file_transfer.size_transferred, 0)
+
     def test_failure_missing_file_transfer(self):
         """
         Tests authorize upload failure with a missing file_transfer
