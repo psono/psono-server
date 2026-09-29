@@ -102,6 +102,7 @@ class FileRepositoryUploadView(GenericAPIView):
                 data["aws_s3_access_key_id"],
                 data["aws_s3_secret_access_key"],
                 hash_checksum,
+                chunk_size,
             )
             url = url_and_fields["url"]
             fields = url_and_fields["fields"]
@@ -112,6 +113,7 @@ class FileRepositoryUploadView(GenericAPIView):
                 data["backblaze_access_key_id"],
                 data["backblaze_secret_access_key"],
                 hash_checksum,
+                chunk_size,
             )
             url = url_and_fields["url"]
             fields = url_and_fields["fields"]
@@ -122,6 +124,7 @@ class FileRepositoryUploadView(GenericAPIView):
                 data["other_s3_access_key_id"],
                 data["other_s3_secret_access_key"],
                 hash_checksum,
+                chunk_size,
                 endpoint_url=data["other_s3_endpoint_url"],
             )
             url = url_and_fields["url"]
@@ -133,6 +136,7 @@ class FileRepositoryUploadView(GenericAPIView):
                 data["do_key"],
                 data["do_secret"],
                 hash_checksum,
+                chunk_size,
             )
             url = url_and_fields["url"]
             fields = url_and_fields["fields"]

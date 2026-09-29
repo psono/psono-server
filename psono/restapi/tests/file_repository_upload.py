@@ -6,6 +6,7 @@ from .base import APITestCaseExtended
 from restapi import models
 from restapi.utils import encrypt_with_db_secret
 
+import base64
 import json
 
 
@@ -243,6 +244,69 @@ class FileRepositryUploadTest(APITestCaseExtended):
             response.data,
             {"url": "https://example.com/whatever?param1=one&param2=one", "fields": []},
         )
+
+    def test_s3_upload_policy_allows_legacy_encryption_overhead(self):
+        repositories = {
+            "aws_s3": {
+                "aws_s3_bucket": "test-bucket",
+                "aws_s3_region": "us-east-1",
+                "aws_s3_access_key_id": "test-key",
+                "aws_s3_secret_access_key": "test-secret",
+            },
+            "backblaze": {
+                "backblaze_bucket": "test-bucket",
+                "backblaze_region": "us-west-001",
+                "backblaze_access_key_id": "test-key",
+                "backblaze_secret_access_key": "test-secret",
+            },
+            "other_s3": {
+                "other_s3_bucket": "test-bucket",
+                "other_s3_region": "us-east-1",
+                "other_s3_access_key_id": "test-key",
+                "other_s3_secret_access_key": "test-secret",
+                "other_s3_endpoint_url": "https://s3.example.com",
+            },
+            "do_spaces": {
+                "do_space": "test-bucket",
+                "do_region": "nyc3",
+                "do_key": "test-key",
+                "do_secret": "test-secret",
+            },
+        }
+
+        for repository_type, config in repositories.items():
+            with self.subTest(repository_type=repository_type):
+                self.file_repository.type = repository_type
+                self.file_repository.data = encrypt_with_db_secret(
+                    json.dumps(config)
+                ).encode()
+                self.file_repository.save(update_fields=["type", "data", "write_date"])
+
+                self.file_transfer.size_transferred = 0
+                self.file_transfer.chunk_count_transferred = 0
+                self.file_transfer.save(
+                    update_fields=[
+                        "size_transferred",
+                        "chunk_count_transferred",
+                        "write_date",
+                    ]
+                )
+                models.File_Chunk.objects.filter(file=self.file).delete()
+
+                response = self.client.put(
+                    reverse("file_repository_upload"),
+                    {"chunk_size": 512, "chunk_position": 0, "hash_checksum": "abc"},
+                    HTTP_AUTHORIZATION=f"Filetransfer {self.file_transfer.id}",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                policy = json.loads(base64.b64decode(response.data["fields"]["policy"]))
+                self.assertIn(["content-length-range", 512, 552], policy["conditions"])
+                self.assertEqual(
+                    models.File_Chunk.objects.get(file=self.file).size, 512
+                )
+                self.file_transfer.refresh_from_db()
+                self.assertEqual(self.file_transfer.size_transferred, 512)
 
     @patch(
         "restapi.views.file_repository_upload.gcs_construct_signed_upload_url",
