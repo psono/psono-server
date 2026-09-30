@@ -2,6 +2,9 @@
 {% trans "Hello," %}
 
 {% trans "You have been invited to a new group. Please login to Psono and accept or decline the invitation." %}
+{% if groups_link %}
+{{ groups_link }}
+{% endif %}
 
 {% trans "Best regards" %}
 {% trans "Your Psono Team" %}

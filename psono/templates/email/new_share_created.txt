@@ -2,6 +2,9 @@
 {% trans "Hello," %}
 
 {% trans "A new entry has been shared with you. Please login to Psono and accept or decline the now pending request." %}
+{% if pending_share_link %}
+{{ pending_share_link }}
+{% endif %}
 
 {% trans "Best regards" %}
 {% trans "Your Psono Team" %}
