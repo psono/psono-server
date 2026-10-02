@@ -51,6 +51,8 @@ class APIKeyView(GenericAPIView):
                         "allow_insecure_access": api_key.allow_insecure_access,
                         "allow_api_key_management": api_key.allow_api_key_management,
                         "allow_admin_access": api_key.allow_admin_access,
+                        "allow_recovery_access": api_key.allow_recovery_access,
+                        "allow_emergency_access": api_key.allow_emergency_access,
                         "active": api_key.active,
                     }
                 )
@@ -83,6 +85,8 @@ class APIKeyView(GenericAPIView):
                 "allow_insecure_access": api_key.allow_insecure_access,
                 "allow_api_key_management": api_key.allow_api_key_management,
                 "allow_admin_access": api_key.allow_admin_access,
+                "allow_recovery_access": api_key.allow_recovery_access,
+                "allow_emergency_access": api_key.allow_emergency_access,
                 "active": api_key.active,
             }
 
@@ -127,6 +131,12 @@ class APIKeyView(GenericAPIView):
                 "allow_api_key_management"
             ),
             allow_admin_access=serializer.validated_data.get("allow_admin_access"),
+            allow_recovery_access=serializer.validated_data.get(
+                "allow_recovery_access"
+            ),
+            allow_emergency_access=serializer.validated_data.get(
+                "allow_emergency_access"
+            ),
         )
 
         return Response(
@@ -158,6 +168,8 @@ class APIKeyView(GenericAPIView):
             "allow_api_key_management"
         )
         allow_admin_access = serializer.validated_data.get("allow_admin_access")
+        allow_recovery_access = serializer.validated_data.get("allow_recovery_access")
+        allow_emergency_access = serializer.validated_data.get("allow_emergency_access")
 
         if title is not None:
             api_key.title = title
@@ -185,6 +197,12 @@ class APIKeyView(GenericAPIView):
 
         if allow_admin_access is not None:
             api_key.allow_admin_access = allow_admin_access
+
+        if allow_recovery_access is not None:
+            api_key.allow_recovery_access = allow_recovery_access
+
+        if allow_emergency_access is not None:
+            api_key.allow_emergency_access = allow_emergency_access
 
         api_key.save()
 

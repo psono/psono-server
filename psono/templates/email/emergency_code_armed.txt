@@ -7,6 +7,9 @@
 {{ emergency_code_activation_delay }} sec
 
 {% trans "If you don't want that, then please login and delete the emergency code." %}
+{% if activation_link %}
+{{ activation_link }}
+{% endif %}
 
 {% trans "Best regards" %}
 {% trans "Your Psono Team" %}

@@ -52,6 +52,20 @@ class IsAuthenticated(BasePermission):
         ):
             raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
 
+        if (
+            api_key is not None
+            and url_name == "recoverycode"
+            and not api_key.allow_recovery_access
+        ):
+            raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
+
+        if (
+            api_key is not None
+            and url_name == "emergencycode"
+            and not api_key.allow_emergency_access
+        ):
+            raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
+
         # bulk-secret-read uses a POST request to read the data
         if url_name == "bulk_secret_read":
             if request.auth and not request.auth.read:

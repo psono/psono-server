@@ -76,6 +76,8 @@ class CreateApiKeyTest(APITestCaseExtended):
             "title": "Test ApiKey",
             "allow_api_key_management": True,
             "allow_admin_access": True,
+            "allow_recovery_access": True,
+            "allow_emergency_access": True,
             "secret_key": "a123",
             "secret_key_nonce": "B52032040066AE04BECBBB03286469223731B0E8A2298F26DC5F01222E63D0F5",
             "private_key": "a123",
@@ -97,6 +99,8 @@ class CreateApiKeyTest(APITestCaseExtended):
         api_key = models.API_Key.objects.get()
         self.assertTrue(api_key.allow_api_key_management)
         self.assertTrue(api_key.allow_admin_access)
+        self.assertTrue(api_key.allow_recovery_access)
+        self.assertTrue(api_key.allow_emergency_access)
 
     def test_create_failure_api_key_session(self):
         api_key = models.API_Key.objects.create(
@@ -1012,6 +1016,8 @@ class ReadApiKeyTest(APITestCaseExtended):
         )
         self.assertFalse(api_key.get("allow_api_key_management"))
         self.assertFalse(api_key.get("allow_admin_access"))
+        self.assertFalse(api_key.get("allow_recovery_access"))
+        self.assertFalse(api_key.get("allow_emergency_access"))
         self.assertEqual(api_key.get("active"), self.test_api_key_obj.active)
 
     def test_restricted_api_key_session_cannot_access_authenticated_endpoint(self):
@@ -1200,6 +1206,8 @@ class ReadApiKeyTest(APITestCaseExtended):
         )
         self.assertFalse(response.data.get("allow_api_key_management"))
         self.assertFalse(response.data.get("allow_admin_access"))
+        self.assertFalse(response.data.get("allow_recovery_access"))
+        self.assertFalse(response.data.get("allow_emergency_access"))
         self.assertEqual(response.data.get("active"), True)
 
     def test_read_api_key_failure_not_exist(self):
@@ -1369,6 +1377,8 @@ class UpdateApiKeyTest(APITestCaseExtended):
             "allow_insecure_access": False,
             "allow_api_key_management": True,
             "allow_admin_access": True,
+            "allow_recovery_access": True,
+            "allow_emergency_access": True,
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
@@ -1389,6 +1399,12 @@ class UpdateApiKeyTest(APITestCaseExtended):
             api_key.allow_api_key_management, data.get("allow_api_key_management")
         )
         self.assertEqual(api_key.allow_admin_access, data.get("allow_admin_access"))
+        self.assertEqual(
+            api_key.allow_recovery_access, data.get("allow_recovery_access")
+        )
+        self.assertEqual(
+            api_key.allow_emergency_access, data.get("allow_emergency_access")
+        )
 
         tokens = api_key.tokens.all()
 

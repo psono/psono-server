@@ -18,7 +18,7 @@ class CreateFileSerializer(serializers.Serializer):
     shard_id = UUIDField(required=False)
     file_repository_id = UUIDField(required=False)
     chunk_count = serializers.IntegerField(required=True)
-    size = serializers.IntegerField(required=False)
+    size = serializers.IntegerField(required=False, min_value=0)
     link_id = UUIDField(required=False)
     parent_share_id = UUIDField(required=False)
     parent_datastore_id = UUIDField(required=False)

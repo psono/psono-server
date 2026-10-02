@@ -613,6 +613,42 @@ class CreateUserShareRightTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_grant_share_right_for_group_requires_accepted_membership(self):
+        url = reverse("share_right")
+        initial_data = {
+            "key": "key",
+            "key_nonce": "key-nonce",
+            "share_id": str(self.test_share1_obj.id),
+            "title": "title",
+            "title_nonce": "title-nonce",
+            "type": "type",
+            "type_nonce": "type-nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "group_id": str(self.test_group_obj.id),
+        }
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (None, False):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+
+                response = self.client.put(url, initial_data)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(
+                    "You don't have the necessary rights to share with this group.",
+                    response.data["non_field_errors"],
+                )
+                self.assertFalse(
+                    models.Group_Share_Right.objects.filter(
+                        share_id=self.test_share1_obj.id,
+                        group_id=self.test_group_obj.id,
+                    ).exists()
+                )
+
     def test_grant_share_right_with_expiration_date(self):
         url = reverse("share_right")
         expiration_date = timezone.now() + timedelta(days=3)

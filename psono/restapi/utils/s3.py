@@ -2,7 +2,13 @@ import boto3
 
 
 def s3_construct_signed_upload_url(
-    bucket, region, access_key_id, secret_access_key, hash_checksum, endpoint_url=None
+    bucket,
+    region,
+    access_key_id,
+    secret_access_key,
+    hash_checksum,
+    chunk_size,
+    endpoint_url=None,
 ):
     """
     Constructs the signed upload url
@@ -17,6 +23,8 @@ def s3_construct_signed_upload_url(
     :type secret_access_key:
     :param hash_checksum: The sha512 checksum of the file
     :type hash_checksum:
+    :param chunk_size: The recorded size of the chunk in bytes
+    :type chunk_size: int
 
     :return:
     :rtype:
@@ -32,7 +40,15 @@ def s3_construct_signed_upload_url(
 
     key = create_key(hash_checksum)
 
-    url = client.generate_presigned_post(Bucket=bucket, Key=key, ExpiresIn=3600)
+    # Older browser clients report the plaintext chunk size, but upload a chunk
+    # with 40 additional bytes for the encryption nonce and authentication tag.
+    # Allow that overhead until all clients report the encrypted chunk size.
+    url = client.generate_presigned_post(
+        Bucket=bucket,
+        Key=key,
+        Conditions=[["content-length-range", chunk_size, chunk_size + 40]],
+        ExpiresIn=3600,
+    )
 
     return url
 

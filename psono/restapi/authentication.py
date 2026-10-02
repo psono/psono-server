@@ -461,6 +461,13 @@ class FileserverAliveAuthentication(TokenAuthentication):
                 msg = "No write permission for shard."
                 raise exceptions.AuthenticationFailed(msg)
 
+            if (
+                shard.get("allow_link_shares", True)
+                and not shards[shard["shard_id"]]["allow_link_shares"]
+            ):
+                msg = "No link share permission for shard."
+                raise exceptions.AuthenticationFailed(msg)
+
     @staticmethod
     def get_fileserver_validator(request):
         auth = get_authorization_validator_header(request)

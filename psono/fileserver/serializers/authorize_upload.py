@@ -96,6 +96,8 @@ class FileserverAuthorizeUploadSerializer(serializers.Serializer):
                 shard__active=True,
                 member=self.context["request"].user,
                 shard_id=file_transfer.shard_id,
+                member__write=True,
+                write=True,
             )
             .count()
         )

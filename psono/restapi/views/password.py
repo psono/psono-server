@@ -18,7 +18,7 @@ from ..app_settings import (
     SetNewPasswordSerializer,
 )
 
-from ..models import Google_Authenticator, Yubikey_OTP, Duo
+from ..models import Google_Authenticator, Yubikey_OTP, Duo, Token
 
 
 class PasswordView(GenericAPIView):
@@ -96,6 +96,7 @@ class PasswordView(GenericAPIView):
         user.hashing_parameters = hashing_parameters
         user.require_password_change = False
         user.save()
+        Token.objects.filter(user=user).delete()
 
         # Delete 2 Factors
         Google_Authenticator.objects.filter(user=user).delete()

@@ -3,7 +3,9 @@ import os
 import binascii
 import random
 import string
+from decimal import Decimal
 from django.conf import settings
+from django.test import override_settings
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch, MagicMock
@@ -228,6 +230,29 @@ class FileSecretAttachmentTests(APITestCaseExtended):
         # Verify no File_Link was created
         file_link_count = models.File_Link.objects.filter(file_id=file.id).count()
         self.assertEqual(file_link_count, 0)
+
+    @override_settings(SHARD_CREDIT_COSTS_UPLOAD=Decimal("1"))
+    def test_create_file_negative_size_does_not_increase_credit(self):
+        self.test_user_obj.credit = Decimal("1")
+        self.test_user_obj.save(update_fields=["credit"])
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file"),
+            {
+                "shard_id": self.shard1.id,
+                "parent_secret_id": str(self.secret1.id),
+                "chunk_count": 1,
+                "size": -1024 * 1024 * 1024,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("size", response.data)
+        self.assertFalse(models.File.objects.exists())
+        self.assertFalse(models.File_Transfer.objects.exists())
+        self.test_user_obj.refresh_from_db()
+        self.assertEqual(self.test_user_obj.credit, Decimal("1"))
 
     def test_create_file_with_parent_secret_id_no_permission(self):
         """

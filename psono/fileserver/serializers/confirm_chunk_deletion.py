@@ -38,7 +38,10 @@ class FileserverConfirmChunkDeletionSerializer(serializers.Serializer):
             if (
                 File_Chunk.objects.only("id")
                 .filter(hash_checksum__in=c["chunks"])
-                .exclude(file__shard_id=c["shard_id"])
+                .exclude(
+                    file__shard_id=c["shard_id"],
+                    file__delete_date__lte=timezone.now(),
+                )
                 .exists()
             ):
                 msg = "Permission denied."

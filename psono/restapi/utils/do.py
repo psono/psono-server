@@ -7,7 +7,7 @@ from .s3 import (
 
 
 def do_construct_signed_upload_url(
-    bucket, region, access_key_id, secret_access_key, hash_checksum
+    bucket, region, access_key_id, secret_access_key, hash_checksum, chunk_size
 ):
     """
     Constructs the signed upload url
@@ -22,6 +22,8 @@ def do_construct_signed_upload_url(
     :type secret_access_key:
     :param hash_checksum: The sha512 checksum of the file
     :type hash_checksum:
+    :param chunk_size: The recorded size of the chunk in bytes
+    :type chunk_size: int
 
     :return:
     :rtype:
@@ -33,6 +35,7 @@ def do_construct_signed_upload_url(
         access_key_id,
         secret_access_key,
         hash_checksum,
+        chunk_size,
         endpoint_url="https://" + region + ".digitaloceanspaces.com",
     )
 

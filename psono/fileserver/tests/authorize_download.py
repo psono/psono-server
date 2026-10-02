@@ -263,6 +263,42 @@ class AuthorizeDownloadTests(APITestCaseExtended):
             refreshed_file_transfer.chunk_count_transferred,
         )
 
+    def test_failure_without_read_capability(self):
+        url = reverse("fileserver_authorize_download")
+        ticket_encrypted = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"hash_checksum": self.hash_checksum}).encode(),
+        )
+        data = {
+            "file_transfer_id": self.file_transfer.id,
+            "ip_address": "127.0.0.1",
+            "ticket": ticket_encrypted["text"].decode(),
+            "ticket_nonce": ticket_encrypted["nonce"].decode(),
+        }
+        self.client.force_authenticate(user=self.fileserver1)
+
+        for field in ("read", "member__read"):
+            with self.subTest(field=field):
+                if field == "read":
+                    models.Fileserver_Cluster_Member_Shard_Link.objects.filter(
+                        member=self.fileserver1, shard=self.shard1
+                    ).update(read=False)
+                else:
+                    models.Fileserver_Cluster_Member_Shard_Link.objects.filter(
+                        member=self.fileserver1, shard=self.shard1
+                    ).update(read=True)
+                    models.Fileserver_Cluster_Members.objects.filter(
+                        pk=self.fileserver1.pk
+                    ).update(read=False)
+
+                response = self.client.put(url, data)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("Permission denied.", response.data["non_field_errors"])
+                self.file_transfer.refresh_from_db()
+                self.assertEqual(self.file_transfer.chunk_count_transferred, 0)
+                self.assertEqual(self.file_transfer.size_transferred, 0)
+
     def test_failure_missing_file_transfer_id(self):
         """
         Tests failing authorize download when the file_transfer_id parameter is not set

@@ -147,7 +147,7 @@ class EmergencyLoginView(GenericAPIView):
             # send email
             if settings.WEB_CLIENT_URL:
                 emergency_code_link = (
-                    settings.WEB_CLIENT_URL + "/activate.html#!/account/emergency-codes"
+                    settings.WEB_CLIENT_URL + "/index.html#!/account/emergency-codes"
                 )
             else:
                 emergency_code_link = None

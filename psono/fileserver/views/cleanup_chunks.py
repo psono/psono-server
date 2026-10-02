@@ -91,7 +91,9 @@ class CleanupChunksView(GenericAPIView):
 
         hash_checksums = serializer.validated_data.get("hash_checksums")
 
-        File_Chunk.objects.filter(hash_checksum__in=hash_checksums).delete()
+        File_Chunk.objects.filter(
+            hash_checksum__in=hash_checksums, file__delete_date__lte=timezone.now()
+        ).delete()
 
         File.objects.filter(
             file_chunk__isnull=True, delete_date__lte=timezone.now()

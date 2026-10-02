@@ -1090,6 +1090,9 @@ class PasswordTests(APITestCaseExtended):
             "update_data_nonce": update_data_nonce_hex,
         }
 
+        revoked_token = models.Token.objects.create(user=self.test_user_obj)
+        unrelated_token = models.Token.objects.create(user=self.test_user_obj2)
+
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, data)
 
@@ -1104,6 +1107,8 @@ class PasswordTests(APITestCaseExtended):
         self.assertEqual(db_user.private_key_nonce, new_private_key_nonce)
         self.assertEqual(db_user.secret_key, new_secret_key)
         self.assertEqual(db_user.secret_key_nonce, new_secret_key_nonce)
+        self.assertFalse(models.Token.objects.filter(pk=revoked_token.pk).exists())
+        self.assertTrue(models.Token.objects.filter(pk=unrelated_token.pk).exists())
         self.assertEqual(db_user.duo_enabled, False)
         self.assertEqual(db_user.google_authenticator_enabled, False)
         self.assertEqual(db_user.yubikey_otp_enabled, False)

@@ -16,7 +16,6 @@ from restapi.models import (
     User,
     File,
     File_Chunk,
-    File_Link,
 )
 from restapi.utils import encrypt_with_db_secret
 
@@ -27,7 +26,6 @@ from nacl.public import PrivateKey
 import os
 import binascii
 import datetime
-import uuid
 
 
 class CleanupChunksTest(APITestCaseExtended):
@@ -269,6 +267,57 @@ class CleanupChunksTest(APITestCaseExtended):
         # Verify file was deleted (since it has no chunks left and delete_date is in the past)
         self.assertEqual(File.objects.filter(id=self.file1.id).count(), 0)
 
+    def test_post_cleanup_chunks_rejects_live_file(self):
+        for delete_date in (None, timezone.now() + datetime.timedelta(days=1)):
+            with self.subTest(delete_date=delete_date):
+                self.file1.delete_date = delete_date
+                self.file1.save(update_fields=["delete_date"])
+
+                self.client.force_authenticate(user=self.fileserver1)
+                response = self.client.post(
+                    reverse("fileserver_cleanup_chunks"),
+                    {
+                        "deleted_chunks": [
+                            {"shard_id": str(self.shard1.id), "chunks": ["chunk1hash"]}
+                        ]
+                    },
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertTrue(File_Chunk.objects.filter(pk=self.chunk1.pk).exists())
+                self.assertTrue(File.objects.filter(pk=self.file1.pk).exists())
+
+    def test_post_cleanup_chunks_rejects_mixed_live_and_deleted_files(self):
+        live_file = File.objects.create(
+            shard=self.shard1,
+            chunk_count=1,
+            size=512,
+        )
+        live_chunk = File_Chunk.objects.create(
+            hash_checksum="livechunkhash",
+            position=0,
+            user=self.user,
+            file=live_file,
+            size=512,
+        )
+
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.post(
+            reverse("fileserver_cleanup_chunks"),
+            {
+                "deleted_chunks": [
+                    {
+                        "shard_id": str(self.shard1.id),
+                        "chunks": ["chunk1hash", "livechunkhash"],
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(File_Chunk.objects.filter(pk=self.chunk1.pk).exists())
+        self.assertTrue(File_Chunk.objects.filter(pk=live_chunk.pk).exists())
+
     def test_post_cleanup_chunks_no_permission(self):
         """
         Tests POST request when fileserver has no delete permission
@@ -303,7 +352,7 @@ class CleanupChunksTest(APITestCaseExtended):
             delete_date=timezone.now() - datetime.timedelta(days=1),
         )
 
-        chunk3 = File_Chunk.objects.create(
+        File_Chunk.objects.create(
             hash_checksum="chunk3hash",
             position=0,
             user=self.user,
@@ -518,7 +567,7 @@ class CleanupChunksTest(APITestCaseExtended):
             delete_date=timezone.now() - datetime.timedelta(days=1),
         )
 
-        chunk3 = File_Chunk.objects.create(
+        File_Chunk.objects.create(
             hash_checksum="chunk3hash",
             position=0,
             user=self.user,
