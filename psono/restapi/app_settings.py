@@ -19,6 +19,7 @@ from .serializers import (
     ReadSecretHistorySerializer as DefaultReadSecretHistorySerializer,
     ReadHistorySerializer as DefaultReadHistorySerializer,
     UserUpdateSerializer as DefaultUserUpdateSerializer,
+    UserUpgradeHashingSerializer as DefaultUserUpgradeHashingSerializer,
     UserDeleteSerializer as DefaultUserDeleteSerializer,
     NewGASerializer as DefaultNewGASerializer,
     NewWebauthnSerializer as DefaultNewWebauthnSerializer,
@@ -204,6 +205,11 @@ ReadHistorySerializer = import_callable(
 
 UserUpdateSerializer = import_callable(
     serializers.get("USER_UPDATE_SERIALIZER", DefaultUserUpdateSerializer)
+)
+UserUpgradeHashingSerializer = import_callable(
+    serializers.get(
+        "USER_UPGRADE_HASHING_SERIALIZER", DefaultUserUpgradeHashingSerializer
+    )
 )
 
 UserDeleteSerializer = import_callable(

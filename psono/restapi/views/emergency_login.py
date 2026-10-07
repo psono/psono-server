@@ -29,7 +29,7 @@ from ..app_settings import (
 )
 
 
-from ..models import Token
+from ..models import Token, DEFAULT_HASHING_ALGORITHM, default_hashing_parameters
 
 
 class EmergencyLoginView(GenericAPIView):
@@ -102,6 +102,10 @@ class EmergencyLoginView(GenericAPIView):
             "user_public_key": user.public_key,
             "user_email": decrypt_with_db_secret(user.email) if user.email else "",
             "user_id": str(user.id),
+            "hashing_algorithm": user.hashing_algorithm,
+            "hashing_parameters": user.hashing_parameters,
+            "default_hashing_algorithm": DEFAULT_HASHING_ALGORITHM,
+            "default_hashing_parameters": default_hashing_parameters(),
         }
 
         server_crypto_box = Box(

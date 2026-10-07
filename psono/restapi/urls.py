@@ -92,6 +92,11 @@ urlpatterns = [
         name="authentication_verify_email",
     ),
     re_path(r"^user/update/$", views.UserUpdate.as_view(), name="user_update"),
+    re_path(
+        r"^user/upgrade-hashing/$",
+        views.UserUpgradeHashingView.as_view(),
+        name="user_upgrade_hashing",
+    ),
     re_path(r"^user/ga/$", views.UserGA.as_view(), name="user_ga"),
     re_path(r"^user/duo/$", views.UserDuo.as_view(), name="user_duo"),
     re_path(r"^user/webauthn/$", views.UserWebauthn.as_view(), name="user_webauthn"),

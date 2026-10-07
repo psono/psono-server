@@ -15,6 +15,7 @@ import os
 from hashlib import sha512
 import uuid
 from .fields import LtreeField
+from .hashing import is_weaker_hashing_profile
 import nacl.secret
 import nacl.utils
 
@@ -153,6 +154,21 @@ class User(models.Model):
                 self.hashing_parameters != stored_user.hashing_parameters
             )
 
+            if hashing_parameters_changed or hashing_algorithm_changed:
+                weaker_ids = [
+                    credential.id
+                    for credential in Old_Credential.objects.filter(
+                        user_id=stored_user.id
+                    )
+                    if is_weaker_hashing_profile(
+                        credential.hashing_algorithm,
+                        credential.hashing_parameters,
+                        self.hashing_algorithm,
+                        self.hashing_parameters,
+                    )
+                ]
+                Old_Credential.objects.filter(pk__in=weaker_ids).delete()
+
             if (
                 authkey_changed
                 or public_key_changed
@@ -161,20 +177,24 @@ class User(models.Model):
                 or private_key_changed
                 or private_key_nonce_changed
             ):
-                if hashing_parameters_changed or hashing_algorithm_changed:
-                    Old_Credential.objects.filter(user_id=stored_user.id).delete()
-
-                Old_Credential.objects.create(
-                    user_id=stored_user.id,
-                    authkey=stored_user.authkey,
-                    public_key=stored_user.public_key,
-                    secret_key=stored_user.secret_key,
-                    secret_key_nonce=stored_user.secret_key_nonce,
-                    private_key=stored_user.private_key,
-                    private_key_nonce=stored_user.private_key_nonce,
-                    hashing_algorithm=stored_user.hashing_algorithm,
-                    hashing_parameters=stored_user.hashing_parameters,
-                )
+                # Old ciphertexts would retain the weaker offline attack path.
+                if not is_weaker_hashing_profile(
+                    stored_user.hashing_algorithm,
+                    stored_user.hashing_parameters,
+                    self.hashing_algorithm,
+                    self.hashing_parameters,
+                ):
+                    Old_Credential.objects.create(
+                        user_id=stored_user.id,
+                        authkey=stored_user.authkey,
+                        public_key=stored_user.public_key,
+                        secret_key=stored_user.secret_key,
+                        secret_key_nonce=stored_user.secret_key_nonce,
+                        private_key=stored_user.private_key,
+                        private_key_nonce=stored_user.private_key_nonce,
+                        hashing_algorithm=stored_user.hashing_algorithm,
+                        hashing_parameters=stored_user.hashing_parameters,
+                    )
 
             if email_changed or email_bcrypt_changed:
                 Old_Email.objects.create(
