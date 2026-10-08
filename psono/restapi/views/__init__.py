@@ -61,6 +61,7 @@ from .user_policy import UserPolicyView
 from .user_duo import UserDuo
 from .user_search import UserSearch
 from .user_update import UserUpdate
+from .user_upgrade_hashing import UserUpgradeHashingView
 from .user_webauthn import UserWebauthn
 from .user_yubikey_otp import UserYubikeyOTP
 from .user_delete import UserDelete

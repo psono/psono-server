@@ -5,6 +5,7 @@ from rest_framework.serializers import Serializer
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import translation
 from django.utils.formats import date_format
@@ -13,7 +14,7 @@ import os
 from email.mime.image import MIMEImage
 
 from ..permissions import IsAuthenticated
-from ..models import Token
+from ..models import Token, User, DEFAULT_HASHING_ALGORITHM, default_hashing_parameters
 from ..app_settings import ActivateTokenSerializer
 from ..authentication import TokenAuthenticationAllowInactive
 from ..utils import decrypt_with_db_secret
@@ -39,10 +40,13 @@ class ActivateTokenView(GenericAPIView):
     def put(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         """
-        Activates a token
+        Activates a token and advertises the default hashing profile for new
+        credentials, independently of the user's current credential profile.
         """
+        request.user = User.objects.select_for_update().get(pk=request.user.pk)
         serializer = self.get_serializer(data=self.request.data)
 
         if not serializer.is_valid():
@@ -190,6 +194,8 @@ class ActivateTokenView(GenericAPIView):
 
         return Response(
             {
+                "default_hashing_algorithm": DEFAULT_HASHING_ALGORITHM,
+                "default_hashing_parameters": default_hashing_parameters(),
                 "user": {
                     "id": request.user.id,
                     "authentication": "AUTHKEY",
@@ -198,9 +204,11 @@ class ActivateTokenView(GenericAPIView):
                     else "",
                     "secret_key": request.user.secret_key,
                     "secret_key_nonce": request.user.secret_key_nonce,
+                    "hashing_algorithm": request.user.hashing_algorithm,
+                    "hashing_parameters": request.user.hashing_parameters,
                     "registration_date": request.user.create_date.isoformat(),
                     "require_password_change": request.user.require_password_change,
-                }
+                },
             },
             status=status.HTTP_200_OK,
         )

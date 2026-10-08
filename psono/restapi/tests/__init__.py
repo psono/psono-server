@@ -16,6 +16,7 @@ from .datastore import *
 from .decline_share import *
 from .email_verification import *
 from .emergencycode import *
+from .emergency_hashing import *
 from .file import *
 from .file_link import *
 from .file_repository import *
@@ -27,6 +28,7 @@ from .group import *
 from .group_file_repository_right import *
 from .group_rights import *
 from .health_check import *
+from .hashing_upgrade import *
 from .history import *
 from .info import *
 from .inherited_share_rights import *

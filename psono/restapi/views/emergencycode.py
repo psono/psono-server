@@ -11,7 +11,11 @@ from ..app_settings import (
     CreateEmergencycodeSerializer,
     DeleteEmergencycodeSerializer,
 )
-from ..models import Emergency_Code
+from ..models import (
+    Emergency_Code,
+    DEFAULT_HASHING_ALGORITHM,
+    default_hashing_parameters,
+)
 
 
 class EmergencyCodeView(GenericAPIView):
@@ -44,7 +48,14 @@ class EmergencyCodeView(GenericAPIView):
                 }
             )
 
-        return Response({"emegency_codes": emegency_codes}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "emegency_codes": emegency_codes,
+                "default_hashing_algorithm": DEFAULT_HASHING_ALGORITHM,
+                "default_hashing_parameters": default_hashing_parameters(),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         """

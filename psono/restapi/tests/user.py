@@ -624,6 +624,8 @@ class UserActivateTokenTests(APITestCaseExtended):
                 "email": self.test_email,
                 "registration_date": self.test_user_obj.create_date.isoformat(),
                 "require_password_change": False,
+                "hashing_algorithm": self.test_user_obj.hashing_algorithm,
+                "hashing_parameters": self.test_user_obj.hashing_parameters,
             },
         )
 

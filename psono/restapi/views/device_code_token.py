@@ -101,6 +101,14 @@ class DeviceCodeTokenView(generics.GenericAPIView):
         )
         new_token.save()
 
+        if device_code.device_date is not None:
+            # Advance the device timestamp by the server-side approval/polling delay
+            # so replay protection retains the original device/server clock offset.
+            new_token.client_date = device_code.device_date + (
+                new_token.create_date - device_code.create_date
+            )
+            new_token.save(update_fields=["client_date"])
+
         return {
             "token": new_token.clear_text_key,
             "session_secret_key": new_token.secret_key,

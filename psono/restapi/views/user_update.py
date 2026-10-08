@@ -1,5 +1,6 @@
 from ..utils import encrypt_with_db_secret, get_static_bcrypt_hash_from_email
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -7,7 +8,7 @@ from rest_framework.serializers import Serializer
 from ..permissions import IsAuthenticated
 
 from ..app_settings import UserUpdateSerializer
-from ..models import Token
+from ..models import Token, User
 
 
 from ..authentication import TokenAuthentication
@@ -27,11 +28,15 @@ class UserUpdate(GenericAPIView):
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @transaction.atomic
     def put(self, request, *args, **kwargs):
         """
         Checks the REST Token and updates the users email / authkey / secret and private key
         """
 
+        # Serialize credential changes and validate against the latest profile,
+        # including concurrent logins and password changes.
+        request.user = User.objects.select_for_update().get(pk=request.user.pk)
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():

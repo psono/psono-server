@@ -2,7 +2,12 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import restapi.models
+
+
+def legacy_hashing_parameters():
+    # Existing credentials were derived with this profile. Keep it frozen here,
+    # independently of the defaults used to create new credentials.
+    return {"u": 14, "r": 8, "p": 1, "l": 64}
 
 
 class Migration(migrations.Migration):
@@ -25,7 +30,7 @@ class Migration(migrations.Migration):
             model_name="old_credential",
             name="hashing_parameters",
             field=models.JSONField(
-                default=restapi.models.default_hashing_parameters,
+                default=legacy_hashing_parameters,
                 verbose_name="hashing parameters",
             ),
         ),
@@ -50,7 +55,7 @@ class Migration(migrations.Migration):
             model_name="user",
             name="hashing_parameters",
             field=models.JSONField(
-                default=restapi.models.default_hashing_parameters,
+                default=legacy_hashing_parameters,
                 verbose_name="hashing parameters",
             ),
         ),

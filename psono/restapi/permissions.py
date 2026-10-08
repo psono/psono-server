@@ -20,6 +20,7 @@ class IsAuthenticated(BasePermission):
         "authentication_yubikey_otp_verify",
         "authentication_ivalt_verify",
         "user_update",
+        "user_upgrade_hashing",
         "user_ga",
         "user_duo",
         "user_webauthn",

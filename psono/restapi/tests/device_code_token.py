@@ -5,6 +5,7 @@ import json
 import binascii
 import os
 from django.conf import settings
+from django.test.utils import override_settings
 
 from rest_framework import status
 
@@ -225,6 +226,108 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
         self.assertEqual(
             self.client.delete(url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED
         )
+
+    def _poll_delayed_device_code(self, clock_offset):
+        code_creation_time = timezone.now() - timedelta(seconds=30)
+        device_code = models.DeviceCode.objects.create(
+            device_fingerprint="delayed_poll_fingerprint",
+            device_description=self.device_description,
+            device_date=code_creation_time + clock_offset,
+            user=self.test_user,
+            user_public_key=self.device_public_key_hex,
+            server_public_key=self.dc_server_public_key_hex,
+            server_private_key=self.dc_server_private_key_hex_encrypted,
+            state=models.DeviceCode.DeviceCodeState.CLAIMED,
+            encrypted_credentials=self.active_dc_creds_bytes,
+            encrypted_credentials_nonce=self.credentials_nonce_hex,
+            valid_till=code_creation_time + timedelta(minutes=5),
+        )
+        models.DeviceCode.objects.filter(pk=device_code.pk).update(
+            create_date=code_creation_time
+        )
+
+        # Each poll is anonymous, even if a previous subtest authenticated.
+        self.client.credentials()
+        response = self.client.post(
+            reverse("device_code_token", kwargs={"device_code": str(device_code.id)}),
+            {},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        client_box = Box(
+            self.device_private_key,
+            PublicKey(self.dc_server_public_key_hex, encoder=nacl.encoding.HexEncoder),
+        )
+        return json.loads(
+            client_box.decrypt(
+                nacl.encoding.HexEncoder.decode(response.data["boxed_payload"]),
+                nacl.encoding.HexEncoder.decode(response.data["nonce"]),
+            )
+        )
+
+    def _authenticate_polled_token(self, payload, request_time):
+        secret_box = nacl.secret.SecretBox(
+            payload["session_secret_key"], encoder=nacl.encoding.HexEncoder
+        )
+        validator = secret_box.encrypt(
+            json.dumps(
+                {
+                    "request_time": request_time.isoformat(),
+                    "request_device_fingerprint": "delayed_poll_fingerprint",
+                }
+            ).encode()
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + payload["token"],
+            HTTP_AUTHORIZATION_VALIDATOR=json.dumps(
+                {
+                    "text": nacl.encoding.HexEncoder.encode(
+                        validator.ciphertext
+                    ).decode(),
+                    "nonce": nacl.encoding.HexEncoder.encode(validator.nonce).decode(),
+                }
+            ),
+        )
+        return self.client.get(reverse("authentication_session"))
+
+    @override_settings(
+        REPLAY_PROTECTION_DISABLED=False,
+        REPLAY_PROTECTION_TIME_DFFERENCE=20,
+        DEVICE_PROTECTION_DISABLED=False,
+    )
+    def test_delayed_poll_preserves_clock_offset_and_authenticates(self):
+        for offset_seconds in (0, -300, 300):
+            with self.subTest(offset_seconds=offset_seconds):
+                clock_offset = timedelta(seconds=offset_seconds)
+                payload = self._poll_delayed_device_code(clock_offset)
+                response = self._authenticate_polled_token(
+                    payload, timezone.now() + clock_offset
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                token = models.Token.objects.get(user=self.test_user)
+                self.assertEqual(token.client_date - token.create_date, clock_offset)
+
+                # Remove this subtest's token before polling the next code.
+                token.delete()
+
+    @override_settings(
+        REPLAY_PROTECTION_DISABLED=False,
+        REPLAY_PROTECTION_TIME_DFFERENCE=20,
+        DEVICE_PROTECTION_DISABLED=False,
+    )
+    def test_delayed_poll_still_rejects_stale_authenticated_request(self):
+        clock_offset = timedelta(seconds=300)
+        payload = self._poll_delayed_device_code(clock_offset)
+        response = self._authenticate_polled_token(
+            payload, timezone.now() + clock_offset - timedelta(seconds=30)
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data, {"detail": "Replay Protection: Time difference too big"}
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.test_user).exists())
 
     def test_poll_with_pending_device_code_fails(self):
         """
