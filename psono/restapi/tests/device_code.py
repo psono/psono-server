@@ -1,4 +1,5 @@
 import binascii
+from unittest.mock import patch
 
 from django.urls import reverse
 from django.test.utils import override_settings
@@ -88,6 +89,8 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         self.assertEqual(models.DeviceCode.objects.count(), 1)
 
         # Verify response data structure based on the new correct response
+        self.assertRegex(response.data["user_code"], r"^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$")
+        self.assertNotIn(response.data["user_code"], response.data["web_client_url"])
         self.assertIn("id", response.data)
         self.assertIn("state", response.data)
         self.assertIn("valid_till", response.data)
@@ -108,6 +111,7 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         # Verify persisted data in the database
         device_code_obj = models.DeviceCode.objects.first()
         self.assertIsNotNone(device_code_obj)
+        self.assertEqual(device_code_obj.user_code, response.data["user_code"])
         self.assertEqual(
             device_code_obj.state, models.DeviceCode.DeviceCodeState.PENDING
         )
@@ -127,6 +131,23 @@ class CreateDeviceCodeTest(APITestCaseExtended):
             PrivateKey.SIZE,
             "Persisted server private key",
         )
+
+    def test_comparison_code_collision_is_retried(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "Test device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        with patch("restapi.views.device_code.secrets.choice", return_value="A"):
+            first = self.client.post(reverse("device_code"), data)
+        self.assertEqual(first.status_code, 201)
+        with patch("restapi.views.device_code.secrets.choice", side_effect=list("AAAAAAAA" + "BBBBBBBB")):
+            second = self.client.post(reverse("device_code"), data)
+        self.assertEqual(second.status_code, 201)
+        self.assertEqual(first.data["user_code"], "AAAA-AAAA")
+        self.assertEqual(second.data["user_code"], "BBBB-BBBB")
+        self.assertEqual(models.DeviceCode.objects.count(), 2)
 
     def test_create_device_code_invalid_user_public_key(self):
         """

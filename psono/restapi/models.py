@@ -1790,6 +1790,10 @@ class DeviceCode(models.Model):
     device_fingerprint = models.CharField(max_length=128, null=False, editable=False)
     device_description = models.CharField(max_length=256, null=True, editable=False)
     device_date = models.DateTimeField(null=True, editable=False)
+    # Optional display-only comparison code; never included in the approval URL.
+    user_code = models.CharField(
+        max_length=9, null=True, blank=True, unique=True, editable=False
+    )
     # server_private_key is stored encrypted with the db secret
     server_private_key = models.CharField(max_length=256, null=False, editable=False)
     server_public_key = models.CharField(max_length=128, null=False, editable=False)

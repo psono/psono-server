@@ -1,4 +1,7 @@
 import datetime
+import secrets
+
+from django.db import IntegrityError, transaction
 
 from django.conf import settings
 from django.utils import timezone
@@ -61,20 +64,33 @@ class DeviceCodeView(generics.GenericAPIView):
         valid_duration = datetime.timedelta(seconds=300)  # 5 minutes
         valid_till = timezone.now() + valid_duration
 
-        # Create the DeviceCode object
-        device_code = DeviceCode.objects.create(
-            device_fingerprint=device_fingerprint,
-            device_description=device_description,
-            device_date=device_date,
-            valid_till=valid_till,
-            state=DeviceCode.DeviceCodeState.PENDING,
-            server_private_key=server_private_key_hex_encrypted,
-            server_public_key=server_public_key_hex,
-            user_public_key=user_public_key_hex,
-        )
+        # Independent of the URL's UUID and encryption key. Retry rare collisions.
+        for attempt in range(5):
+            code = "".join(
+                secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8)
+            )
+            user_code = code[:4] + "-" + code[4:]
+            try:
+                with transaction.atomic():
+                    device_code = DeviceCode.objects.create(
+                        user_code=user_code,
+                        device_fingerprint=device_fingerprint,
+                        device_description=device_description,
+                        device_date=device_date,
+                        valid_till=valid_till,
+                        state=DeviceCode.DeviceCodeState.PENDING,
+                        server_private_key=server_private_key_hex_encrypted,
+                        server_public_key=server_public_key_hex,
+                        user_public_key=user_public_key_hex,
+                    )
+                break
+            except IntegrityError:
+                if attempt == 4:
+                    raise
 
         response_body = {
             "id": device_code.id,
+            "user_code": device_code.user_code,
             "state": device_code.state,
             "valid_till": device_code.valid_till,
             "server_public_key": device_code.server_public_key,
