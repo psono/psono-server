@@ -48,7 +48,7 @@ class DeviceCodeClaimView(GenericAPIView):
                 "valid_till": instance.valid_till,
                 "state": instance.state,
             },
-            headers={"Cache-Control": "no-store"}
+            headers={"Cache-Control": "no-store"},
         )
 
     def put(self, request, *args, **kwargs):

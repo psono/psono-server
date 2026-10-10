@@ -620,13 +620,17 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
                 self.assertEqual(self.pending_device_code.user, initial_dc_user)
 
     def test_read_comparison_code_requires_authentication(self):
-        url = reverse("device_code_claim", kwargs={"device_code": self.pending_device_code.id})
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
         response = self.client.get(url)
         self.assertIn(response.status_code, (401, 403))
         self.assertNotIn("user_code", response.data)
 
     def test_read_comparison_code_and_legacy_request(self):
-        url = reverse("device_code_claim", kwargs={"device_code": self.pending_device_code.id})
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
         self.client.force_authenticate(user=self.test_user_obj)
         self.assertIsNone(self.client.get(url).data["user_code"])
         self.pending_device_code.user_code = "K7MP-4X9R"
@@ -634,27 +638,53 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["user_code"], "K7MP-4X9R")
-        self.assertEqual(response.data["device_fingerprint"], self.pending_device_code.device_fingerprint)
-        self.assertEqual(response.data["device_description"], self.pending_device_code.device_description)
-        self.assertEqual(response.data["device_date"], self.pending_device_code.device_date)
-        self.assertEqual(response.data["create_date"], self.pending_device_code.create_date)
-        self.assertEqual(response.data["valid_till"], self.pending_device_code.valid_till)
+        self.assertEqual(
+            response.data["device_fingerprint"],
+            self.pending_device_code.device_fingerprint,
+        )
+        self.assertEqual(
+            response.data["device_description"],
+            self.pending_device_code.device_description,
+        )
+        self.assertEqual(
+            response.data["device_date"], self.pending_device_code.device_date
+        )
+        self.assertEqual(
+            response.data["create_date"], self.pending_device_code.create_date
+        )
+        self.assertEqual(
+            response.data["valid_till"], self.pending_device_code.valid_till
+        )
         self.assertEqual(response.data["state"], "pending")
-        self.assertEqual(set(response.data), {
-            "user_code", "device_description", "device_fingerprint", "device_date",
-            "create_date", "valid_till", "state",
-        })
+        self.assertEqual(
+            set(response.data),
+            {
+                "user_code",
+                "device_description",
+                "device_fingerprint",
+                "device_date",
+                "create_date",
+                "valid_till",
+                "state",
+            },
+        )
         self.assertEqual(response["Cache-Control"], "no-store")
         self.pending_device_code.refresh_from_db()
-        self.assertEqual(self.pending_device_code.state, models.DeviceCode.DeviceCodeState.PENDING)
+        self.assertEqual(
+            self.pending_device_code.state, models.DeviceCode.DeviceCodeState.PENDING
+        )
 
     def test_read_comparison_code_unavailable_after_expiry_or_claim(self):
         self.client.force_authenticate(user=self.test_user_obj)
-        url = reverse("device_code_claim", kwargs={"device_code": self.pending_device_code.id})
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
         self.pending_device_code.valid_till = timezone.now() - timedelta(seconds=1)
         self.pending_device_code.save(update_fields=["valid_till"])
         self.assertEqual(self.client.get(url).status_code, 403)
-        url = reverse("device_code_claim", kwargs={"device_code": self.active_device_code.id})
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.active_device_code.id}
+        )
         self.assertEqual(self.client.get(url).status_code, 403)
 
     def test_http_method_not_allowed(self):

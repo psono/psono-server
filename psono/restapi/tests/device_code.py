@@ -89,7 +89,9 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         self.assertEqual(models.DeviceCode.objects.count(), 1)
 
         # Verify response data structure based on the new correct response
-        self.assertRegex(response.data["user_code"], r"^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$")
+        self.assertRegex(
+            response.data["user_code"], r"^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$"
+        )
         self.assertNotIn(response.data["user_code"], response.data["web_client_url"])
         self.assertIn("id", response.data)
         self.assertIn("state", response.data)
@@ -142,7 +144,10 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         with patch("restapi.views.device_code.secrets.choice", return_value="A"):
             first = self.client.post(reverse("device_code"), data)
         self.assertEqual(first.status_code, 201)
-        with patch("restapi.views.device_code.secrets.choice", side_effect=list("AAAAAAAA" + "BBBBBBBB")):
+        with patch(
+            "restapi.views.device_code.secrets.choice",
+            side_effect=list("AAAAAAAA" + "BBBBBBBB"),
+        ):
             second = self.client.post(reverse("device_code"), data)
         self.assertEqual(second.status_code, 201)
         self.assertEqual(first.data["user_code"], "AAAA-AAAA")

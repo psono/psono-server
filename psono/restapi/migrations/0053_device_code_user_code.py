@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('restapi', '0052_hashing_parameters_model_defaults'),
+        ("restapi", "0052_hashing_parameters_model_defaults"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='devicecode',
-            name='user_code',
-            field=models.CharField(blank=True, editable=False, max_length=9, null=True, unique=True),
+            model_name="devicecode",
+            name="user_code",
+            field=models.CharField(
+                blank=True, editable=False, max_length=9, null=True, unique=True
+            ),
         ),
     ]
