@@ -236,6 +236,8 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
             "encrypted_credentials_nonce": self.valid_nonce_hex,
         }
 
+        self.pending_device_code.user_code = "K7MP-4X9R"
+        self.pending_device_code.save(update_fields=["user_code"])
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.put(url, payload)
 
@@ -554,8 +556,8 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
                 "This field may not be blank.",
                 "blank",
             ),
-            ("encrypted_credentials_input", "123", "INVALID_HEX_STRING", "invalid"),
-            ("encrypted_credentials_input", "XXYYZZ", "INVALID_HEX_STRING", "invalid"),
+            ("encrypted_credentials_input", "123", "NO_VALID_HEX", "invalid"),
+            ("encrypted_credentials_input", "XXYYZZ", "NO_VALID_HEX", "invalid"),
             # encrypted_credentials_nonce validations
             (
                 "encrypted_credentials_nonce",
@@ -569,8 +571,8 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
                 "This field may not be blank.",
                 "blank",
             ),
-            ("encrypted_credentials_nonce", "123", "INVALID_HEX_STRING", "invalid"),
-            ("encrypted_credentials_nonce", "XXYYZZ", "INVALID_HEX_STRING", "invalid"),
+            ("encrypted_credentials_nonce", "123", "NO_VALID_HEX", "invalid"),
+            ("encrypted_credentials_nonce", "XXYYZZ", "NO_VALID_HEX", "invalid"),
             (
                 "encrypted_credentials_nonce",
                 "a" * 65,
@@ -617,23 +619,83 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
                 self.assertEqual(self.pending_device_code.state, initial_dc_state)
                 self.assertEqual(self.pending_device_code.user, initial_dc_user)
 
+    def test_read_comparison_code_requires_authentication(self):
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
+        response = self.client.get(url)
+        self.assertIn(response.status_code, (401, 403))
+        self.assertNotIn("user_code", response.data)
+
+    def test_read_comparison_code_and_legacy_request(self):
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertIsNone(self.client.get(url).data["user_code"])
+        self.pending_device_code.user_code = "K7MP-4X9R"
+        self.pending_device_code.save(update_fields=["user_code"])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user_code"], "K7MP-4X9R")
+        self.assertEqual(
+            response.data["device_fingerprint"],
+            self.pending_device_code.device_fingerprint,
+        )
+        self.assertEqual(
+            response.data["device_description"],
+            self.pending_device_code.device_description,
+        )
+        self.assertEqual(
+            response.data["device_date"], self.pending_device_code.device_date
+        )
+        self.assertEqual(
+            response.data["create_date"], self.pending_device_code.create_date
+        )
+        self.assertEqual(
+            response.data["valid_till"], self.pending_device_code.valid_till
+        )
+        self.assertEqual(response.data["state"], "pending")
+        self.assertEqual(
+            set(response.data),
+            {
+                "user_code",
+                "device_description",
+                "device_fingerprint",
+                "device_date",
+                "create_date",
+                "valid_till",
+                "state",
+            },
+        )
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(
+            self.pending_device_code.state, models.DeviceCode.DeviceCodeState.PENDING
+        )
+
+    def test_read_comparison_code_unavailable_after_expiry_or_claim(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
+        self.pending_device_code.valid_till = timezone.now() - timedelta(seconds=1)
+        self.pending_device_code.save(update_fields=["valid_till"])
+        self.assertEqual(self.client.get(url).status_code, 403)
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.active_device_code.id}
+        )
+        self.assertEqual(self.client.get(url).status_code, 403)
+
     def test_http_method_not_allowed(self):
         """
-        Tests that methods other than PUT and OPTIONS are not allowed.
+        Tests that methods other than GET, PUT and OPTIONS are not allowed.
         """
         url = reverse(
             "device_code_claim",
             kwargs={"device_code": str(self.pending_device_code.id)},
         )
         self.client.force_authenticate(user=self.test_user_obj)
-
-        # Test GET
-        response_get = self.client.get(url)
-        self.assertEqual(response_get.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(
-            response_get.data,
-            {"detail": "GET method not supported. Use PUT to claim a device code."},
-        )
 
         # Test POST
         response_post = self.client.post(url, {})

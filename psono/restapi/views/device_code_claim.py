@@ -1,4 +1,6 @@
 from typing import cast
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -14,16 +16,40 @@ from ..authentication import TokenAuthentication
 
 class DeviceCodeClaimView(GenericAPIView):
     """
-    Handles the claiming of Device Codes via PUT method.
+    Previews comparison codes via GET and claims Device Codes via PUT.
     Requires a URL parameter `device_code` (uuid) and authentication.
     """
 
     queryset = DeviceCode.objects.all()
     lookup_url_kwarg = "device_code"
-    http_method_names = ["put", "options"]
+    http_method_names = ["get", "put", "options"]
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     serializer_class = ClaimDeviceCodeSerializer
+
+    def get(self, request, *args, **kwargs):
+        """Read the optional comparison code without exposing encryption material."""
+        if getattr(request.auth, "api_key_id", None) is not None:
+            raise PermissionDenied("API_KEY_SESSION_NOT_ALLOWED")
+        instance = self.get_object()
+        if instance.user_id is not None and instance.user_id != request.user.id:
+            raise PermissionDenied("DEVICE_CODE_USER_MISMATCH")
+        if instance.valid_till <= timezone.now():
+            raise PermissionDenied("DEVICE_CODE_EXPIRED")
+        if instance.state != DeviceCode.DeviceCodeState.PENDING:
+            raise PermissionDenied("DEVICE_CODE_ALREADY_CLAIMED")
+        return Response(
+            {
+                "user_code": instance.user_code,
+                "device_description": instance.device_description,
+                "device_fingerprint": instance.device_fingerprint,
+                "device_date": instance.device_date,
+                "create_date": instance.create_date,
+                "valid_till": instance.valid_till,
+                "state": instance.state,
+            },
+            headers={"Cache-Control": "no-store"},
+        )
 
     def put(self, request, *args, **kwargs):
         """
