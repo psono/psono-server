@@ -277,6 +277,55 @@ class AcceptMembershipTest(APITestCaseExtended):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_accept_only_allows_pending_memberships(self):
+        url = reverse("membership_accept")
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+
+                response = self.client.post(
+                    url, {"membership_id": str(self.test_membership_obj.id)}
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_200_OK
+                    if accepted is None
+                    else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not None:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST_OR_ALREADY_PROCESSED_MEMBERSHIP",
+                        response.data["non_field_errors"],
+                    )
+                self.test_membership_obj.refresh_from_db()
+                self.assertIs(
+                    self.test_membership_obj.accepted,
+                    True if accepted is None else accepted,
+                )
+
+    def test_accept_rejects_other_users_memberships_in_all_acceptance_states(self):
+        url = reverse("membership_accept")
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj4.accepted = accepted
+                self.test_membership_obj4.save(update_fields=["accepted"])
+
+                response = self.client.post(
+                    url, {"membership_id": str(self.test_membership_obj4.id)}
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(
+                    "NO_PERMISSION_OR_NOT_EXIST_OR_ALREADY_PROCESSED_MEMBERSHIP",
+                    response.data["non_field_errors"],
+                )
+                self.test_membership_obj4.refresh_from_db()
+                self.assertIs(self.test_membership_obj4.accepted, accepted)
+
     def test_create_accept_membership(self):
         """
         Tests PUT method on membership_accept

@@ -274,6 +274,38 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
 
         self.assertEqual(models.Group_File_Repository_Right.objects.count(), 1)
 
+    def test_create_requires_accepted_group_membership(self):
+        url = reverse("group_file_repository_right")
+        data = {
+            "group_id": str(self.test_group_obj.id),
+            "file_repository_id": str(self.file_repository.id),
+        }
+        self.test_membership_obj.share_admin = True
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+
+                response = self.client.put(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_201_CREATED
+                    if accepted
+                    else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
+                    )
+                self.assertEqual(
+                    models.Group_File_Repository_Right.objects.filter(
+                        group=self.test_group_obj, file_repository=self.file_repository
+                    ).exists(),
+                    accepted is True,
+                )
+
     def test_create_with_no_group_membership(self):
         """
         Tests to create a file repository right without being a member of the group
@@ -763,6 +795,62 @@ class DeleteGroupFileRepositryTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(models.Group_File_Repository_Right.objects.count(), 0)
+
+    def test_delete_requires_accepted_membership_without_repository_grant(self):
+        self.file_repository_right.grant = False
+        self.file_repository_right.save(update_fields=["grant"])
+        self.test_membership_obj.share_admin = True
+        self.client.force_authenticate(user=self.test_user_obj)
+        url = reverse("group_file_repository_right")
+        data = {
+            "group_file_repository_right_id": str(self.group_file_repository_right.id)
+        }
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+
+                response = self.client.delete(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
+                    )
+                self.assertEqual(
+                    models.Group_File_Repository_Right.objects.filter(
+                        pk=self.group_file_repository_right.id
+                    ).exists(),
+                    accepted is not True,
+                )
+
+    def test_delete_allows_independent_repository_grant_in_all_membership_states(self):
+        self.group_file_repository_right.delete()
+        self.client.force_authenticate(user=self.test_user_obj)
+        url = reverse("group_file_repository_right")
+        for accepted in (True, False, None):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+                right = models.Group_File_Repository_Right.objects.create(
+                    group=self.test_group_obj,
+                    file_repository=self.file_repository,
+                    grant=False,
+                )
+
+                response = self.client.delete(
+                    url, {"group_file_repository_right_id": str(right.id)}
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertFalse(
+                    models.Group_File_Repository_Right.objects.filter(
+                        pk=right.id
+                    ).exists()
+                )
 
     def test_delete_without_authentication(self):
         """

@@ -202,6 +202,47 @@ class CreateGroupRightsTest(APITestCaseExtended):
         self.assertTrue(response.data.get("group_rights", False))
         self.assertEqual(len(response.data["group_rights"]), 1)
 
+    def test_read_group_rights_requires_accepted_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            for specific_group in (True, False):
+                with self.subTest(accepted=accepted, specific_group=specific_group):
+                    self.test_membership_obj.accepted = accepted
+                    self.test_membership_obj.save(update_fields=["accepted"])
+                    url = (
+                        reverse(
+                            "group_rights", kwargs={"group_id": self.test_group_obj.id}
+                        )
+                        if specific_group
+                        else reverse("group_rights")
+                    )
+
+                    response = self.client.get(url)
+
+                    if specific_group and accepted is not True:
+                        self.assertEqual(
+                            response.status_code, status.HTTP_400_BAD_REQUEST
+                        )
+                        self.assertIn(
+                            "NO_PERMISSION_OR_NOT_EXIST",
+                            response.data["non_field_errors"],
+                        )
+                        self.assertNotIn("group_rights", response.data)
+                    else:
+                        self.assertEqual(response.status_code, status.HTTP_200_OK)
+                        expected_groups = set()
+                        if accepted is True:
+                            expected_groups.add(str(self.test_group_obj.id))
+                        if not specific_group:
+                            expected_groups.add(str(self.test_group_obj2.id))
+                        self.assertEqual(
+                            {
+                                right["group_id"]
+                                for right in response.data["group_rights"]
+                            },
+                            expected_groups,
+                        )
+
     def test_read_no_group_rights(self):
         """
         Tests read of group rights

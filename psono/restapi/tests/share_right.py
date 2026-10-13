@@ -630,23 +630,30 @@ class CreateUserShareRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (None, False):
+        for accepted in (None, False, True):
             with self.subTest(accepted=accepted):
                 self.test_membership_obj.accepted = accepted
                 self.test_membership_obj.save(update_fields=["accepted"])
 
                 response = self.client.put(url, initial_data)
 
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                self.assertIn(
-                    "You don't have the necessary rights to share with this group.",
-                    response.data["non_field_errors"],
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_201_CREATED
+                    if accepted
+                    else status.HTTP_400_BAD_REQUEST,
                 )
-                self.assertFalse(
+                if accepted is not True:
+                    self.assertIn(
+                        "You don't have the necessary rights to share with this group.",
+                        response.data["non_field_errors"],
+                    )
+                self.assertEqual(
                     models.Group_Share_Right.objects.filter(
                         share_id=self.test_share1_obj.id,
                         group_id=self.test_group_obj.id,
-                    ).exists()
+                    ).exists(),
+                    accepted is True,
                 )
 
     def test_grant_share_right_with_expiration_date(self):
@@ -1330,6 +1337,37 @@ class DeleteUserShareRightTest(APITestCaseExtended):
             0,
             "Share right with this id should have been deleted",
         )
+
+    def test_delete_group_share_right_requires_accepted_membership(self):
+        url = reverse("share_right")
+        data = {"group_share_right_id": str(self.test_group_share_right_obj.id)}
+
+        self.test_membership_obj2.share_admin = True
+        self.client.force_authenticate(user=self.test_user2_obj)
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj2.accepted = accepted
+                self.test_membership_obj2.save(
+                    update_fields=["share_admin", "accepted"]
+                )
+
+                response = self.client.delete(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "You don't have the necessary rights to share with this group.",
+                        response.data["non_field_errors"],
+                    )
+                self.assertEqual(
+                    models.Group_Share_Right.objects.filter(
+                        pk=self.test_group_share_right_obj.id
+                    ).exists(),
+                    accepted is not True,
+                )
 
     def test_delete_user_share_right_failure_does_not_exist(self):
         """

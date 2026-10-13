@@ -226,6 +226,75 @@ class CreateMembershipTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_requires_accepted_group_admin(self):
+        url = reverse("membership")
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+
+                response = self.client.put(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_201_CREATED
+                    if accepted
+                    else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST", response.data["group_id"]
+                    )
+                self.assertEqual(
+                    models.User_Group_Membership.objects.filter(
+                        user=self.test_user_obj2, group=self.test_group_obj
+                    ).exists(),
+                    accepted is True,
+                )
+
+    def test_create_rejects_duplicate_memberships_in_all_acceptance_states(self):
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj
+        )
+        url = reverse("membership")
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            with self.subTest(accepted=accepted):
+                membership.accepted = accepted
+                membership.save(update_fields=["accepted"])
+
+                response = self.client.put(url, data)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(
+                    "USER_ALREADY_PART_OF_GROUP", response.data["non_field_errors"]
+                )
+                membership.refresh_from_db()
+                self.assertIs(membership.accepted, accepted)
+                self.assertEqual(
+                    models.User_Group_Membership.objects.filter(
+                        user=self.test_user_obj2, group=self.test_group_obj
+                    ).count(),
+                    1,
+                )
+
     def test_create_failure_invalid_secret_key_type(self):
         """
         Tests to create a membership with an invalid secret key type
@@ -709,6 +778,70 @@ class DeleteMembershipTest(APITestCaseExtended):
         except models.User_Group_Membership.DoesNotExist:
             pass
 
+    def test_delete_requires_accepted_admin_for_all_target_acceptance_states(self):
+        url = reverse("membership")
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            for target_accepted in (True, False, None):
+                with self.subTest(accepted=accepted, target_accepted=target_accepted):
+                    self.test_membership_obj.accepted = accepted
+                    self.test_membership_obj.save(update_fields=["accepted"])
+                    target = models.User_Group_Membership.objects.create(
+                        user=self.test_user_obj2,
+                        group=self.test_group_obj,
+                        accepted=target_accepted,
+                    )
+
+                    response = self.client.delete(
+                        url, {"membership_id": str(target.id)}
+                    )
+
+                    self.assertEqual(
+                        response.status_code,
+                        status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                    )
+                    if accepted is not True:
+                        self.assertIn(
+                            "NO_PERMISSION_OR_NOT_EXIST",
+                            response.data["non_field_errors"],
+                        )
+                        target.refresh_from_db()
+                        self.assertIs(target.accepted, target_accepted)
+                    self.assertEqual(
+                        models.User_Group_Membership.objects.filter(
+                            pk=target.id
+                        ).exists(),
+                        accepted is not True,
+                    )
+                    models.User_Group_Membership.objects.filter(pk=target.id).delete()
+
+    def test_delete_allows_self_removal_in_all_acceptance_states(self):
+        url = reverse("membership")
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            with self.subTest(accepted=accepted):
+                group = models.Group.objects.create(
+                    name="Self removal", public_key="key"
+                )
+                membership = models.User_Group_Membership.objects.create(
+                    user=self.test_user_obj,
+                    group=group,
+                    group_admin=False,
+                    share_admin=False,
+                    accepted=accepted,
+                )
+
+                response = self.client.delete(
+                    url, {"membership_id": str(membership.id)}
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertFalse(
+                    models.User_Group_Membership.objects.filter(
+                        pk=membership.id
+                    ).exists()
+                )
+
     def test_delete_failure_no_membership_id_provided(self):
         """
         Tests to delete a membership without a membership id
@@ -1003,6 +1136,45 @@ class UpdateMembershipTest(APITestCaseExtended):
         )
 
         self.assertFalse(membership.group_admin)
+
+    def test_update_requires_accepted_admin_for_all_target_acceptance_states(self):
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj
+        )
+        url = reverse("membership")
+        data = {
+            "membership_id": str(target.id),
+            "group_admin": True,
+            "share_admin": True,
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (True, False, None):
+            for target_accepted in (True, False, None):
+                with self.subTest(accepted=accepted, target_accepted=target_accepted):
+                    self.test_membership_obj.accepted = accepted
+                    self.test_membership_obj.save(update_fields=["accepted"])
+                    target.accepted = target_accepted
+                    target.group_admin = False
+                    target.share_admin = False
+                    target.save(
+                        update_fields=["accepted", "group_admin", "share_admin"]
+                    )
+
+                    response = self.client.post(url, data)
+
+                    self.assertEqual(
+                        response.status_code,
+                        status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                    )
+                    if accepted is not True:
+                        self.assertIn(
+                            "NO_PERMISSION_OR_NOT_EXIST",
+                            response.data["non_field_errors"],
+                        )
+                    target.refresh_from_db()
+                    self.assertIs(target.group_admin, accepted is True)
+                    self.assertIs(target.share_admin, accepted is True)
+                    self.assertIs(target.accepted, target_accepted)
 
     def test_update_success_to_group_admin(self):
         """

@@ -516,6 +516,30 @@ class DeleteGroupTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_delete_requires_accepted_group_admin(self):
+        url = reverse("group")
+        data = {"group_id": str(self.test_group_obj.id)}
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+
+                response = self.client.delete(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
+                    )
+                self.assertEqual(
+                    models.Group.objects.filter(pk=self.test_group_obj.id).exists(),
+                    accepted is not True,
+                )
+
     def test_delete_failure_missing_group_id(self):
         """
         Tests to delete a group
@@ -1056,6 +1080,32 @@ class UpdateGroupTest(APITestCaseExtended):
         group = models.Group.objects.get(pk=self.test_group_obj.id)
 
         self.assertEqual(group.name, "New Name")
+
+    def test_update_requires_accepted_group_admin(self):
+        url = reverse("group")
+        data = {"group_id": str(self.test_group_obj.id), "name": "Updated group"}
+        original_name = self.test_group_obj.name
+        self.client.force_authenticate(user=self.test_user_obj)
+        for accepted in (None, False, True):
+            with self.subTest(accepted=accepted):
+                self.test_membership_obj.accepted = accepted
+                self.test_membership_obj.save(update_fields=["accepted"])
+
+                response = self.client.post(url, data)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
+                )
+                if accepted is not True:
+                    self.assertIn(
+                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
+                    )
+                self.test_group_obj.refresh_from_db()
+                self.assertEqual(
+                    self.test_group_obj.name,
+                    data["name"] if accepted else original_name,
+                )
 
     def test_update_groups_failure_no_group_admin(self):
         """
