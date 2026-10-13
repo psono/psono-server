@@ -33,9 +33,11 @@ class ReadLinkShareAccessSerializer(serializers.Serializer):
 
         # Lets check if the current user can do that
         try:
-            link_share = Link_Share.objects.select_related(
-                "secret", "file", "user"
-            ).get(id=link_share_id)
+            link_share = (
+                Link_Share.objects.select_related("secret", "file", "user")
+                .select_for_update(of=("self",))
+                .get(id=link_share_id)
+            )
         except Link_Share.DoesNotExist:
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)

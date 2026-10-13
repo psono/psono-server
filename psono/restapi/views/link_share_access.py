@@ -40,6 +40,7 @@ class LinkShareAccessView(GenericAPIView):
     def get(self, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @transaction.atomic
     def put(self, request, *args, **kwargs):
         """
         Use a link share to update a secret.
@@ -73,6 +74,7 @@ class LinkShareAccessView(GenericAPIView):
 
         return Response({}, status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         """
         Use a link share to access a secret.
