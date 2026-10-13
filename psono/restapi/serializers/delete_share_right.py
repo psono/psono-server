@@ -49,6 +49,7 @@ class DeleteShareRightSerializer(serializers.Serializer):
                     group_id=share_right.group_id,
                     user_id=self.context["request"].user.id,
                     share_admin=True,
+                    accepted=True,
                 )
             except User_Group_Membership.DoesNotExist:
                 msg = "You don't have the necessary rights to share with this group."
