@@ -6,6 +6,117 @@ from .helpers import _FileserverAdministrationTestCase
 
 
 class FileserverClusterViewTests(_FileserverAdministrationTestCase):
+    def test_cluster_rejects_non_numeric_page(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"), {"page": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_cluster_rejects_negative_page(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver_cluster"), {"page": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_cluster_rejects_negative_page_size(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"), {"page_size": "-1"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_cluster_rejects_non_numeric_page_size(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"), {"page_size": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_cluster_rejects_zero_page_size(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"), {"page_size": "0"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_cluster_rejects_invalid_ordering(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"), {"ordering": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ordering", response.data)
+
+    def test_cluster_search_returns_matching_cluster(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster"),
+            {
+                "search": self.cluster.title,
+                "page_size": "1",
+                "page": "0",
+                "ordering": "title",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["clusters"][0]["id"], self.cluster.id)
+
+    def test_cluster_populated_detail(self):
+        member = self.create_member()
+        link = self.create_cluster_shard_link()
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster", kwargs={"cluster_id": self.cluster.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["links"][0]["id"], link.id)
+        self.assertEqual(response.data["fileservers"][0]["id"], member.id)
+
+    def test_cluster_detail_rejects_missing_cluster(self):
+        from uuid import uuid4
+
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster", kwargs={"cluster_id": str(uuid4())})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cluster_detail_rejects_malformed_id(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver_cluster", kwargs={"cluster_id": "invalid"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cluster_creation_requires_fields(self):
+        self.authenticate()
+        response = self.client.post(reverse("admin_fileserver_cluster"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cluster_update_rejects_missing_cluster(self):
+        from uuid import uuid4
+
+        self.authenticate()
+        response = self.client.put(
+            reverse("admin_fileserver_cluster"),
+            {"cluster_id": str(uuid4()), "title": "Missing", "file_size_limit": 1},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cluster_delete_rejects_missing_cluster(self):
+        from uuid import uuid4
+
+        self.authenticate()
+        response = self.client.delete(
+            reverse("admin_fileserver_cluster"), {"cluster_id": str(uuid4())}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_cluster_crud(self):
         self.authenticate()
         url = reverse("admin_fileserver_cluster")

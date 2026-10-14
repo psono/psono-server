@@ -703,6 +703,102 @@ class UserUpdateLinkShareTest(APITestCaseExtended):
             type="dummy",
         )
 
+    def test_update_accepts_boolean_write_permission(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("link_share"),
+            {
+                "link_share_id": str(self.link_share.id),
+                "public_title": "Writable",
+                "allow_write": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link_share.refresh_from_db()
+        self.assertTrue(self.link_share.allow_write)
+
+    def test_update_can_disable_write_permission(self):
+        self.link_share.allow_write = True
+        self.link_share.save(update_fields=["allow_write"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("link_share"),
+            {
+                "link_share_id": str(self.link_share.id),
+                "public_title": "Read only",
+                "allow_write": False,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link_share.refresh_from_db()
+        self.assertFalse(self.link_share.allow_write)
+
+    def test_update_cannot_enable_writes_without_secret_write_permission(self):
+        from uuid import uuid4
+
+        share = models.Share.objects.create(
+            user=self.test_user2_obj, data=b"shared", data_nonce="nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, accepted=True, read=True, write=False
+        )
+        self.secret_link_obj.delete()
+        models.Secret_Link.objects.create(
+            link_id=uuid4(), secret=self.test_secret_obj, parent_share=share
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("link_share"),
+            {
+                "link_share_id": str(self.link_share.id),
+                "public_title": "Forbidden write",
+                "allow_write": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
+        self.link_share.refresh_from_db()
+        self.assertFalse(self.link_share.allow_write)
+
+    def test_file_link_share_permissions_passphrase_and_exclusive_target(self):
+        from uuid import uuid4
+        from django.contrib.auth.hashers import check_password
+
+        shard = models.Fileserver_Shard.objects.create(
+            title="Storage", description="Storage"
+        )
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=shard, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            file=file, link_id=uuid4(), parent_datastore=self.test_datastore_obj
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "file_id": str(file.id),
+            "node": "ciphertext",
+            "node_nonce": "nonce",
+            "public_title": "File share",
+            "allow_write": True,
+            "passphrase": "password",
+        }
+        response = self.client.put(
+            reverse("link_share"), {**data, "secret_id": str(self.test_secret_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.put(reverse("link_share"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        shared = models.Link_Share.objects.get(file=file)
+        self.assertFalse(shared.allow_write)
+        self.assertTrue(check_password("password", shared.passphrase))
+        response = self.client.put(
+            reverse("link_share"), {**data, "file_id": str(uuid4())}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        link.delete()
+        response = self.client.put(reverse("link_share"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_success(self):
         """
         Tests to update a specific link share successful
@@ -742,6 +838,79 @@ class UserUpdateLinkShareTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_owned_link_share_preserves_secret(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("link_share"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Link_Share.objects.filter(pk=self.link_share.id).exists()
+        )
+        self.assertTrue(
+            models.Secret.objects.filter(pk=self.test_secret_obj.id).exists()
+        )
+
+    def test_delete_rejects_missing_identifier(self):
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(reverse("link_share"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_rejects_foreign_link_share(self):
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(
+            reverse("link_share"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            models.Link_Share.objects.filter(pk=self.link_share.id).exists()
+        )
+
+    def test_delete_rejects_unknown_link_share(self):
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(
+            reverse("link_share"),
+            {"link_share_id": "00000000-0000-4000-8000-000000000001"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_rejects_malformed_identifier(self):
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(
+            reverse("link_share"), {"link_share_id": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+        self.assertEqual(
+            self.client.delete(
+                reverse("link_share"), {"link_share_id": str(self.link_share.id)}
+            ).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_update_passphrase_preservation_replacement_and_removal(self):
+        from django.contrib.auth.hashers import check_password
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {"link_share_id": str(self.link_share.id), "public_title": "Updated"}
+        response = self.client.post(
+            reverse("link_share"), {**data, "passphrase": "new-password"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link_share.refresh_from_db()
+        self.assertTrue(check_password("new-password", self.link_share.passphrase))
+        hashed = self.link_share.passphrase
+        response = self.client.post(reverse("link_share"), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link_share.refresh_from_db()
+        self.assertEqual(self.link_share.passphrase, hashed)
+        response = self.client.post(reverse("link_share"), {**data, "passphrase": ""})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link_share.refresh_from_db()
+        self.assertIsNone(self.link_share.passphrase)
 
     def test_with_valid_till_already_expired(self):
         """

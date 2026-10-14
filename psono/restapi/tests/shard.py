@@ -11,6 +11,27 @@ from .base import APITestCaseExtended
 
 
 class ShardTests(APITestCaseExtended):
+    def test_put_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.put(reverse("shard"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.post(reverse("shard"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(reverse("shard"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "asd"
@@ -29,12 +50,8 @@ class ShardTests(APITestCaseExtended):
         self.test_secret_key = (
             "a7d028388e9d80f2679c236ebb2d0fedc5b7b0a28b393f6a20cc8f6be636aa71"
         )
-        self.test_secret_key_nonce = (
-            "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
-        )
-        self.test_secret_key_nonce2 = (
-            "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
-        )
+        self.test_secret_key_nonce = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3c"
+        self.test_secret_key_nonce2 = "f580cc9900ce7ae8b6f7d2bab4627e9e689dca0f13a53e3d"
         self.test_secret_key_enc = (
             "77cde8ff6a5bbead93588fdcd0d6346bb57224b55a49c0f8a22a807bf6414e4d82ff60711422"
             "7a4faf06969a7404961f855841e5d5d1baba935f35fa522553ef3ee27c7123d6be058e6d43cc7"
@@ -47,9 +64,7 @@ class ShardTests(APITestCaseExtended):
             "16d9486b1e6ad9a29023a461a0d36ceef48a553697cbba2acc3530a6bb06f2e2798c5e10b369f9f"
             "4af8999d5a1b0e08f5ee7878139caf2b8c55e6cd0c936f2891"
         )
-        self.test_private_key_nonce = (
-            "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
-        )
+        self.test_private_key_nonce = "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb9"
         self.test_private_key_nonce2 = (
             "4298a9ab3d9d5d8643dfd4445adc30301b565ab650497fb8"
         )
@@ -81,7 +96,9 @@ class ShardTests(APITestCaseExtended):
             is_email_active=True,
         )
 
-    def _create_api_key_session_token(self, restrict_to_secrets=False, read=True, write=True):
+    def _create_api_key_session_token(
+        self, restrict_to_secrets=False, read=True, write=True
+    ):
         api_key = models.API_Key.objects.create(
             user=self.test_user_obj,
             title="Test API Key",
@@ -109,6 +126,100 @@ class ShardTests(APITestCaseExtended):
             valid_till=timezone.now() + timedelta(hours=1),
         )
         return token
+
+    def test_live_fileservers_are_grouped_and_permissions_are_aggregated(self):
+        shard = models.Fileserver_Shard.objects.create(
+            title="Shard", description="Storage", active=True
+        )
+        cluster = models.Fileserver_Cluster.objects.create(
+            title="Cluster",
+            auth_public_key="key",
+            auth_private_key="key",
+            file_size_limit=0,
+        )
+        reader = models.Fileserver_Cluster_Members.objects.create(
+            create_ip="127.0.0.1",
+            fileserver_cluster=cluster,
+            key="reader",
+            public_key="key",
+            secret_key="secret",
+            url="https://reader.example.com",
+            read=True,
+            write=False,
+            valid_till=timezone.now() + timedelta(minutes=5),
+        )
+        writer = models.Fileserver_Cluster_Members.objects.create(
+            create_ip="127.0.0.1",
+            fileserver_cluster=cluster,
+            key="writer",
+            public_key="key",
+            secret_key="secret",
+            url="https://writer.example.com",
+            read=False,
+            write=True,
+            valid_till=timezone.now() + timedelta(minutes=5),
+        )
+        inactive = models.Fileserver_Cluster_Members.objects.create(
+            create_ip="127.0.0.1",
+            fileserver_cluster=cluster,
+            key="inactive",
+            public_key="key",
+            secret_key="secret",
+            url="https://inactive.example.com",
+            read=False,
+            write=False,
+            valid_till=timezone.now() + timedelta(minutes=5),
+        )
+        models.Fileserver_Cluster_Member_Shard_Link.objects.create(
+            member=reader,
+            shard=shard,
+            read=True,
+            write=True,
+            ip_read_whitelist="[]",
+            ip_read_blacklist="[]",
+            ip_write_whitelist="[]",
+            ip_write_blacklist="[]",
+        )
+        models.Fileserver_Cluster_Member_Shard_Link.objects.create(
+            member=writer,
+            shard=shard,
+            read=True,
+            write=True,
+            ip_read_whitelist="[]",
+            ip_read_blacklist="[]",
+            ip_write_whitelist="[]",
+            ip_write_blacklist="[]",
+        )
+        models.Fileserver_Cluster_Member_Shard_Link.objects.create(
+            member=inactive,
+            shard=shard,
+            read=True,
+            write=True,
+            ip_read_whitelist="[]",
+            ip_read_blacklist="[]",
+            ip_write_whitelist="[]",
+            ip_write_blacklist="[]",
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("shard"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["shards"]), 1)
+        result = response.data["shards"][0]
+        self.assertEqual(result["id"], shard.id)
+        self.assertTrue(result["read"])
+        self.assertTrue(result["write"])
+        self.assertEqual(len(result["fileserver"]), 3)
+        self.assertEqual(
+            sorted((node["read"], node["write"]) for node in result["fileserver"]),
+            [(False, False), (False, True), (True, False)],
+        )
+
+    def test_read_rejects_non_object_json_request_body(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.generic(
+            "GET", reverse("shard"), data='["invalid"]', content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_read_success(self):
         """

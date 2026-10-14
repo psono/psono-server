@@ -13,6 +13,45 @@ import binascii
 
 
 class MetadataDatastoreTest(APITestCaseExtended):
+    def test_put_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.put(
+                reverse(
+                    "metadata_datastore",
+                    kwargs={"datastore_id": str(self.test_datastore_obj.id)},
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.post(
+                reverse(
+                    "metadata_datastore",
+                    kwargs={"datastore_id": str(self.test_datastore_obj.id)},
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(
+                reverse(
+                    "metadata_datastore",
+                    kwargs={"datastore_id": str(self.test_datastore_obj.id)},
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to read the metadata of a datastore
     """
@@ -159,6 +198,14 @@ class MetadataDatastoreTest(APITestCaseExtended):
             parent_datastore_id=self.test_datastore_obj.id,
             path=str(self.share_link_id).replace("-", ""),
         )
+
+    def test_malformed_datastore_id_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("metadata_datastore", kwargs={"datastore_id": "malformed"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("DATASTORE_ID_MALFORMED", response.data["non_field_errors"])
 
     def test_read_metadata_datastore(self):
         """

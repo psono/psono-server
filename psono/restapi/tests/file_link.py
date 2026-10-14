@@ -11,11 +11,98 @@ from unittest.mock import patch
 from django.urls import reverse
 
 from rest_framework import status
+from rest_framework.test import APITransactionTestCase
 
 from restapi import models
 from restapi.utils import encrypt_with_db_secret
 
 from .base import APITestCaseExtended
+
+
+class ConcurrentFileLinkMoveTests(APITransactionTestCase):
+    def test_concurrent_identical_move_preserves_one_destination_link(self):
+        from uuid import uuid4
+        from django.db import connection
+
+        user = models.User.objects.create(
+            username="move-race@example.com",
+            is_email_active=True,
+            private_key_nonce="private",
+            secret_key_nonce="secret",
+        )
+        source = models.Data_Store.objects.create(
+            user=user,
+            type="password",
+            description="Source",
+            data=b"source",
+            data_nonce="source-nonce",
+            secret_key="source-key",
+            secret_key_nonce="source-key-nonce",
+        )
+        destination = models.Data_Store.objects.create(
+            user=user,
+            type="password",
+            description="Destination",
+            data=b"destination",
+            data_nonce="destination-nonce",
+            secret_key="destination-key",
+            secret_key_nonce="destination-key-nonce",
+        )
+        shard = models.Fileserver_Shard.objects.create(
+            title="Storage", description="Storage"
+        )
+        file = models.File.objects.create(
+            user=user, shard=shard, size=10, chunk_count=1
+        )
+        identifier = uuid4()
+        models.File_Link.objects.create(
+            link_id=identifier, file=file, parent_datastore=source
+        )
+        self.client.force_authenticate(user=user)
+        controller = connection.copy(alias="file-move-controller")
+        inserted = False
+
+        def execute(execute, sql, params, many, context):
+            nonlocal inserted
+            if (
+                not inserted
+                and sql.startswith("INSERT")
+                and '"restapi_file_link"' in sql
+            ):
+                columns = [
+                    column.strip().strip('"')
+                    for column in sql.split("(", 1)[1].split(")", 1)[0].split(",")
+                ]
+                competing = list(params)
+                competing[columns.index("id")] = uuid4()
+                # Another connection completes the same move before this INSERT.
+                # The real uniqueness constraint rejects the duplicate link.
+                with controller.cursor() as cursor:
+                    cursor.execute(sql, competing)
+                inserted = True
+            return execute(sql, params, many, context)
+
+        try:
+            with connection.execute_wrapper(execute):
+                response = self.client.post(
+                    reverse("file_link"),
+                    {
+                        "link_id": str(identifier),
+                        "new_parent_datastore_id": str(destination.id),
+                    },
+                    format="json",
+                )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertTrue(inserted)
+            self.assertEqual(
+                models.File_Link.objects.filter(link_id=identifier).count(), 1
+            )
+            saved = models.File_Link.objects.get(link_id=identifier)
+            self.assertEqual(saved.file, file)
+            self.assertEqual(saved.parent_datastore, destination)
+            self.assertIsNone(saved.parent_share)
+        finally:
+            controller.close()
 
 
 class FileLinkDeleteTests(APITestCaseExtended):
@@ -124,6 +211,236 @@ class FileLinkDeleteTests(APITestCaseExtended):
                 random.choice(string.ascii_lowercase) for _ in range(64)
             ),
         )
+
+    def test_move_file_link_between_datastore_and_share(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        identifier = uuid4()
+        models.File_Link.objects.create(
+            link_id=identifier, file=file, parent_datastore=self.test_datastore_obj
+        )
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj,
+            share=share,
+            read=True,
+            write=True,
+            grant=True,
+            accepted=True,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"),
+            {"link_id": str(identifier), "new_parent_share_id": str(share.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        link = models.File_Link.objects.get(link_id=identifier)
+        self.assertEqual(link.parent_share, share)
+        self.assertIsNone(link.parent_datastore_id)
+        response = self.client.post(
+            reverse("file_link"),
+            {
+                "link_id": str(identifier),
+                "new_parent_datastore_id": str(self.test_datastore_obj.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        link = models.File_Link.objects.get(link_id=identifier)
+        self.assertEqual(link.parent_datastore, self.test_datastore_obj)
+        self.assertIsNone(link.parent_share_id)
+        file.refresh_from_db()
+        self.assertIsNone(file.delete_date)
+
+    def test_move_file_link_requires_link_id(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(reverse("file_link"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_move_file_link_requires_destination(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"), {"link_id": str(link.link_id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.File_Link.objects.filter(pk=link.pk).exists())
+
+    def test_move_file_link_rejects_missing_link(self):
+        from uuid import uuid4
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"),
+            {
+                "link_id": str(uuid4()),
+                "new_parent_datastore_id": str(self.test_datastore_obj.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_move_file_link_requires_destination_share_write_permission(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, write=False, accepted=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"),
+            {"link_id": str(link.link_id), "new_parent_share_id": str(share.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.File_Link.objects.filter(pk=link.pk).exists())
+
+    def test_move_file_link_rejects_missing_destination_datastore(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"),
+            {"link_id": str(link.link_id), "new_parent_datastore_id": str(uuid4())},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.File_Link.objects.filter(pk=link.pk).exists())
+
+    def test_move_file_link_requires_source_share_write_permission(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, write=False, accepted=True
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_share=share
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_link"),
+            {
+                "link_id": str(link.link_id),
+                "new_parent_datastore_id": str(self.test_datastore_obj.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        link.refresh_from_db()
+        self.assertEqual(link.parent_share, share)
+
+    def test_move_file_link_requires_source_datastore_ownership(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, write=True, accepted=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        other = models.User.objects.create(
+            username="other-move@example.com",
+            private_key_nonce="other-private",
+            secret_key_nonce="other-secret",
+        )
+        self.test_datastore_obj.user = other
+        self.test_datastore_obj.save(update_fields=["user"])
+        response = self.client.post(
+            reverse("file_link"),
+            {"link_id": str(link.link_id), "new_parent_share_id": str(share.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        link.refresh_from_db()
+        self.assertEqual(link.parent_datastore, self.test_datastore_obj)
+
+    def test_delete_file_link_checks_share_and_datastore_ownership(self):
+        from uuid import uuid4
+
+        file = models.File.objects.create(
+            user=self.test_user_obj, shard=self.shard1, size=50, chunk_count=1
+        )
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        right = models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, write=False, accepted=True
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_share=share
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(
+                reverse("file_link"), {"link_id": str(uuid4())}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertEqual(
+            self.client.delete(
+                reverse("file_link"), {"link_id": str(link.link_id)}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        right.write = True
+        right.save(update_fields=["write"])
+        self.assertEqual(
+            self.client.delete(
+                reverse("file_link"), {"link_id": str(link.link_id)}
+            ).status_code,
+            status.HTTP_200_OK,
+        )
+        other = models.User.objects.create(
+            username="delete-other@example.com",
+            private_key_nonce="other-private",
+            secret_key_nonce="other-secret",
+        )
+        self.test_datastore_obj.user = other
+        self.test_datastore_obj.save(update_fields=["user"])
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        self.assertEqual(
+            self.client.delete(
+                reverse("file_link"), {"link_id": str(link.link_id)}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertTrue(models.File_Link.objects.filter(pk=link.pk).exists())
 
     def test_delete_file_link_with_shard_file_soft_deletes(self):
         """

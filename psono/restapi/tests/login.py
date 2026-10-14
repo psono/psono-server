@@ -88,6 +88,49 @@ class LoginTests(APITestCaseExtended):
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
     )
+    def test_login_reports_webauthn_and_ivalt_factors_using_real_encryption(self):
+        self.user_obj.webauthn_enabled = True
+        self.user_obj.ivalt_enabled = True
+        self.user_obj.save(update_fields=["webauthn_enabled", "ivalt_enabled"])
+        client_key = PrivateKey.generate()
+        box = Box(
+            client_key, PublicKey(settings.PUBLIC_KEY, encoder=nacl.encoding.HexEncoder)
+        )
+        encrypted = box.encrypt(
+            json.dumps(
+                {
+                    "username": self.test_username,
+                    "authkey": self.test_authkey,
+                    "device_description": "Test browser",
+                }
+            ).encode()
+        )
+        response = self.client.post(
+            reverse("authentication_login"),
+            {
+                "public_key": client_key.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+                "login_info": encrypted.ciphertext.hex(),
+                "login_info_nonce": encrypted.nonce.hex(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        clear = json.loads(
+            box.decrypt(
+                nacl.encoding.HexEncoder.decode(response.data["login_info"]),
+                nacl.encoding.HexEncoder.decode(response.data["login_info_nonce"]),
+            )
+        )
+        self.assertIn("webauthn_2fa", clear["required_multifactors"])
+        self.assertIn("ivalt_2fa", clear["required_multifactors"])
+        token = models.Token.objects.filter(user=self.user_obj).latest("create_date")
+        self.assertTrue(token.webauthn_2fa)
+        self.assertTrue(token.ivalt_2fa)
+
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
     def test_unique_constraint_token(self):
         key = "".join(random.choice(string.ascii_lowercase) for _ in range(64))
 

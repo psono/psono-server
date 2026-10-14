@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 import nacl.encoding
@@ -46,6 +48,8 @@ class CommandFSShardUnlinkTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsshardunlink", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsshardunlink", stdout=out, *args, **opts)
+        self.assertIn("Deleted successful.", out.getvalue())
 
         self.assertFalse(models.Fileserver_Cluster_Shard_Link.objects.exists())

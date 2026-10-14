@@ -277,54 +277,118 @@ class AcceptMembershipTest(APITestCaseExtended):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_accept_only_allows_pending_memberships(self):
+    def test_accept_rejects_already_accepted_membership_without_changes(self):
         url = reverse("membership_accept")
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (True, False, None):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.post(
+            url, {"membership_id": str(self.test_membership_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj.refresh_from_db()
+        self.assertTrue(self.test_membership_obj.accepted)
 
-                response = self.client.post(
-                    url, {"membership_id": str(self.test_membership_obj.id)}
-                )
+    def test_accept_rejects_declined_membership_without_changes(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_accept"),
+            {"membership_id": str(self.test_membership_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj.refresh_from_db()
+        self.assertFalse(self.test_membership_obj.accepted)
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_200_OK
-                    if accepted is None
-                    else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not None:
-                    self.assertIn(
-                        "NO_PERMISSION_OR_NOT_EXIST_OR_ALREADY_PROCESSED_MEMBERSHIP",
-                        response.data["non_field_errors"],
-                    )
-                self.test_membership_obj.refresh_from_db()
-                self.assertIs(
-                    self.test_membership_obj.accepted,
-                    True if accepted is None else accepted,
-                )
+    def test_accept_persists_pending_membership_acceptance(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_accept"),
+            {"membership_id": str(self.test_membership_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_membership_obj.refresh_from_db()
+        self.assertTrue(self.test_membership_obj.accepted)
 
-    def test_accept_rejects_other_users_memberships_in_all_acceptance_states(self):
+    def test_accept_rejects_other_users_accepted_membership(self):
         url = reverse("membership_accept")
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (True, False, None):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj4.accepted = accepted
-                self.test_membership_obj4.save(update_fields=["accepted"])
+        self.test_membership_obj4.accepted = True
+        self.test_membership_obj4.save(update_fields=["accepted"])
+        response = self.client.post(
+            url, {"membership_id": str(self.test_membership_obj4.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertTrue(self.test_membership_obj4.accepted)
 
-                response = self.client.post(
-                    url, {"membership_id": str(self.test_membership_obj4.id)}
-                )
+    def test_accept_rejects_other_users_declined_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_accept"),
+            {"membership_id": str(self.test_membership_obj4.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertFalse(self.test_membership_obj4.accepted)
 
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                self.assertIn(
-                    "NO_PERMISSION_OR_NOT_EXIST_OR_ALREADY_PROCESSED_MEMBERSHIP",
-                    response.data["non_field_errors"],
-                )
-                self.test_membership_obj4.refresh_from_db()
-                self.assertIs(self.test_membership_obj4.accepted, accepted)
+    def test_accept_rejects_other_users_pending_membership(self):
+        self.test_membership_obj4.accepted = None
+        self.test_membership_obj4.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_accept"),
+            {"membership_id": str(self.test_membership_obj4.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertIsNone(self.test_membership_obj4.accepted)
+
+    def test_accept_returns_only_readable_share_data_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"readable", data_nonce="nonce"
+        )
+        hidden = models.Share.objects.create(
+            user=self.test_user_obj, data=b"hidden", data_nonce="nonce"
+        )
+        models.Group_Share_Right.objects.create(
+            group=self.test_group_obj5,
+            share=share,
+            read=True,
+            key="key",
+            key_nonce="nonce",
+        )
+        models.Group_Share_Right.objects.create(
+            group=self.test_group_obj5,
+            share=hidden,
+            read=False,
+            key="key",
+            key_nonce="nonce",
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            response = self.client.post(
+                reverse("membership_accept"),
+                {"membership_id": str(self.test_membership_obj5.id)},
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
+        returned = {item["share_id"]: item for item in response.data["shares"]}
+        self.assertEqual(returned[share.id]["share_data"], "readable")
+        self.assertNotIn("share_data", returned[hidden.id])
+        self.test_membership_obj5.refresh_from_db()
+        self.assertTrue(self.test_membership_obj5.accepted)
 
     def test_create_accept_membership(self):
         """

@@ -103,6 +103,64 @@ class ReadSessionTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_list_rejects_non_numeric_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"page": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"page": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"page_size": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_non_numeric_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"page_size": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_zero_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"page_size": "0"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_search_and_pagination(self):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        token = models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Searchable device",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("admin_session")
+        response = self.client.get(
+            url,
+            {
+                "search": "Searchable",
+                "page_size": "1",
+                "page": "0",
+                "ordering": "username",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["sessions"][0]["id"], token.id)
+
+    def test_list_accepts_empty_ordering(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_session"), {"ordering": ""})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_read_session_success(self):
         """
         Tests GET method on session

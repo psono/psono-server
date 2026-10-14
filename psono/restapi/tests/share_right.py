@@ -80,6 +80,58 @@ class ReadUserShareRightTest(APITestCaseExtended):
             is_email_active=True,
         )
 
+    def test_list_merges_direct_and_group_rights_and_lists_group_only_shares(self):
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"shared", data_nonce="nonce"
+        )
+        other = models.Share.objects.create(
+            user=self.test_user_obj, data=b"group-only", data_nonce="other-nonce"
+        )
+        right = models.User_Share_Right.objects.create(
+            user=self.test_user_obj,
+            creator=self.test_user_obj,
+            share=share,
+            read=True,
+            write=False,
+            grant=False,
+            accepted=True,
+        )
+        group = models.Group.objects.create(name="Readers", public_key="key")
+        models.User_Group_Membership.objects.create(
+            user=self.test_user_obj, group=group, accepted=True
+        )
+        models.Group_Share_Right.objects.create(
+            group=group, share=share, read=False, write=True, grant=True
+        )
+        models.Group_Share_Right.objects.create(group=group, share=other, read=True)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("share_right"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        result = {str(item["share_id"]): item for item in response.data["share_rights"]}
+        self.assertEqual(len(result), 2)
+        self.assertTrue(result[str(share.id)]["read"])
+        self.assertTrue(result[str(share.id)]["write"])
+        self.assertTrue(result[str(share.id)]["grant"])
+        right.expiration_date = timezone.now() - timedelta(days=1)
+        right.save(update_fields=["expiration_date"])
+        response = self.client.get(
+            reverse("share_right", kwargs={"user_share_right_id": right.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        foreign_share = models.Share.objects.create(
+            user=self.test_user2_obj, data=b"foreign", data_nonce="foreign-nonce"
+        )
+        foreign = models.User_Share_Right.objects.create(
+            user=self.test_user2_obj,
+            creator=self.test_user2_obj,
+            share=foreign_share,
+            accepted=True,
+        )
+        response = self.client.get(
+            reverse("share_right", kwargs={"user_share_right_id": foreign.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_list_share_right_without_credentials(self):
         """
         Tests if someone gets share rights without credentials
@@ -497,6 +549,210 @@ class CreateUserShareRightTest(APITestCaseExtended):
             user_id=self.test_user_obj.id, data=b"my-data", data_nonce="12345"
         )
 
+    def test_user_share_smtp_failure_preserves_right_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        models.User_Share_Right.objects.filter(
+            user=self.test_user2_obj, share=self.test_share1_obj
+        ).delete()
+        data = {
+            "share_id": str(self.test_share1_obj.id),
+            "key": "key",
+            "key_nonce": "nonce",
+            "title": "Title",
+            "title_nonce": "nonce",
+            "type": "type",
+            "type_nonce": "nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "user_id": str(self.test_user2_obj.id),
+        }
+        key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_SHARE_CREATED=False,
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "django.core.mail.backends.smtp.EmailBackend.send_messages",
+                side_effect=OSError("SMTP unavailable"),
+            ):
+                response = self.client.put(reverse("share_right"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.User_Share_Right.objects.filter(
+                user=self.test_user2_obj, share=self.test_share1_obj
+            ).exists()
+        )
+
+    def test_user_share_brevo_notification_preserves_right_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        models.User_Share_Right.objects.filter(
+            user=self.test_user2_obj, share=self.test_share1_obj
+        ).delete()
+        data = {
+            "share_id": str(self.test_share1_obj.id),
+            "key": "key",
+            "key_nonce": "nonce",
+            "title": "Title",
+            "title_nonce": "nonce",
+            "type": "type",
+            "type_nonce": "nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "user_id": str(self.test_user2_obj.id),
+        }
+        key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_SHARE_CREATED=False,
+            EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+            ANYMAIL={"BREVO_API_KEY": "test-key"},
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "anymail.backends.brevo.EmailBackend.send_messages", return_value=1
+            ):
+                response = self.client.put(reverse("share_right"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.User_Share_Right.objects.filter(
+                user=self.test_user2_obj, share=self.test_share1_obj
+            ).exists()
+        )
+
+    def test_group_share_smtp_failure_preserves_right_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        models.User_Group_Membership.objects.create(
+            user=self.test_user2_obj, group=self.test_group_obj, accepted=True
+        )
+        blank = models.User.objects.create(
+            username="blank-member@psono.pw",
+            email="",
+            private_key_nonce="blank-private",
+            secret_key_nonce="blank-secret",
+        )
+        models.User_Group_Membership.objects.create(
+            user=blank, group=self.test_group_obj, accepted=True
+        )
+        models.Group_Share_Right.objects.filter(group=self.test_group_obj).delete()
+        data = {
+            "share_id": str(self.test_share1_obj.id),
+            "key": "key",
+            "key_nonce": "nonce",
+            "title": "Title",
+            "title_nonce": "nonce",
+            "type": "type",
+            "type_nonce": "nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "group_id": str(self.test_group_obj.id),
+        }
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_GROUP_SHARE_CREATED=False,
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "django.core.mail.backends.smtp.EmailBackend.send_messages",
+                side_effect=OSError("SMTP unavailable"),
+            ):
+                response = self.client.put(reverse("share_right"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.Group_Share_Right.objects.filter(
+                group=self.test_group_obj, share=self.test_share1_obj
+            ).exists()
+        )
+
+    def test_group_share_brevo_notification_preserves_right_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        models.User_Group_Membership.objects.create(
+            user=self.test_user2_obj, group=self.test_group_obj, accepted=True
+        )
+        blank = models.User.objects.create(
+            username="blank-member@psono.pw",
+            email="",
+            private_key_nonce="blank-private",
+            secret_key_nonce="blank-secret",
+        )
+        models.User_Group_Membership.objects.create(
+            user=blank, group=self.test_group_obj, accepted=True
+        )
+        models.Group_Share_Right.objects.filter(group=self.test_group_obj).delete()
+        data = {
+            "share_id": str(self.test_share1_obj.id),
+            "key": "key",
+            "key_nonce": "nonce",
+            "title": "Title",
+            "title_nonce": "nonce",
+            "type": "type",
+            "type_nonce": "nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "group_id": str(self.test_group_obj.id),
+        }
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_GROUP_SHARE_CREATED=False,
+            EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+            ANYMAIL={"BREVO_API_KEY": "test-key"},
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "anymail.backends.brevo.EmailBackend.send_messages", return_value=1
+            ):
+                response = self.client.put(reverse("share_right"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.Group_Share_Right.objects.filter(
+                group=self.test_group_obj, share=self.test_share1_obj
+            ).exists()
+        )
+
     def test_grant_share_right_sucess_for_user(self):
         """
         Tests to insert the share right and check the rights to access it
@@ -613,7 +869,7 @@ class CreateUserShareRightTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_grant_share_right_for_group_requires_accepted_membership(self):
+    def test_grant_share_right_for_group_rejects_pending_membership(self):
         url = reverse("share_right")
         initial_data = {
             "key": "key",
@@ -630,31 +886,73 @@ class CreateUserShareRightTest(APITestCaseExtended):
         }
 
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["accepted"])
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.put(url, initial_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "You don't have the necessary rights to share with this group.",
+            response.data["non_field_errors"],
+        )
+        self.assertFalse(
+            models.Group_Share_Right.objects.filter(
+                share=self.test_share1_obj, group=self.test_group_obj
+            ).exists()
+        )
 
-                response = self.client.put(url, initial_data)
+    def test_grant_share_right_for_group_rejects_declined_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "key": "key",
+            "key_nonce": "key-nonce",
+            "share_id": str(self.test_share1_obj.id),
+            "title": "title",
+            "title_nonce": "title-nonce",
+            "type": "type",
+            "type_nonce": "type-nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "group_id": str(self.test_group_obj.id),
+        }
+        response = self.client.put(reverse("share_right"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "You don't have the necessary rights to share with this group.",
+            response.data["non_field_errors"],
+        )
+        self.assertFalse(
+            models.Group_Share_Right.objects.filter(
+                share=self.test_share1_obj, group=self.test_group_obj
+            ).exists()
+        )
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_201_CREATED
-                    if accepted
-                    else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "You don't have the necessary rights to share with this group.",
-                        response.data["non_field_errors"],
-                    )
-                self.assertEqual(
-                    models.Group_Share_Right.objects.filter(
-                        share_id=self.test_share1_obj.id,
-                        group_id=self.test_group_obj.id,
-                    ).exists(),
-                    accepted is True,
-                )
+    def test_grant_share_right_for_group_accepts_accepted_membership(self):
+        self.test_membership_obj.accepted = True
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "key": "key",
+            "key_nonce": "key-nonce",
+            "share_id": str(self.test_share1_obj.id),
+            "title": "title",
+            "title_nonce": "title-nonce",
+            "type": "type",
+            "type_nonce": "type-nonce",
+            "read": True,
+            "write": True,
+            "grant": True,
+            "group_id": str(self.test_group_obj.id),
+        }
+        response = self.client.put(reverse("share_right"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            models.Group_Share_Right.objects.filter(
+                share=self.test_share1_obj, group=self.test_group_obj
+            ).exists()
+        )
 
     def test_grant_share_right_with_expiration_date(self):
         url = reverse("share_right")
@@ -1338,36 +1636,106 @@ class DeleteUserShareRightTest(APITestCaseExtended):
             "Share right with this id should have been deleted",
         )
 
-    def test_delete_group_share_right_requires_accepted_membership(self):
+    def test_delete_group_share_right_rejects_pending_membership(self):
         url = reverse("share_right")
         data = {"group_share_right_id": str(self.test_group_share_right_obj.id)}
 
         self.test_membership_obj2.share_admin = True
         self.client.force_authenticate(user=self.test_user2_obj)
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj2.accepted = accepted
-                self.test_membership_obj2.save(
-                    update_fields=["share_admin", "accepted"]
-                )
+        self.test_membership_obj2.accepted = None
+        self.test_membership_obj2.save(update_fields=["share_admin", "accepted"])
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "You don't have the necessary rights to share with this group.",
+            response.data["non_field_errors"],
+        )
+        self.assertTrue(
+            models.Group_Share_Right.objects.filter(
+                pk=self.test_group_share_right_obj.id
+            ).exists()
+        )
 
-                response = self.client.delete(url, data)
+    def test_delete_group_share_right_rejects_declined_membership(self):
+        self.test_membership_obj2.share_admin = True
+        self.test_membership_obj2.accepted = False
+        self.test_membership_obj2.save(update_fields=["share_admin", "accepted"])
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(
+            reverse("share_right"),
+            {"group_share_right_id": str(self.test_group_share_right_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "You don't have the necessary rights to share with this group.",
+            response.data["non_field_errors"],
+        )
+        self.assertTrue(
+            models.Group_Share_Right.objects.filter(
+                pk=self.test_group_share_right_obj.id
+            ).exists()
+        )
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "You don't have the necessary rights to share with this group.",
-                        response.data["non_field_errors"],
-                    )
-                self.assertEqual(
-                    models.Group_Share_Right.objects.filter(
-                        pk=self.test_group_share_right_obj.id
-                    ).exists(),
-                    accepted is not True,
-                )
+    def test_delete_group_share_right_accepts_accepted_membership(self):
+        self.test_membership_obj2.share_admin = True
+        self.test_membership_obj2.accepted = True
+        self.test_membership_obj2.save(update_fields=["share_admin", "accepted"])
+        self.client.force_authenticate(user=self.test_user2_obj)
+        response = self.client.delete(
+            reverse("share_right"),
+            {"group_share_right_id": str(self.test_group_share_right_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group_Share_Right.objects.filter(
+                pk=self.test_group_share_right_obj.id
+            ).exists()
+        )
+
+    def test_delete_group_share_right_invalidates_member_status_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        owner_key = "psono_user_status_" + str(self.test_user_obj.id)
+        member_key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(owner_key, {"cached": True})
+            cache.set(member_key, {"cached": True})
+            self.assertEqual(cache.get(owner_key), {"cached": True})
+            self.assertEqual(cache.get(member_key), {"cached": True})
+            response = self.client.delete(
+                reverse("share_right"),
+                {"group_share_right_id": str(self.test_group_share_right_obj.id)},
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(owner_key))
+            self.assertIsNone(cache.get(member_key))
+
+    def test_delete_user_share_right_invalidates_user_status_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            response = self.client.delete(
+                reverse("share_right"),
+                {"user_share_right_id": str(self.test_user_share_right2.id)},
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
 
     def test_delete_user_share_right_failure_does_not_exist(self):
         """

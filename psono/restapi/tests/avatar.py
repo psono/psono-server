@@ -88,6 +88,58 @@ class CreateAvatarTest(APITestCaseExtended):
         self.assertEqual(avatar.mime_type, "image/png")
         self.assertEqual(base64.b64encode(avatar.data).decode(), data["data_base64"])
 
+    def test_real_local_storage_upload_replacement_and_deletion(self):
+        from tempfile import TemporaryDirectory
+        from django.core.files.storage import FileSystemStorage
+
+        data = {
+            "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNg+A8AAQIBAEK+vGgAAAAASUVORK5CYII="
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        with TemporaryDirectory() as directory:
+            with override_settings(
+                AVATAR_STORAGE={"class": "local", "kwargs": {"location": directory}},
+                AVATAR_STORAGE_PREFIX="avatars/",
+                AVATAR_DIMENSION_X=1,
+                AVATAR_DIMENSION_Y=1,
+            ):
+                storage = FileSystemStorage(location=directory)
+                first = self.client.post(reverse("avatar"), data)
+                self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+                first_name = f"avatars/{self.test_user_obj.id}/{first.data['id']}"
+                self.assertTrue(storage.exists(first_name))
+                avatar = models.Avatar.objects.get(pk=first.data["id"])
+                self.assertIsNone(avatar.data)
+                second = self.client.post(reverse("avatar"), data)
+                self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+                self.assertFalse(storage.exists(first_name))
+                second_name = f"avatars/{self.test_user_obj.id}/{second.data['id']}"
+                self.assertTrue(storage.exists(second_name))
+                self.assertEqual(
+                    models.Avatar.objects.filter(user=self.test_user_obj).count(), 1
+                )
+                response = self.client.delete(
+                    reverse("avatar"), {"avatar_id": str(second.data["id"])}
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertFalse(storage.exists(second_name))
+
+    def test_avatar_metadata_describes_upload_fields(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.options(reverse("avatar"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["actions"]["POST"]["data_base64"]["required"])
+
+    def test_read_rejects_non_object_json_request_body(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.generic(
+            "GET",
+            reverse("avatar"),
+            data='["invalid"]',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     @override_settings(AVATAR_DIMENSION_X=1, AVATAR_DIMENSION_Y=1)
     def test_create_unauthenticated(self):
         """

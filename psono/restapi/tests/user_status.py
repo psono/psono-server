@@ -117,6 +117,31 @@ class UserStatusTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_latest_report_timestamp_and_real_cache_hits(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        report = models.SecurityReport.objects.create(user=self.test_user_obj)
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.delete(key)
+            response = self.client.get(reverse("user_status"))
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(
+                response.data["last_security_report_created"],
+                report.create_date.isoformat(),
+            )
+            self.assertEqual(cache.get(key), response.data)
+            with self.assertNumQueries(0):
+                cached = self.client.get(reverse("user_status"))
+            self.assertEqual(cached.data, response.data)
+
     def test_read_user_status(self):
         """
         Tests to read the user status

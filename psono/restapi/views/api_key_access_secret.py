@@ -54,7 +54,9 @@ class APIKeyAccessSecretView(GenericAPIView):
         )
 
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                json.dumps(serializer.errors), status=status.HTTP_400_BAD_REQUEST
+            )
 
         user = serializer.validated_data.get("user")
         with transaction.atomic():
@@ -144,7 +146,9 @@ class APIKeyAccessSecretView(GenericAPIView):
         )
 
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                json.dumps(serializer.errors), status=status.HTTP_400_BAD_REQUEST
+            )
 
         secret = serializer.validated_data.get("secret")
         secret_key = serializer.validated_data.get("secret_key")

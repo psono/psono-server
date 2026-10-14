@@ -1,6 +1,6 @@
 from administration.permissions import AdminPermission
 from administration.serializers.tenant import TenantSerializer
-from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, Paginator
 from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.deletion import ProtectedError
@@ -75,9 +75,12 @@ class TenantView(GenericAPIView):
         if page_size:
             paginator = Paginator(tenant_qs, page_size)
             count = paginator.count
-            tenant_qs = paginator.page(
-                serializer.validated_data.get("page", 0) + 1
-            ).object_list
+            try:
+                tenant_qs = paginator.page(
+                    serializer.validated_data.get("page", 0) + 1
+                ).object_list
+            except EmptyPage:
+                tenant_qs = []
 
         return Response(
             {

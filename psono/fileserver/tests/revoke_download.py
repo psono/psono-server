@@ -25,6 +25,27 @@ from nacl.public import PrivateKey
 
 
 class RevokeDownloadTests(APITestCaseExtended):
+    def test_get_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.get(reverse("fileserver_revoke_download")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.post(reverse("fileserver_revoke_download"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.delete(reverse("fileserver_revoke_download"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def setUp(self):
 
         self.test_email = (
@@ -217,6 +238,50 @@ class RevokeDownloadTests(APITestCaseExtended):
             position=1,
             size=self.file_size,
         )
+
+    def test_inactive_transfer_owner_is_rejected_without_refund(self):
+        self.test_user_obj.is_active = False
+        self.test_user_obj.save(update_fields=["is_active"])
+        ticket = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"hash_checksum": self.hash_checksum}).encode(),
+        )
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(
+            reverse("fileserver_revoke_download"),
+            {
+                "file_transfer_id": str(self.file_transfer.id),
+                "ip_address": "127.0.0.1",
+                "ticket": ticket["text"].decode(),
+                "ticket_nonce": ticket["nonce"].decode(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("User inactive.", response.data["non_field_errors"])
+        self.file_transfer.refresh_from_db()
+        self.assertEqual(self.file_transfer.chunk_count_transferred, 1)
+
+    def test_non_hex_checksum_in_encrypted_ticket_is_rejected_without_refund(self):
+        ticket = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"hash_checksum": "not-hex"}).encode(),
+        )
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(
+            reverse("fileserver_revoke_download"),
+            {
+                "file_transfer_id": str(self.file_transfer.id),
+                "ip_address": "127.0.0.1",
+                "ticket": ticket["text"].decode(),
+                "ticket_nonce": ticket["nonce"].decode(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION", response.data["non_field_errors"]
+        )
+        self.file_transfer.refresh_from_db()
+        self.assertEqual(self.file_transfer.chunk_count_transferred, 1)
 
     def test_successful(self):
         """

@@ -274,7 +274,7 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
 
         self.assertEqual(models.Group_File_Repository_Right.objects.count(), 1)
 
-    def test_create_requires_accepted_group_membership(self):
+    def test_create_rejects_pending_group_share_admin(self):
         url = reverse("group_file_repository_right")
         data = {
             "group_id": str(self.test_group_obj.id),
@@ -282,29 +282,49 @@ class CreateGroupFileRepositryRightTest(APITestCaseExtended):
         }
         self.test_membership_obj.share_admin = True
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                group=self.test_group_obj
+            ).exists()
+        )
 
-                response = self.client.put(url, data)
+    def test_create_rejects_declined_group_share_admin(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("group_file_repository_right"),
+            {
+                "group_id": str(self.test_group_obj.id),
+                "file_repository_id": str(self.file_repository.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                group=self.test_group_obj
+            ).exists()
+        )
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_201_CREATED
-                    if accepted
-                    else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
-                    )
-                self.assertEqual(
-                    models.Group_File_Repository_Right.objects.filter(
-                        group=self.test_group_obj, file_repository=self.file_repository
-                    ).exists(),
-                    accepted is True,
-                )
+    def test_create_allows_accepted_group_share_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("group_file_repository_right"),
+            {
+                "group_id": str(self.test_group_obj.id),
+                "file_repository_id": str(self.file_repository.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            models.Group_File_Repository_Right.objects.filter(
+                group=self.test_group_obj
+            ).exists()
+        )
 
     def test_create_with_no_group_membership(self):
         """
@@ -796,7 +816,7 @@ class DeleteGroupFileRepositryTest(APITestCaseExtended):
 
         self.assertEqual(models.Group_File_Repository_Right.objects.count(), 0)
 
-    def test_delete_requires_accepted_membership_without_repository_grant(self):
+    def test_delete_rejects_pending_share_admin_without_repository_grant(self):
         self.file_repository_right.grant = False
         self.file_repository_right.save(update_fields=["grant"])
         self.test_membership_obj.share_admin = True
@@ -805,52 +825,123 @@ class DeleteGroupFileRepositryTest(APITestCaseExtended):
         data = {
             "group_file_repository_right_id": str(self.group_file_repository_right.id)
         }
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["share_admin", "accepted"])
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
 
-                response = self.client.delete(url, data)
-
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
-                    )
-                self.assertEqual(
-                    models.Group_File_Repository_Right.objects.filter(
-                        pk=self.group_file_repository_right.id
-                    ).exists(),
-                    accepted is not True,
-                )
-
-    def test_delete_allows_independent_repository_grant_in_all_membership_states(self):
-        self.group_file_repository_right.delete()
+    def test_delete_rejects_declined_share_admin_without_repository_grant(self):
+        self.file_repository_right.grant = False
+        self.file_repository_right.save(update_fields=["grant"])
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
         self.client.force_authenticate(user=self.test_user_obj)
-        url = reverse("group_file_repository_right")
-        for accepted in (True, False, None):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["accepted"])
-                right = models.Group_File_Repository_Right.objects.create(
-                    group=self.test_group_obj,
-                    file_repository=self.file_repository,
-                    grant=False,
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {
+                "group_file_repository_right_id": str(
+                    self.group_file_repository_right.id
                 )
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
 
-                response = self.client.delete(
-                    url, {"group_file_repository_right_id": str(right.id)}
+    def test_delete_allows_accepted_share_admin_without_repository_grant(self):
+        self.file_repository_right.grant = False
+        self.file_repository_right.save(update_fields=["grant"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {
+                "group_file_repository_right_id": str(
+                    self.group_file_repository_right.id
                 )
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
 
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertFalse(
-                    models.Group_File_Repository_Right.objects.filter(
-                        pk=right.id
-                    ).exists()
+    def test_repository_grant_allows_deletion_for_accepted_member(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {
+                "group_file_repository_right_id": str(
+                    self.group_file_repository_right.id
                 )
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
+
+    def test_repository_grant_allows_deletion_for_declined_member(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {
+                "group_file_repository_right_id": str(
+                    self.group_file_repository_right.id
+                )
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
+
+    def test_repository_grant_allows_deletion_for_pending_member(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {
+                "group_file_repository_right_id": str(
+                    self.group_file_repository_right.id
+                )
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
+
+    def test_delete_missing_right_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group_file_repository_right"),
+            {"group_file_repository_right_id": "00000000-0000-4000-8000-000000000001"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            models.Group_File_Repository_Right.objects.filter(
+                pk=self.group_file_repository_right.id
+            ).exists()
+        )
 
     def test_delete_without_authentication(self):
         """

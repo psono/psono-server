@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -18,7 +20,9 @@ class CommandFSClusterCreateTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsclustercreate", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsclustercreate", stdout=out, *args, **opts)
+        self.assertIn("Created. Cluster ID:", out.getvalue())
 
         self.assertTrue(
             models.Fileserver_Cluster.objects.filter(title=cluster_title).exists()

@@ -18,6 +18,12 @@ from datetime import timedelta
 
 
 class BulkReadSecretTest(APITestCaseExtended):
+    def test_missing_secret_ids_are_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(reverse("bulk_secret_read"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("secret_ids", response.data)
+
     """
     Test to read multiple secret in a bulk request (POST)
     """

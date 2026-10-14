@@ -638,6 +638,15 @@ class DeleteFileRepositoryRightTest(APITestCaseExtended):
 
         self.assertEqual(models.File_Repository_Right.objects.count(), 1)
 
+    def test_delete_missing_right_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("file_repository_right"),
+            {"file_repository_right_id": "00000000-0000-4000-8000-000000000001"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
+
     def test_delete_without_authentication(self):
         """
         Tests to delete a file repository right without authentication

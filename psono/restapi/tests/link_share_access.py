@@ -346,6 +346,25 @@ class LinkShareAccess(APITestCaseExtended):
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
     )
+    def test_write_access_is_rejected_after_share_write_permission_is_revoked(self):
+        self.user_share_right1.write = True
+        self.user_share_right1.save(update_fields=["write"])
+        self.link_share_in_share.allow_write = True
+        self.link_share_in_share.save(update_fields=["allow_write"])
+        self.user_share_right1.write = False
+        self.user_share_right1.save(update_fields=["write"])
+        response = self.client.put(
+            reverse("link_share_access"),
+            {
+                "link_share_id": str(self.link_share_in_share.id),
+                "secret_data": "blocked",
+                "secret_data_nonce": "nonce",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_secret_in_share_obj.refresh_from_db()
+        self.assertEqual(bytes(self.test_secret_in_share_obj.data), b"12345")
+
     def test_put_link_share_not_valid_anymore(self):
         """
         Tests PUT on link share access that is not valid anymore
@@ -809,6 +828,166 @@ class LinkShareAccess(APITestCaseExtended):
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
     )
+    def test_unknown_link_share_is_rejected(self):
+        from uuid import uuid4
+
+        response = self.client.post(
+            reverse("link_share_access"), {"link_share_id": str(uuid4())}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
+        self.assertFalse(models.File_Transfer.objects.exists())
+
+    def test_file_download_rejects_fileserver_blocking_request_ip(self):
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.save(update_fields=["file", "secret"])
+        models.Fileserver_Cluster_Member_Shard_Link.objects.filter(
+            member=self.fileserver1
+        ).update(ip_read_blacklist=json.dumps(["127.0.0.1/32"]))
+        response = self.client.post(
+            reverse("link_share_access"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_FILESERVER_AVAILABLE", response.data["non_field_errors"])
+        self.assertFalse(models.File_Transfer.objects.exists())
+
+    def test_file_download_groups_multiple_fileservers_on_the_same_shard(self):
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.save(update_fields=["file", "secret"])
+        member = models.Fileserver_Cluster_Members.objects.create(
+            create_ip="127.0.0.1",
+            fileserver_cluster=self.cluster1,
+            key="second-member",
+            public_key="second-key",
+            secret_key="secret",
+            url="https://second.example.com",
+            read=True,
+            valid_till=timezone.now() + timedelta(minutes=5),
+        )
+        models.Fileserver_Cluster_Member_Shard_Link.objects.create(
+            member=member,
+            shard=self.shard1,
+            read=True,
+            ip_read_whitelist="[]",
+            ip_read_blacklist="[]",
+            ip_write_whitelist="[]",
+            ip_write_blacklist="[]",
+        )
+        response = self.client.post(
+            reverse("link_share_access"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["shards"]), 1)
+        self.assertEqual(len(response.data["shards"][0]["fileserver"]), 2)
+        self.assertEqual(models.File_Transfer.objects.filter(file=self.file).count(), 1)
+
+    def test_repository_file_download_needs_no_shard_or_credits(self):
+        from restapi.utils import encrypt_with_db_secret
+
+        repository = models.File_Repository.objects.create(
+            title="Repository",
+            type="aws_s3",
+            active=True,
+            data=encrypt_with_db_secret("{}").encode(),
+        )
+        self.file.shard = None
+        self.file.file_repository = repository
+        self.file.save(update_fields=["shard", "file_repository"])
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.save(update_fields=["file", "secret"])
+        response = self.client.post(
+            reverse("link_share_access"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["shards"], [])
+        transfer = models.File_Transfer.objects.get(
+            pk=response.data["file_transfer_id"]
+        )
+        self.assertEqual(transfer.file_repository, repository)
+        self.assertEqual(transfer.credit, 0)
+
+    def test_write_rejects_link_share_without_target(self):
+        self.link_share.secret = None
+        self.link_share.allow_write = True
+        self.link_share.save(update_fields=["secret", "allow_write"])
+        response = self.client.put(
+            reverse("link_share_access"),
+            {
+                "link_share_id": str(self.link_share.id),
+                "secret_data": "updated",
+                "secret_data_nonce": "nonce",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "EITHER_SECRET_OR_FILE_REQUIRED", response.data["non_field_errors"]
+        )
+
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
+    def test_file_download_enforces_real_credit_balance_and_charges_once(self):
+        from decimal import Decimal
+
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.allowed_reads = 2
+        self.link_share.save(update_fields=["file", "secret", "allowed_reads"])
+        self.file.size = 1024**3
+        self.file.save(update_fields=["size"])
+        url = reverse("link_share_access")
+        data = {"link_share_id": str(self.link_share.id)}
+        with override_settings(SHARD_CREDIT_COSTS_DOWNLOAD=Decimal("1")):
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("INSUFFICIENT_FUNDS", response.data["non_field_errors"])
+            self.link_share.refresh_from_db()
+            self.assertEqual(self.link_share.allowed_reads, 2)
+            self.assertFalse(models.File_Transfer.objects.exists())
+            self.test_user_obj.credit = Decimal("2")
+            self.test_user_obj.save(update_fields=["credit"])
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.test_user_obj.refresh_from_db()
+            self.assertEqual(self.test_user_obj.credit, Decimal("1"))
+            transfer = models.File_Transfer.objects.get(
+                pk=response.data["file_transfer_id"]
+            )
+            self.assertEqual(transfer.credit, Decimal("1"))
+            self.assertEqual(transfer.file, self.file)
+            self.link_share.refresh_from_db()
+            self.assertEqual(self.link_share.allowed_reads, 1)
+
+    def test_file_download_rejects_deleted_files_but_allows_future_deletion(self):
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.save(update_fields=["file", "secret"])
+        data = {"link_share_id": str(self.link_share.id)}
+        self.file.delete_date = timezone.now() - timedelta(days=1)
+        self.file.save(update_fields=["delete_date"])
+        response = self.client.post(reverse("link_share_access"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(models.File_Transfer.objects.exists())
+        self.file.delete_date = timezone.now() + timedelta(days=1)
+        self.file.save(update_fields=["delete_date"])
+        response = self.client.post(reverse("link_share_access"), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(models.File_Transfer.objects.count(), 1)
+
+    def test_file_download_rejects_revoked_file_access(self):
+        self.link_share.file = self.file
+        self.link_share.secret = None
+        self.link_share.save(update_fields=["file", "secret"])
+        self.file_link.delete()
+        response = self.client.post(
+            reverse("link_share_access"), {"link_share_id": str(self.link_share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(models.File_Transfer.objects.exists())
+
     def test_post_with_expired_link_share(self):
         """
         Tests POST on link share access with an already expired link share

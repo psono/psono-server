@@ -127,6 +127,73 @@ class UserSearchTests(APITestCaseExtended):
             is_email_active=True,
         )
 
+    def test_search_returns_own_security_metadata(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("user_search"), {"user_id": str(self.test_user_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("multifactor_auth_enabled", response.data)
+        self.assertIn("recovery_code_enabled", response.data)
+
+    @override_settings(ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=True)
+    def test_partial_search_returns_multiple_matches(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("user_search"), {"user_username": "psono.pw"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertGreaterEqual(len(response.data), 2)
+
+    def test_exact_username_search_deduplicates_id_match(self):
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=False):
+            response = self.client.post(
+                reverse("user_search"),
+                {
+                    "user_id": str(self.test_user_obj.id),
+                    "user_username": self.test_user_obj.username,
+                },
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, dict)
+        self.assertEqual(response.data["id"], self.test_user_obj.id)
+
+    def test_partial_username_search_deduplicates_id_match(self):
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(ALLOW_USER_SEARCH_BY_USERNAME_PARTIAL=True):
+            response = self.client.post(
+                reverse("user_search"),
+                {
+                    "user_id": str(self.test_user_obj.id),
+                    "user_username": self.test_user_obj.username,
+                },
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, dict)
+        self.assertEqual(response.data["id"], self.test_user_obj.id)
+
+    def test_email_search_deduplicates_id_match(self):
+        from django.test import override_settings
+
+        email = "deduplicate@example.com"
+        self.test_user_obj.email_bcrypt = get_static_bcrypt_hash_from_email(email)
+        self.test_user_obj.save(update_fields=["email_bcrypt"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(ALLOW_USER_SEARCH_BY_EMAIL=True):
+            response = self.client.post(
+                reverse("user_search"),
+                {"user_id": str(self.test_user_obj.id), "user_email": email},
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, dict)
+        self.assertEqual(response.data["id"], self.test_user_obj.id)
+
     def test_get_user_search(self):
         """
         Tests GET method on user_search
@@ -551,6 +618,132 @@ class UserActivateTokenTests(APITestCaseExtended):
                 "nonce": authorization_validator_nonce_hex.decode(),
             }
         )
+
+    def test_activation_rejects_pending_webauthn_challenge(self):
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.active = False
+        token.webauthn_2fa = True
+        token.save(update_fields=["active", "webauthn_2fa"])
+        box = nacl.secret.SecretBox(
+            self.session_secret_key, encoder=nacl.encoding.HexEncoder
+        )
+        encrypted = box.encrypt(self.user_validator)
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        response = self.client.post(
+            reverse("authentication_activate_token"),
+            {
+                "verification": encrypted.ciphertext.hex(),
+                "verification_nonce": encrypted.nonce.hex(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("WEBAUTHN_CHALLENGE_UNSOLVED", response.data["non_field_errors"])
+        token.refresh_from_db()
+        self.assertFalse(token.active)
+
+    def test_activation_rejects_pending_ivalt_challenge(self):
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.active = False
+        token.ivalt_2fa = True
+        token.save(update_fields=["active", "ivalt_2fa"])
+        box = nacl.secret.SecretBox(
+            self.session_secret_key, encoder=nacl.encoding.HexEncoder
+        )
+        encrypted = box.encrypt(self.user_validator)
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        response = self.client.post(
+            reverse("authentication_activate_token"),
+            {
+                "verification": encrypted.ciphertext.hex(),
+                "verification_nonce": encrypted.nonce.hex(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("IVALT_CHALLENGE_UNSOLVED", response.data["non_field_errors"])
+        token.refresh_from_db()
+        self.assertFalse(token.active)
+
+    def test_activation_records_timezone_country_and_tolerates_smtp_failure(self):
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        box = nacl.secret.SecretBox(
+            self.session_secret_key, encoder=nacl.encoding.HexEncoder
+        )
+        encrypted = box.encrypt(self.user_validator)
+        payload = {
+            "token": self.request_data["token"],
+            "verification": encrypted.ciphertext.hex(),
+            "verification_nonce": encrypted.nonce.hex(),
+            "zoneinfo": "Europe/Berlin",
+        }
+        token.active = False
+        token.save(update_fields=["active"])
+        self.test_user_obj.zoneinfo = None
+        self.test_user_obj.save(update_fields=["zoneinfo"])
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        with override_settings(
+            TRUSTED_COUNTRY_HEADER="HTTP_X_COUNTRY",
+            DISABLE_EMAIL_NEW_LOGIN=False,
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+        ):
+            with patch(
+                "django.core.mail.backends.smtp.EmailBackend.send_messages",
+                side_effect=OSError("SMTP unavailable"),
+            ):
+                response = self.client.post(
+                    reverse("authentication_activate_token"),
+                    payload,
+                    HTTP_X_COUNTRY="DE",
+                )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertEqual(str(self.test_user_obj.zoneinfo), "Europe/Berlin")
+        self.assertEqual(str(self.test_user_obj.country), "DE")
+        token.refresh_from_db()
+        self.assertTrue(token.active)
+
+    def test_activation_records_timezone_country_and_sends_brevo_mail(self):
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        box = nacl.secret.SecretBox(
+            self.session_secret_key, encoder=nacl.encoding.HexEncoder
+        )
+        encrypted = box.encrypt(self.user_validator)
+        payload = {
+            "token": self.request_data["token"],
+            "verification": encrypted.ciphertext.hex(),
+            "verification_nonce": encrypted.nonce.hex(),
+            "zoneinfo": "Europe/Berlin",
+        }
+        token.active = False
+        token.save(update_fields=["active"])
+        self.test_user_obj.zoneinfo = None
+        self.test_user_obj.save(update_fields=["zoneinfo"])
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        with override_settings(
+            TRUSTED_COUNTRY_HEADER="HTTP_X_COUNTRY",
+            DISABLE_EMAIL_NEW_LOGIN=False,
+            EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+            ANYMAIL={"BREVO_API_KEY": "test-key"},
+        ):
+            with patch(
+                "anymail.backends.brevo.EmailBackend.send_messages", return_value=1
+            ):
+                response = self.client.post(
+                    reverse("authentication_activate_token"),
+                    payload,
+                    HTTP_X_COUNTRY="DE",
+                )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertEqual(str(self.test_user_obj.zoneinfo), "Europe/Berlin")
+        self.assertEqual(str(self.test_user_obj.country), "DE")
+        token.refresh_from_db()
+        self.assertTrue(token.active)
 
     def test_get_authentication_activate_token(self):
         """

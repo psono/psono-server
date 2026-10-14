@@ -546,6 +546,35 @@ class DeleteGroupShareRightTests(APITestCaseExtended):
 
 
 class TenantScopedGroupShareRightTests(AdministrativeAccessTestCase):
+    def test_update_can_revoke_grant_permission(self):
+        right = self.create_group_share_right(
+            self.create_group("Group", self.tenant_a), self.user_a
+        )
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.put(
+            reverse("admin_group_share_right"),
+            {"group_share_right_id": str(right.id), "grant": False},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        right.refresh_from_db()
+        self.assertFalse(right.grant)
+        self.assertTrue(right.read)
+        self.assertTrue(right.write)
+
+    def test_update_without_changes_preserves_right(self):
+        right = self.create_group_share_right(
+            self.create_group("Group", self.tenant_a), self.user_a
+        )
+        original_write_date = right.write_date
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.put(
+            reverse("admin_group_share_right"), {"group_share_right_id": str(right.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        right.refresh_from_db()
+        self.assertTrue(right.grant)
+        self.assertEqual(right.write_date, original_write_date)
+
     def create_group_share_right(self, group, user):
         share = models.Share.objects.create(
             user=user, data=b"share-data", data_nonce="nonce"

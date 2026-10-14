@@ -264,6 +264,27 @@ class ReadShareTests(APITestCaseExtended):
 
 
 class CreateShareTests(APITestCaseExtended):
+    def test_creation_rejects_invalid_key_type(self):
+        from uuid import uuid4
+
+        count = models.Share.objects.count()
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("share"),
+            {
+                "data": "ciphertext",
+                "data_nonce": "nonce",
+                "key": "key",
+                "key_nonce": "nonce",
+                "key_type": "invalid",
+                "link_id": str(uuid4()),
+                "parent_share_id": str(self.test_share1_obj.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid Key Type", response.data["non_field_errors"])
+        self.assertEqual(models.Share.objects.count(), count)
+
     def setUp(self):
         self.test_email = "test@example.com"
         self.test_email_bcrypt = "a"
@@ -893,6 +914,29 @@ class UpdateShareTests(APITestCaseExtended):
             grant=True,
             accepted=True,
         )
+
+    def test_partial_updates_preserve_unspecified_data_and_nonce(self):
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"original", data_nonce="original-nonce"
+        )
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, read=True, write=True, accepted=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("share"), {"share_id": str(share.id), "data_nonce": "new-nonce"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        share.refresh_from_db()
+        self.assertEqual(bytes(share.data), b"original")
+        self.assertEqual(share.data_nonce, "new-nonce")
+        response = self.client.put(
+            reverse("share"), {"share_id": str(share.id), "data": "updated"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        share.refresh_from_db()
+        self.assertEqual(bytes(share.data), b"updated")
+        self.assertEqual(share.data_nonce, "new-nonce")
 
     def test_update_share(self):
         """

@@ -28,9 +28,9 @@ class PasswordView(GenericAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "PUT":
-            return EnableNewPasswordSerializer
-        if self.request.method == "POST":
             return SetNewPasswordSerializer
+        if self.request.method == "POST":
+            return EnableNewPasswordSerializer
         return Serializer
 
     parser_classes = [JSONParser]

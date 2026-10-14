@@ -32,9 +32,9 @@ class LinkShareAccessView(GenericAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "PUT":
-            return ReadLinkShareAccessSerializer
-        if self.request.method == "POST":
             return UpdateLinkShareAccessSerializer
+        if self.request.method == "POST":
+            return ReadLinkShareAccessSerializer
         return Serializer
 
     def get(self, *args, **kwargs):

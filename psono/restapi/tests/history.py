@@ -202,6 +202,16 @@ class ReadHistory(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_malformed_history_id_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("history", kwargs={"secret_history_id": "malformed"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "SECRET_HISTORY_ID_BADLY_FORMED", response.data["non_field_errors"]
+        )
+
     def test_read_history_of_secret_success(self):
         """
         Tests to read the history of a secret

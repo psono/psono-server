@@ -17,6 +17,38 @@ import os
 
 
 class UnegistrationTests(APITestCaseExtended):
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+    )
+    def test_smtp_delivery_failure_does_not_delete_account(self):
+        from unittest.mock import patch
+
+        with patch(
+            "django.core.mail.backends.smtp.EmailBackend.send_messages",
+            side_effect=OSError("SMTP unavailable"),
+        ):
+            response = self.client.post(
+                reverse("authentication_unregister"), {"username": self.test_username}
+            )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.User.objects.filter(pk=self.test_user_obj.id).exists())
+
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+        ANYMAIL={"BREVO_API_KEY": "test-key"},
+    )
+    def test_brevo_delivery_sends_unregistration_without_deleting_account(self):
+        from unittest.mock import patch
+
+        with patch("anymail.backends.brevo.EmailBackend.send_messages", return_value=1):
+            response = self.client.post(
+                reverse("authentication_unregister"), {"username": self.test_username}
+            )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(models.User.objects.filter(pk=self.test_user_obj.id).exists())
+
     def setUp(self):
         self.test_email = (
             "".join(random.choice(string.ascii_lowercase) for _ in range(10))
@@ -131,7 +163,9 @@ class UnegistrationTests(APITestCaseExtended):
 
         data = {"username": "invalid@example.com"}
 
-        response = self.client.post(url, data)
+        with self.assertLogs("restapi.views.unregister", level="WARNING") as logs:
+            response = self.client.post(url, data)
+        self.assertIn("USER_WITH_USERNAME_DOESNT_EXIST", logs.output[0])
 
         # Should return success to prevent enumeration attacks
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -188,7 +222,9 @@ class UnegistrationTests(APITestCaseExtended):
 
         data = {"email": "invalid@example.com"}
 
-        response = self.client.post(url, data)
+        with self.assertLogs("restapi.views.unregister", level="WARNING") as logs:
+            response = self.client.post(url, data)
+        self.assertIn("USER_WITH_EMAIL_DOESNT_EXIST", logs.output[0])
 
         # Should return success to prevent enumeration attacks
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -237,7 +273,9 @@ class UnegistrationTests(APITestCaseExtended):
 
         data = {"username": test_username_no_email}
 
-        response = self.client.post(url, data)
+        with self.assertLogs("restapi.views.unregister", level="WARNING") as logs:
+            response = self.client.post(url, data)
+        self.assertIn("USER_HAS_NO_EMAIL_ADDRESS_ASSOCIATED", logs.output[0])
 
         # Should return success to prevent enumeration attacks
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

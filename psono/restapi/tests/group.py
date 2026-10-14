@@ -516,29 +516,55 @@ class DeleteGroupTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_delete_requires_accepted_group_admin(self):
+    def test_delete_rejects_pending_group_admin(self):
         url = reverse("group")
         data = {"group_id": str(self.test_group_obj.id)}
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["accepted"])
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.delete(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Group.objects.filter(pk=self.test_group_obj.id).exists())
 
-                response = self.client.delete(url, data)
+    def test_delete_rejects_declined_group_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.delete(
+            reverse("group"), {"group_id": str(self.test_group_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(models.Group.objects.filter(pk=self.test_group_obj.id).exists())
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
-                    )
-                self.assertEqual(
-                    models.Group.objects.filter(pk=self.test_group_obj.id).exists(),
-                    accepted is not True,
-                )
+    def test_delete_removes_group_for_accepted_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("group"), {"group_id": str(self.test_group_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.Group.objects.filter(pk=self.test_group_obj.id).exists()
+        )
+
+    def test_delete_invalidates_member_status_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            self.assertEqual(cache.get(key), {"cached": True})
+            response = self.client.delete(
+                reverse("group"), {"group_id": str(self.test_group_obj.id)}
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
 
     def test_delete_failure_missing_group_id(self):
         """
@@ -761,6 +787,62 @@ class ReadGroupTest(APITestCaseExtended):
             private_key_type="symmetric",
             group_admin=False,
             accepted=None,
+        )
+
+    def test_pending_invitation_without_group_grant_rights_is_marked_read_only(self):
+        share = models.Share.objects.create(
+            user=self.test_user_obj2, data=b"shared", data_nonce="nonce"
+        )
+        models.Group_Share_Right.objects.create(
+            group=self.test_group_obj5, share=share, grant=False
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("group"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invitation = next(
+            item
+            for item in response.data["groups"]
+            if item["group_id"] == self.test_group_obj5.id
+        )
+        self.assertFalse(invitation["share_right_grant"])
+        self.assertNotIn("secret_key", invitation)
+
+    def test_pending_invitation_with_group_grant_rights_can_grant(self):
+        share = models.Share.objects.create(
+            user=self.test_user_obj2, data=b"shared", data_nonce="nonce"
+        )
+        models.Group_Share_Right.objects.create(
+            group=self.test_group_obj5, share=share, grant=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("group"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invitation = next(
+            item
+            for item in response.data["groups"]
+            if item["group_id"] == self.test_group_obj5.id
+        )
+        self.assertTrue(invitation["share_right_grant"])
+
+    def test_group_detail_includes_shared_right_metadata(self):
+        share = models.Share.objects.create(
+            user=self.test_user_obj2, data=b"shared", data_nonce="nonce"
+        )
+        right = models.Group_Share_Right.objects.create(
+            group=self.test_group_obj,
+            share=share,
+            read=True,
+            grant=True,
+            title="Encrypted title",
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("group", kwargs={"group_id": str(self.test_group_obj.id)})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["group_share_rights"][0]["id"], right.id)
+        self.assertEqual(
+            response.data["group_share_rights"][0]["title"], "Encrypted title"
         )
 
     def test_read_groups_success(self):
@@ -1081,31 +1163,65 @@ class UpdateGroupTest(APITestCaseExtended):
 
         self.assertEqual(group.name, "New Name")
 
-    def test_update_requires_accepted_group_admin(self):
+    def test_update_rejects_pending_group_admin(self):
         url = reverse("group")
         data = {"group_id": str(self.test_group_obj.id), "name": "Updated group"}
         original_name = self.test_group_obj.name
         self.client.force_authenticate(user=self.test_user_obj)
-        for accepted in (None, False, True):
-            with self.subTest(accepted=accepted):
-                self.test_membership_obj.accepted = accepted
-                self.test_membership_obj.save(update_fields=["accepted"])
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_group_obj.refresh_from_db()
+        self.assertEqual(self.test_group_obj.name, original_name)
 
-                response = self.client.post(url, data)
+    def test_update_rejects_declined_group_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        original = self.test_group_obj.name
+        response = self.client.post(
+            reverse("group"),
+            {"group_id": str(self.test_group_obj.id), "name": "Updated group"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_group_obj.refresh_from_db()
+        self.assertEqual(self.test_group_obj.name, original)
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_200_OK if accepted else status.HTTP_400_BAD_REQUEST,
-                )
-                if accepted is not True:
-                    self.assertIn(
-                        "NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"]
-                    )
-                self.test_group_obj.refresh_from_db()
-                self.assertEqual(
-                    self.test_group_obj.name,
-                    data["name"] if accepted else original_name,
-                )
+    def test_update_changes_group_for_accepted_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("group"),
+            {"group_id": str(self.test_group_obj.id), "name": "Updated group"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_group_obj.refresh_from_db()
+        self.assertEqual(self.test_group_obj.name, "Updated group")
+
+    def test_update_rejects_short_name(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        original = self.test_group_obj.name
+        response = self.client.post(
+            reverse("group"), {"group_id": str(self.test_group_obj.id), "name": "ab"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NAME_TOO_SHORT", response.data["non_field_errors"])
+        self.test_group_obj.refresh_from_db()
+        self.assertEqual(self.test_group_obj.name, original)
+
+    def test_update_rejects_forbidden_character_in_name(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        original = self.test_group_obj.name
+        response = self.client.post(
+            reverse("group"),
+            {"group_id": str(self.test_group_obj.id), "name": "group@example"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "NAME_CONTAINS_FORBIDDEN_CHARACTERS", response.data["non_field_errors"]
+        )
+        self.test_group_obj.refresh_from_db()
+        self.assertEqual(self.test_group_obj.name, original)
 
     def test_update_groups_failure_no_group_admin(self):
         """

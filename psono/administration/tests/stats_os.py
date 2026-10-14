@@ -1,6 +1,8 @@
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status
+from datetime import timedelta
+from django.utils import timezone
 
 import random
 import string
@@ -88,6 +90,18 @@ class StatOsTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_statistics_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_read_stats_os(self):
         """
         Tests GET method on stats_os
@@ -107,6 +121,143 @@ class StatOsTests(APITestCaseExtended):
         self.assertTrue("mac_os" in response.data)
         self.assertTrue("android" in response.data)
         self.assertTrue("ios" in response.data)
+
+    def test_classifies_windows_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Windows",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["windows"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_ubuntu_session_as_linux(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Ubuntu",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["linux"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_mac_os_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Mac OS",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["mac_os"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_android_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Android",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["android"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_samsung_session_as_android(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="SM-G950",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["android"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_pixel_session_as_android(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Pixel 8",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["android"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_oneplus_session_as_android(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="OnePlus",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["android"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_ios_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="iOS",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["ios"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_ipad_session_as_ipados(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="iPad",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["ipados"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_unknown_os_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Unknown",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["other"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_excludes_expired_sessions(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Windows",
+            valid_till=timezone.now() - timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_os"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(sum(response.data.values()), 0)
+
+    def test_read_requires_administrative_access(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.get(reverse("stats_os")).status_code, status.HTTP_403_FORBIDDEN
+        )
 
     def test_create_stats_os(self):
         """

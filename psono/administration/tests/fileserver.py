@@ -9,6 +9,118 @@ from .helpers import _FileserverAdministrationTestCase
 
 
 class FileserverViewTests(_FileserverAdministrationTestCase):
+    def test_tenant_scoped_fileserver_capability_cannot_access_global_infrastructure(
+        self,
+    ):
+        tenant = models.Tenant.objects.create(name="Scoped tenant")
+        role = models.AdministrativeRole.objects.create(name="Scoped fileserver reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="fileservers.read"
+        )
+        assignment = models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.user, is_global=False
+        )
+        models.AdministrativeRoleAssignmentTenant.objects.create(
+            assignment=assignment, tenant=tenant
+        )
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse("admin_fileserver"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ADMIN_PERMISSION_DENIED", response.data["non_field_errors"])
+
+    def test_fileserver_rejects_non_numeric_page(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver"), {"page": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_fileserver_rejects_negative_page(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver"), {"page": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_fileserver_rejects_negative_page_size(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver"), {"page_size": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_fileserver_rejects_non_numeric_page_size(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver"), {"page_size": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_fileserver_rejects_zero_page_size(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver"), {"page_size": "0"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_fileserver_rejects_invalid_ordering(self):
+        self.authenticate()
+        response = self.client.get(reverse("admin_fileserver"), {"ordering": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ordering", response.data)
+
+    def test_fileserver_search_by_user(self):
+        self.create_member()
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver"),
+            {
+                "search": "fileserver-user",
+                "page_size": "1",
+                "page": "0",
+                "ordering": "cluster_title",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_fileserver_search_by_hostname(self):
+        member = self.create_member()
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver"),
+            {
+                "search": member.hostname,
+                "page_size": "1",
+                "page": "0",
+                "ordering": "cluster_title",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["fileservers"][0]["id"], member.id)
+
+    def test_fileserver_out_of_range_page_is_empty(self):
+        self.create_member()
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver"), {"page_size": "1", "page": "100"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["fileservers"], [])
+
+    def test_fileserver_detail_rejects_missing_fileserver(self):
+        from uuid import uuid4
+
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver", kwargs={"fileserver_id": str(uuid4())})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_fileserver_detail_rejects_malformed_id(self):
+        self.authenticate()
+        response = self.client.get(
+            reverse("admin_fileserver", kwargs={"fileserver_id": "invalid"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_fileserver_list_and_detail_redact_secrets(self):
         member = self.create_member()
         models.Fileserver_Cluster_Members.objects.create(

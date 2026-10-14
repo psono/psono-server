@@ -193,6 +193,96 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
             secret_key_nonce=nacl.encoding.HexEncoder.encode(nonce).decode(),
         )
 
+    def test_callback_updates_and_external_failure_preserve_committed_secret(self):
+        from django.test import override_settings
+        from unittest.mock import patch
+        from restapi.utils import decrypt_with_db_secret
+
+        url = reverse("api_key_access_secret")
+        payload = {
+            "api_key_id": str(self.test_api_key_obj.id),
+            "secret_id": str(self.test_secret_obj.id),
+            "data": "updated",
+            "data_nonce": "nonce",
+        }
+        with override_settings(
+            DISABLE_CALLBACKS=False,
+            ALLOWED_CALLBACK_URL_PREFIX=["https://callbacks.example.com"],
+        ):
+            with patch("restapi.views.api_key_access_secret.requests.post") as callback:
+                response = self.client.put(
+                    url,
+                    {
+                        **payload,
+                        "callback_url": "https://callbacks.example.com/update",
+                        "callback_user": "user",
+                        "callback_pass": "password",
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(
+                    callback.call_args.kwargs["auth"], ("user", "password")
+                )
+                self.test_secret_obj.refresh_from_db()
+                self.assertEqual(
+                    decrypt_with_db_secret(self.test_secret_obj.callback_pass),
+                    "password",
+                )
+                self.test_secret_obj.callback_pass = "legacy-password"
+                self.test_secret_obj.save(update_fields=["callback_pass"])
+                payload["data_nonce"] = nacl.utils.random(
+                    nacl.secret.SecretBox.NONCE_SIZE
+                ).hex()
+                response = self.client.put(url, payload)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(
+                    callback.call_args.kwargs["auth"], ("user", "legacy-password")
+                )
+                self.test_secret_obj.callback_user = ""
+                self.test_secret_obj.save(update_fields=["callback_user"])
+                payload["data_nonce"] = nacl.utils.random(
+                    nacl.secret.SecretBox.NONCE_SIZE
+                ).hex()
+                response = self.client.put(url, payload)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertIsNone(callback.call_args.kwargs["auth"])
+            with patch(
+                "restapi.views.api_key_access_secret.requests.post",
+                side_effect=OSError("callback unavailable"),
+            ):
+                payload["data_nonce"] = nacl.utils.random(
+                    nacl.secret.SecretBox.NONCE_SIZE
+                ).hex()
+                response = self.client.put(
+                    url, {**payload, "data": "persisted-after-failure"}
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(bytes(self.test_secret_obj.data), b"persisted-after-failure")
+        self.assertEqual(
+            models.Secret_History.objects.filter(secret=self.test_secret_obj).count(), 4
+        )
+
+    def test_insecure_read_rejects_disallowed_access_and_invalid_decryption_key(self):
+        payload = {
+            "api_key_id": str(self.test_api_key_obj.id),
+            "secret_id": str(self.test_secret_obj.id),
+            "api_key_secret_key": self.api_key_secret_key_hex.decode(),
+        }
+        self.test_api_key_obj.allow_insecure_access = False
+        self.test_api_key_obj.save(update_fields=["allow_insecure_access"])
+        response = self.client.post(reverse("api_key_access_secret"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_api_key_obj.allow_insecure_access = True
+        self.test_api_key_obj.save(update_fields=["allow_insecure_access"])
+        response = self.client.post(
+            reverse("api_key_access_secret"),
+            {**payload, "api_key_secret_key": "00" * 32},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(self.test_secret_obj.read_count, 0)
+
     def test_get(self):
         """
         Tests GET on api_key_access_secret
@@ -357,6 +447,65 @@ class CreateApiAccessSecretKeyTest(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_put_with_unwrapped_key_and_no_plaintext_preserves_ciphertext(self):
+        original_data = bytes(self.test_secret_obj.data)
+        original_nonce = self.test_secret_obj.data_nonce
+        response = self.client.put(
+            reverse("api_key_access_secret"),
+            {
+                "api_key_id": str(self.test_api_key_obj.id),
+                "secret_id": str(self.test_secret_obj.id),
+                "api_key_secret_key": self.api_key_secret_key_hex.decode(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(bytes(self.test_secret_obj.data), original_data)
+        self.assertEqual(self.test_secret_obj.data_nonce, original_nonce)
+
+    def test_read_validation_errors_are_valid_json(self):
+        response = self.client.post(reverse("api_key_access_secret"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("api_key_id", json.loads(response.content))
+
+    def test_put_rejects_wrong_api_key_secret_key_without_changing_secret(self):
+        original = bytes(self.test_secret_obj.data)
+        response = self.client.put(
+            reverse("api_key_access_secret"),
+            {
+                "api_key_id": str(self.test_api_key_obj.id),
+                "secret_id": str(self.test_secret_obj.id),
+                "api_key_secret_key": "00" * 32,
+                "insecure_data": "{}",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "API_KEY_SECRET_KEY_INVALID",
+            json.loads(response.content)["non_field_errors"],
+        )
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(bytes(self.test_secret_obj.data), original)
+
+    def test_put_rejects_invalid_plaintext_json_without_changing_secret(self):
+        original = bytes(self.test_secret_obj.data)
+        response = self.client.put(
+            reverse("api_key_access_secret"),
+            {
+                "api_key_id": str(self.test_api_key_obj.id),
+                "secret_id": str(self.test_secret_obj.id),
+                "api_key_secret_key": self.api_key_secret_key_hex.decode(),
+                "insecure_data": "{",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "API_KEY_SECRET_KEY_SPECIFIED_YET_INSECURE_DATA_NO_JSON",
+            json.loads(response.content)["non_field_errors"],
+        )
+        self.test_secret_obj.refresh_from_db()
+        self.assertEqual(bytes(self.test_secret_obj.data), original)
 
     def test_put_insecure_success(self):
         """

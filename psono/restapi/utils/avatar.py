@@ -33,7 +33,12 @@ def delete_avatar_storage_of_user(user_id):
     """
     storage = get_avatar_storage()
     if storage:
-        files = storage.listdir(f"{settings.AVATAR_STORAGE_PREFIX}{user_id}".lower())[1]
+        try:
+            files = storage.listdir(
+                f"{settings.AVATAR_STORAGE_PREFIX}{user_id}".lower()
+            )[1]
+        except FileNotFoundError:
+            return
         for file_name in files:
             file_path = f"{settings.AVATAR_STORAGE_PREFIX}{user_id}/{file_name}".lower()
             if storage.exists(file_path):

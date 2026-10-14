@@ -466,6 +466,22 @@ class DeleteWebauthnTests(APITestCaseExtended):
 
 
 class TenantScopedWebAuthnTests(AdministrativeAccessTestCase):
+    def test_delete_preserves_enabled_flag_when_another_active_webauthn_remains(self):
+        removed = self.create_webauthn(self.user_a, "removed")
+        retained = self.create_webauthn(self.user_a, "retained")
+        retained.active = True
+        retained.save(update_fields=["active"])
+        self.user_a.webauthn_enabled = True
+        self.user_a.save(update_fields=["webauthn_enabled"])
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.delete(
+            reverse("admin_webauthn"), {"webauthn_id": str(removed.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user_a.refresh_from_db()
+        self.assertTrue(self.user_a.webauthn_enabled)
+        self.assertTrue(models.Webauthn.objects.filter(pk=retained.id).exists())
+
     def create_webauthn(self, user, suffix):
         return models.Webauthn.objects.create(
             user=user,

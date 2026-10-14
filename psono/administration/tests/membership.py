@@ -128,6 +128,19 @@ class ReadMembershipTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_membership_read_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("admin_membership"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ADMIN_PERMISSION_DENIED", response.data["non_field_errors"])
+
     def test_read_membership_success(self):
         """
         Tests GET method on membership
@@ -392,6 +405,18 @@ class UpdateMembershipTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_missing_membership_is_rejected(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_membership"),
+            {
+                "membership_id": "00000000-0000-4000-8000-000000000001",
+                "group_admin": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
 
     def test_update_membership_missing_membership_id(self):
         """

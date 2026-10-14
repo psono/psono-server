@@ -1083,6 +1083,23 @@ class DeleteDatastoreTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
+    def test_wrong_password_preserves_datastore(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("datastore"),
+            {
+                "datastore_id": self.new_datastore_id,
+                "authkey": "0" * (settings.AUTH_KEY_LENGTH_BYTES * 2),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(
+            models.Data_Store.objects.filter(pk=self.new_datastore_id).exists()
+        )
+
     def test_delete_datastore_that_does_not_belong_to_the_user(self):
         """
         Tests to delete a datastore that does not belong to the user

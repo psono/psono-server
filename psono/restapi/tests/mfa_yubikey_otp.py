@@ -143,6 +143,50 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
             }
         )
 
+    def test_missing_yubikey_is_rejected_without_solving_challenge(self):
+        from django.test import override_settings
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.yubikey_otp_2fa = True
+        token.save(update_fields=["yubikey_otp_2fa"])
+        models.Yubikey_OTP.objects.filter(user=self.test_user_obj).delete()
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        with override_settings(
+            YUBIKEY_CLIENT_ID="123", YUBIKEY_SECRET_KEY="T3VoIHlvdSBmb3VuZCBtZT8="
+        ):
+            with patch("restapi.utils.yubikey.Yubico.verify", return_value=True):
+                response = self.client.post(
+                    reverse("authentication_yubikey_otp_verify"),
+                    {"yubikey_otp": self.yubikey_token},
+                )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_YUBIKEY_FOUND", response.data["non_field_errors"])
+        token.refresh_from_db()
+        self.assertTrue(token.yubikey_otp_2fa)
+
+    def test_multifactor_verification_preserves_other_pending_factors(self):
+        from django.test import override_settings
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.yubikey_otp_2fa = True
+        token.duo_2fa = True
+        token.save(update_fields=["yubikey_otp_2fa", "duo_2fa"])
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        with override_settings(
+            MULTIFACTOR_ENABLED=True,
+            YUBIKEY_CLIENT_ID="123",
+            YUBIKEY_SECRET_KEY="T3VoIHlvdSBmb3VuZCBtZT8=",
+        ):
+            with patch("restapi.utils.yubikey.Yubico.verify", return_value=True):
+                response = self.client.post(
+                    reverse("authentication_yubikey_otp_verify"),
+                    {"yubikey_otp": self.yubikey_token},
+                )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token.refresh_from_db()
+        self.assertFalse(token.yubikey_otp_2fa)
+        self.assertTrue(token.duo_2fa)
+
     def test_get_authentication_yubikey_otp_verify(self):
         """
         Tests GET method on authentication_yubikey_otp_verify
@@ -388,6 +432,78 @@ class YubikeyOTPTests(APITestCaseExtended):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_yubikey_creation_activation_and_error_paths_with_real_records(self):
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        url = reverse("user_yubikey_otp")
+        otp = "cccccccccccc" + "d" * 32
+        with override_settings(
+            ALLOWED_SECOND_FACTORS=["yubikey_otp"],
+            YUBIKEY_CLIENT_ID="123",
+            YUBIKEY_SECRET_KEY="T3VoIHlvdSBmb3VuZCBtZT8=",
+        ):
+            with patch("restapi.utils.yubikey.Yubico.verify", return_value=True):
+                response = self.client.put(
+                    url, {"title": "Real test key", "yubikey_otp": otp}
+                )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                yubikey = models.Yubikey_OTP.objects.get(user=self.test_user_obj)
+                self.assertTrue(yubikey.active)
+                response = self.client.post(
+                    url, {"yubikey_id": str(yubikey.id), "yubikey_otp": otp}
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                yubikey.refresh_from_db()
+                self.assertTrue(yubikey.active)
+                response = self.client.post(
+                    url,
+                    {
+                        "yubikey_id": str(yubikey.id),
+                        "yubikey_otp": "dddddddddddd" + "c" * 32,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(
+                    "YUBIKEY_OTP_NOT_ATTACHED_TO_THIS_ACCOUNT",
+                    response.data["non_field_errors"],
+                )
+                response = self.client.post(
+                    url,
+                    {
+                        "yubikey_id": "00000000-0000-4000-8000-000000000001",
+                        "yubikey_otp": otp,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            with patch("restapi.utils.yubikey.Yubico.verify", return_value=False):
+                response = self.client.post(
+                    url, {"yubikey_id": str(yubikey.id), "yubikey_otp": otp}
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(
+                    "YUBIKEY_OTP_INCORRECT", response.data["non_field_errors"]
+                )
+        with override_settings(YUBIKEY_CLIENT_ID=None, YUBIKEY_SECRET_KEY=None):
+            response = self.client.put(
+                url, {"title": "Unavailable key", "yubikey_otp": otp}
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("SERVER_NOT_SUPPORT_YUBIKEY", response.data["yubikey_otp"])
+            response = self.client.post(
+                url, {"yubikey_id": str(yubikey.id), "yubikey_otp": otp}
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(
+                "SERVER_DOES_NOT_SUPPORT_YUBIKEYS", response.data["non_field_errors"]
+            )
+        with override_settings(ALLOWED_SECOND_FACTORS=["ga"]):
+            response = self.client.put(
+                url, {"title": "Disabled key", "yubikey_otp": otp}
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("SERVER_NOT_SUPPORT_YUBIKEY", response.data["yubikey_otp"])
 
     def test_put_user_yubikey_otp_with_no_valid_yubikey(self):
         """

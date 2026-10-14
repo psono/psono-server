@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -19,7 +21,9 @@ class CommandFSShardCreateTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsshardcreate", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsshardcreate", stdout=out, *args, **opts)
+        self.assertIn("Created. Shard ID:", out.getvalue())
 
         self.assertTrue(
             models.Fileserver_Shard.objects.filter(

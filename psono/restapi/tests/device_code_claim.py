@@ -6,7 +6,6 @@ from rest_framework import status
 import nacl.secret
 import nacl.utils
 import nacl.encoding
-from unittest.mock import patch
 
 from .base import APITestCaseExtended
 from restapi import models
@@ -478,13 +477,11 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
 
         self.client.force_authenticate(user=self.test_user_obj)
 
-        # Simulate time passing so the code is now expired
-        future_time = self.pending_device_code_will_expire.valid_till + timedelta(
+        self.pending_device_code_will_expire.valid_till = timezone.now() - timedelta(
             seconds=1
         )
-
-        with patch("django.utils.timezone.now", return_value=future_time):
-            response = self.client.put(url, payload)
+        self.pending_device_code_will_expire.save(update_fields=["valid_till"])
+        response = self.client.put(url, payload)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data, {"detail": "DEVICE_CODE_EXPIRED"})
@@ -525,99 +522,243 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
         )
         self.assertEqual(self.pending_dc_assigned_other_user.user, self.other_user_obj)
 
-    def test_claim_serializer_validations(self):
-        """
-        Tests various validation failures in ActivateDeviceCodeSerializer.
-        """
-        url = reverse(
-            "device_code_claim",
-            kwargs={"device_code": str(self.pending_device_code.id)},
+    def test_claim_requires_encrypted_credentials(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
         )
         self.client.force_authenticate(user=self.test_user_obj)
-
-        base_payload = {
-            "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
-            "encrypted_credentials_nonce": self.valid_nonce_hex,
-        }
-
-        # Test cases: (field_to_break, broken_value, expected_error_detail_string, expected_error_code)
-        # Note: ClaimDeviceCodeSerializer._validate_hex_string uses nacl.encoding.HexEncoder for validation.
-        test_cases = [
-            # encrypted_credentials_input validations
-            (
-                "encrypted_credentials_input",
-                None,
-                "This field is required.",
-                "required",
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
             ),
-            (
-                "encrypted_credentials_input",
-                "",
-                "This field may not be blank.",
-                "blank",
+            {"encrypted_credentials_nonce": self.valid_nonce_hex},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_input"][0]),
+            "This field is required.",
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_input"][0].code, "required"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
+
+    def test_claim_rejects_blank_encrypted_credentials(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
             ),
-            ("encrypted_credentials_input", "123", "NO_VALID_HEX", "invalid"),
-            ("encrypted_credentials_input", "XXYYZZ", "NO_VALID_HEX", "invalid"),
-            # encrypted_credentials_nonce validations
-            (
-                "encrypted_credentials_nonce",
-                None,
-                "This field is required.",
-                "required",
+            {
+                "encrypted_credentials_input": "",
+                "encrypted_credentials_nonce": self.valid_nonce_hex,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_input"][0]),
+            "This field may not be blank.",
+        )
+        self.assertEqual(response.data["encrypted_credentials_input"][0].code, "blank")
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
+
+    def test_claim_rejects_odd_length_encrypted_credentials(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
             ),
-            (
-                "encrypted_credentials_nonce",
-                "",
-                "This field may not be blank.",
-                "blank",
+            {
+                "encrypted_credentials_input": "123",
+                "encrypted_credentials_nonce": self.valid_nonce_hex,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_input"][0]), "NO_VALID_HEX"
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_input"][0].code, "invalid"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
+
+    def test_claim_rejects_non_hex_encrypted_credentials(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
             ),
-            ("encrypted_credentials_nonce", "123", "NO_VALID_HEX", "invalid"),
-            ("encrypted_credentials_nonce", "XXYYZZ", "NO_VALID_HEX", "invalid"),
-            (
-                "encrypted_credentials_nonce",
-                "a" * 65,
-                "Ensure this field has no more than 64 characters.",
-                "max_length",
+            {
+                "encrypted_credentials_input": "XXYYZZ",
+                "encrypted_credentials_nonce": self.valid_nonce_hex,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_input"][0]), "NO_VALID_HEX"
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_input"][0].code, "invalid"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
+
+    def test_claim_requires_credentials_nonce(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
             ),
-        ]
+            {"encrypted_credentials_input": self.valid_encrypted_credentials_hex},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_nonce"][0]),
+            "This field is required.",
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_nonce"][0].code, "required"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
 
-        initial_dc_state = self.pending_device_code.state
-        initial_dc_user = self.pending_device_code.user
+    def test_claim_rejects_blank_credentials_nonce(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
+            ),
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": "",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_nonce"][0]),
+            "This field may not be blank.",
+        )
+        self.assertEqual(response.data["encrypted_credentials_nonce"][0].code, "blank")
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
 
-        for field, value, err_string, err_code in test_cases:
-            with self.subTest(field=field, value=value, error_string=err_string):
-                payload = base_payload.copy()
-                if value is None:  # DRF handles None differently for required fields
-                    payload.pop(field)
-                else:
-                    payload[field] = value
+    def test_claim_rejects_odd_length_credentials_nonce(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
+            ),
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": "123",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_nonce"][0]), "NO_VALID_HEX"
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_nonce"][0].code, "invalid"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
 
-                response = self.client.put(url, payload)
+    def test_claim_rejects_non_hex_credentials_nonce(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
+            ),
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": "XXYYZZ",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_nonce"][0]), "NO_VALID_HEX"
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_nonce"][0].code, "invalid"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
 
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_400_BAD_REQUEST,
-                    f"Failed for {field}={value}. Response: {response.data}",
-                )
-                self.assertIn(
-                    field,
-                    response.data,
-                    f"Field {field} not in error response for value {value}. Response: {response.data}",
-                )
-
-                # We expect a list of ErrorDetail objects
-                self.assertIsInstance(response.data[field], list)
-                self.assertGreater(len(response.data[field]), 0)
-                error_detail = response.data[field][0]
-                self.assertEqual(
-                    str(error_detail), err_string
-                )  # Compare string representation
-                self.assertEqual(error_detail.code, err_code)
-
-                # Ensure DeviceCode was not modified
-                self.pending_device_code.refresh_from_db()
-                self.assertEqual(self.pending_device_code.state, initial_dc_state)
-                self.assertEqual(self.pending_device_code.user, initial_dc_user)
+    def test_claim_rejects_overlong_credentials_nonce(self):
+        initial_state, initial_user = (
+            self.pending_device_code.state,
+            self.pending_device_code.user,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse(
+                "device_code_claim",
+                kwargs={"device_code": str(self.pending_device_code.id)},
+            ),
+            {
+                "encrypted_credentials_input": self.valid_encrypted_credentials_hex,
+                "encrypted_credentials_nonce": "a" * 65,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            str(response.data["encrypted_credentials_nonce"][0]),
+            "Ensure this field has no more than 64 characters.",
+        )
+        self.assertEqual(
+            response.data["encrypted_credentials_nonce"][0].code, "max_length"
+        )
+        self.pending_device_code.refresh_from_db()
+        self.assertEqual(self.pending_device_code.state, initial_state)
+        self.assertEqual(self.pending_device_code.user, initial_user)
 
     def test_read_comparison_code_requires_authentication(self):
         url = reverse(
@@ -626,6 +767,31 @@ class ClaimDeviceCodeTest(APITestCaseExtended):
         response = self.client.get(url)
         self.assertIn(response.status_code, (401, 403))
         self.assertNotIn("user_code", response.data)
+
+    def test_read_comparison_code_rejects_foreign_owner_and_api_key_sessions(self):
+        url = reverse(
+            "device_code_claim",
+            kwargs={"device_code": self.pending_dc_assigned_other_user.id},
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotIn("user_code", response.data)
+        api_key = models.API_Key.objects.create(
+            user=self.test_user_obj,
+            title="Session key",
+            read=True,
+            write=True,
+            allow_insecure_access=True,
+        )
+        token = models.Token.objects.create(
+            user=self.test_user_obj, api_key=api_key, active=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        url = reverse(
+            "device_code_claim", kwargs={"device_code": self.pending_device_code.id}
+        )
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
 
     def test_read_comparison_code_and_legacy_request(self):
         url = reverse(
