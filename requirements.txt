@@ -47,7 +47,7 @@ cbor2==6.1.2
     # via
     #   autobahn
     #   webauthn
-certifi==2026.6.17
+certifi==2026.10.19
     # via
     #   requests
     #   sentry-sdk
