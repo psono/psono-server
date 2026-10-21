@@ -15,6 +15,36 @@ import binascii
 
 
 class AvatarImageTest(APITestCaseExtended):
+    def test_put_is_not_supported(self):
+        self.assertEqual(
+            self.client.put(
+                reverse(
+                    "avatar_image",
+                    kwargs={
+                        "user_id": str(self.test_user_obj.id),
+                        "avatar_id": "00000000-0000-4000-8000-000000000001",
+                    },
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.assertEqual(
+            self.client.delete(
+                reverse(
+                    "avatar_image",
+                    kwargs={
+                        "user_id": str(self.test_user_obj.id),
+                        "avatar_id": "00000000-0000-4000-8000-000000000001",
+                    },
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to read an avatar_image (GET)
     """
@@ -114,6 +144,43 @@ class AvatarImageTest(APITestCaseExtended):
             mime_type="image/gif",
             data=base64.b64decode(self.avatar_image_data_base64),
         )
+
+    def test_real_local_storage_and_database_fallback(self):
+        from tempfile import TemporaryDirectory
+        from django.core.files.base import ContentFile
+        from django.core.files.storage import FileSystemStorage
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        url = reverse(
+            "avatar_image",
+            kwargs={
+                "user_id": self.test_user_obj.id,
+                "avatar_id": self.avatar_image.id,
+            },
+        )
+        with TemporaryDirectory() as directory:
+            storage = FileSystemStorage(location=directory)
+            name = f"avatars/{self.test_user_obj.id}/{self.avatar_image.id}"
+            data = bytes(self.avatar_image.data)
+            storage.save(name, ContentFile(data))
+            self.avatar_image.data = None
+            self.avatar_image.save(update_fields=["data"])
+            with override_settings(
+                AVATAR_STORAGE={"class": "local", "kwargs": {"location": directory}},
+                AVATAR_STORAGE_PREFIX="avatars/",
+            ):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.content, data)
+                storage.delete(name)
+                self.assertEqual(
+                    self.client.get(url).status_code, status.HTTP_400_BAD_REQUEST
+                )
+                self.avatar_image.data = data
+                self.avatar_image.save(update_fields=["data"])
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.content, data)
 
     def test_read_successful(self):
         """

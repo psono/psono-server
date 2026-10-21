@@ -100,6 +100,59 @@ class ReadGroupTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_list_rejects_non_numeric_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"page": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"page": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"page_size": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_non_numeric_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"page_size": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_zero_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"page_size": "0"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_search_and_pagination(self):
+        self.test_group_obj.name = "Searchable group"
+        self.test_group_obj.save(update_fields=["name"])
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("admin_group")
+        response = self.client.get(
+            url,
+            {
+                "search": self.test_group_obj.name,
+                "page_size": "1",
+                "page": "0",
+                "ordering": "name",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["groups"]), 1)
+        self.assertEqual(response.data["groups"][0]["id"], self.test_group_obj.id)
+
+    def test_list_accepts_empty_ordering(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_group"), {"ordering": ""})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_read_specific_group_success(self):
         """
         Tests GET method on a specific group

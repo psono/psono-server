@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers, exceptions
 
 from ..utils import user_has_rights_on_secret
-from ..fields import UUIDField
+from ..fields import UUIDField, BooleanField
 from ..models import Link_Share
 
 
@@ -28,7 +28,7 @@ class UpdateLinkShareSerializer(serializers.Serializer):
     # else => update restriction
     valid_till = serializers.DateTimeField(required=False, allow_null=True)
 
-    allow_write = serializers.DateTimeField(required=False, allow_null=True)
+    allow_write = BooleanField(required=False, allow_null=True)
 
     def validate(self, attrs: dict) -> dict:
 

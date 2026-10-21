@@ -194,6 +194,33 @@ class CreateApiKeyAccessInspectTest(APITestCaseExtended):
             secret_key_nonce=nacl.encoding.HexEncoder.encode(nonce).decode(),
         )
 
+    def test_inspection_rejects_missing_inactive_keys_and_inactive_owners(self):
+        url = reverse("api_key_access_inspect")
+        self.assertEqual(
+            self.client.post(
+                url, {"api_key_id": "00000000-0000-4000-8000-000000000001"}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.test_api_key_obj.active = False
+        self.test_api_key_obj.save(update_fields=["active"])
+        self.assertEqual(
+            self.client.post(
+                url, {"api_key_id": str(self.test_api_key_obj.id)}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.test_api_key_obj.active = True
+        self.test_api_key_obj.save(update_fields=["active"])
+        self.test_user_obj.is_active = False
+        self.test_user_obj.save(update_fields=["is_active"])
+        self.assertEqual(
+            self.client.post(
+                url, {"api_key_id": str(self.test_api_key_obj.id)}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_get(self):
         """
         Tests GET on api_key_access_secret

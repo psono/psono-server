@@ -204,7 +204,7 @@ class DeclineMembershipTest(APITestCaseExtended):
         Tests to decline a membership that has already been accepted
         """
 
-        url = reverse("membership_accept")
+        url = reverse("membership_decline")
 
         data = {
             "membership_id": self.test_membership_obj.id,
@@ -276,6 +276,94 @@ class DeclineMembershipTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_decline_rejects_already_accepted_membership_without_changes(self):
+        url = reverse("membership_decline")
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            url, {"membership_id": str(self.test_membership_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj.refresh_from_db()
+        self.assertTrue(self.test_membership_obj.accepted)
+
+    def test_decline_rejects_declined_membership_without_changes(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_decline"),
+            {"membership_id": str(self.test_membership_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj.refresh_from_db()
+        self.assertFalse(self.test_membership_obj.accepted)
+
+    def test_decline_persists_pending_membership_decline(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_decline"),
+            {"membership_id": str(self.test_membership_obj.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_membership_obj.refresh_from_db()
+        self.assertFalse(self.test_membership_obj.accepted)
+
+    def test_decline_rejects_other_users_accepted_membership(self):
+        url = reverse("membership_decline")
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.test_membership_obj4.accepted = True
+        self.test_membership_obj4.save(update_fields=["accepted"])
+        response = self.client.post(
+            url, {"membership_id": str(self.test_membership_obj4.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertTrue(self.test_membership_obj4.accepted)
+
+    def test_decline_rejects_other_users_declined_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_decline"),
+            {"membership_id": str(self.test_membership_obj4.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertFalse(self.test_membership_obj4.accepted)
+
+    def test_decline_rejects_other_users_pending_membership(self):
+        self.test_membership_obj4.accepted = None
+        self.test_membership_obj4.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership_decline"),
+            {"membership_id": str(self.test_membership_obj4.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_membership_obj4.refresh_from_db()
+        self.assertIsNone(self.test_membership_obj4.accepted)
+
+    def test_decline_invalidates_member_status_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            response = self.client.post(
+                reverse("membership_decline"),
+                {"membership_id": str(self.test_membership_obj5.id)},
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
 
     def test_create_decline_membership(self):
         """

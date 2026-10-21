@@ -464,6 +464,42 @@ class DeleteGATests(APITestCaseExtended):
 
 
 class TenantScopedGoogleAuthenticatorTests(AdministrativeAccessTestCase):
+    def test_get_is_not_supported(self):
+        self.client.force_authenticate(user=self.superuser)
+        self.assertEqual(
+            self.client.get(reverse("admin_google_authenticator")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_preserves_enabled_flag_when_another_active_authenticator_remains(
+        self,
+    ):
+        removed = models.Google_Authenticator.objects.create(
+            user=self.user_a,
+            title="Removed",
+            secret=encrypt_with_db_secret("secret"),
+            active=True,
+        )
+        retained = models.Google_Authenticator.objects.create(
+            user=self.user_a,
+            title="Retained",
+            secret=encrypt_with_db_secret("other-secret"),
+            active=True,
+        )
+        self.user_a.google_authenticator_enabled = True
+        self.user_a.save(update_fields=["google_authenticator_enabled"])
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.delete(
+            reverse("admin_google_authenticator"),
+            {"google_authenticator_id": str(removed.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user_a.refresh_from_db()
+        self.assertTrue(self.user_a.google_authenticator_enabled)
+        self.assertTrue(
+            models.Google_Authenticator.objects.filter(pk=retained.id).exists()
+        )
+
     def create_authenticator(self, user, title):
         return models.Google_Authenticator.objects.create(
             user=user,

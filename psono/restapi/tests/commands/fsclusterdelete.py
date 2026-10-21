@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 import nacl.encoding
@@ -34,6 +36,8 @@ class CommandFSClusterDeleteTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsclusterdelete", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsclusterdelete", stdout=out, *args, **opts)
+        self.assertIn("Deleted successful.", out.getvalue())
 
         self.assertEqual(models.Fileserver_Cluster.objects.count(), 0)

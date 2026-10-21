@@ -17,6 +17,239 @@ import os
 
 
 class RegistrationTests(APITestCaseExtended):
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",),
+    )
+    def test_concurrent_username_registration_returns_validation_error(self):
+        from uuid import uuid4
+        from django.db import connection, transaction
+
+        username = f"concurrent-test@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "concurrent-test@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        controller = connection.copy(alias="registration-controller")
+        collision_id = uuid4()
+        inserted = False
+
+        def execute(execute, sql, params, many, context):
+            nonlocal inserted
+            if not inserted and sql.startswith("INSERT") and '"restapi_user"' in sql:
+                columns = [
+                    column.strip().strip('"')
+                    for column in sql.split("(", 1)[1].split(")", 1)[0].split(",")
+                ]
+                competing = list(params)
+                competing[columns.index("id")] = collision_id
+                competing[columns.index("private_key_nonce")] = (
+                    "competing-private-" + str(collision_id)
+                )
+                competing[columns.index("secret_key_nonce")] = (
+                    "competing-secret-" + str(collision_id)
+                )
+                # Commit a real competing registration after validation and
+                # before INSERT; let PostgreSQL enforce username uniqueness.
+                with controller.cursor() as cursor:
+                    cursor.execute(sql, competing)
+                inserted = True
+            return execute(sql, params, many, context)
+
+        try:
+            with transaction.atomic():
+                with connection.execute_wrapper(execute):
+                    response = self.client.post(
+                        reverse("authentication_register"), payload
+                    )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(
+                "REGISTRATION_FAILED_USERNAME_ALREADY_EXISTS", response.data["custom"]
+            )
+            self.assertEqual(models.User.objects.filter(username=username).count(), 1)
+        finally:
+            if inserted:
+                with controller.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM restapi_user WHERE id = %s", [collision_id]
+                    )
+            controller.close()
+
+    @override_settings(WEB_CLIENT_URL="")
+    def test_missing_web_client_url_creates_no_unactivatable_account(self):
+        username = f"missing-client@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "missing-client@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("REGISTRATION_HAS_BEEN_DISABLED", response.data["custom"])
+        self.assertFalse(models.User.objects.filter(username=username).exists())
+
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",),
+        EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+        ANYMAIL={"BREVO_API_KEY": "test-key"},
+    )
+    def test_unsupported_brevo_feature_removes_unactivated_account(self):
+        from anymail.exceptions import AnymailUnsupportedFeature
+
+        username = f"unsupported-mail@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "unsupported-mail@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        with patch(
+            "anymail.backends.brevo.EmailBackend.send_messages",
+            side_effect=AnymailUnsupportedFeature("Unsupported mail feature"),
+        ):
+            with self.assertRaises(AnymailUnsupportedFeature):
+                self.client.post(reverse("authentication_register"), payload)
+        self.assertFalse(models.User.objects.filter(username=username).exists())
+
+    @override_settings(WEB_CLIENT_URL="https://psono.pw")
+    def test_duplicate_username_creates_no_additional_account(self):
+        username = f"duplicate-test@{settings.ALLOWED_DOMAINS[0]}"
+        models.User.objects.create(
+            username=username,
+            private_key_nonce="existing-private",
+            secret_key_nonce="existing-secret",
+        )
+        payload = {
+            "username": username,
+            "email": "duplicate-test@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("USERNAME_ALREADY_EXISTS", response.data["username"])
+        self.assertEqual(models.User.objects.count(), 1)
+
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        REGISTRATION_EMAIL_FILTER=["allowed.example.com"],
+    )
+    def test_registration_rejects_email_outside_allowed_domains(self):
+        username = f"filtered-test@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "filtered-test@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "EMAIL_DOMAIN_NOT_ALLOWED_TO_REGISTER", response.data["non_field_errors"]
+        )
+        self.assertFalse(models.User.objects.exists())
+
+    @override_settings(
+        REGISTRATION_EMAIL_FILTER=["example.com"],
+        WEB_CLIENT_URL="https://psono.pw",
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",),
+    )
+    def test_registration_accepts_email_in_allowed_domain(self):
+        username = f"allowed-test@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "allowed-test@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(models.User.objects.filter(username=username).exists())
+
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",),
+        EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+    )
+    def test_smtp_delivery_failure_creates_no_account(self):
+        username = f"mail-test-smtp@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "mail-test-smtp@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        with patch(
+            "django.core.mail.backends.smtp.EmailBackend.send_messages",
+            side_effect=OSError("SMTP unavailable"),
+        ):
+            response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(models.User.objects.filter(username=username).exists())
+
+    @override_settings(
+        WEB_CLIENT_URL="https://psono.pw",
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",),
+        EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+        ANYMAIL={"BREVO_API_KEY": "test-key"},
+    )
+    def test_brevo_delivery_creates_account(self):
+        username = f"mail-test-brevo@{settings.ALLOWED_DOMAINS[0]}"
+        payload = {
+            "username": username,
+            "email": "mail-test-brevo@example.com",
+            "authkey": os.urandom(settings.AUTH_KEY_LENGTH_BYTES).hex(),
+            "public_key": os.urandom(settings.USER_PUBLIC_KEY_LENGTH_BYTES).hex(),
+            "private_key": os.urandom(settings.USER_PRIVATE_KEY_LENGTH_BYTES).hex(),
+            "private_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "secret_key": os.urandom(settings.USER_SECRET_KEY_LENGTH_BYTES).hex(),
+            "secret_key_nonce": os.urandom(settings.NONCE_LENGTH_BYTES).hex(),
+            "user_sauce": "00" * 32,
+        }
+        with patch("anymail.backends.brevo.EmailBackend.send_messages", return_value=1):
+            response = self.client.post(reverse("authentication_register"), payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(models.User.objects.filter(username=username).exists())
+
     @override_settings(WEB_CLIENT_URL="https://psono.pw")
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)

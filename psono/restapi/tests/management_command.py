@@ -13,9 +13,52 @@ MANAGEMENT_COMMAND_ACCESS_KEY = "ABC"
 
 
 class ManagementCommandTest(APITestCaseExtended):
+    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY=MANAGEMENT_COMMAND_ACCESS_KEY)
+    def test_get_is_not_supported(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY
+        )
+        self.assertEqual(
+            self.client.get(reverse("management_command")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY=MANAGEMENT_COMMAND_ACCESS_KEY)
+    def test_put_is_not_supported(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY
+        )
+        self.assertEqual(
+            self.client.put(reverse("management_command"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY=MANAGEMENT_COMMAND_ACCESS_KEY)
+    def test_delete_is_not_supported(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY
+        )
+        self.assertEqual(
+            self.client.delete(reverse("management_command"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to execute a management command remote
     """
+
+    @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY=MANAGEMENT_COMMAND_ACCESS_KEY)
+    def test_unlisted_command_is_rejected(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + MANAGEMENT_COMMAND_ACCESS_KEY
+        )
+        response = self.client.post(
+            reverse("management_command"), {"command_name": "unlisted-command"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "MANAGEMENT_COMMAND_NOT_ALLOWED", response.data["non_field_errors"]
+        )
 
     @override_settings(MANAGEMENT_COMMAND_ACCESS_KEY=MANAGEMENT_COMMAND_ACCESS_KEY)
     def test_command_without_args(self):

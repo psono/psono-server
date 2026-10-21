@@ -1,6 +1,8 @@
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status
+from datetime import timedelta
+from django.utils import timezone
 
 import random
 import string
@@ -88,6 +90,18 @@ class StatBrowserTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_statistics_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_read_stats_browser(self):
         """
         Tests GET method on stats_browser
@@ -106,6 +120,120 @@ class StatBrowserTests(APITestCaseExtended):
         self.assertTrue("chrome" in response.data)
         self.assertTrue("safari" in response.data)
         self.assertTrue("vivaldi" in response.data)
+
+    def test_classifies_chrome_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Chrome",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["chrome"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_firefox_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Firefox",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["firefox"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_safari_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Safari",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["safari"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_edge_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Edge",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["edge"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_vivaldi_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Vivaldi",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["vivaldi"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_brave_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Brave",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["brave"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_opera_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Opera",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["opera"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_classifies_unknown_browser_session(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Unknown",
+            valid_till=timezone.now() + timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["other"], 1)
+        self.assertEqual(sum(response.data.values()), 1)
+
+    def test_excludes_expired_sessions(self):
+        models.Token.objects.create(
+            user=self.test_user_obj,
+            device_description="Chrome",
+            valid_till=timezone.now() - timedelta(hours=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("stats_browser"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(sum(response.data.values()), 0)
+
+    def test_read_requires_administrative_access(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.get(reverse("stats_browser")).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
 
     def test_create_stats_browser(self):
         """

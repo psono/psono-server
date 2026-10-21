@@ -473,6 +473,22 @@ class DeleteDuoTests(APITestCaseExtended):
 
 
 class TenantScopedDuoTests(AdministrativeAccessTestCase):
+    def test_delete_preserves_enabled_flag_when_another_active_duo_remains(self):
+        removed = models.Duo.objects.create(
+            user=self.user_a, title="Removed", active=True
+        )
+        retained = models.Duo.objects.create(
+            user=self.user_a, title="Retained", active=True
+        )
+        self.user_a.duo_enabled = True
+        self.user_a.save(update_fields=["duo_enabled"])
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.delete(reverse("admin_duo"), {"duo_id": str(removed.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user_a.refresh_from_db()
+        self.assertTrue(self.user_a.duo_enabled)
+        self.assertTrue(models.Duo.objects.filter(pk=retained.id).exists())
+
     def create_duo(self, user, title):
         return models.Duo.objects.create(
             user=user,

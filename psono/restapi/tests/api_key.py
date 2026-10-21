@@ -1361,6 +1361,16 @@ class UpdateApiKeyTest(APITestCaseExtended):
             read=self.test_api_key_obj.read,
         )
 
+    def test_update_without_changes_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("api_key"), {"api_key_id": str(self.test_api_key_obj.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NOTHING_TO_UPDATE", response.data["non_field_errors"])
+        self.test_api_key_obj.refresh_from_db()
+        self.assertEqual(self.test_api_key_obj.title, "Test Title")
+
     def test_update_api_keys_success(self):
         """
         Tests to update an api key

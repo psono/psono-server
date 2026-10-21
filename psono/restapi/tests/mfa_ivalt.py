@@ -114,6 +114,59 @@ class IvaltVerifyTests(APITestCaseExtended):
             "ivalt",
         ]
     )
+    def test_missing_device_and_provider_failure_are_rejected(self):
+        from django.test import override_settings
+        from requests import Response
+
+        token = models.Token.objects.create(user=self.test_user_obj, ivalt_2fa=True)
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        models.Ivalt.objects.filter(user=self.test_user_obj).delete()
+        response = self.client.post(
+            reverse("authentication_ivalt_verify"), {"request_type": "notification"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        models.Ivalt.objects.create(
+            user=self.test_user_obj,
+            mobile=encrypt_with_db_secret("+10123456789"),
+            active=True,
+        )
+        failure = Response()
+        failure.status_code = 503
+        failure._content = b'{"error":{"detail":"unavailable"}}'
+        with override_settings(IVALT_SECRET_KEY="secret"):
+            with patch("restapi.utils.ivalt.requests.post", return_value=failure):
+                response = self.client.post(
+                    reverse("authentication_ivalt_verify"),
+                    {"request_type": "notification"},
+                )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        token.refresh_from_db()
+        self.assertTrue(token.ivalt_2fa)
+
+    def test_multifactor_verification_preserves_other_pending_challenges(self):
+        from requests import Response
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.ivalt_2fa = True
+        token.google_authenticator_2fa = True
+        token.save(update_fields=["ivalt_2fa", "google_authenticator_2fa"])
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+        provider = Response()
+        provider.status_code = 200
+        provider._content = (
+            b'{"data":{"status":true,"message":"Verified","details":{"id":1111}}}'
+        )
+        with override_settings(IVALT_SECRET_KEY="secret", MULTIFACTOR_ENABLED=True):
+            with patch("restapi.utils.ivalt.requests.post", return_value=provider):
+                response = self.client.post(
+                    reverse("authentication_ivalt_verify"),
+                    {"request_type": "verification"},
+                )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token.refresh_from_db()
+        self.assertFalse(token.ivalt_2fa)
+        self.assertTrue(token.google_authenticator_2fa)
+
     def test_get_authentication_ivalt_verify(self):
         """
         Tests GET method on authentication_ivalt_verify
@@ -579,6 +632,62 @@ class IvaltTests(APITestCaseExtended):
         ]
     )
     @override_settings(IVALT_SECRET_KEY="abc")
+    def test_provider_configuration_and_notification_failures_create_no_devices(self):
+        from requests import Response
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(IVALT_SECRET_KEY=None):
+            self.assertEqual(
+                self.client.put(
+                    reverse("user_ivalt"), {"mobile": "+10123456789"}
+                ).status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+        with override_settings(
+            IVALT_SECRET_KEY="secret", ALLOWED_SECOND_FACTORS=["ga"]
+        ):
+            self.assertEqual(
+                self.client.put(
+                    reverse("user_ivalt"), {"mobile": "+10123456789"}
+                ).status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+        failure = Response()
+        failure.status_code = 503
+        with override_settings(
+            IVALT_SECRET_KEY="secret", ALLOWED_SECOND_FACTORS=["ivalt"]
+        ):
+            with patch("restapi.utils.ivalt.requests.post", return_value=failure):
+                self.assertEqual(
+                    self.client.put(
+                        reverse("user_ivalt"), {"mobile": "+10123456789"}
+                    ).status_code,
+                    status.HTTP_400_BAD_REQUEST,
+                )
+        self.assertFalse(models.Ivalt.objects.filter(user=self.test_user_obj).exists())
+
+    def test_activation_configuration_guards_preserve_pending_device(self):
+        ivalt = models.Ivalt.objects.create(
+            user=self.test_user_obj,
+            mobile=encrypt_with_db_secret("+10123456789"),
+            active=False,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(IVALT_SECRET_KEY=None):
+            self.assertEqual(
+                self.client.post(reverse("user_ivalt"), {}).status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+        with override_settings(
+            IVALT_SECRET_KEY="secret", ALLOWED_SECOND_FACTORS=["ga"]
+        ):
+            self.assertEqual(
+                self.client.post(reverse("user_ivalt"), {}).status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+        ivalt.refresh_from_db()
+        self.assertFalse(ivalt.active)
+
     def test_put_user_ivalt_no_parameters(self):
         """
         Tests PUT method on user_ivalt

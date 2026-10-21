@@ -226,6 +226,204 @@ class CreateMembershipTest(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_rejects_pending_group_admin(self):
+        url = reverse("membership")
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["group_id"])
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(
+                user=self.test_user_obj2, group=self.test_group_obj
+            ).exists()
+        )
+
+    def test_create_rejects_declined_group_admin(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        response = self.client.put(reverse("membership"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(
+                user=self.test_user_obj2, group=self.test_group_obj
+            ).exists()
+        )
+
+    def test_create_persists_invitation_for_accepted_group_admin(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        response = self.client.put(reverse("membership"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            models.User_Group_Membership.objects.filter(
+                user=self.test_user_obj2, group=self.test_group_obj
+            ).exists()
+        )
+
+    def test_create_rejects_duplicate_pending_membership(self):
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj
+        )
+        url = reverse("membership")
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("USER_ALREADY_PART_OF_GROUP", response.data["non_field_errors"])
+        membership.refresh_from_db()
+        self.assertIsNone(membership.accepted)
+
+    def test_create_rejects_duplicate_declined_membership(self):
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=False
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        response = self.client.put(reverse("membership"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        membership.refresh_from_db()
+        self.assertFalse(membership.accepted)
+
+    def test_create_rejects_duplicate_accepted_membership(self):
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        response = self.client.put(reverse("membership"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        membership.refresh_from_db()
+        self.assertTrue(membership.accepted)
+
+    def test_smtp_invitation_failure_preserves_membership_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj2.id)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        models.User_Group_Membership.objects.filter(
+            user=self.test_user_obj2, group=self.test_group_obj
+        ).delete()
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED=False,
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "django.core.mail.backends.smtp.EmailBackend.send_messages",
+                side_effect=OSError("SMTP unavailable"),
+            ):
+                response = self.client.put(reverse("membership"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.User_Group_Membership.objects.filter(
+                user=self.test_user_obj2, group=self.test_group_obj
+            ).exists()
+        )
+
+    def test_brevo_invitation_preserves_membership_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj2.id)
+        data = {
+            "user_id": str(self.test_user_obj2.id),
+            "group_id": str(self.test_group_obj.id),
+            "secret_key": "00",
+            "secret_key_nonce": "00",
+            "private_key": "00",
+            "private_key_nonce": "00",
+        }
+        models.User_Group_Membership.objects.filter(
+            user=self.test_user_obj2, group=self.test_group_obj
+        ).delete()
+        with override_settings(
+            WEB_CLIENT_URL="",
+            DISABLE_EMAIL_NEW_GROUP_MEMBERSHIP_CREATED=False,
+            EMAIL_BACKEND="anymail.backends.brevo.EmailBackend",
+            ANYMAIL={"BREVO_API_KEY": "test-key"},
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            with patch(
+                "anymail.backends.brevo.EmailBackend.send_messages", return_value=1
+            ):
+                response = self.client.put(reverse("membership"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertIsNone(cache.get(key))
+        self.assertTrue(
+            models.User_Group_Membership.objects.filter(
+                user=self.test_user_obj2, group=self.test_group_obj
+            ).exists()
+        )
+
     def test_create_failure_invalid_secret_key_type(self):
         """
         Tests to create a membership with an invalid secret key type
@@ -709,6 +907,204 @@ class DeleteMembershipTest(APITestCaseExtended):
         except models.User_Group_Membership.DoesNotExist:
             pass
 
+    def test_accepted_admin_deletes_accepted_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=True
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=target.id).exists()
+        )
+
+    def test_accepted_admin_deletes_declined_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=False
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=target.id).exists()
+        )
+
+    def test_accepted_admin_deletes_pending_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=None
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=target.id).exists()
+        )
+
+    def test_declined_admin_cannot_delete_accepted_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=True
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertTrue(target.accepted)
+
+    def test_declined_admin_cannot_delete_declined_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=False
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.accepted)
+
+    def test_declined_admin_cannot_delete_pending_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=None
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertIsNone(target.accepted)
+
+    def test_pending_admin_cannot_delete_accepted_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=True
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertTrue(target.accepted)
+
+    def test_pending_admin_cannot_delete_declined_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=False
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.accepted)
+
+    def test_pending_admin_cannot_delete_pending_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2, group=self.test_group_obj, accepted=None
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(target.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertIsNone(target.accepted)
+
+    def test_accepted_member_can_remove_own_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        group = models.Group.objects.create(name="Self removal", public_key="key")
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj,
+            group=group,
+            group_admin=False,
+            share_admin=False,
+            accepted=True,
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(membership.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=membership.id).exists()
+        )
+
+    def test_declined_member_can_remove_own_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        group = models.Group.objects.create(name="Self removal", public_key="key")
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj,
+            group=group,
+            group_admin=False,
+            share_admin=False,
+            accepted=False,
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(membership.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=membership.id).exists()
+        )
+
+    def test_pending_member_can_remove_own_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        group = models.Group.objects.create(name="Self removal", public_key="key")
+        membership = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj,
+            group=group,
+            group_admin=False,
+            share_admin=False,
+            accepted=None,
+        )
+        response = self.client.delete(
+            reverse("membership"), {"membership_id": str(membership.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            models.User_Group_Membership.objects.filter(pk=membership.id).exists()
+        )
+
+    def test_delete_invalidates_member_status_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        key = "psono_user_status_" + str(self.test_user_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            self.assertEqual(cache.get(key), {"cached": True})
+            response = self.client.delete(
+                reverse("membership"),
+                {"membership_id": str(self.test_membership_obj.id)},
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
+
     def test_delete_failure_no_membership_id_provided(self):
         """
         Tests to delete a membership without a membership id
@@ -1004,6 +1400,189 @@ class UpdateMembershipTest(APITestCaseExtended):
 
         self.assertFalse(membership.group_admin)
 
+    def test_accepted_admin_updates_accepted_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=True,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        target.refresh_from_db()
+        self.assertTrue(target.group_admin)
+        self.assertTrue(target.share_admin)
+        self.assertTrue(target.accepted)
+
+    def test_accepted_admin_updates_declined_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=False,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        target.refresh_from_db()
+        self.assertTrue(target.group_admin)
+        self.assertTrue(target.share_admin)
+        self.assertFalse(target.accepted)
+
+    def test_accepted_admin_updates_pending_membership(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=None,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        target.refresh_from_db()
+        self.assertTrue(target.group_admin)
+        self.assertTrue(target.share_admin)
+        self.assertIsNone(target.accepted)
+
+    def test_declined_admin_cannot_update_accepted_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=True,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertTrue(target.accepted)
+
+    def test_declined_admin_cannot_update_declined_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=False,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertFalse(target.accepted)
+
+    def test_declined_admin_cannot_update_pending_membership(self):
+        self.test_membership_obj.accepted = False
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=None,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertIsNone(target.accepted)
+
+    def test_pending_admin_cannot_update_accepted_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=True,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertTrue(target.accepted)
+
+    def test_pending_admin_cannot_update_declined_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=False,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertFalse(target.accepted)
+
+    def test_pending_admin_cannot_update_pending_membership(self):
+        self.test_membership_obj.accepted = None
+        self.test_membership_obj.save(update_fields=["accepted"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        target = models.User_Group_Membership.objects.create(
+            user=self.test_user_obj2,
+            group=self.test_group_obj,
+            accepted=None,
+            group_admin=False,
+            share_admin=False,
+        )
+        response = self.client.post(
+            reverse("membership"),
+            {"membership_id": str(target.id), "group_admin": True, "share_admin": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        target.refresh_from_db()
+        self.assertFalse(target.group_admin)
+        self.assertFalse(target.share_admin)
+        self.assertIsNone(target.accepted)
+
     def test_update_success_to_group_admin(self):
         """
         Tests to update a membership without providing group admin rights as yes or no
@@ -1025,6 +1604,18 @@ class UpdateMembershipTest(APITestCaseExtended):
         )
 
         self.assertFalse(membership.group_admin)
+
+    def test_update_missing_membership_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("membership"),
+            {
+                "membership_id": "00000000-0000-4000-8000-000000000001",
+                "group_admin": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
 
     def test_update_failure_with_no_membership_id(self):
         """

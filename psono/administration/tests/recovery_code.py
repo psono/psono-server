@@ -157,6 +157,19 @@ class ReadRecoveryCodeTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_recovery_read_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("admin_recovery_code"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ADMIN_PERMISSION_DENIED", response.data["non_field_errors"])
+
     def test_read_recovery_code_success(self):
         """
         Tests GET method on recovery_code

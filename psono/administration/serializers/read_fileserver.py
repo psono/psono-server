@@ -28,10 +28,6 @@ class ReadFileserverSerializer(AdminCapabilitySerializerMixin, serializers.Seria
             field = "page"
             msg = "ERROR_NO_VALID_INTEGER"
             raise exceptions.ValidationError({field: msg})
-        if page and int(page) < 0:
-            field = "page"
-            msg = "ERROR_VALUE_TOO_SMALL"
-            raise exceptions.ValidationError({field: msg})
 
         page_size = self.context["request"].query_params.get("page_size", False)
         if page_size and not page_size.isdigit():

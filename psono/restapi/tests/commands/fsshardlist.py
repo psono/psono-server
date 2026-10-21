@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 import nacl.encoding
@@ -46,4 +48,6 @@ class CommandFSShardListTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsshardlist", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsshardlist", stdout=out, *args, **opts)
+        self.assertIn(str(self.shard.id), out.getvalue())

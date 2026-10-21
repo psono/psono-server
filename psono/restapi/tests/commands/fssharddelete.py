@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -23,6 +25,8 @@ class CommandFSShardDeleteTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fssharddelete", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fssharddelete", stdout=out, *args, **opts)
+        self.assertIn("Deleted successful.", out.getvalue())
 
         self.assertEqual(models.Fileserver_Shard.objects.count(), 0)

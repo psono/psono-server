@@ -167,6 +167,26 @@ class UserCreateSecretTest(APITestCaseExtended):
 
         self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
 
+    def test_creation_rejects_both_parent_types(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        count = models.Secret.objects.count()
+        response = self.client.put(
+            reverse("secret"),
+            {
+                "data": "ciphertext",
+                "data_nonce": "nonce",
+                "link_id": "00000000-0000-4000-8000-000000000001",
+                "parent_datastore_id": str(self.test_datastore_obj.id),
+                "parent_share_id": "00000000-0000-4000-8000-000000000002",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH",
+            response.data["non_field_errors"],
+        )
+        self.assertEqual(models.Secret.objects.count(), count)
+
     def test_without_data(self):
         """
         Tests to create a secret without data

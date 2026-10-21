@@ -115,6 +115,49 @@ class DuoVerifyTests(APITestCaseExtended):
             }
         )
 
+    def test_system_wide_duo_and_missing_device_verification(self):
+        from django.test import override_settings
+
+        duo = models.Duo.objects.get(user=self.test_user_obj)
+        duo.duo_host = ""
+        duo.save(update_fields=["duo_host"])
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token_obj)
+        with override_settings(
+            DUO_INTEGRATION_KEY="integration",
+            DUO_SECRET_KEY="secret",
+            DUO_API_HOSTNAME="api-test.duosecurity.com",
+        ):
+            with patch(
+                "restapi.utils.duo.duo_client.Auth.auth",
+                return_value={"result": "allow"},
+            ):
+                response = self.client.post(reverse("authentication_duo_verify"), {})
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+        duo.delete()
+        response = self.client.post(reverse("authentication_duo_verify"), {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_DUO_FOUND", response.data["non_field_errors"])
+
+    def test_multifactor_verification_preserves_other_pending_factors(self):
+        from django.test import override_settings
+
+        self.token_obj.duo_2fa = True
+        self.token_obj.google_authenticator_2fa = True
+        self.token_obj.save(update_fields=["duo_2fa", "google_authenticator_2fa"])
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token_obj)
+        with override_settings(MULTIFACTOR_ENABLED=True):
+            with patch(
+                "restapi.utils.duo.duo_client.Auth.auth",
+                return_value={"result": "allow"},
+            ):
+                response = self.client.post(
+                    reverse("authentication_duo_verify"), {"duo_token": "123456"}
+                )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.token_obj.refresh_from_db()
+        self.assertFalse(self.token_obj.duo_2fa)
+        self.assertTrue(self.token_obj.google_authenticator_2fa)
+
     def test_get_authentication_duo_verify(self):
         """
         Tests GET method on authentication_duo_verify
@@ -396,6 +439,84 @@ class DuoTests(APITestCaseExtended):
             user_sauce=self.test_user_sauce,
             is_email_active=True,
         )
+
+    def test_system_wide_enrollment_and_activation_use_real_database_records(self):
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(
+            ALLOWED_SECOND_FACTORS=["duo"],
+            DUO_INTEGRATION_KEY="integration",
+            DUO_SECRET_KEY="secret",
+            DUO_API_HOSTNAME="api-test.duosecurity.com",
+        ):
+            with (
+                patch(
+                    "restapi.utils.duo.duo_client.Auth.check", return_value={"time": 10}
+                ),
+                patch(
+                    "restapi.utils.duo.duo_client.Auth.preauth",
+                    return_value={"result": "enroll"},
+                ),
+                patch(
+                    "restapi.utils.duo.duo_client.Auth.enroll",
+                    return_value={
+                        "enrollment": True,
+                        "expiration": 20,
+                        "user_id": "external-user",
+                        "activation_code": "activation",
+                    },
+                ),
+            ):
+                response = self.client.put(
+                    reverse("user_duo"), {"use_system_wide_duo": True}
+                )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            duo = models.Duo.objects.get(user=self.test_user_obj)
+            self.assertEqual(duo.duo_host, "")
+            self.assertFalse(duo.active)
+            with (
+                patch(
+                    "restapi.utils.duo.duo_client.Auth.enroll_status",
+                    return_value="active",
+                ),
+                patch(
+                    "restapi.utils.duo.duo_client.Auth.auth",
+                    return_value={"result": "allow"},
+                ),
+            ):
+                response = self.client.post(
+                    reverse("user_duo"), {"duo_id": str(duo.id), "duo_token": "123456"}
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+            duo.refresh_from_db()
+            self.assertTrue(duo.active)
+
+    def test_disabled_provider_and_disallowed_activation_host(self):
+        from django.test import override_settings
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        with override_settings(ALLOWED_SECOND_FACTORS=["ga"]):
+            self.assertEqual(
+                self.client.put(
+                    reverse("user_duo"),
+                    {"title": "Disabled", "host": "api-test.duosecurity.com"},
+                ).status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+        duo = models.Duo.objects.create(
+            user=self.test_user_obj,
+            duo_host="localhost",
+            duo_secret_key=encrypt_with_db_secret("secret"),
+            active=False,
+        )
+        with override_settings(DUO_SECRET_KEY=None):
+            with patch("restapi.utils.duo.duo_client.Auth.auth") as external:
+                response = self.client.post(
+                    reverse("user_duo"), {"duo_id": str(duo.id)}
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                external.assert_not_called()
 
     def test_get_user_duo(self):
         """

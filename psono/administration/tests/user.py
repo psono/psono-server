@@ -94,6 +94,131 @@ class ReadUserTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_list_rejects_non_numeric_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"page": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"page": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.data)
+
+    def test_list_rejects_negative_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"page_size": "-1"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_non_numeric_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"page_size": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_rejects_zero_page_size(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"page_size": "0"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page_size", response.data)
+
+    def test_list_search_and_pagination(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("admin_user")
+        response = self.client.get(
+            url,
+            {
+                "search": self.test_user_obj.username,
+                "page_size": "1",
+                "page": "0",
+                "ordering": "username",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["users"][0]["id"], self.test_user_obj.id)
+
+    def test_list_accepts_empty_ordering(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("admin_user"), {"ordering": ""})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_detail_returns_related_records_without_cryptographic_secrets(self):
+        from restapi.utils import encrypt_with_db_secret
+
+        user = self.test_user_obj
+        duo = models.Duo.objects.create(
+            user=user,
+            title="Duo",
+            duo_secret_key=encrypt_with_db_secret("hidden-duo-key"),
+        )
+        ga = models.Google_Authenticator.objects.create(
+            user=user,
+            title="Authenticator",
+            secret=encrypt_with_db_secret("hidden-totp-key"),
+        )
+        yubikey = models.Yubikey_OTP.objects.create(
+            user=user,
+            title="Yubikey",
+            yubikey_id=encrypt_with_db_secret("hidden-key-id"),
+        )
+        webauthn = models.Webauthn.objects.create(
+            user=user,
+            title="WebAuthn",
+            credential_id="credential",
+            credential_public_key="hidden-public-key",
+            challenge="hidden-challenge",
+        )
+        ivalt = models.Ivalt.objects.create(
+            user=user, mobile=encrypt_with_db_secret("+10123456789")
+        )
+        recovery = models.Recovery_Code.objects.create(
+            user=user, recovery_authkey="hidden-recovery-key"
+        )
+        emergency = models.Emergency_Code.objects.create(
+            user=user,
+            emergency_authkey="hidden-emergency-key",
+            description="Emergency",
+            activation_delay=24,
+        )
+        secret = models.Secret.objects.create(
+            user=user, data=b"hidden-ciphertext", data_nonce="nonce"
+        )
+        link = models.Link_Share.objects.create(
+            user=user,
+            secret=secret,
+            public_title="Shared",
+            node=b"node",
+            node_nonce="nonce",
+        )
+        share = models.Share.objects.create(
+            user=user, data=b"hidden-share", data_nonce="nonce"
+        )
+        right = models.User_Share_Right.objects.create(
+            user=user, share=share, accepted=True, read=True
+        )
+        token = models.Token.objects.create(user=user, device_description="Browser")
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(
+            reverse("admin_user", kwargs={"user_id": str(user.id)})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["duos"][0]["id"], duo.id)
+        self.assertNotIn("duo_secret_key", response.data["duos"][0])
+        self.assertEqual(response.data["google_authenticators"][0]["id"], ga.id)
+        self.assertNotIn("secret", response.data["google_authenticators"][0])
+        self.assertEqual(response.data["yubikey_otps"][0]["id"], yubikey.id)
+        self.assertEqual(response.data["webauthns"][0]["id"], webauthn.id)
+        self.assertNotIn("challenge", response.data["webauthns"][0])
+        self.assertEqual(response.data["ivalts"][0]["id"], ivalt.id)
+        self.assertEqual(response.data["ivalts"][0]["mobile"], "+10123456789")
+        self.assertEqual(response.data["recovery_codes"][0]["id"], recovery.id)
+        self.assertEqual(response.data["emergency_codes"][0]["id"], emergency.id)
+        self.assertEqual(response.data["link_shares"][0]["id"], link.id)
+        self.assertEqual(response.data["share_rights"][0]["id"], right.id)
+        self.assertEqual(response.data["sessions"][0]["id"], token.id)
+
     def test_read_specific_user_success(self):
         """
         Tests GET method on a specific user
@@ -247,6 +372,81 @@ class CreateUserTests(APITestCaseExtended):
             is_staff=True,
             is_superuser=True,
         )
+
+    def test_creation_generates_password_and_persists_tenant_membership(self):
+        tenant = models.Tenant.objects.create(name="Created user tenant")
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            reverse("admin_user"),
+            {
+                "username": "generated-user@psono.pw",
+                "email": "generated-user@example.com",
+                "tenant_ids": [str(tenant.id)],
+                "require_password_change": False,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["password"]), 12)
+        user = models.User.objects.get(pk=response.data["id"])
+        self.assertFalse(user.require_password_change)
+        self.assertTrue(
+            models.TenantUserMembership.objects.filter(
+                user=user, tenant=tenant
+            ).exists()
+        )
+        self.assertTrue(user.private_key)
+        self.assertTrue(user.secret_key)
+
+    def test_creation_rejects_missing_tenants_and_duplicate_accounts(self):
+        from uuid import uuid4
+        import bcrypt
+
+        self.client.force_authenticate(user=self.admin)
+        base = {
+            "username": "new-account@psono.pw",
+            "email": "new-account@example.com",
+            "password": "Password",
+        }
+        response = self.client.post(
+            reverse("admin_user"), {**base, "tenant_ids": [str(uuid4())]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.test_user_obj.email_bcrypt = (
+            bcrypt.hashpw(self.test_email.encode(), settings.EMAIL_SECRET_SALT.encode())
+            .decode()
+            .replace(settings.EMAIL_SECRET_SALT, "", 1)
+        )
+        self.test_user_obj.save(update_fields=["email_bcrypt"])
+        response = self.client.post(
+            reverse("admin_user"), {**base, "email": self.test_email}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "USER_WITH_EMAIL_ALREADY_EXISTS", response.data["non_field_errors"]
+        )
+        response = self.client.post(
+            reverse("admin_user"), {**base, "username": self.test_user_obj.username}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "USER_WITH_USERNAME_ALREADY_EXISTS", response.data["non_field_errors"]
+        )
+        tenant = models.Tenant.objects.create(name="Scoped tenant")
+        role = models.AdministrativeRole.objects.create(name="Scoped user creator")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.create"
+        )
+        assignment = models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=False
+        )
+        models.AdministrativeRoleAssignmentTenant.objects.create(
+            assignment=assignment, tenant=tenant
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(reverse("admin_user"), base)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("TENANT_REQUIRED", response.data["non_field_errors"])
+        self.assertFalse(models.User.objects.filter(username=base["username"]).exists())
 
     def test_successful(self):
         """
@@ -432,6 +632,26 @@ class UpdateUserTests(APITestCaseExtended):
             is_staff=True,
             is_superuser=True,
         )
+
+    def test_update_account_activation_and_administrative_flags(self):
+        self.client.force_authenticate(user=self.admin)
+        data = {"user_id": str(self.test_user_obj.id)}
+        response = self.client.put(
+            reverse("admin_user"),
+            {**data, "is_email_active": False, "is_superuser": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertFalse(self.test_user_obj.is_email_active)
+        self.assertTrue(self.test_user_obj.is_superuser)
+        self.assertTrue(self.test_user_obj.is_staff)
+        response = self.client.put(
+            reverse("admin_user"), {**data, "is_superuser": False, "is_staff": False}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertFalse(self.test_user_obj.is_superuser)
+        self.assertFalse(self.test_user_obj.is_staff)
 
     def test_update_user_success(self):
         """

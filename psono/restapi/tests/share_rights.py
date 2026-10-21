@@ -9,6 +9,30 @@ from restapi import models
 
 
 class UserShareRightsTest(APITestCaseExtended):
+    def test_put_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.put(
+                reverse(
+                    "share_rights", kwargs={"share_id": str(self.test_share1_obj.id)}
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(
+                reverse(
+                    "share_rights", kwargs={"share_id": str(self.test_share1_obj.id)}
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to read/create/grant any share right, when normal inherited rights exist (nor not exist)
     """
@@ -198,6 +222,23 @@ class UserShareRightsTest(APITestCaseExtended):
         response = self.client.get(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_group_rights_are_listed_with_expiration_metadata(self):
+        group = models.Group.objects.create(name="Shared group", public_key="key")
+        deadline = timezone.now() + timedelta(days=1)
+        right = models.Group_Share_Right.objects.create(
+            group=group, share=self.test_share3_obj, expiration_date=deadline, read=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("share_rights", kwargs={"share_id": self.test_share3_obj.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["group_share_rights"][0]["id"], right.id)
+        self.assertEqual(
+            response.data["group_share_rights"][0]["expiration_date"],
+            deadline.isoformat(),
+        )
 
     def test_list_shares(self):
         """

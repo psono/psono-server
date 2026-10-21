@@ -116,6 +116,41 @@ class UserRightsAccept(APITestCaseExtended):
             user_id=self.test_user3_obj.id, data=b"my-data", data_nonce="12345"
         )
 
+    def test_accept_without_read_permission_withholds_data_and_invalidates_cache(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        right = models.User_Share_Right.objects.create(
+            user=self.test_user2_obj,
+            creator=self.test_user_obj,
+            share=self.test_share1_obj,
+            read=False,
+            accepted=None,
+            key="original-key",
+            key_nonce="original-nonce",
+        )
+        self.client.force_authenticate(user=self.test_user2_obj)
+        data = {"share_right_id": str(right.id)}
+        response = self.client.post(
+            reverse("share_right_accept"), {**data, "key_type": "invalid"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            response = self.client.post(reverse("share_right_accept"), data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
+        self.assertNotIn("share_data", response.data)
+        right.refresh_from_db()
+        self.assertTrue(right.accepted)
+        self.assertEqual(right.key, "original-key")
+
     def test_accept_share_right_no_uuid(self):
         """
         Tests to accept a share right without uuid

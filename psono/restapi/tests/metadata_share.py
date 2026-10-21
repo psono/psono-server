@@ -13,6 +13,50 @@ import binascii
 
 
 class MetadataShareTest(APITestCaseExtended):
+    def test_malformed_share_id_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("metadata_share", kwargs={"share_id": "malformed"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("SHARE_ID_MALFORMED", response.data["non_field_errors"])
+
+    def test_put_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.put(
+                reverse(
+                    "metadata_share", kwargs={"share_id": str(self.test_share1_obj.id)}
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.post(
+                reverse(
+                    "metadata_share", kwargs={"share_id": str(self.test_share1_obj.id)}
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(
+                reverse(
+                    "metadata_share", kwargs={"share_id": str(self.test_share1_obj.id)}
+                ),
+                {},
+            ).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to read the metadata of a share
     """

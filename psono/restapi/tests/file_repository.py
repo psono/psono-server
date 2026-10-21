@@ -96,6 +96,110 @@ class ReadFileRepositryTest(APITestCaseExtended):
             accepted=True,
         )
 
+    def test_list_merges_direct_and_group_permissions_and_lists_group_only_access(self):
+        models.File_Repository_Right.objects.filter(user=self.test_user_obj).update(
+            read=False, write=False, grant=False
+        )
+        group = models.Group.objects.create(name="Repository readers", public_key="key")
+        models.User_Group_Membership.objects.create(
+            user=self.test_user_obj, group=group, accepted=True
+        )
+        models.Group_File_Repository_Right.objects.create(
+            group=group,
+            file_repository=self.file_repository,
+            read=True,
+            write=True,
+            grant=False,
+        )
+        other = models.File_Repository.objects.create(
+            title="Group only",
+            type="gcp_cloud_storage",
+            active=True,
+            data=encrypt_with_db_secret(
+                json.dumps(
+                    {
+                        "gcp_cloud_storage_bucket": "bucket",
+                        "gcp_cloud_storage_json_key": "{}",
+                    }
+                )
+            ).encode(),
+        )
+        models.Group_File_Repository_Right.objects.create(
+            group=group, file_repository=other, read=True, write=False, grant=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("file_repository"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        result = {item["id"]: item for item in response.data["file_repositories"]}
+        self.assertTrue(result[str(self.file_repository.id)]["read"])
+        self.assertTrue(result[str(self.file_repository.id)]["write"])
+        self.assertFalse(result[str(self.file_repository.id)]["grant"])
+        self.assertTrue(result[str(other.id)]["grant"])
+        self.assertIsNone(result[str(other.id)]["file_repository_right_id"])
+
+    def test_detail_merges_configuration_without_overwriting_repository_metadata(self):
+        self.file_repository.data = encrypt_with_db_secret(
+            json.dumps(
+                {
+                    "title": "Injected title",
+                    "read": False,
+                    "gcp_cloud_storage_bucket": "bucket",
+                }
+            )
+        ).encode()
+        self.file_repository.save(update_fields=["data"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse(
+                "file_repository",
+                kwargs={"file_repository_id": str(self.file_repository.id)},
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "Some Title")
+        self.assertTrue(response.data["read"])
+        self.assertEqual(response.data["gcp_cloud_storage_bucket"], "bucket")
+
+    def test_detail_lists_group_rights_for_grant_owner(self):
+        group = models.Group.objects.create(name="Repository group", public_key="key")
+        right = models.Group_File_Repository_Right.objects.create(
+            group=group, file_repository=self.file_repository, read=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse(
+                "file_repository",
+                kwargs={"file_repository_id": str(self.file_repository.id)},
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["group_file_repository_rights"][0]["id"], str(right.id)
+        )
+        self.assertEqual(
+            response.data["group_file_repository_rights"][0]["group_name"], group.name
+        )
+
+    def test_detail_hides_configuration_and_rights_without_read_or_grant(self):
+        self.file_repository.data = encrypt_with_db_secret(
+            json.dumps({"gcp_cloud_storage_json_key": "sensitive-key"})
+        ).encode()
+        self.file_repository.save(update_fields=["data"])
+        self.file_repository_right.read = False
+        self.file_repository_right.grant = False
+        self.file_repository_right.save(update_fields=["read", "grant"])
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse(
+                "file_repository",
+                kwargs={"file_repository_id": str(self.file_repository.id)},
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("gcp_cloud_storage_json_key", response.data)
+        self.assertEqual(response.data["file_repository_rights"], [])
+        self.assertEqual(response.data["group_file_repository_rights"], [])
+
     def test_read_all_success(self):
         """
         Tests to read all file repositories
@@ -265,6 +369,398 @@ class CreateFileRepositryTest(APITestCaseExtended):
             user_sauce="90272aaf01a2d525223f192aca069e7f5661b3a0f1b1a91f9b16d493fdf15295",
             is_email_active=True,
         )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_create_azure_blob_persists_configuration_and_owner_right(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "azure_blob_storage_account_name": "account",
+            "azure_blob_storage_account_primary_key": "secret",
+            "azure_blob_storage_account_container_name": "container",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {"title": "Repository", "type": "azure_blob", **configuration},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        repository = models.File_Repository.objects.get(type="azure_blob")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(repository.data.decode())), configuration
+        )
+        self.assertTrue(
+            models.File_Repository_Right.objects.filter(
+                user=self.test_user_obj,
+                file_repository=repository,
+                accepted=True,
+                grant=True,
+            ).exists()
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_create_azure_blob_requires_account_name(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "azure_blob",
+                "azure_blob_storage_account_primary_key": "secret",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_create_azure_blob_requires_primary_key(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "account",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_create_azure_blob_requires_container_name(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "account",
+                "azure_blob_storage_account_primary_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_persists_configuration_and_owner_right(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "other_s3_bucket": "bucket",
+            "other_s3_region": "region",
+            "other_s3_access_key_id": "key",
+            "other_s3_secret_access_key": "secret",
+            "other_s3_endpoint_url": "https://objects.example.com",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {"title": "Repository", "type": "other_s3", **configuration},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        repository = models.File_Repository.objects.get(type="other_s3")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(repository.data.decode())), configuration
+        )
+        self.assertTrue(
+            models.File_Repository_Right.objects.filter(
+                user=self.test_user_obj,
+                file_repository=repository,
+                accepted=True,
+                grant=True,
+            ).exists()
+        )
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_requires_bucket(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "other_s3",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_requires_region(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_requires_access_key_id(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_requires_secret_access_key(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_other_s3_requires_endpoint_url(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_create_backblaze_persists_configuration_and_owner_right(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "backblaze_bucket": "bucket",
+            "backblaze_region": "region",
+            "backblaze_access_key_id": "key",
+            "backblaze_secret_access_key": "secret",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {"title": "Repository", "type": "backblaze", **configuration},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        repository = models.File_Repository.objects.get(type="backblaze")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(repository.data.decode())), configuration
+        )
+        self.assertTrue(
+            models.File_Repository_Right.objects.filter(
+                user=self.test_user_obj,
+                file_repository=repository,
+                accepted=True,
+                grant=True,
+            ).exists()
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_create_backblaze_requires_bucket(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "backblaze",
+                "backblaze_region": "region",
+                "backblaze_access_key_id": "key",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_create_backblaze_requires_region(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_access_key_id": "key",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_create_backblaze_requires_access_key_id(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_region": "region",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_create_backblaze_requires_secret_access_key(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_region": "region",
+                "backblaze_access_key_id": "key",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_create_do_spaces_persists_configuration_and_owner_right(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "do_space": "space",
+            "do_region": "region",
+            "do_key": "key",
+            "do_secret": "secret",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {"title": "Repository", "type": "do_spaces", **configuration},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        repository = models.File_Repository.objects.get(type="do_spaces")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(repository.data.decode())), configuration
+        )
+        self.assertTrue(
+            models.File_Repository_Right.objects.filter(
+                user=self.test_user_obj,
+                file_repository=repository,
+                accepted=True,
+                grant=True,
+            ).exists()
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_create_do_spaces_requires_space(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "do_spaces",
+                "do_region": "region",
+                "do_key": "key",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_create_do_spaces_requires_region(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_key": "key",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_create_do_spaces_requires_key(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_region": "region",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_create_do_spaces_requires_secret(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_region": "region",
+                "do_key": "key",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
 
     def test_create_success_gcp(self):
         """
@@ -671,6 +1167,462 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             grant=True,
             accepted=True,
         )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_update_azure_blob_persists_configuration(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "azure_blob_storage_account_name": "account",
+            "azure_blob_storage_account_primary_key": "secret",
+            "azure_blob_storage_account_container_name": "container",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "azure_blob",
+                **configuration,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(self.file_repository.type, "azure_blob")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(self.file_repository.data.decode())),
+            configuration,
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_update_azure_blob_requires_account_name(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "azure_blob",
+                "azure_blob_storage_account_primary_key": "secret",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_update_azure_blob_requires_primary_key(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "account",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_update_azure_blob_requires_container_name(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "account",
+                "azure_blob_storage_account_primary_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_persists_configuration(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "other_s3_bucket": "bucket",
+            "other_s3_region": "region",
+            "other_s3_access_key_id": "key",
+            "other_s3_secret_access_key": "secret",
+            "other_s3_endpoint_url": "https://objects.example.com",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                **configuration,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(self.file_repository.type, "other_s3")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(self.file_repository.data.decode())),
+            configuration,
+        )
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_requires_bucket(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_requires_region(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_requires_access_key_id(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_secret_access_key": "secret",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_requires_secret_access_key(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_endpoint_url": "https://objects.example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=["other_s3"],
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_other_s3_requires_endpoint_url(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "other_s3",
+                "other_s3_bucket": "bucket",
+                "other_s3_region": "region",
+                "other_s3_access_key_id": "key",
+                "other_s3_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_update_backblaze_persists_configuration(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "backblaze_bucket": "bucket",
+            "backblaze_region": "region",
+            "backblaze_access_key_id": "key",
+            "backblaze_secret_access_key": "secret",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "backblaze",
+                **configuration,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(self.file_repository.type, "backblaze")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(self.file_repository.data.decode())),
+            configuration,
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_update_backblaze_requires_bucket(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "backblaze",
+                "backblaze_region": "region",
+                "backblaze_access_key_id": "key",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_update_backblaze_requires_region(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_access_key_id": "key",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_update_backblaze_requires_access_key_id(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_region": "region",
+                "backblaze_secret_access_key": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["backblaze"])
+    def test_update_backblaze_requires_secret_access_key(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "backblaze",
+                "backblaze_bucket": "bucket",
+                "backblaze_region": "region",
+                "backblaze_access_key_id": "key",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_update_do_spaces_persists_configuration(self):
+        from restapi.utils import decrypt_with_db_secret
+
+        configuration = {
+            "do_space": "space",
+            "do_region": "region",
+            "do_key": "key",
+            "do_secret": "secret",
+        }
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "do_spaces",
+                **configuration,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(self.file_repository.type, "do_spaces")
+        self.assertEqual(
+            json.loads(decrypt_with_db_secret(self.file_repository.data.decode())),
+            configuration,
+        )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_update_do_spaces_requires_space(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "do_spaces",
+                "do_region": "region",
+                "do_key": "key",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_update_do_spaces_requires_region(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_key": "key",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_update_do_spaces_requires_key(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_region": "region",
+                "do_secret": "secret",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["do_spaces"])
+    def test_update_do_spaces_requires_secret(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "do_spaces",
+                "do_space": "space",
+                "do_region": "region",
+                "do_key": "key",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
 
     def test_update_success_gcp(self):
         """

@@ -22,6 +22,27 @@ def mock_request_post(url, data=None, json=None, **kwargs):
 
 
 class BulkCreateSecretTest(APITestCaseExtended):
+    def test_get_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.get(reverse("bulk_secret")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.post(reverse("bulk_secret"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        self.assertEqual(
+            self.client.delete(reverse("bulk_secret"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to create multiple secret in a bulk request (PUT)
     """
@@ -165,6 +186,30 @@ class BulkCreateSecretTest(APITestCaseExtended):
         self.response1 = self.client.post(url, self.initial_data1)
 
         self.assertEqual(self.response1.status_code, status.HTTP_201_CREATED)
+
+    def test_creation_rejects_both_parent_types(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        count = models.Secret.objects.count()
+        response = self.client.put(
+            reverse("bulk_secret"),
+            {
+                "secrets": [
+                    {
+                        "data": "ciphertext",
+                        "data_nonce": "nonce",
+                        "link_id": "00000000-0000-4000-8000-000000000001",
+                    }
+                ],
+                "parent_datastore_id": str(self.test_datastore_obj.id),
+                "parent_share_id": "00000000-0000-4000-8000-000000000002",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH",
+            response.data["non_field_errors"],
+        )
+        self.assertEqual(models.Secret.objects.count(), count)
 
     def test_create_secret_in_datastore(self):
         """

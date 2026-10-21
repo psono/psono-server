@@ -133,6 +133,36 @@ class FileRepositryUploadTest(APITestCaseExtended):
         )
         self.file_transfer.write = True
 
+    def test_azure_blob_generates_real_signed_upload_url(self):
+        import base64
+        from urllib.parse import urlparse, parse_qs
+
+        configuration = {
+            "azure_blob_storage_account_name": "account",
+            "azure_blob_storage_account_primary_key": base64.b64encode(
+                bytes(range(32))
+            ).decode(),
+            "azure_blob_storage_account_container_name": "container",
+        }
+        self.file_repository.type = "azure_blob"
+        self.file_repository.data = encrypt_with_db_secret(
+            json.dumps(configuration)
+        ).encode()
+        self.file_repository.save(update_fields=["type", "data"])
+        self.client.force_authenticate(
+            user=self.test_user_obj, token=self.file_transfer
+        )
+        response = self.client.put(
+            reverse("file_repository_upload"),
+            {"hash_checksum": "abc", "chunk_position": 1, "chunk_size": 512},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        parsed = urlparse(response.data["url"])
+        self.assertEqual(parsed.scheme, "https")
+        self.assertIn("sig", parse_qs(parsed.query))
+        self.assertIn("abc", parsed.path)
+        self.assertEqual(models.File_Chunk.objects.filter(file=self.file).count(), 1)
+
     def test_get(self):
         """
         Tests GET on file repository upload

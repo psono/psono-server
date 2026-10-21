@@ -31,6 +31,27 @@ import datetime
 
 
 class FileserverAlive(APITestCaseExtended):
+    def test_get_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.get(reverse("fileserver_alive")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.post(reverse("fileserver_alive"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.delete(reverse("fileserver_alive"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     """
     Test to accept share rights
     """
@@ -83,6 +104,14 @@ class FileserverAlive(APITestCaseExtended):
             delete_capability=True,
             valid_till=timezone.now() + datetime.timedelta(seconds=30),
         )
+
+    def test_invalid_heartbeat_does_not_modify_registered_fileserver(self):
+        before = self.fileserver1.valid_till
+        self.client.force_authenticate(user=self.fileserver1, token=self.fileserver1)
+        response = self.client.put(reverse("fileserver_alive"), ["invalid"])
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.fileserver1.refresh_from_db()
+        self.assertEqual(self.fileserver1.valid_till, before)
 
     def test_alive_initial(self):
         """
@@ -189,7 +218,7 @@ class FileserverAlive(APITestCaseExtended):
 
         self.assertGreater(updated_fs.valid_till, old_valid_till)
 
-    def test_cluster_shard_link_share_access_cannot_be_exceeded(self):
+    def test_cluster_shard_rejects_explicit_link_share_access_without_permission(self):
         self.link1.allow_link_shares = False
         self.link1.save(update_fields=["allow_link_shares"])
         shard = {
@@ -199,15 +228,39 @@ class FileserverAlive(APITestCaseExtended):
             "delete": True,
         }
 
-        for announced in ({**shard, "allow_link_shares": True}, shard):
-            with self.subTest(announced=announced):
-                with self.assertRaisesMessage(
-                    AuthenticationFailed, "No link share permission for shard."
-                ):
-                    FileserverAliveAuthentication.validate_cluster_shard_access(
-                        self.cluster1.id, [announced]
-                    )
+        with self.assertRaisesMessage(
+            AuthenticationFailed, "No link share permission for shard."
+        ):
+            FileserverAliveAuthentication.validate_cluster_shard_access(
+                self.cluster1.id, [{**shard, "allow_link_shares": True}]
+            )
 
+    def test_cluster_shard_rejects_default_link_share_access_without_permission(self):
+        self.link1.allow_link_shares = False
+        self.link1.save(update_fields=["allow_link_shares"])
+        shard = {
+            "shard_id": str(self.shard1.id),
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
+        with self.assertRaisesMessage(
+            AuthenticationFailed, "No link share permission for shard."
+        ):
+            FileserverAliveAuthentication.validate_cluster_shard_access(
+                self.cluster1.id, [shard]
+            )
+
+    def test_cluster_shard_allows_explicitly_disabled_link_share_access(self):
+        self.link1.allow_link_shares = False
+        self.link1.save(update_fields=["allow_link_shares"])
+        shard = {
+            "shard_id": str(self.shard1.id),
+            "read": True,
+            "write": True,
+            "delete": True,
+            "allow_link_shares": False,
+        }
         FileserverAliveAuthentication.validate_cluster_shard_access(
-            self.cluster1.id, [{**shard, "allow_link_shares": False}]
+            self.cluster1.id, [shard]
         )

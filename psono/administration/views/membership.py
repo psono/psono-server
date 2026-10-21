@@ -16,7 +16,7 @@ from administration.serializers.read_administration import ReadMembershipSeriali
 class MembershipView(GenericAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (AdminPermission,)
-    allowed_methods = ("GET", "OPTIONS", "HEAD")
+    allowed_methods = ("GET", "PUT", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
         if self.request.method == "PUT":

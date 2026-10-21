@@ -442,6 +442,24 @@ class DeleteYubikeyOTPTests(APITestCaseExtended):
 
 
 class TenantScopedYubikeyTests(AdministrativeAccessTestCase):
+    def test_delete_preserves_enabled_flag_when_another_active_yubikey_remains(self):
+        removed = models.Yubikey_OTP.objects.create(
+            user=self.user_a, title="Removed", yubikey_id="removed-key", active=True
+        )
+        retained = models.Yubikey_OTP.objects.create(
+            user=self.user_a, title="Retained", yubikey_id="retained-key", active=True
+        )
+        self.user_a.yubikey_otp_enabled = True
+        self.user_a.save(update_fields=["yubikey_otp_enabled"])
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.delete(
+            reverse("admin_yubikey_otp"), {"yubikey_otp_id": str(removed.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user_a.refresh_from_db()
+        self.assertTrue(self.user_a.yubikey_otp_enabled)
+        self.assertTrue(models.Yubikey_OTP.objects.filter(pk=retained.id).exists())
+
     def test_tenant_scoped_yubikey_delete_rejects_other_tenant(self):
         self.assert_tenant_scoped_delete(
             "admin_yubikey_otp",

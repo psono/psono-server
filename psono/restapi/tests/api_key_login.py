@@ -15,6 +15,24 @@ from restapi import models
 
 
 class APIKeyLoginTest(APITestCaseExtended):
+    def test_get_is_not_supported(self):
+        self.assertEqual(
+            self.client.get(reverse("api_key_login")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_put_is_not_supported(self):
+        self.assertEqual(
+            self.client.put(reverse("api_key_login"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.assertEqual(
+            self.client.delete(reverse("api_key_login"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def setUp(self):
         user_private_key = PrivateKey.generate()
         self.user = models.User.objects.create(
@@ -52,6 +70,179 @@ class APIKeyLoginTest(APITestCaseExtended):
                 encoder=nacl.encoding.HexEncoder
             ).decode(),
         )
+
+    def test_restricted_api_key_cannot_create_session(self):
+        self.api_key.restrict_to_secrets = True
+        self.api_key.save(update_fields=["restrict_to_secrets"])
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        response = self.client.post(
+            reverse("api_key_login"),
+            {
+                "info": info,
+                "signature": self.signing_key.sign(info.encode()).signature.hex(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "API_KEY_RESTRICTED_TO_SECRETS")
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_rejects_invalid_json(self):
+        self.assertEqual(
+            self.client.post(
+                reverse("api_key_login"), {"info": "{", "signature": "00"}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_login_rejects_missing_api_key(self):
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": "00000000-0000-4000-8000-000000000001",
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("api_key_login"),
+                {
+                    "info": info,
+                    "signature": self.signing_key.sign(info.encode()).signature.hex(),
+                },
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_rejects_inactive_api_key(self):
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        payload = {
+            "info": info,
+            "signature": self.signing_key.sign(info.encode()).signature.hex(),
+        }
+        self.api_key.active = False
+        self.api_key.save(update_fields=["active"])
+        self.assertEqual(
+            self.client.post(reverse("api_key_login"), payload).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_rejects_inactive_user(self):
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        payload = {
+            "info": info,
+            "signature": self.signing_key.sign(info.encode()).signature.hex(),
+        }
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self.assertEqual(
+            self.client.post(reverse("api_key_login"), payload).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_rejects_user_with_inactive_email(self):
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        payload = {
+            "info": info,
+            "signature": self.signing_key.sign(info.encode()).signature.hex(),
+        }
+        self.user.is_email_active = False
+        self.user.save(update_fields=["is_email_active"])
+        self.assertEqual(
+            self.client.post(reverse("api_key_login"), payload).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_rejects_invalid_signature(self):
+        session = PrivateKey.generate()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+            }
+        )
+        payload = {"info": info}
+        self.assertEqual(
+            self.client.post(
+                reverse("api_key_login"), {**payload, "signature": "00" * 64}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(models.Token.objects.filter(user=self.user).exists())
+
+    def test_login_parses_device_time_and_revokes_previous_sessions_when_configured(
+        self,
+    ):
+        from django.test import override_settings
+        from django.utils import timezone
+
+        old = models.Token.objects.create(user=self.user, active=True)
+        session = PrivateKey.generate()
+        device_time = timezone.now()
+        info = json.dumps(
+            {
+                "api_key_id": str(self.api_key.id),
+                "session_public_key": session.public_key.encode(
+                    nacl.encoding.HexEncoder
+                ).decode(),
+                "device_time": device_time.isoformat(),
+                "device_description": "Test browser",
+                "session_duration": 10**9,
+            }
+        )
+        with override_settings(ALLOW_MULTIPLE_SESSIONS=False):
+            response = self.client.post(
+                reverse("api_key_login"),
+                {
+                    "info": info,
+                    "signature": self.signing_key.sign(info.encode()).signature.hex(),
+                },
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.Token.objects.filter(pk=old.pk).exists())
+        token = models.Token.objects.get(user=self.user)
+        self.assertEqual(token.client_date, device_time)
+        self.assertEqual(token.device_description, "Test browser")
+        self.assertEqual(token.api_key, self.api_key)
 
     def test_login_token_is_bound_to_api_key(self):
         session_private_key = PrivateKey.generate()

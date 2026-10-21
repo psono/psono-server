@@ -88,6 +88,18 @@ class StatTwoFactorTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_statistics_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("stats_two_factor"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_read_stats_two_factor(self):
         """
         Tests GET method on stats_two_factor

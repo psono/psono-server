@@ -81,6 +81,38 @@ class UserRightsDecline(APITestCaseExtended):
             is_email_active=True,
         )
 
+    def test_decline_invalidates_recipient_cache_and_erases_key(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"shared", data_nonce="nonce"
+        )
+        right = models.User_Share_Right.objects.create(
+            user=self.test_user2_obj,
+            creator=self.test_user_obj,
+            share=share,
+            key="encrypted-key",
+            key_nonce="nonce",
+        )
+        self.client.force_authenticate(user=self.test_user2_obj)
+        key = "psono_user_status_" + str(self.test_user2_obj.id)
+        with override_settings(
+            CACHE_ENABLE=True,
+            CACHES={
+                "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+            },
+        ):
+            cache.set(key, {"cached": True})
+            response = self.client.post(
+                reverse("share_right_decline"), {"share_right_id": str(right.id)}
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIsNone(cache.get(key))
+        right.refresh_from_db()
+        self.assertFalse(right.accepted)
+        self.assertEqual(right.key, "")
+
     def test_decline_share_right_no_uuid(self):
         """
         Tests to decline a share right without uuid

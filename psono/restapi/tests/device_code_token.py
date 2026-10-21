@@ -295,21 +295,43 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
         REPLAY_PROTECTION_TIME_DFFERENCE=20,
         DEVICE_PROTECTION_DISABLED=False,
     )
-    def test_delayed_poll_preserves_clock_offset_and_authenticates(self):
-        for offset_seconds in (0, -300, 300):
-            with self.subTest(offset_seconds=offset_seconds):
-                clock_offset = timedelta(seconds=offset_seconds)
-                payload = self._poll_delayed_device_code(clock_offset)
-                response = self._authenticate_polled_token(
-                    payload, timezone.now() + clock_offset
-                )
+    def test_delayed_poll_authenticates_without_clock_offset(self):
+        clock_offset = timedelta(seconds=0)
+        payload = self._poll_delayed_device_code(clock_offset)
+        response = self._authenticate_polled_token(payload, timezone.now())
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = models.Token.objects.get(user=self.test_user)
+        self.assertEqual(token.client_date - token.create_date, clock_offset)
 
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                token = models.Token.objects.get(user=self.test_user)
-                self.assertEqual(token.client_date - token.create_date, clock_offset)
+    @override_settings(
+        REPLAY_PROTECTION_DISABLED=False,
+        REPLAY_PROTECTION_TIME_DFFERENCE=20,
+        DEVICE_PROTECTION_DISABLED=False,
+    )
+    def test_delayed_poll_authenticates_with_clock_behind(self):
+        clock_offset = timedelta(seconds=-300)
+        payload = self._poll_delayed_device_code(clock_offset)
+        response = self._authenticate_polled_token(
+            payload, timezone.now() + clock_offset
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = models.Token.objects.get(user=self.test_user)
+        self.assertEqual(token.client_date - token.create_date, clock_offset)
 
-                # Remove this subtest's token before polling the next code.
-                token.delete()
+    @override_settings(
+        REPLAY_PROTECTION_DISABLED=False,
+        REPLAY_PROTECTION_TIME_DFFERENCE=20,
+        DEVICE_PROTECTION_DISABLED=False,
+    )
+    def test_delayed_poll_authenticates_with_clock_ahead(self):
+        clock_offset = timedelta(seconds=300)
+        payload = self._poll_delayed_device_code(clock_offset)
+        response = self._authenticate_polled_token(
+            payload, timezone.now() + clock_offset
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = models.Token.objects.get(user=self.test_user)
+        self.assertEqual(token.client_date - token.create_date, clock_offset)
 
     @override_settings(
         REPLAY_PROTECTION_DISABLED=False,
@@ -387,7 +409,12 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
             valid_till=timezone.now() + timedelta(minutes=5),
         )
         url = reverse("device_code_token", kwargs={"device_code": str(dc_no_user.id)})
-        response = self.client.post(url, {})
+        with self.assertLogs(
+            "restapi.serializers.poll_device_code_token", level="ERROR"
+        ) as logs:
+            response = self.client.post(url, {})
+        self.assertIn(str(dc_no_user.id), logs.output[0])
+        self.assertIn("CLAIMED state but has no user_id", logs.output[0])
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("non_field_errors", response.data)
         self.assertEqual(response.data["non_field_errors"][0].code, "invalid")

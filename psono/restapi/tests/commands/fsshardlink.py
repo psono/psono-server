@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+
 from django.core.management import call_command
 from django.test import TestCase
 import nacl.encoding
@@ -39,6 +41,8 @@ class CommandFSShardLinkTestCase(TestCase):
         opts = {}
 
         out = StringIO()
-        call_command("fsshardlink", stdout=out, *args, **opts)
+        with redirect_stdout(out):
+            call_command("fsshardlink", stdout=out, *args, **opts)
+        self.assertIn("Created. Link ID:", out.getvalue())
 
         self.assertTrue(models.Fileserver_Cluster_Shard_Link.objects.exists())

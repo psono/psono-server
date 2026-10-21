@@ -25,6 +25,27 @@ from nacl.public import PrivateKey
 
 
 class AuthorizeUploadTests(APITestCaseExtended):
+    def test_get_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.get(reverse("fileserver_authorize_upload")).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_post_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.post(reverse("fileserver_authorize_upload"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_is_not_supported(self):
+        self.client.force_authenticate(user=self.fileserver1)
+        self.assertEqual(
+            self.client.delete(reverse("fileserver_authorize_upload"), {}).status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def setUp(self):
 
         self.test_email = (
@@ -208,6 +229,52 @@ class AuthorizeUploadTests(APITestCaseExtended):
             credit=0,
             type="upload",
         )
+
+    def test_inactive_transfer_owner_is_rejected_without_creating_chunk(self):
+        self.test_user_obj.is_active = False
+        self.test_user_obj.save(update_fields=["is_active"])
+        ticket = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"chunk_position": 1, "hash_checksum": "abc"}).encode(),
+        )
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(
+            reverse("fileserver_authorize_upload"),
+            {
+                "file_transfer_id": str(self.file_transfer.id),
+                "chunk_size": self.file_size,
+                "hash_checksum": "abc",
+                "ip_address": "127.0.0.1",
+                "ticket": ticket["text"].decode(),
+                "ticket_nonce": ticket["nonce"].decode(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("User inactive.", response.data["non_field_errors"])
+        self.assertFalse(models.File_Chunk.objects.filter(file=self.file).exists())
+
+    def test_non_hex_checksum_in_encrypted_ticket_is_rejected(self):
+        ticket = encrypt_symmetric(
+            self.file_transfer.secret_key,
+            json.dumps({"chunk_position": 1, "hash_checksum": "not-hex"}).encode(),
+        )
+        self.client.force_authenticate(user=self.fileserver1)
+        response = self.client.put(
+            reverse("fileserver_authorize_upload"),
+            {
+                "file_transfer_id": str(self.file_transfer.id),
+                "chunk_size": self.file_size,
+                "hash_checksum": "not-hex",
+                "ip_address": "127.0.0.1",
+                "ticket": ticket["text"].decode(),
+                "ticket_nonce": ticket["nonce"].decode(),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "HASH_CHECKSUM_NOT_IN_HEX_REPRESENTATION", response.data["non_field_errors"]
+        )
+        self.assertFalse(models.File_Chunk.objects.filter(file=self.file).exists())
 
     def test_successful(self):
         """

@@ -1617,7 +1617,7 @@ def in_networks(ip_address, networks):
 
     for network in networks:
         ip_network = ipaddress.ip_network(network)
-        if ip_address in ip_network:
+        if ipaddress.ip_address(ip_address) in ip_network:
             return True
 
     return False

@@ -128,6 +128,19 @@ class ReadMembershipTests(APITestCaseExtended):
             is_superuser=True,
         )
 
+    def test_read_requires_membership_read_capability(self):
+        role = models.AdministrativeRole.objects.create(name="User reader")
+        models.AdministrativeRoleCapability.objects.create(
+            role=role, capability="users.read"
+        )
+        models.AdministrativeRoleAssignment.objects.create(
+            role=role, user=self.test_user_obj, is_global=True
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(reverse("admin_membership"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ADMIN_PERMISSION_DENIED", response.data["non_field_errors"])
+
     def test_read_membership_success(self):
         """
         Tests GET method on membership
@@ -392,6 +405,18 @@ class UpdateMembershipTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_missing_membership_is_rejected(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_membership"),
+            {
+                "membership_id": "00000000-0000-4000-8000-000000000001",
+                "group_admin": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_PERMISSION_OR_NOT_EXIST", response.data["non_field_errors"])
 
     def test_update_membership_missing_membership_id(self):
         """
@@ -678,3 +703,77 @@ class TenantScopedMembershipTests(AdministrativeAccessTestCase):
         self.assertTrue(
             models.User_Group_Membership.objects.filter(pk=membership_b.id).exists()
         )
+
+    def assert_membership_acceptance_access(self, method):
+        membership_a, membership_b = self.create_memberships()
+        group_a, group_b = membership_a.group, membership_b.group
+        membership_a.delete()
+        membership_b.delete()
+        admin_membership = models.User_Group_Membership.objects.create(
+            user=self.delegated_admin,
+            group=group_a,
+            group_admin=True,
+            share_admin=True,
+        )
+        self.grant("groups.memberships.manage")
+        url = reverse("admin_membership")
+
+        for accepted in (True, False, None):
+            admin_membership.accepted = accepted
+            admin_membership.save(update_fields=["accepted"])
+            for group, target_user in ((group_a, self.user_a), (group_b, self.user_b)):
+                for user, allowed in (
+                    (self.superuser, True),
+                    (self.delegated_admin, group == group_a),
+                    (self.user_a, False),
+                ):
+                    with self.subTest(accepted=accepted, group=group.id, user=user.id):
+                        membership = models.User_Group_Membership.objects.create(
+                            user=target_user,
+                            group=group,
+                            group_admin=True,
+                            share_admin=True,
+                            accepted=accepted,
+                        )
+                        data = {"membership_id": str(membership.id)}
+                        if method == "put":
+                            data.update(group_admin=False, share_admin=False)
+                        self.client.force_authenticate(user=user)
+
+                        response = getattr(self.client, method)(url, data)
+
+                        expected_status = (
+                            status.HTTP_200_OK
+                            if allowed
+                            else status.HTTP_403_FORBIDDEN
+                            if user == self.user_a
+                            else status.HTTP_400_BAD_REQUEST
+                        )
+                        self.assertEqual(
+                            response.status_code, expected_status, response.data
+                        )
+                        if method == "delete" and allowed:
+                            self.assertFalse(
+                                models.User_Group_Membership.objects.filter(
+                                    pk=membership.id
+                                ).exists()
+                            )
+                        else:
+                            membership.refresh_from_db()
+                            self.assertIs(membership.accepted, accepted)
+                            self.assertIs(membership.group_admin, not allowed)
+                            self.assertIs(membership.share_admin, not allowed)
+                        if user == self.delegated_admin and not allowed:
+                            self.assertIn(
+                                "NO_PERMISSION_OR_NOT_EXIST",
+                                response.data["non_field_errors"],
+                            )
+                        models.User_Group_Membership.objects.filter(
+                            pk=membership.id
+                        ).delete()
+
+    def test_administrative_update_handles_all_membership_acceptance_states(self):
+        self.assert_membership_acceptance_access("put")
+
+    def test_administrative_delete_handles_all_membership_acceptance_states(self):
+        self.assert_membership_acceptance_access("delete")

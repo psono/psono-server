@@ -156,6 +156,165 @@ class FileTests(APITestCaseExtended):
             parent_share_id=None,
         )
 
+    def test_repository_upload_requires_real_accepted_repository_access(self):
+        from uuid import uuid4
+        from restapi.utils import encrypt_with_db_secret
+
+        repository = models.File_Repository.objects.create(
+            title="Repository",
+            type="gcp_cloud_storage",
+            data=encrypt_with_db_secret("{}").encode(),
+            active=True,
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "file_repository_id": str(repository.id),
+            "link_id": str(uuid4()),
+            "parent_datastore_id": str(self.test_datastore_obj.id),
+            "chunk_count": 1,
+            "size": 50,
+        }
+        self.assertEqual(
+            self.client.put(
+                reverse("file"), {**data, "file_repository_id": str(uuid4())}
+            ).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertEqual(
+            self.client.put(reverse("file"), data).status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        models.File_Repository_Right.objects.create(
+            user=self.test_user_obj,
+            file_repository=repository,
+            read=False,
+            write=False,
+            grant=False,
+            accepted=True,
+        )
+        response = self.client.put(reverse("file"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        file = models.File.objects.get(pk=response.data["file_id"])
+        self.assertEqual(file.file_repository, repository)
+        self.assertIsNone(file.shard_id)
+        self.assertTrue(
+            models.File_Link.objects.filter(
+                file=file, parent_datastore=self.test_datastore_obj
+            ).exists()
+        )
+        response = self.client.get(reverse("file", kwargs={"file_id": file.id}))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_upload_parent_validation_and_share_write_permissions(self):
+        from uuid import uuid4
+
+        share = models.Share.objects.create(
+            user=self.test_user_obj, data=b"share", data_nonce="nonce"
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "shard_id": str(self.shard1.id),
+            "chunk_count": 1,
+            "size": 50,
+            "link_id": str(uuid4()),
+        }
+        response = self.client.put(
+            reverse("file"),
+            {
+                **data,
+                "parent_share_id": str(share.id),
+                "parent_datastore_id": str(self.test_datastore_obj.id),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.put(
+            reverse("file"), {**data, "parent_share_id": str(share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        models.User_Share_Right.objects.create(
+            user=self.test_user_obj, share=share, read=True, write=True, accepted=True
+        )
+        response = self.client.put(
+            reverse("file"), {**data, "parent_share_id": str(share.id)}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            models.File_Link.objects.filter(
+                file_id=response.data["file_id"], parent_share=share
+            ).exists()
+        )
+
+    def test_fileserver_ip_restrictions_prevent_upload_and_download(self):
+        from uuid import uuid4
+
+        link = models.Fileserver_Cluster_Member_Shard_Link.objects.get(
+            member=self.fileserver1, shard=self.shard1
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        link.ip_write_whitelist = json.dumps(["198.51.100.0/24"])
+        link.save(update_fields=["ip_write_whitelist"])
+        response = self.client.put(
+            reverse("file"),
+            {
+                "shard_id": str(self.shard1.id),
+                "link_id": str(uuid4()),
+                "parent_datastore_id": str(self.test_datastore_obj.id),
+                "chunk_count": 1,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_FILESERVER_AVAILABLE", response.data["non_field_errors"])
+        link.ip_read_whitelist = json.dumps(["198.51.100.0/24"])
+        link.save(update_fields=["ip_read_whitelist"])
+        response = self.client.get(reverse("file", kwargs={"file_id": self.file.id}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("NO_FILESERVER_AVAILABLE", response.data["non_field_errors"])
+        self.assertFalse(models.File_Transfer.objects.exists())
+
+    def test_upload_and_download_credit_checks_and_actual_debits(self):
+        from decimal import Decimal
+        from django.test import override_settings
+        from uuid import uuid4
+
+        self.client.force_authenticate(user=self.test_user_obj)
+        data = {
+            "shard_id": str(self.shard1.id),
+            "link_id": str(uuid4()),
+            "parent_datastore_id": str(self.test_datastore_obj.id),
+            "chunk_count": 1,
+            "size": 1024**3,
+        }
+        with override_settings(
+            SHARD_CREDIT_COSTS_UPLOAD=Decimal("1"),
+            SHARD_CREDIT_COSTS_DOWNLOAD=Decimal("1"),
+        ):
+            response = self.client.put(reverse("file"), data)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("INSUFFICIENT_FUNDS", response.data["non_field_errors"])
+            self.test_user_obj.credit = Decimal("2")
+            self.test_user_obj.save(update_fields=["credit"])
+            response = self.client.put(reverse("file"), data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            file_id = response.data["file_id"]
+            self.test_user_obj.refresh_from_db()
+            self.assertEqual(self.test_user_obj.credit, Decimal("1"))
+            response = self.client.get(reverse("file", kwargs={"file_id": file_id}))
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.test_user_obj.refresh_from_db()
+            self.assertEqual(self.test_user_obj.credit, Decimal("0"))
+            response = self.client.get(reverse("file", kwargs={"file_id": file_id}))
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(
+                models.File_Transfer.objects.filter(file_id=file_id).count(), 2
+            )
+
+    def test_delete_missing_file_is_rejected(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("file"), {"file_id": "00000000-0000-4000-8000-000000000001"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_post(self):
         """
         Tests POST on file
@@ -553,7 +712,9 @@ class FileTests(APITestCaseExtended):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def _create_api_key_session_token(self, restrict_to_secrets=False, read=True, write=True):
+    def _create_api_key_session_token(
+        self, restrict_to_secrets=False, read=True, write=True
+    ):
         api_key = models.API_Key.objects.create(
             user=self.test_user_obj,
             title="Test API Key",

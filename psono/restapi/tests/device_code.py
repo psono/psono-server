@@ -1,5 +1,6 @@
 import binascii
-from unittest.mock import patch
+from uuid import uuid4
+from django.db import connection
 
 from django.urls import reverse
 from django.test.utils import override_settings
@@ -134,6 +135,46 @@ class CreateDeviceCodeTest(APITestCaseExtended):
             "Persisted server private key",
         )
 
+    def test_comparison_code_collision_retry_budget_is_bounded(self):
+        from django.db import IntegrityError
+
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "Test device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        controller = connection.copy(alias="collision-budget-controller")
+        collision_ids = []
+
+        def execute(execute, sql, params, many, context):
+            if sql.startswith("INSERT") and '"restapi_device_code"' in sql:
+                columns = [
+                    column.strip().strip('"')
+                    for column in sql.split("(", 1)[1].split(")", 1)[0].split(",")
+                ]
+                competing = list(params)
+                identifier = uuid4()
+                competing[columns.index("id")] = identifier
+                with controller.cursor() as cursor:
+                    cursor.execute(sql, competing)
+                collision_ids.append(identifier)
+            return execute(sql, params, many, context)
+
+        try:
+            with connection.execute_wrapper(execute):
+                with self.assertRaises(IntegrityError):
+                    self.client.post(reverse("device_code"), data)
+            self.assertEqual(len(collision_ids), 5)
+            self.assertEqual(models.DeviceCode.objects.count(), 5)
+        finally:
+            with controller.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM restapi_device_code WHERE id = ANY(%s)",
+                    [collision_ids],
+                )
+            controller.close()
+
     def test_comparison_code_collision_is_retried(self):
         data = {
             "device_fingerprint": "test-device-fingerprint",
@@ -141,95 +182,166 @@ class CreateDeviceCodeTest(APITestCaseExtended):
             "device_date": "2024-01-15T10:30:00Z",
             "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
         }
-        with patch("restapi.views.device_code.secrets.choice", return_value="A"):
-            first = self.client.post(reverse("device_code"), data)
-        self.assertEqual(first.status_code, 201)
-        with patch(
-            "restapi.views.device_code.secrets.choice",
-            side_effect=list("AAAAAAAA" + "BBBBBBBB"),
-        ):
-            second = self.client.post(reverse("device_code"), data)
-        self.assertEqual(second.status_code, 201)
-        self.assertEqual(first.data["user_code"], "AAAA-AAAA")
-        self.assertEqual(second.data["user_code"], "BBBB-BBBB")
-        self.assertEqual(models.DeviceCode.objects.count(), 2)
+        controller = connection.copy(alias="comparison-code-controller")
+        collision_id = uuid4()
+        inserted = False
+        collision_code = None
 
-    def test_create_device_code_invalid_user_public_key(self):
-        """
-        Tests that invalid user_public_key formats are rejected.
-        """
-        url = reverse("device_code")
-        input_device_fingerprint = "test-device-fingerprint"
-        input_device_description = "My Test Device"
-        input_device_date = "2024-01-15T10:30:00Z"
+        def execute(execute, sql, params, many, context):
+            nonlocal inserted, collision_code
+            if (
+                not inserted
+                and sql.startswith("INSERT")
+                and '"restapi_device_code"' in sql
+            ):
+                inserted = True
+                columns = [
+                    column.strip().strip('"')
+                    for column in sql.split("(", 1)[1].split(")", 1)[0].split(",")
+                ]
+                competing = list(params)
+                competing[columns.index("id")] = collision_id
+                collision_code = competing[columns.index("user_code")]
+                # A separate real connection commits a competing code after
+                # generation but before this request's INSERT. No randomness,
+                # ORM methods, query results, or database errors are mocked.
+                with controller.cursor() as cursor:
+                    cursor.execute(sql, competing)
+            return execute(sql, params, many, context)
 
-        invalid_keys = [
-            "1234567890abcdef",  # Too short
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c6XX",  # Non-hex characters
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c6",  # Wrong length (31 bytes)
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649AA",  # Wrong length (33 bytes)
-        ]
+        try:
+            with connection.execute_wrapper(execute):
+                response = self.client.post(reverse("device_code"), data)
+            self.assertEqual(response.status_code, 201)
+            self.assertNotEqual(response.data["user_code"], collision_code)
+            self.assertEqual(models.DeviceCode.objects.count(), 2)
+        finally:
+            if inserted:
+                with controller.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM restapi_device_code WHERE id = %s", [collision_id]
+                    )
+            controller.close()
 
-        initial_count = models.DeviceCode.objects.count()
-        expected_error = {
-            "user_public_key": [
-                ErrorDetail(string="INVALID_USER_PUBLIC_KEY", code="invalid")
-            ]
+    def test_create_device_code_rejects_short_public_key(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "1234567890abcdef",
         }
-
-        for invalid_key in invalid_keys:
-            with self.subTest(invalid_key=invalid_key):
-                data = {
-                    "device_fingerprint": input_device_fingerprint,
-                    "device_description": input_device_description,
-                    "device_date": input_device_date,
-                    "user_public_key": invalid_key,
-                }
-                response = self.client.post(url, data)
-
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                self.assertEqual(models.DeviceCode.objects.count(), initial_count)
-                self.assertEqual(response.data, expected_error)
-
-    def test_create_device_code_invalid_device_date(self):
-        """
-        Tests that invalid device_date formats are rejected.
-        """
-        url = reverse("device_code")
-        input_device_fingerprint = "test-device-fingerprint"
-        input_device_description = "My Test Device"
-        input_user_public_key = (
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "user_public_key": [
+                    ErrorDetail(string="INVALID_USER_PUBLIC_KEY", code="invalid")
+                ]
+            },
         )
 
-        invalid_dates = [
-            "not-a-date",  # Invalid format
-            "2024-13-01T10:30:00Z",  # Invalid month
-        ]
-
-        initial_count = models.DeviceCode.objects.count()
-        expected_error = {
-            "device_date": [
-                ErrorDetail(
-                    string="Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z].",
-                    code="invalid",
-                )
-            ]
+    def test_create_device_code_rejects_non_hex_public_key(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c6XX",
         }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "user_public_key": [
+                    ErrorDetail(string="INVALID_USER_PUBLIC_KEY", code="invalid")
+                ]
+            },
+        )
 
-        for invalid_date in invalid_dates:
-            with self.subTest(invalid_date=invalid_date):
-                data = {
-                    "device_fingerprint": input_device_fingerprint,
-                    "device_description": input_device_description,
-                    "device_date": invalid_date,
-                    "user_public_key": input_user_public_key,
-                }
-                response = self.client.post(url, data)
+    def test_create_device_code_rejects_31_byte_public_key(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c6",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "user_public_key": [
+                    ErrorDetail(string="INVALID_USER_PUBLIC_KEY", code="invalid")
+                ]
+            },
+        )
 
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                self.assertEqual(models.DeviceCode.objects.count(), initial_count)
-                self.assertEqual(response.data, expected_error)
+    def test_create_device_code_rejects_33_byte_public_key(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649AA",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "user_public_key": [
+                    ErrorDetail(string="INVALID_USER_PUBLIC_KEY", code="invalid")
+                ]
+            },
+        )
+
+    def test_create_device_code_rejects_malformed_date(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "not-a-date",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "device_date": [
+                    ErrorDetail(
+                        string="Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z].",
+                        code="invalid",
+                    )
+                ]
+            },
+        )
+
+    def test_create_device_code_rejects_invalid_month(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "My Test Device",
+            "device_date": "2024-13-01T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "device_date": [
+                    ErrorDetail(
+                        string="Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z].",
+                        code="invalid",
+                    )
+                ]
+            },
+        )
 
     def test_create_device_code_missing_device_description(self):
         """
@@ -256,100 +368,71 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         }
         self.assertEqual(response.data, expected_error)
 
-    def test_create_device_code_invalid_device_description(self):
-        """
-        Tests that invalid device_description formats are rejected.
-        """
-        url = reverse("device_code")
-        input_device_fingerprint = "test-device-fingerprint"
-        input_device_date = "2024-01-15T10:30:00Z"
-        input_user_public_key = (
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
-        )
-
-        error_detail_min_length = ErrorDetail(
-            string="Ensure this field has at least 3 characters.", code="min_length"
-        )
-
-        invalid_descriptions = [
-            ("too_short", "ab", error_detail_min_length),
-        ]
-
-        initial_count = models.DeviceCode.objects.count()
-
-        for (
-            reason,
-            invalid_description,
-            expected_error_detail_obj,
-        ) in invalid_descriptions:
-            with self.subTest(reason=reason, invalid_description=invalid_description):
-                data = {
-                    "device_fingerprint": input_device_fingerprint,
-                    "device_description": invalid_description,
-                    "device_date": input_device_date,
-                    "user_public_key": input_user_public_key,
-                }
-                response = self.client.post(url, data)
-
-                expected_error_response_dict = {
-                    "device_description": [expected_error_detail_obj]
-                }
-
-                self.assertEqual(
-                    response.status_code,
-                    status.HTTP_400_BAD_REQUEST,
-                    f"Failed for {reason}: status code was {response.status_code}, expected 400. Error: {response.data}",
-                )
-                self.assertEqual(
-                    models.DeviceCode.objects.count(),
-                    initial_count,
-                    f"Failed for {reason}: DeviceCode count changed. Error: {response.data}",
-                )
-                self.assertEqual(
-                    response.data,
-                    expected_error_response_dict,
-                    f"Failed for {reason}: error response was {response.data}, expected {expected_error_response_dict}.",
-                )
-
-    def test_create_device_code_invalid_device_fingerprint(self):
-        """
-        Tests that invalid device_fingerprint formats are rejected.
-        """
-        url = reverse("device_code")
-        input_device_description = "My Test Device"
-        input_device_date = "2024-01-15T10:30:00Z"
-        input_user_public_key = (
-            "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649"
-        )
-
-        invalid_fingerprints = [
-            "short",  # Too short (less than 22 characters)
-            "also-too-short-fp",  # Still too short (18 characters)
-        ]
-
-        initial_count = models.DeviceCode.objects.count()
-        expected_error = {
-            "device_fingerprint": [
-                ErrorDetail(
-                    string="Ensure this field has at least 22 characters.",
-                    code="min_length",
-                )
-            ]
+    def test_create_device_code_rejects_short_description(self):
+        data = {
+            "device_fingerprint": "test-device-fingerprint",
+            "device_description": "ab",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
         }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "device_description": [
+                    ErrorDetail(
+                        string="Ensure this field has at least 3 characters.",
+                        code="min_length",
+                    )
+                ]
+            },
+        )
 
-        for invalid_fingerprint in invalid_fingerprints:
-            with self.subTest(invalid_fingerprint=invalid_fingerprint):
-                data = {
-                    "device_fingerprint": invalid_fingerprint,
-                    "device_description": input_device_description,
-                    "device_date": input_device_date,
-                    "user_public_key": input_user_public_key,
-                }
-                response = self.client.post(url, data)
+    def test_create_device_code_rejects_short_fingerprint(self):
+        data = {
+            "device_fingerprint": "short",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "device_fingerprint": [
+                    ErrorDetail(
+                        string="Ensure this field has at least 22 characters.",
+                        code="min_length",
+                    )
+                ]
+            },
+        )
 
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                self.assertEqual(models.DeviceCode.objects.count(), initial_count)
-                self.assertEqual(response.data, expected_error)
+    def test_create_device_code_rejects_near_minimum_fingerprint(self):
+        data = {
+            "device_fingerprint": "also-too-short-fp",
+            "device_description": "My Test Device",
+            "device_date": "2024-01-15T10:30:00Z",
+            "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+        }
+        response = self.client.post(reverse("device_code"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(models.DeviceCode.objects.count(), 0)
+        self.assertEqual(
+            response.data,
+            {
+                "device_fingerprint": [
+                    ErrorDetail(
+                        string="Ensure this field has at least 22 characters.",
+                        code="min_length",
+                    )
+                ]
+            },
+        )
 
     def test_create_device_code_missing_user_public_key(self):
         """

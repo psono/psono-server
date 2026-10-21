@@ -670,6 +670,28 @@ class ShareTreeModificationTests(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         self.responseB3 = self.client.post(url, self.initial_dataB3)
 
+    def test_creation_requires_parent(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        base = {
+            "share_id": "00000000-0000-4000-8000-000000000001",
+            "link_id": "00000000-0000-4000-8000-000000000002",
+        }
+        response = self.client.put(reverse("share_link"), base)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("non_field_errors", response.data)
+
+    def test_creation_rejects_both_parent_types(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        payload = {
+            "share_id": "00000000-0000-4000-8000-000000000001",
+            "link_id": "00000000-0000-4000-8000-000000000002",
+            "parent_share_id": "00000000-0000-4000-8000-000000000003",
+            "parent_datastore_id": "00000000-0000-4000-8000-000000000004",
+        }
+        response = self.client.put(reverse("share_link"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("non_field_errors", response.data)
+
     def test_link_of_share_to_other_parent_share_with_badly_formatted_uuid(self):
         """
         Tests to link a share to other parent_share with badly formatted uuid
