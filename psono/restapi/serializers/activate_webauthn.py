@@ -1,4 +1,7 @@
 from rest_framework import serializers, exceptions
+from datetime import timedelta
+from django.conf import settings
+from django.utils import timezone
 from webauthn import verify_registration_response
 from webauthn.helpers.exceptions import InvalidRegistrationResponse
 from webauthn.helpers.structs import (
@@ -7,7 +10,7 @@ from webauthn.helpers.structs import (
 
 from ..fields import UUIDField
 from ..models import Webauthn
-from ..utils import decrypt_with_db_secret
+from ..utils import decrypt_with_db_secret, effective_webauthn_rp_id
 
 
 class ActivateWebauthnSerializer(serializers.Serializer):
@@ -27,25 +30,18 @@ class ActivateWebauthnSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        if webauthn.origin.startswith("https://"):
-            # we have a website so the parameters should look like:
-            # expected_origin="https://psono.example.com",
-            # expected_rp_id="psono.example.com",
-            expected_origin = webauthn.origin
-            expected_rp_id = webauthn.rp_id
-        else:
-            # We have a browser extension where the rp_id in the response contains the scheme too, e.g. in chrome:
-            # expected_origin="chrome-extension://nknmfipbcebafiaclacheccehghgikkk",
-            # expected_rp_id="chrome-extension://nknmfipbcebafiaclacheccehghgikkk",
-            expected_origin = webauthn.origin
-            expected_rp_id = webauthn.origin
+        now = timezone.now()
+        cutoff = now - timedelta(seconds=settings.WEBAUTHN_CHALLENGE_TIME_VALID)
+        if not cutoff < webauthn.create_date <= now:
+            raise exceptions.ValidationError("NO_PERMISSION_OR_NOT_EXIST")
 
         try:
             registration_verification = verify_registration_response(
                 credential=credential,
                 expected_challenge=decrypt_with_db_secret(webauthn.challenge).encode(),
-                expected_origin=expected_origin,
-                expected_rp_id=expected_rp_id,
+                # Registration must finish in the client that initiated it.
+                expected_origin=webauthn.origin,
+                expected_rp_id=effective_webauthn_rp_id(webauthn),
             )
         except InvalidRegistrationResponse:
             msg = "NO_PERMISSION_OR_NOT_EXIST"

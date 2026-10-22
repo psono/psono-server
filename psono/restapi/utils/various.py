@@ -1,9 +1,11 @@
 from django.conf import settings
+from datetime import timedelta
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import connection
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django_countries import countries
 from urllib.parse import urlparse
 
@@ -43,6 +45,111 @@ from ..models import (
 from ..models import Ivalt
 from ..models import File_Repository_Right
 from .avatar import delete_avatar_storage_of_user
+
+
+OFFICIAL_EXTENSION_ORIGINS = (
+    "chrome-extension://eljmjmgjkbmpmfljlmklcfineebidmlo",  # Chrome Web Store
+    "chrome-extension://abobmepfpbkapdlmfhnnkebcnhgeccbm",  # Microsoft Edge Add-ons
+    # SHA-256 of {3dce78ca-2a07-4017-9111-998d4f826625}, hex digits mapped to a-p.
+    "moz-extension://ofcjppepgijefpoodofipcbkfnbnkgghlndbaocdngagmdgooiejchclkancledi",
+)
+
+
+def webauthn_origin(value):
+    """Normalize the origin as browsers serialize it (paths are not origins)."""
+    url = urlparse(value)
+    if (
+        url.scheme not in ("https", "chrome-extension", "extension", "moz-extension")
+        or not url.hostname
+        or url.username is not None
+        or url.password is not None
+        or "*" in url.netloc
+    ):
+        raise ValueError("Invalid WebAuthn origin")
+    # Firefox's deterministic extension hostname has 64 ASCII characters;
+    # unlike DNS names, it must not be subjected to IDNA's 63-byte label limit.
+    host = url.hostname
+    if not host.isascii():
+        host = host.encode("idna").decode("ascii")
+    if ":" in host:
+        host = "[" + host + "]"
+    port = url.port
+    if port is not None and not (url.scheme == "https" and port == 443):
+        host += ":" + str(port)
+    return url.scheme + "://" + host
+
+
+def shared_webauthn_scope():
+    """Derive the shared domain and exact origins from server configuration."""
+    url = urlparse(settings.WEB_CLIENT_URL or settings.HOST_URL)
+    if url.scheme != "https" or not url.hostname:
+        return "", ()
+    web_origin = webauthn_origin(url.geturl())
+    origins = tuple(
+        dict.fromkeys(
+            (web_origin,)
+            + OFFICIAL_EXTENSION_ORIGINS
+            + tuple(
+                webauthn_origin(origin)
+                for origin in settings.WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS
+            )
+        )
+    )
+    return urlparse(web_origin).hostname, origins
+
+
+def effective_webauthn_rp_id(webauthn):
+    """Older Chromium credentials are bound to the full extension origin."""
+    url = urlparse(webauthn.origin)
+    if url.scheme in ("chrome-extension", "extension") and webauthn.rp_id == url.netloc:
+        return webauthn.origin
+    return webauthn.rp_id
+
+
+def authentication_webauthn_origins(webauthn):
+    rp_id, origins = shared_webauthn_scope()
+    if webauthn.rp_id == rp_id and webauthn.origin in origins:
+        return list(origins)
+    # Custom and legacy registrations remain scoped to their original client.
+    return webauthn.origin
+
+
+def get_webauthn_challenges(webauthn, now):
+    """Read live per-token challenges from the existing encrypted text field."""
+    cutoff = now - timedelta(seconds=settings.WEBAUTHN_CHALLENGE_TIME_VALID)
+    if not webauthn.challenge or not cutoff < webauthn.write_date <= now:
+        return {}
+    try:
+        payload = json.loads(decrypt_with_db_secret(webauthn.challenge))
+    except (ValueError, TypeError, nacl.exceptions.CryptoError):
+        return {}
+    if not isinstance(payload, dict) or not isinstance(payload.get("sessions"), dict):
+        # Pre-upgrade and registration challenges have no token binding and
+        # cannot be accepted as authentication challenges. A new PUT is needed.
+        return {}
+    sessions = {}
+    for token_id, context in payload["sessions"].items():
+        if not isinstance(context, dict) or not isinstance(
+            context.get("challenge"), str
+        ):
+            continue
+        try:
+            issued_at = parse_datetime(context.get("issued_at", ""))
+        except (TypeError, ValueError):
+            continue
+        if (
+            issued_at is not None
+            and timezone.is_aware(issued_at)
+            and cutoff < issued_at <= now
+        ):
+            sessions[token_id] = context
+    return sessions
+
+
+def encrypt_webauthn_challenges(sessions):
+    if not sessions:
+        return ""
+    return encrypt_with_db_secret(json.dumps({"sessions": sessions}))
 
 
 def generate_verification_code(email: str, verification_secret: str) -> str:
