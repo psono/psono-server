@@ -1,5 +1,7 @@
 from django.conf import settings
-from rest_framework import status
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import status, exceptions
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import Serializer
@@ -13,7 +15,7 @@ from webauthn import (
     options_to_json,
 )
 
-from ..utils import encrypt_with_db_secret
+from ..utils import encrypt_webauthn_challenges, get_webauthn_challenges
 from ..permissions import IsAuthenticated
 from ..models import (
     Token,
@@ -53,33 +55,55 @@ class WebauthnVerifyView(GenericAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        origin = serializer.validated_data.get("origin")
         rp_id = serializer.validated_data.get("rp_id")
 
-        allow_credentials = []
-        webauthns = Webauthn.objects.filter(
-            user_id=request.user.id, origin=origin, active=True
-        ).only("credential_id")
-        for w in webauthns:
-            allow_credentials.append(
-                PublicKeyCredentialDescriptor(
-                    id=nacl.encoding.HexEncoder.decode(w.credential_id)
-                )
+        with transaction.atomic():
+            webauthns = list(
+                serializer.validated_data["webauthns"]
+                .select_for_update()
+                .order_by("id")
             )
+            if not webauthns:
+                raise exceptions.ValidationError("NO_PERMISSION_OR_NOT_EXIST")
+            opts = generate_authentication_options(
+                rp_id=rp_id,
+                timeout=settings.WEBAUTHN_CHALLENGE_TIME_VALID * 1000,
+                allow_credentials=[
+                    PublicKeyCredentialDescriptor(
+                        id=nacl.encoding.HexEncoder.decode(w.credential_id)
+                    )
+                    for w in webauthns
+                ],
+                user_verification=UserVerificationRequirement.DISCOURAGED,
+            )
+            options = json.loads(options_to_json(opts))
+            now = timezone.now()
+            token_id = str(request.auth.id)
+            for w in webauthns:
+                sessions = get_webauthn_challenges(w, now)
+                if token_id not in sessions and len(sessions) >= 64:
+                    raise exceptions.Throttled(
+                        wait=settings.WEBAUTHN_CHALLENGE_TIME_VALID
+                    )
+                # Each token has its own nonce. Its timestamp also prevents
+                # another session's PUT from extending its configured lifetime.
+                sessions[token_id] = {
+                    "challenge": options["challenge"],
+                    "issued_at": now.isoformat(),
+                }
+                w.challenge = encrypt_webauthn_challenges(sessions)
+                w.write_date = now
+            # QuerySet.update does not apply auto_now; explicitly persist the
+            # issuance time used for the server-side freshness check.
+            Webauthn.objects.bulk_update(webauthns, ["challenge", "write_date"])
 
-        opts = generate_authentication_options(
-            rp_id=rp_id,
-            timeout=90000,
-            allow_credentials=allow_credentials,
-            user_verification=UserVerificationRequirement.DISCOURAGED,
+        return Response(
+            {
+                "options": options,
+                "legacy_available": serializer.validated_data["legacy_available"],
+            },
+            status=status.HTTP_200_OK,
         )
-        options = json.loads(options_to_json(opts))
-
-        Webauthn.objects.filter(
-            user_id=request.user.id, origin=origin, active=True
-        ).update(challenge=encrypt_with_db_secret(options["challenge"]))
-
-        return Response({"options": options}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """

@@ -764,6 +764,20 @@ USER_SECRET_KEY_LENGTH_BYTES = int(config_get("USER_SECRET_KEY_LENGTH_BYTES", 80
 NONCE_LENGTH_BYTES = int(config_get("NONCE_LENGTH_BYTES", 24))
 ACTIVATION_LINK_SECRET = config_get("ACTIVATION_LINK_SECRET")
 WEB_CLIENT_URL = config_get("WEB_CLIENT_URL", "")
+WEBAUTHN_CHALLENGE_TIME_VALID = int(
+    config_get("WEBAUTHN_CHALLENGE_TIME_VALID", 90)
+)  # in seconds
+# Additional exact origins allowed to share the WEB_CLIENT_URL RP ID with the
+# webclient and official Chrome, Edge and Firefox extensions (no wildcards).
+WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS = config_get(
+    "WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS", []
+)
+if isinstance(WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS, str):
+    WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS.split(",")
+        if origin.strip()
+    ]
 DB_SECRET = config_get("DB_SECRET")
 EMAIL_SECRET_SALT = config_get("EMAIL_SECRET_SALT")
 

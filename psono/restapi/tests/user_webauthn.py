@@ -1,12 +1,16 @@
 import base64
 import hashlib
 import json
+from datetime import timedelta
+from unittest.mock import patch
+from urllib.parse import urlparse
 from uuid import uuid4
 
 import cbor2
 from cryptography.hazmat.primitives.asymmetric import ec
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 
 from restapi import models
@@ -14,6 +18,7 @@ from restapi.utils import decrypt_with_db_secret
 from .base import APITestCaseExtended
 
 
+@override_settings(WEBAUTHN_CHALLENGE_TIME_VALID=90)
 class UserWebauthnTest(APITestCaseExtended):
     def setUp(self):
         self.user = models.User.objects.create(
@@ -49,9 +54,10 @@ class UserWebauthnTest(APITestCaseExtended):
         )
         credential_id = b"test-registration"
         rp_id = (
-            webauthn.rp_id
-            if webauthn.origin.startswith("https://")
-            else webauthn.origin
+            webauthn.origin
+            if urlparse(webauthn.origin).scheme in ("chrome-extension", "extension")
+            and webauthn.rp_id == urlparse(webauthn.origin).netloc
+            else webauthn.rp_id
         )
         data = json.dumps(
             {
@@ -154,6 +160,116 @@ class UserWebauthnTest(APITestCaseExtended):
             self.client.put(self.url, {}).status_code, status.HTTP_400_BAD_REQUEST
         )
 
+    @override_settings(
+        WEB_CLIENT_URL="https://example.com/psono/",
+        WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS=[],
+    )
+    def test_registration_rejects_unofficial_origin_and_wrong_rp_id(self):
+        for origin, rp_id in (
+            ("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "example.com"),
+            (
+                "chrome-extension://eljmjmgjkbmpmfljlmklcfineebidmlo",
+                "other.example.com",
+            ),
+            ("https://example.com", "other.example.com"),
+        ):
+            with self.subTest(origin=origin, rp_id=rp_id):
+                response = self.client.put(
+                    self.url, {"title": "Key", "origin": origin, "rp_id": rp_id}
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(
+        WEB_CLIENT_URL="https://example.com/psono/",
+        WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS=[],
+    )
+    def test_activation_must_finish_in_registration_origin(self):
+        response = self.client.put(
+            self.url,
+            {
+                "title": "Key",
+                "origin": "chrome-extension://eljmjmgjkbmpmfljlmklcfineebidmlo",
+                "rp_id": "example.com",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        webauthn = models.Webauthn.objects.get(pk=response.data["id"])
+        response = self.client.post(
+            self.url,
+            {
+                "webauthn_id": str(webauthn.id),
+                "credential": self.registration(
+                    webauthn,
+                    "moz-extension://ofcjppepgijefpoodofipcbkfnbnkgghlndbaocdngagmdgooiejchclkancledi",
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(
+        WEB_CLIENT_URL="https://example.com/psono/",
+        WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS=[],
+    )
+    def test_registration_remains_compatible_with_old_clients_with_existing_keys(self):
+        models.Webauthn.objects.create(
+            user=self.user,
+            origin="https://example.com",
+            rp_id="example.com",
+            credential_id=b"test-credential".hex(),
+            active=True,
+        )
+        for origin, expected_rp_id in (
+            ("https://example.com", "example.com"),
+            (
+                "chrome-extension://eljmjmgjkbmpmfljlmklcfineebidmlo",
+                "eljmjmgjkbmpmfljlmklcfineebidmlo",
+            ),
+        ):
+            with self.subTest(origin=origin):
+                # Old clients send no rp_id and do not decode exclusion IDs.
+                response = self.client.put(self.url, {"title": "Key", "origin": origin})
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                self.assertEqual(response.data["options"]["rp"]["id"], expected_rp_id)
+                self.assertEqual(
+                    response.data["options"].get("excludeCredentials", []), []
+                )
+
+    @override_settings(
+        WEB_CLIENT_URL="https://api.example.com",
+        WEBAUTHN_ADDITIONAL_TRUSTED_ORIGINS=["moz-extension://" + "a" * 64],
+    )
+    def test_firefox_extension_registration_and_activation(self):
+        origin = "moz-extension://" + "a" * 64
+        response = self.client.put(
+            self.url,
+            {"title": "Firefox key", "origin": origin, "rp_id": "api.example.com"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["options"]["rp"]["id"], "api.example.com")
+        webauthn = models.Webauthn.objects.get(pk=response.data["id"])
+        self.assertEqual(webauthn.origin, origin)
+        self.assertEqual(webauthn.rp_id, "api.example.com")
+        response = self.client.post(
+            self.url,
+            {
+                "webauthn_id": str(webauthn.id),
+                "credential": self.registration(webauthn),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        webauthn.refresh_from_db()
+        self.assertTrue(webauthn.active)
+
+    def test_firefox_registration_requires_domain_rp_id(self):
+        for rp_id in (None, "https://api.example.com", "example.com/path"):
+            with self.subTest(rp_id=rp_id):
+                data = {"title": "Firefox key", "origin": "moz-extension://" + "a" * 64}
+                if rp_id is not None:
+                    data["rp_id"] = rp_id
+                response = self.client.put(self.url, data)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("rp_id", response.data)
+
     def test_registration_rejects_insecure_origin(self):
         self.assertEqual(
             self.client.put(
@@ -195,6 +311,72 @@ class UserWebauthnTest(APITestCaseExtended):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         webauthn.refresh_from_db()
         self.assertFalse(webauthn.active)
+
+    def test_registration_activation_enforces_the_90_second_creation_boundary(self):
+        issued_at = timezone.now()
+        for elapsed, expected in (
+            (timedelta(seconds=89), status.HTTP_200_OK),
+            (timedelta(seconds=90), status.HTTP_400_BAD_REQUEST),
+            (timedelta(minutes=10), status.HTTP_400_BAD_REQUEST),
+        ):
+            with self.subTest(elapsed=elapsed):
+                with patch("django.utils.timezone.now", return_value=issued_at):
+                    response = self.client.put(
+                        self.url, {"title": "Key", "origin": "https://example.com"}
+                    )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                webauthn = models.Webauthn.objects.get(pk=response.data["id"])
+                credential = self.registration(webauthn)
+                # A subsequent write must not extend registration's lifetime.
+                models.Webauthn.objects.filter(pk=webauthn.pk).update(
+                    write_date=issued_at + elapsed
+                )
+                with patch(
+                    "django.utils.timezone.now", return_value=issued_at + elapsed
+                ):
+                    response = self.client.post(
+                        self.url,
+                        {"webauthn_id": str(webauthn.id), "credential": credential},
+                    )
+                self.assertEqual(response.status_code, expected)
+                webauthn.refresh_from_db()
+                self.assertEqual(webauthn.active, expected == status.HTTP_200_OK)
+
+    def test_registration_uses_the_configured_lifetime_and_browser_timeout(self):
+        issued_at = timezone.now()
+        for lifetime in (30, 180):
+            with (
+                self.subTest(lifetime=lifetime),
+                override_settings(WEBAUTHN_CHALLENGE_TIME_VALID=lifetime),
+            ):
+                for elapsed, expected in (
+                    (lifetime - 1, status.HTTP_200_OK),
+                    (lifetime, status.HTTP_400_BAD_REQUEST),
+                ):
+                    with self.subTest(elapsed=elapsed):
+                        with patch("django.utils.timezone.now", return_value=issued_at):
+                            response = self.client.put(
+                                self.url,
+                                {"title": "Key", "origin": "https://example.com"},
+                            )
+                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                        self.assertEqual(
+                            response.data["options"]["timeout"], lifetime * 1000
+                        )
+                        webauthn = models.Webauthn.objects.get(pk=response.data["id"])
+                        credential = self.registration(webauthn)
+                        with patch(
+                            "django.utils.timezone.now",
+                            return_value=issued_at + timedelta(seconds=elapsed),
+                        ):
+                            response = self.client.post(
+                                self.url,
+                                {
+                                    "webauthn_id": str(webauthn.id),
+                                    "credential": credential,
+                                },
+                            )
+                        self.assertEqual(response.status_code, expected)
 
     def test_activation_rejects_foreign_authenticator(self):
         response = self.client.put(
