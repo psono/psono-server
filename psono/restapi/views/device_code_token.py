@@ -84,12 +84,32 @@ class DeviceCodeTokenView(generics.GenericAPIView):
         device_fingerprint = device_code.device_fingerprint
         device_description = device_code.device_description
 
+        # As in normal login, app clients use app limits and other client
+        # types use web limits. Old device-code clients default to app.
+        client_type = device_code.client_type or "app"
+        if client_type == "app":
+            max_duration = settings.MAX_APP_TOKEN_TIME_VALID
+            min_duration = settings.MIN_APP_TOKEN_TIME_VALID
+        else:
+            max_duration = settings.MAX_WEB_TOKEN_TIME_VALID
+            min_duration = settings.MIN_WEB_TOKEN_TIME_VALID
+
+        # Resolve limits after approval, when the user is known. App clients
+        # keep the legacy maximum; web clients use the normal login default.
+        session_duration = device_code.session_duration
+        if session_duration is None:
+            session_duration = (
+                max_duration
+                if client_type == "app"
+                else settings.DEFAULT_TOKEN_TIME_VALID
+            )
+        session_duration = min(session_duration, max_duration)
+        session_duration = max(session_duration, min_duration)
+
         new_token = Token(
             user=user,
             active=True,
-            valid_till=(
-                timezone.now() + timedelta(seconds=settings.MAX_APP_TOKEN_TIME_VALID)
-            ),
+            valid_till=timezone.now() + timedelta(seconds=session_duration),
             device_description=device_description,
             device_fingerprint=device_fingerprint,
             client_date=device_code.device_date,

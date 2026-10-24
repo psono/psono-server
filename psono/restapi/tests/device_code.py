@@ -122,6 +122,9 @@ class CreateDeviceCodeTest(APITestCaseExtended):
         self.assertEqual(device_code_obj.device_description, input_device_description)
         self.assertEqual(device_code_obj.user_public_key, input_user_public_key)
         self.assertIsNotNone(device_code_obj.device_date)
+        self.assertIsNone(device_code_obj.session_duration)
+        self.assertEqual(device_code_obj.client_type, "app")
+        self.assertNotIn("session_duration", response.data)
 
         self._assert_valid_hex_key(
             device_code_obj.server_public_key,
@@ -134,6 +137,102 @@ class CreateDeviceCodeTest(APITestCaseExtended):
             PrivateKey.SIZE,
             "Persisted server private key",
         )
+
+    @override_settings(MAX_APP_TOKEN_TIME_VALID=300)
+    def test_requested_session_duration_is_persisted_without_changing_the_response(
+        self,
+    ):
+        for requested in (None, 1, 30 * 24 * 60 * 60, 2147483647):
+            with self.subTest(session_duration=requested):
+                response = self.client.post(
+                    reverse("device_code"),
+                    {
+                        "device_fingerprint": "test-device-fingerprint",
+                        "device_description": "Android Test phone",
+                        "device_date": "2024-01-15T10:30:00Z",
+                        "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+                        "session_duration": requested,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                device_code = models.DeviceCode.objects.get(pk=response.data["id"])
+                # Keep the request until redemption, rather than clamping it
+                # against limits before the approving user is known.
+                self.assertEqual(device_code.session_duration, requested)
+                self.assertEqual(
+                    set(response.data),
+                    {
+                        "id",
+                        "user_code",
+                        "state",
+                        "valid_till",
+                        "server_public_key",
+                        "web_client_url",
+                    },
+                )
+                self.assertAlmostEqual(
+                    (device_code.valid_till - device_code.create_date).total_seconds(),
+                    300,
+                    delta=1,
+                )
+
+    def test_create_device_code_rejects_invalid_session_durations(self):
+        for requested in (0, -1, 1.5, True, "invalid", 2147483648, [3600], {}):
+            with self.subTest(session_duration=requested):
+                response = self.client.post(
+                    reverse("device_code"),
+                    {
+                        "device_fingerprint": "test-device-fingerprint",
+                        "device_description": "Android Test phone",
+                        "device_date": "2024-01-15T10:30:00Z",
+                        "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+                        "session_duration": requested,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("session_duration", response.data)
+                self.assertFalse(models.DeviceCode.objects.exists())
+
+    def test_create_device_code_persists_the_initiating_client_type(self):
+        for client_type in (
+            "app",
+            "webclient",
+            "firefox_extension",
+            "other-client",
+            None,
+        ):
+            with self.subTest(client_type=client_type):
+                response = self.client.post(
+                    reverse("device_code"),
+                    {
+                        "device_fingerprint": "test-device-fingerprint",
+                        "device_description": "Test device",
+                        "device_date": "2024-01-15T10:30:00Z",
+                        "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+                        "client_type": client_type,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                device_code = models.DeviceCode.objects.get(pk=response.data["id"])
+                self.assertEqual(device_code.client_type, client_type)
+                self.assertNotIn("client_type", response.data)
+
+    def test_create_device_code_rejects_invalid_client_types(self):
+        for client_type in ("", "a" * 65, ["app"], {}, True):
+            with self.subTest(client_type=client_type):
+                response = self.client.post(
+                    reverse("device_code"),
+                    {
+                        "device_fingerprint": "test-device-fingerprint",
+                        "device_description": "Test device",
+                        "device_date": "2024-01-15T10:30:00Z",
+                        "user_public_key": "5706a5648debec63e86714c8c489f08aee39477487d1b3f39b0bbb05dbd2c649",
+                        "client_type": client_type,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("client_type", response.data)
+                self.assertFalse(models.DeviceCode.objects.exists())
 
     def test_comparison_code_collision_retry_budget_is_bounded(self):
         from django.db import IntegrityError

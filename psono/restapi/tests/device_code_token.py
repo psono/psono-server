@@ -2,6 +2,7 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 import json
+import hashlib
 import binascii
 import os
 from django.conf import settings
@@ -265,7 +266,9 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
             )
         )
 
-    def _authenticate_polled_token(self, payload, request_time):
+    def _authenticate_polled_token(
+        self, payload, request_time, fingerprint="delayed_poll_fingerprint"
+    ):
         secret_box = nacl.secret.SecretBox(
             payload["session_secret_key"], encoder=nacl.encoding.HexEncoder
         )
@@ -273,7 +276,7 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
             json.dumps(
                 {
                     "request_time": request_time.isoformat(),
-                    "request_device_fingerprint": "delayed_poll_fingerprint",
+                    "request_device_fingerprint": fingerprint,
                 }
             ).encode()
         )
@@ -289,6 +292,282 @@ class PollDeviceCodeTokenTest(APITestCaseExtended):
             ),
         )
         return self.client.get(reverse("authentication_session"))
+
+    def _create_claim_and_poll(
+        self,
+        create_options=None,
+        claim_options=None,
+        poll_options=None,
+        issue_settings=None,
+    ):
+        self.client.force_authenticate(user=None, token=None)
+        self.client.credentials()
+        create_data = {
+            "device_fingerprint": "native-app-fingerprint-123456789",
+            "device_description": "Android Test phone",
+            "device_date": timezone.now().isoformat(),
+            "user_public_key": self.device_public_key_hex,
+            **(create_options or {}),
+        }
+        response = self.client.post(reverse("device_code"), create_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        code_id = response.data["id"]
+        server_public_key = response.data["server_public_key"]
+        device_code = models.DeviceCode.objects.get(pk=code_id)
+        self.assertEqual(
+            device_code.session_duration, create_data.get("session_duration")
+        )
+        self.assertEqual(device_code.client_type, create_data.get("client_type", "app"))
+
+        approver_token = models.Token.objects.create(
+            user=self.test_user,
+            active=True,
+            valid_till=timezone.now() + timedelta(hours=2),
+            device_fingerprint="approving-browser-fingerprint",
+            device_description="Firefox approval browser",
+        )
+        self.client.force_authenticate(user=self.test_user, token=approver_token)
+        vault_box = nacl.secret.SecretBox(
+            nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
+        )
+        encrypted_credentials = vault_box.encrypt(self.credentials_plaintext)
+        response = self.client.put(
+            reverse("device_code_claim", kwargs={"device_code": code_id}),
+            {
+                "encrypted_credentials_input": encrypted_credentials.ciphertext.hex(),
+                "encrypted_credentials_nonce": encrypted_credentials.nonce.hex(),
+                **(claim_options or {}),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        device_code.refresh_from_db()
+        self.assertEqual(
+            device_code.session_duration, create_data.get("session_duration")
+        )
+        self.assertEqual(device_code.client_type, create_data.get("client_type", "app"))
+
+        self.client.force_authenticate(user=None, token=None)
+        self.client.credentials()
+        with override_settings(**(issue_settings or {})):
+            response = self.client.post(
+                reverse("device_code_token", kwargs={"device_code": code_id}),
+                poll_options or {},
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(set(response.data), {"boxed_payload", "nonce"})
+        client_box = Box(
+            self.device_private_key,
+            PublicKey(server_public_key, encoder=nacl.encoding.HexEncoder),
+        )
+        payload = json.loads(
+            client_box.decrypt(
+                bytes.fromhex(response.data["boxed_payload"]),
+                bytes.fromhex(response.data["nonce"]),
+            )
+        )
+        self.assertEqual(
+            vault_box.decrypt(
+                bytes.fromhex(payload["encrypted_credentials"]),
+                bytes.fromhex(payload["encrypted_credentials_nonce"]),
+            ),
+            self.credentials_plaintext,
+        )
+        token = models.Token.objects.get(
+            key=hashlib.sha512(payload["token"].encode()).hexdigest()
+        )
+        self.assertEqual(token.secret_key, payload["session_secret_key"])
+        self.assertEqual(token.valid_till.isoformat(), payload["token_valid_till"])
+        self.assertFalse(models.DeviceCode.objects.filter(pk=code_id).exists())
+        return token, payload
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        DEFAULT_TOKEN_TIME_VALID=60,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+    )
+    def test_legacy_device_code_requests_keep_the_app_maximum(self):
+        token, payload = self._create_claim_and_poll()
+        self.assertTrue(token.active)
+        self.assertAlmostEqual(
+            (token.valid_till - token.create_date).total_seconds(), 7200, delta=1
+        )
+        self.assertEqual(
+            set(payload),
+            {
+                "id",
+                "state",
+                "token",
+                "session_secret_key",
+                "token_valid_till",
+                "encrypted_credentials",
+                "encrypted_credentials_nonce",
+            },
+        )
+
+    @override_settings(MAX_APP_TOKEN_TIME_VALID=7200, MIN_APP_TOKEN_TIME_VALID=300)
+    def test_existing_device_codes_without_a_duration_keep_the_app_maximum(self):
+        self.assertIsNone(self.active_dc_with_creds.session_duration)
+        response = self.client.post(
+            reverse(
+                "device_code_token",
+                kwargs={"device_code": self.active_dc_with_creds.id},
+            ),
+            {},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = models.Token.objects.get(user=self.test_user)
+        self.assertAlmostEqual(
+            (token.valid_till - token.create_date).total_seconds(), 7200, delta=1
+        )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+    )
+    def test_requested_session_duration_uses_app_limits(self):
+        for requested, expected in (
+            (1, 300),
+            (3600, 3600),
+            (10000, 7200),
+            (None, 7200),
+        ):
+            with self.subTest(session_duration=requested):
+                token, _ = self._create_claim_and_poll(
+                    {"client_type": "app", "session_duration": requested}
+                )
+                self.assertAlmostEqual(
+                    (token.valid_till - token.create_date).total_seconds(),
+                    expected,
+                    delta=1,
+                )
+
+    @override_settings(MAX_APP_TOKEN_TIME_VALID=7200, MIN_APP_TOKEN_TIME_VALID=300)
+    def test_session_limits_are_applied_at_redemption(self):
+        token, _ = self._create_claim_and_poll(
+            {"session_duration": 3600},
+            issue_settings={
+                "MAX_APP_TOKEN_TIME_VALID": 900,
+                "MIN_APP_TOKEN_TIME_VALID": 300,
+            },
+        )
+        self.assertAlmostEqual(
+            (token.valid_till - token.create_date).total_seconds(), 900, delta=1
+        )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+        MIN_WEB_TOKEN_TIME_VALID=30,
+    )
+    def test_approval_and_polling_cannot_replace_the_client_type_or_duration(self):
+        for source, duration, replacement in (
+            ("app", 600, "webclient"),
+            ("webclient", 60, "app"),
+        ):
+            with self.subTest(client_type=source):
+                token, _ = self._create_claim_and_poll(
+                    {"client_type": source, "session_duration": duration},
+                    claim_options={
+                        "session_duration": 7200,
+                        "client_type": replacement,
+                    },
+                    poll_options={"session_duration": 7200, "client_type": replacement},
+                )
+                self.assertAlmostEqual(
+                    (token.valid_till - token.create_date).total_seconds(),
+                    duration,
+                    delta=1,
+                )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+        MIN_WEB_TOKEN_TIME_VALID=30,
+    )
+    @override_settings(DEFAULT_TOKEN_TIME_VALID=60)
+    def test_web_client_session_duration_uses_web_limits(self):
+        for requested, expected in ((1, 30), (60, 60), (3600, 120), (None, 60)):
+            with self.subTest(session_duration=requested):
+                token, _ = self._create_claim_and_poll(
+                    {"client_type": "webclient", "session_duration": requested}
+                )
+                self.assertAlmostEqual(
+                    (token.valid_till - token.create_date).total_seconds(),
+                    expected,
+                    delta=1,
+                )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+        MIN_WEB_TOKEN_TIME_VALID=30,
+    )
+    def test_non_app_client_types_use_web_limits_as_in_normal_login(self):
+        for client_type in (
+            "chrome_extension",
+            "firefox_extension",
+            "electron",
+            "other-client",
+        ):
+            with self.subTest(client_type=client_type):
+                token, _ = self._create_claim_and_poll(
+                    {"client_type": client_type, "session_duration": 3600}
+                )
+                self.assertAlmostEqual(
+                    (token.valid_till - token.create_date).total_seconds(), 120, delta=1
+                )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+    )
+    def test_null_client_type_keeps_legacy_app_behavior(self):
+        token, _ = self._create_claim_and_poll({"client_type": None})
+        self.assertAlmostEqual(
+            (token.valid_till - token.create_date).total_seconds(), 7200, delta=1
+        )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        MAX_WEB_TOKEN_TIME_VALID=120,
+        MIN_WEB_TOKEN_TIME_VALID=30,
+    )
+    def test_web_limits_are_applied_at_redemption(self):
+        token, _ = self._create_claim_and_poll(
+            {"client_type": "webclient", "session_duration": 80},
+            issue_settings={"MAX_WEB_TOKEN_TIME_VALID": 45},
+        )
+        self.assertAlmostEqual(
+            (token.valid_till - token.create_date).total_seconds(), 45, delta=1
+        )
+
+    @override_settings(
+        MAX_APP_TOKEN_TIME_VALID=7200,
+        MIN_APP_TOKEN_TIME_VALID=300,
+        AUTO_PROLONGATION_TOKEN_TIME_VALID=0,
+        DEVICE_PROTECTION_DISABLED=False,
+        REPLAY_PROTECTION_DISABLED=False,
+    )
+    def test_device_identity_is_preserved_in_the_new_session(self):
+        token, payload = self._create_claim_and_poll(
+            {"client_type": "app", "session_duration": 3600}
+        )
+        self.assertEqual(token.device_description, "Android Test phone")
+        self.assertEqual(token.device_fingerprint, "native-app-fingerprint-123456789")
+        response = self._authenticate_polled_token(
+            payload, timezone.now(), fingerprint="native-app-fingerprint-123456789"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        session = next(s for s in response.data["sessions"] if s["id"] == str(token.id))
+        self.assertEqual(session["device_description"], "Android Test phone")
+        self.assertTrue(session["current_session"])
 
     @override_settings(
         REPLAY_PROTECTION_DISABLED=False,
