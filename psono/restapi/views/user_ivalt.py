@@ -89,6 +89,9 @@ class UserIvalt(GenericAPIView):
         request.user.save()
         ivalt.active = True
         ivalt.save()
+
+        request.user.auth_tokens.filter(active=False).delete()
+
         return Response(
             {"message": "BIOMETRIC_AUTHENTICATION_SUCCESSFULLY_DONE"},
             status=status.HTTP_200_OK,

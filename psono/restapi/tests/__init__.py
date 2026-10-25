@@ -71,10 +71,14 @@ from .share_right import *
 from .share_rights import *
 from .unregister import *
 from .user import *
+from .user_duo import *
+from .user_ga import *
+from .user_ivalt import *
 from .utils import *
 from .secret_history import *
 from .user_update import *
 from .user_webauthn import *
+from .user_yubikey_otp import *
 from .user_policy import *
 from .user_status import *
 from .verify_email import *
