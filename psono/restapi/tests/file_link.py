@@ -3,7 +3,10 @@ import os
 import binascii
 import random
 import string
+from uuid import uuid4
+from urllib.parse import parse_qs, urlsplit
 from django.conf import settings
+from django.test import override_settings
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch
@@ -17,6 +20,10 @@ from restapi import models
 from restapi.utils import encrypt_with_db_secret
 
 from .base import APITestCaseExtended
+from .file_repository import (
+    _REPOSITORY_CONFIGURATIONS,
+    _invalid_repository_configurations,
+)
 
 
 class ConcurrentFileLinkMoveTests(APITransactionTestCase):
@@ -485,6 +492,117 @@ class FileLinkDeleteTests(APITestCaseExtended):
         file_after = models.File.objects.get(id=file.id)
         self.assertIsNotNone(file_after.delete_date)
         self.assertLessEqual(file_after.delete_date, timezone.now())
+
+    def _delete_repository_attachment(self, repository_type, configuration):
+        repository = models.File_Repository.objects.create(
+            title="Repository",
+            type=repository_type,
+            data=encrypt_with_db_secret(json.dumps(configuration)).encode(),
+            active=True,
+        )
+        file = models.File.objects.create(
+            user=self.test_user_obj,
+            file_repository=repository,
+            size=512,
+            chunk_count=1,
+        )
+        models.File_Chunk.objects.create(
+            user=self.test_user_obj,
+            file=file,
+            hash_checksum="a" * 128,
+            position=0,
+            size=512,
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_datastore=self.test_datastore_obj
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.delete(
+            reverse("file_link"),
+            {"link_id": str(link.link_id), "file_ids": [str(file.id)]},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.File_Link.objects.filter(pk=link.pk).exists())
+        self.assertFalse(models.File.objects.filter(pk=file.pk).exists())
+
+    @override_settings(
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"]
+    )
+    @patch("restapi.utils.gcp.RSA.importKey")
+    @patch("restapi.utils.azure_blob.generate_blob_sas")
+    @patch("restapi.utils.s3.boto3.client")
+    @patch("requests.sessions.Session.request")
+    def test_delete_rejects_unsafe_stored_repository_identifiers_before_cleanup(
+        self, request, s3_client, azure_sign, gcp_key
+    ):
+        configurations = _invalid_repository_configurations()
+        for repository_type, field, configuration in configurations:
+            with self.subTest(
+                provider=repository_type, field=field, value=configuration[field]
+            ):
+                if repository_type == "gcp_cloud_storage":
+                    configuration["gcp_cloud_storage_json_key"] = json.dumps(
+                        {"client_email": "test@example.com", "private_key": "fixture"}
+                    )
+                self._delete_repository_attachment(repository_type, configuration)
+        request.assert_not_called()
+        s3_client.assert_not_called()
+        azure_sign.assert_not_called()
+        gcp_key.assert_not_called()
+
+    @patch("requests.delete")
+    def test_delete_azure_and_gcp_cleanup_does_not_follow_redirects(self, delete):
+        from Cryptodome.PublicKey import RSA
+
+        gcp_configuration = {
+            **_REPOSITORY_CONFIGURATIONS["gcp_cloud_storage"],
+            "gcp_cloud_storage_json_key": json.dumps(
+                {
+                    "client_email": "test@example.com",
+                    "private_key": RSA.generate(1024).export_key().decode(),
+                }
+            ),
+        }
+        delete.return_value.status_code = 302
+        delete.return_value.headers = {"Location": "http://127.0.0.1/"}
+        for repository_type, configuration, host in (
+            (
+                "azure_blob",
+                _REPOSITORY_CONFIGURATIONS["azure_blob"],
+                "account123.blob.core.windows.net",
+            ),
+            ("gcp_cloud_storage", gcp_configuration, "storage.googleapis.com"),
+        ):
+            with self.subTest(provider=repository_type):
+                delete.reset_mock()
+                self._delete_repository_attachment(repository_type, configuration)
+                delete.assert_called_once()
+                self.assertFalse(delete.call_args.kwargs["allow_redirects"])
+                parsed = urlsplit(delete.call_args.args[0])
+                self.assertEqual(parsed.scheme, "https")
+                self.assertEqual(parsed.hostname, host)
+                if repository_type == "azure_blob":
+                    self.assertEqual(parse_qs(parsed.query)["sp"], ["d"])
+
+    @override_settings(
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"]
+    )
+    @patch("restapi.utils.s3.boto3.client")
+    def test_delete_s3_cleanup_preserves_provider_endpoints(self, client):
+        for repository_type, endpoint in (
+            ("aws_s3", None),
+            ("backblaze", "https://s3.us-west-004.backblazeb2.com"),
+            ("do_spaces", "https://nyc3.digitaloceanspaces.com"),
+            ("other_s3", "https://objects.example.com"),
+        ):
+            with self.subTest(provider=repository_type):
+                client.reset_mock()
+                self._delete_repository_attachment(
+                    repository_type, _REPOSITORY_CONFIGURATIONS[repository_type]
+                )
+                client.assert_called_once()
+                self.assertEqual(client.call_args.kwargs["endpoint_url"], endpoint)
+                client.return_value.delete_object.assert_called_once()
 
     @patch("restapi.utils.gcs_delete")
     def test_delete_file_link_with_gcs_file_repository_hard_deletes(

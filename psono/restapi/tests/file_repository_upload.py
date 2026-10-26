@@ -8,6 +8,9 @@ from restapi.utils import encrypt_with_db_secret
 
 import base64
 import json
+from urllib.parse import parse_qs, urlsplit
+
+from .file_repository import _REPOSITORY_CONFIGURATIONS
 
 
 def gcs_construct_signed_upload_url_side_effect(bucket, json_key, hash_checksum):
@@ -134,34 +137,37 @@ class FileRepositryUploadTest(APITestCaseExtended):
         self.file_transfer.write = True
 
     def test_azure_blob_generates_real_signed_upload_url(self):
-        import base64
-        from urllib.parse import urlparse, parse_qs
-
-        configuration = {
-            "azure_blob_storage_account_name": "account",
-            "azure_blob_storage_account_primary_key": base64.b64encode(
-                bytes(range(32))
-            ).decode(),
-            "azure_blob_storage_account_container_name": "container",
-        }
-        self.file_repository.type = "azure_blob"
-        self.file_repository.data = encrypt_with_db_secret(
-            json.dumps(configuration)
-        ).encode()
-        self.file_repository.save(update_fields=["type", "data"])
-        self.client.force_authenticate(
-            user=self.test_user_obj, token=self.file_transfer
-        )
-        response = self.client.put(
-            reverse("file_repository_upload"),
-            {"hash_checksum": "abc", "chunk_position": 1, "chunk_size": 512},
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        parsed = urlparse(response.data["url"])
-        self.assertEqual(parsed.scheme, "https")
-        self.assertIn("sig", parse_qs(parsed.query))
-        self.assertIn("abc", parsed.path)
-        self.assertEqual(models.File_Chunk.objects.filter(file=self.file).count(), 1)
+        for container in ("test-container", "$root", "$web"):
+            with self.subTest(container=container):
+                configuration = {
+                    **_REPOSITORY_CONFIGURATIONS["azure_blob"],
+                    "azure_blob_storage_account_container_name": container,
+                }
+                self.file_repository.type = "azure_blob"
+                self.file_repository.data = encrypt_with_db_secret(
+                    json.dumps(configuration)
+                ).encode()
+                self.file_repository.save(update_fields=["type", "data"])
+                models.File_Chunk.objects.filter(file=self.file).delete()
+                models.File_Transfer.objects.filter(pk=self.file_transfer.pk).update(
+                    size_transferred=0, chunk_count_transferred=0
+                )
+                response = self.client.put(
+                    reverse("file_repository_upload"),
+                    {"hash_checksum": "abc", "chunk_position": 1, "chunk_size": 512},
+                    HTTP_AUTHORIZATION=f"Filetransfer {self.file_transfer.id}",
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                parsed = urlsplit(response.data["url"])
+                self.assertEqual(parsed.scheme, "https")
+                self.assertEqual(parsed.netloc, "account123.blob.core.windows.net")
+                self.assertTrue(parsed.path.startswith(f"/{container}/"))
+                self.assertEqual(parse_qs(parsed.query)["sp"], ["w"])
+                self.assertIn("sig", parse_qs(parsed.query))
+                self.assertIn("abc", parsed.path)
+                self.assertEqual(
+                    models.File_Chunk.objects.filter(file=self.file).count(), 1
+                )
 
     def test_get(self):
         """

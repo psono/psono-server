@@ -123,6 +123,8 @@ class UserDuo(GenericAPIView):
         request.user.duo_enabled = True
         request.user.save()
 
+        request.user.auth_tokens.filter(active=False).delete()
+
         return Response({}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):

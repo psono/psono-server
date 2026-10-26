@@ -1790,6 +1790,15 @@ class DeviceCode(models.Model):
     device_fingerprint = models.CharField(max_length=128, null=False, editable=False)
     device_description = models.CharField(max_length=256, null=True, editable=False)
     device_date = models.DateTimeField(null=True, editable=False)
+    client_type = models.CharField(
+        max_length=64, default="app", null=True, blank=True, editable=False
+    )
+    session_duration = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+        help_text="Requested session duration in seconds; null uses the client type's default.",
+    )
     # Optional display-only comparison code; never included in the approval URL.
     user_code = models.CharField(
         max_length=9, null=True, blank=True, unique=True, editable=False

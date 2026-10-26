@@ -77,6 +77,8 @@ class DeviceCodeView(generics.GenericAPIView):
                         device_fingerprint=device_fingerprint,
                         device_description=device_description,
                         device_date=device_date,
+                        client_type=validated_data["client_type"],
+                        session_duration=validated_data.get("session_duration"),
                         valid_till=valid_till,
                         state=DeviceCode.DeviceCodeState.PENDING,
                         server_private_key=server_private_key_hex_encrypted,

@@ -27,6 +27,20 @@ class CreateDeviceCodeSerializer(serializers.Serializer):
         max_length=128,
         help_text="Hex-encoded public key of the initiating user/device.",
     )
+    client_type = serializers.CharField(
+        required=False,
+        default="app",
+        allow_null=True,
+        max_length=64,
+        help_text="Initiating client type, as in normal login; omitted or null defaults to app.",
+    )
+    session_duration = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+        max_value=2147483647,
+        help_text="Requested session duration in seconds; omitted or null uses the client type's default.",
+    )
 
     def validate_user_public_key(self, value):
         """Basic validation for the public key hex string."""

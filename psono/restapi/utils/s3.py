@@ -1,4 +1,20 @@
 import boto3
+from django.core.validators import RegexValidator
+
+
+# Match the SDK's bucket-name character/length envelope, including legacy S3
+# names (uppercase, underscores, up to 255 characters). Exclude dot-only path
+# segments, but leave provider naming policy to storage.
+validate_s3_bucket_name = RegexValidator(
+    regex=r"\A(?!\.{1,2}\Z)[A-Za-z0-9._-]{1,255}\Z",
+    message="BUCKET_IS_INVALID",
+)
+
+# Botocore permits mixed-case host labels, including for custom S3 regions.
+validate_s3_region = RegexValidator(
+    regex=r"\A[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z",
+    message="REGION_IS_INVALID",
+)
 
 
 def s3_construct_signed_upload_url(
@@ -29,6 +45,9 @@ def s3_construct_signed_upload_url(
     :return:
     :rtype:
     """
+
+    validate_s3_bucket_name(bucket)
+    validate_s3_region(region)
 
     client = boto3.client(
         "s3",
@@ -74,6 +93,9 @@ def s3_construct_signed_download_url(
     :rtype:
     """
 
+    validate_s3_bucket_name(bucket)
+    validate_s3_region(region)
+
     client = boto3.client(
         "s3",
         region_name=region,
@@ -113,6 +135,9 @@ def s3_delete(
     :return:
     :rtype:
     """
+
+    validate_s3_bucket_name(bucket)
+    validate_s3_region(region)
 
     client = boto3.client(
         "s3",

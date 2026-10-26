@@ -88,6 +88,8 @@ class UserYubikeyOTP(GenericAPIView):
         request.user.yubikey_otp_enabled = True
         request.user.save()
 
+        request.user.auth_tokens.filter(active=False).delete()
+
         return Response(
             {
                 "id": new_yubikey.id,
@@ -123,6 +125,8 @@ class UserYubikeyOTP(GenericAPIView):
 
         request.user.yubikey_otp_enabled = True
         request.user.save()
+
+        request.user.auth_tokens.filter(active=False).delete()
 
         return Response({}, status=status.HTTP_200_OK)
 

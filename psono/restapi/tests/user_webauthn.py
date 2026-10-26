@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import cbor2
 from cryptography.hazmat.primitives.asymmetric import ec
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -117,6 +118,79 @@ class UserWebauthnTest(APITestCaseExtended):
         self.assertEqual(webauthn.credential_id, b"test-registration".hex())
         self.user.refresh_from_db()
         self.assertTrue(self.user.webauthn_enabled)
+
+    @override_settings(
+        ALLOWED_SECOND_FACTORS=[],
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        },
+    )
+    def test_activation_deletes_inactive_tokens(self):
+        self.addCleanup(cache.clear)
+        valid_till = timezone.now() + timedelta(minutes=5)
+        active_token = models.Token.objects.create(
+            user=self.user, active=True, valid_till=valid_till
+        )
+        inactive_tokens = [
+            models.Token.objects.create(user=self.user, valid_till=valid_till),
+            models.Token.objects.create(
+                user=self.user, google_authenticator_2fa=True, valid_till=valid_till
+            ),
+        ]
+        other_tokens = [
+            models.Token.objects.create(
+                user=self.other_user, active=active, valid_till=valid_till
+            )
+            for active in (False, True)
+        ]
+        self.client.force_authenticate(user=self.user, token=active_token)
+        response = self.client.put(
+            self.url, {"title": "Security key", "origin": "https://example.com"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        for token in inactive_tokens:
+            self.assertTrue(models.Token.objects.filter(pk=token.pk).exists())
+        webauthn = models.Webauthn.objects.get(pk=response.data["id"])
+        response = self.client.post(
+            self.url,
+            {
+                "webauthn_id": webauthn.id,
+                "credential": self.registration(webauthn),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertSetEqual(
+            set(models.Token.objects.values_list("pk", flat=True)),
+            {active_token.pk, *(token.pk for token in other_tokens)},
+        )
+        for token in inactive_tokens:
+            self.assertIsNone(cache.get("psono_token_" + token.pk))
+
+    @override_settings(
+        ALLOWED_SECOND_FACTORS=[],
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        },
+    )
+    def test_invalid_activation_preserves_inactive_tokens(self):
+        self.addCleanup(cache.clear)
+        valid_till = timezone.now() + timedelta(minutes=5)
+        active_token = models.Token.objects.create(
+            user=self.user, active=True, valid_till=valid_till
+        )
+        inactive_tokens = [
+            models.Token.objects.create(user=self.user, valid_till=valid_till),
+            models.Token.objects.create(
+                user=self.user, google_authenticator_2fa=True, valid_till=valid_till
+            ),
+        ]
+        self.client.force_authenticate(user=self.user, token=active_token)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        for token in inactive_tokens:
+            self.assertTrue(models.Token.objects.filter(pk=token.pk).exists())
 
     def test_chrome_extension_registration_and_activation(self):
         response = self.client.put(

@@ -7,6 +7,9 @@ from restapi import models
 from restapi.utils import encrypt_with_db_secret
 
 import json
+from urllib.parse import parse_qs, urlsplit
+
+from .file_repository import _REPOSITORY_CONFIGURATIONS
 
 
 def gcs_construct_signed_download_url_side_effect(bucket, json_key, hash_checksum):
@@ -191,43 +194,76 @@ class FileRepositryDownloadTest(APITestCaseExtended):
         self.assertIn(self.hash_checksum, parsed.path)
 
     def test_azure_blob_generates_real_signed_download_url(self):
-        import base64
-        from urllib.parse import urlparse, parse_qs
+        for container in ("test-container", "$root", "$web"):
+            with self.subTest(container=container):
+                configuration = {
+                    **_REPOSITORY_CONFIGURATIONS["azure_blob"],
+                    "azure_blob_storage_account_container_name": container,
+                }
+                self.file_repository.type = "azure_blob"
+                self.file_repository.data = encrypt_with_db_secret(
+                    json.dumps(configuration)
+                ).encode()
+                self.file_repository.save(update_fields=["type", "data"])
+                transfer = models.File_Transfer.objects.create(
+                    user=self.test_user_obj,
+                    file=self.file,
+                    file_repository=self.file_repository,
+                    size=512,
+                    size_transferred=0,
+                    chunk_count=1,
+                    chunk_count_transferred=0,
+                    credit=0,
+                    type="download",
+                )
+                response = self.client.put(
+                    reverse("file_repository_download"),
+                    {"hash_checksum": self.hash_checksum},
+                    HTTP_AUTHORIZATION=f"Filetransfer {transfer.id}",
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                parsed = urlsplit(response.data["url"])
+                self.assertEqual(parsed.scheme, "https")
+                self.assertEqual(parsed.netloc, "account123.blob.core.windows.net")
+                self.assertTrue(parsed.path.startswith(f"/{container}/"))
+                self.assertEqual(parse_qs(parsed.query)["sp"], ["r"])
+                self.assertIn("sig", parse_qs(parsed.query))
+                self.assertEqual(response.data["type"], "azure_blob")
+                self.assertIn(self.hash_checksum, parsed.path)
 
-        configuration = {
-            "azure_blob_storage_account_name": "account",
-            "azure_blob_storage_account_primary_key": base64.b64encode(
-                bytes(range(32))
-            ).decode(),
-            "azure_blob_storage_account_container_name": "container",
-        }
-        self.file_repository.type = "azure_blob"
-        self.file_repository.data = encrypt_with_db_secret(
-            json.dumps(configuration)
-        ).encode()
-        self.file_repository.save(update_fields=["type", "data"])
-        transfer = models.File_Transfer.objects.create(
-            user=self.test_user_obj,
-            file=self.file,
-            file_repository=self.file_repository,
-            size=512,
-            size_transferred=0,
-            chunk_count=1,
-            chunk_count_transferred=0,
-            credit=0,
-            type="download",
-        )
-        self.client.force_authenticate(user=None)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Filetransfer {transfer.id}")
-        response = self.client.put(
-            reverse("file_repository_download"), {"hash_checksum": self.hash_checksum}
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        parsed = urlparse(response.data["url"])
-        self.assertEqual(parsed.scheme, "https")
-        self.assertIn("sig", parse_qs(parsed.query))
-        self.assertEqual(response.data["type"], "azure_blob")
-        self.assertIn(self.hash_checksum, parsed.path)
+    def test_other_s3_signs_legacy_names_without_changing_endpoint(self):
+        for bucket in ("Legacy_" + "a" * 248, "_custom_bucket_"):
+            with self.subTest(bucket=bucket):
+                configuration = {
+                    **_REPOSITORY_CONFIGURATIONS["other_s3"],
+                    "other_s3_bucket": bucket,
+                    "other_s3_region": "Region-1",
+                }
+                self.file_repository.type = "other_s3"
+                self.file_repository.data = encrypt_with_db_secret(
+                    json.dumps(configuration)
+                ).encode()
+                self.file_repository.save(update_fields=["type", "data"])
+                transfer = models.File_Transfer.objects.create(
+                    user=self.test_user_obj,
+                    file=self.file,
+                    file_repository=self.file_repository,
+                    size=512,
+                    size_transferred=0,
+                    chunk_count=1,
+                    chunk_count_transferred=0,
+                    credit=0,
+                    type="download",
+                )
+                response = self.client.put(
+                    reverse("file_repository_download"),
+                    {"hash_checksum": self.hash_checksum},
+                    HTTP_AUTHORIZATION=f"Filetransfer {transfer.id}",
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                parsed = urlsplit(response.data["url"])
+                self.assertEqual(parsed.netloc, "objects.example.com")
+                self.assertTrue(parsed.path.startswith(f"/{bucket}/"))
 
     def test_backblaze_generates_real_signed_download_url(self):
         from urllib.parse import urlparse, parse_qs
