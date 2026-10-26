@@ -9,35 +9,61 @@ import json
 from ..fields import UUIDField, BooleanField
 from ..models import File_Repository
 from ..utils import is_allowed_other_s3_endpoint_url
+from ..utils.azure_blob import (
+    validate_azure_account_name,
+    validate_azure_container_name,
+)
+from ..utils.gcp import validate_gcs_bucket_name
+from ..utils.s3 import validate_s3_bucket_name, validate_s3_region
 
 
 class UpdateFileRepositorySerializer(serializers.Serializer):
     file_repository_id = UUIDField(required=True)
     title = serializers.CharField(max_length=256, required=True)
     type = serializers.CharField(max_length=32, required=True)
-    gcp_cloud_storage_bucket = serializers.CharField(required=False)
+    gcp_cloud_storage_bucket = serializers.CharField(
+        required=False, validators=[validate_gcs_bucket_name]
+    )
     gcp_cloud_storage_json_key = serializers.CharField(required=False)
     active = BooleanField(required=True)
-    aws_s3_bucket = serializers.CharField(required=False)
-    aws_s3_region = serializers.CharField(required=False)
+    aws_s3_bucket = serializers.CharField(
+        required=False, validators=[validate_s3_bucket_name]
+    )
+    aws_s3_region = serializers.CharField(
+        required=False, validators=[validate_s3_region]
+    )
     aws_s3_access_key_id = serializers.CharField(required=False)
     aws_s3_secret_access_key = serializers.CharField(required=False)
 
-    azure_blob_storage_account_name = serializers.CharField(required=False)
+    azure_blob_storage_account_name = serializers.CharField(
+        required=False, validators=[validate_azure_account_name]
+    )
     azure_blob_storage_account_primary_key = serializers.CharField(required=False)
-    azure_blob_storage_account_container_name = serializers.CharField(required=False)
+    azure_blob_storage_account_container_name = serializers.CharField(
+        required=False, validators=[validate_azure_container_name]
+    )
 
-    other_s3_bucket = serializers.CharField(required=False)
-    other_s3_region = serializers.CharField(required=False)
+    other_s3_bucket = serializers.CharField(
+        required=False, validators=[validate_s3_bucket_name]
+    )
+    other_s3_region = serializers.CharField(
+        required=False, validators=[validate_s3_region]
+    )
     other_s3_access_key_id = serializers.CharField(required=False)
     other_s3_secret_access_key = serializers.CharField(required=False)
     other_s3_endpoint_url = serializers.CharField(required=False)
-    backblaze_bucket = serializers.CharField(required=False)
-    backblaze_region = serializers.CharField(required=False)
+    backblaze_bucket = serializers.CharField(
+        required=False, validators=[validate_s3_bucket_name]
+    )
+    backblaze_region = serializers.CharField(
+        required=False, validators=[validate_s3_region]
+    )
     backblaze_access_key_id = serializers.CharField(required=False)
     backblaze_secret_access_key = serializers.CharField(required=False)
-    do_space = serializers.CharField(required=False)
-    do_region = serializers.CharField(required=False)
+    do_space = serializers.CharField(
+        required=False, validators=[validate_s3_bucket_name]
+    )
+    do_region = serializers.CharField(required=False, validators=[validate_s3_region])
     do_key = serializers.CharField(required=False)
     do_secret = serializers.CharField(required=False)
 

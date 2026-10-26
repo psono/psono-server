@@ -4,9 +4,112 @@ from django.test.utils import override_settings
 from rest_framework import status
 from .base import APITestCaseExtended
 from restapi import models
-from restapi.utils import encrypt_with_db_secret
+from restapi.utils import encrypt_with_db_secret, decrypt_with_db_secret
 
+import base64
 import json
+
+
+_REPOSITORY_CONFIGURATIONS = {
+    "azure_blob": {
+        "azure_blob_storage_account_name": "account123",
+        "azure_blob_storage_account_primary_key": base64.b64encode(b"a" * 64).decode(),
+        "azure_blob_storage_account_container_name": "test-container",
+    },
+    "aws_s3": {
+        "aws_s3_bucket": "test-bucket",
+        "aws_s3_region": "us-east-1",
+        "aws_s3_access_key_id": "key",
+        "aws_s3_secret_access_key": "secret",
+    },
+    "backblaze": {
+        "backblaze_bucket": "test-bucket",
+        "backblaze_region": "us-west-004",
+        "backblaze_access_key_id": "key",
+        "backblaze_secret_access_key": "secret",
+    },
+    "do_spaces": {
+        "do_space": "test-space",
+        "do_region": "nyc3",
+        "do_key": "key",
+        "do_secret": "secret",
+    },
+    "other_s3": {
+        "other_s3_bucket": "test-bucket",
+        "other_s3_region": "region",
+        "other_s3_access_key_id": "key",
+        "other_s3_secret_access_key": "secret",
+        "other_s3_endpoint_url": "https://objects.example.com",
+    },
+    "gcp_cloud_storage": {
+        "gcp_cloud_storage_bucket": "test_bucket.example.com",
+        "gcp_cloud_storage_json_key": "{}",
+    },
+}
+
+
+def _invalid_repository_configurations():
+    injection_values = (
+        "callback.invalid?",
+        "127.0.0.1:8000/",
+        "localhost#",
+        "account@localhost",
+        "account/../other",
+        "account\\@localhost",
+        "account%3f",
+        "acc\nount",
+        "acc\tount",
+        "acc ount",
+        "acc\uff0eount",
+    )
+    for repository_type, configuration in _REPOSITORY_CONFIGURATIONS.items():
+        for field in configuration:
+            if not field.endswith(
+                ("bucket", "region", "account_name", "container_name", "space")
+            ):
+                continue
+            values = injection_values
+            if field.endswith(("bucket", "space")):
+                values += (".", "..")
+            elif field.endswith("account_name"):
+                values += ("ab", "a" * 25, "Account")
+            elif field.endswith("container_name"):
+                values += ("ab", "a" * 64, "bad--container")
+            for value in values:
+                yield repository_type, field, {**configuration, field: value}
+
+
+def _valid_repository_configurations():
+    yield from _REPOSITORY_CONFIGURATIONS.items()
+    for repository_type, overrides in (
+        ("aws_s3", {"aws_s3_bucket": "Legacy_" + "a" * 248}),
+        (
+            "other_s3",
+            {"other_s3_bucket": "_custom_bucket_", "other_s3_region": "Region-1"},
+        ),
+        (
+            "gcp_cloud_storage",
+            {"gcp_cloud_storage_bucket": ("a" * 63 + ".") * 3 + "a" * 30},
+        ),
+        (
+            "azure_blob",
+            {
+                "azure_blob_storage_account_name": "a" * 24,
+                "azure_blob_storage_account_container_name": "a" * 63,
+            },
+        ),
+        (
+            "azure_blob",
+            {
+                "azure_blob_storage_account_name": "abc",
+                "azure_blob_storage_account_container_name": "a-b",
+            },
+        ),
+    ):
+        yield (
+            repository_type,
+            {**_REPOSITORY_CONFIGURATIONS[repository_type], **overrides},
+        )
 
 
 class ReadFileRepositryTest(APITestCaseExtended):
@@ -369,6 +472,63 @@ class CreateFileRepositryTest(APITestCaseExtended):
             user_sauce="90272aaf01a2d525223f192aca069e7f5661b3a0f1b1a91f9b16d493fdf15295",
             is_email_active=True,
         )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_create_azure_blob_rejects_account_name_url_injection(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.put(
+            reverse("file_repository"),
+            {
+                "title": "Repository",
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "callback.invalid?",
+                "azure_blob_storage_account_primary_key": "secret",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("azure_blob_storage_account_name", response.data)
+        self.assertEqual(models.File_Repository.objects.count(), 0)
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=list(_REPOSITORY_CONFIGURATIONS),
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_rejects_unsafe_repository_identifiers(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        configurations = _invalid_repository_configurations()
+        for repository_type, field, configuration in configurations:
+            with self.subTest(
+                provider=repository_type, field=field, value=configuration[field]
+            ):
+                response = self.client.put(
+                    reverse("file_repository"),
+                    {"title": "Repository", "type": repository_type, **configuration},
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(field, response.data)
+                self.assertFalse(models.File_Repository.objects.exists())
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=list(_REPOSITORY_CONFIGURATIONS),
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_create_accepts_valid_and_legacy_repository_identifiers(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        for repository_type, configuration in _valid_repository_configurations():
+            with self.subTest(provider=repository_type, configuration=configuration):
+                response = self.client.put(
+                    reverse("file_repository"),
+                    {"title": "Repository", "type": repository_type, **configuration},
+                )
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                repository = models.File_Repository.objects.get(
+                    id=response.data["file_repository_id"]
+                )
+                self.assertEqual(repository.type, repository_type)
+                self.assertEqual(
+                    json.loads(decrypt_with_db_secret(repository.data)), configuration
+                )
 
     @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
     def test_create_azure_blob_persists_configuration_and_owner_right(self):
@@ -1167,6 +1327,82 @@ class UpdateFileRepositryTest(APITestCaseExtended):
             grant=True,
             accepted=True,
         )
+
+    @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
+    def test_update_azure_blob_rejects_account_name_url_injection(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.post(
+            reverse("file_repository"),
+            {
+                "file_repository_id": str(self.file_repository.id),
+                "title": "Updated",
+                "active": True,
+                "type": "azure_blob",
+                "azure_blob_storage_account_name": "callback.invalid?",
+                "azure_blob_storage_account_primary_key": "secret",
+                "azure_blob_storage_account_container_name": "container",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("azure_blob_storage_account_name", response.data)
+        self.file_repository.refresh_from_db()
+        self.assertEqual(bytes(self.file_repository.data), original)
+        self.assertEqual(self.file_repository.type, "gcp_cloud_storage")
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=list(_REPOSITORY_CONFIGURATIONS),
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_rejects_unsafe_repository_identifiers(self):
+        original = bytes(self.file_repository.data)
+        self.client.force_authenticate(user=self.test_user_obj)
+        configurations = _invalid_repository_configurations()
+        for repository_type, field, configuration in configurations:
+            with self.subTest(
+                provider=repository_type, field=field, value=configuration[field]
+            ):
+                response = self.client.post(
+                    reverse("file_repository"),
+                    {
+                        "file_repository_id": str(self.file_repository.id),
+                        "title": "Updated",
+                        "active": True,
+                        "type": repository_type,
+                        **configuration,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(field, response.data)
+                self.file_repository.refresh_from_db()
+                self.assertEqual(bytes(self.file_repository.data), original)
+                self.assertEqual(self.file_repository.type, "gcp_cloud_storage")
+
+    @override_settings(
+        ALLOWED_FILE_REPOSITORY_TYPES=list(_REPOSITORY_CONFIGURATIONS),
+        ALLOWED_OTHER_S3_ENDPOINT_URL_PREFIX=["https://objects.example.com"],
+    )
+    def test_update_accepts_valid_and_legacy_repository_identifiers(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        for repository_type, configuration in _valid_repository_configurations():
+            with self.subTest(provider=repository_type, configuration=configuration):
+                response = self.client.post(
+                    reverse("file_repository"),
+                    {
+                        "file_repository_id": str(self.file_repository.id),
+                        "title": "Updated",
+                        "active": True,
+                        "type": repository_type,
+                        **configuration,
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.file_repository.refresh_from_db()
+                self.assertEqual(self.file_repository.type, repository_type)
+                self.assertEqual(
+                    json.loads(decrypt_with_db_secret(self.file_repository.data)),
+                    configuration,
+                )
 
     @override_settings(ALLOWED_FILE_REPOSITORY_TYPES=["azure_blob"])
     def test_update_azure_blob_persists_configuration(self):

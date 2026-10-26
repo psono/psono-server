@@ -1,6 +1,20 @@
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from datetime import datetime, timedelta
 import requests
+from django.core.validators import RegexValidator
+
+
+# These values become URL host/path components. Anchor both ends strictly,
+# including against trailing newlines, and follow Azure's naming rules.
+validate_azure_account_name = RegexValidator(
+    regex=r"\A[a-z0-9]{3,24}\Z",
+    message="ACCOUNT_NAME_IS_INVALID",
+)
+
+validate_azure_container_name = RegexValidator(
+    regex=r"\A(?:[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){1,61}[a-z0-9]|\$(?:root|web))\Z",
+    message="CONTAINER_NAME_IS_INVALID",
+)
 
 
 def create_key(hash_checksum):
@@ -51,6 +65,9 @@ def azure_blob_construct_signed_url(
     :return: The signed upload url
     :rtype:
     """
+
+    validate_azure_account_name(storage_account_name)
+    validate_azure_container_name(container_name)
 
     expiry = datetime.utcnow() + timedelta(hours=1)
     blob_name = create_key(hash_checksum)
@@ -179,4 +196,5 @@ def azure_blob_delete(
             "x-ms-delete-snapshots": "include",
         },
         timeout=5.0,
+        allow_redirects=False,
     )
