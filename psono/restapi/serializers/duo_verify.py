@@ -17,7 +17,7 @@ class DuoVerifySerializer(serializers.Serializer):
 
         token = self.context["request"].auth
 
-        duos = Duo.objects.filter(user_id=token.user_id).all()
+        duos = Duo.objects.filter(user_id=token.user_id, active=True).all()
         if len(duos) < 1:
             msg = "NO_DUO_FOUND"
             raise exceptions.ValidationError(msg)
