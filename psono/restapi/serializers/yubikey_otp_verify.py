@@ -25,7 +25,7 @@ class YubikeyOTPVerifySerializer(serializers.Serializer):
 
         yubikey_id = yubikey_get_yubikey_id(yubikey_otp)
 
-        yks = Yubikey_OTP.objects.filter(user_id=token.user_id).all()
+        yks = Yubikey_OTP.objects.filter(user_id=token.user_id, active=True).all()
         if len(yks) < 1:
             msg = "NO_YUBIKEY_FOUND"
             raise exceptions.ValidationError(msg)

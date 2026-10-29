@@ -158,6 +158,76 @@ class DuoVerifyTests(APITestCaseExtended):
         self.assertFalse(self.token_obj.duo_2fa)
         self.assertTrue(self.token_obj.google_authenticator_2fa)
 
+    def test_inactive_duo_is_rejected_without_solving_challenges(self):
+        from django.test import override_settings
+
+        self.token_obj.duo_2fa = True
+        self.token_obj.google_authenticator_2fa = True
+        self.token_obj.save(update_fields=["duo_2fa", "google_authenticator_2fa"])
+        duo = models.Duo.objects.get(user=self.test_user_obj)
+        duo.active = False
+        duo.save(update_fields=["active"])
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token_obj)
+
+        for system_wide in (False, True):
+            if system_wide:
+                duo.duo_host = ""
+                duo.save(update_fields=["duo_host"])
+            for data in ({}, {"duo_token": "123456"}):
+                with self.subTest(system_wide=system_wide, data=data):
+                    with override_settings(
+                        MULTIFACTOR_ENABLED=False,
+                        DUO_INTEGRATION_KEY="integration",
+                        DUO_SECRET_KEY="secret",
+                        DUO_API_HOSTNAME="api-test.duosecurity.com",
+                    ):
+                        with patch(
+                            "restapi.serializers.duo_verify.duo_auth_auth",
+                            return_value={"result": "allow"},
+                        ) as authenticate:
+                            response = self.client.post(
+                                reverse("authentication_duo_verify"), data
+                            )
+                    self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                    self.assertIn("NO_DUO_FOUND", response.data["non_field_errors"])
+                    authenticate.assert_not_called()
+                    self.token_obj.refresh_from_db()
+                    self.assertTrue(self.token_obj.duo_2fa)
+                    self.assertTrue(self.token_obj.google_authenticator_2fa)
+
+    def test_active_duo_is_used_when_an_inactive_configuration_exists(self):
+        models.Duo.objects.filter(user=self.test_user_obj).update(active=False)
+        models.Duo.objects.create(
+            user=self.test_user_obj,
+            title="Active Duo",
+            duo_integration_key="active_integration_key",
+            duo_secret_key=encrypt_with_db_secret("active_secret_key"),
+            duo_host="api-test.duosecurity.com",
+            active=True,
+        )
+        self.token_obj.duo_2fa = True
+        self.token_obj.save(update_fields=["duo_2fa"])
+        self.client.force_authenticate(user=self.test_user_obj, token=self.token_obj)
+
+        with patch(
+            "restapi.serializers.duo_verify.duo_auth_auth",
+            return_value={"result": "allow"},
+        ) as authenticate:
+            response = self.client.post(
+                reverse("authentication_duo_verify"), {"duo_token": "123456"}
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        authenticate.assert_called_once()
+        self.assertEqual(
+            authenticate.call_args.kwargs["integration_key"], "active_integration_key"
+        )
+        self.assertEqual(
+            authenticate.call_args.kwargs["secret_key"], "active_secret_key"
+        )
+        self.token_obj.refresh_from_db()
+        self.assertFalse(self.token_obj.duo_2fa)
+
     def test_get_authentication_duo_verify(self):
         """
         Tests GET method on authentication_duo_verify

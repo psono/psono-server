@@ -187,6 +187,49 @@ class YubikeyOTPVerifyTests(APITestCaseExtended):
         self.assertFalse(token.yubikey_otp_2fa)
         self.assertTrue(token.duo_2fa)
 
+    def test_inactive_yubikey_is_rejected_without_solving_challenges(self):
+        from django.test import override_settings
+
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.yubikey_otp_2fa = True
+        token.duo_2fa = True
+        token.save(update_fields=["yubikey_otp_2fa", "duo_2fa"])
+        self.yubikey.active = False
+        self.yubikey.save(update_fields=["active"])
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        for other_active in (False, True):
+            if other_active:
+                models.Yubikey_OTP.objects.create(
+                    user=self.test_user_obj,
+                    title="Another active YubiKey",
+                    yubikey_id=encrypt_with_db_secret("cccccccccccc"),
+                    active=True,
+                )
+            with self.subTest(other_active=other_active):
+                with override_settings(
+                    MULTIFACTOR_ENABLED=False,
+                    YUBIKEY_CLIENT_ID="123",
+                    YUBIKEY_SECRET_KEY="T3VoIHlvdSBmb3VuZCBtZT8=",
+                ):
+                    with patch(
+                        "restapi.utils.yubikey.Yubico.verify", return_value=True
+                    ):
+                        response = self.client.post(
+                            reverse("authentication_yubikey_otp_verify"),
+                            {"yubikey_otp": self.yubikey_token},
+                        )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                expected_error = (
+                    "YubiKey OTP not attached to this account."
+                    if other_active
+                    else "NO_YUBIKEY_FOUND"
+                )
+                self.assertIn(expected_error, response.data["non_field_errors"])
+                token.refresh_from_db()
+                self.assertTrue(token.yubikey_otp_2fa)
+                self.assertTrue(token.duo_2fa)
+
     def test_get_authentication_yubikey_otp_verify(self):
         """
         Tests GET method on authentication_yubikey_otp_verify

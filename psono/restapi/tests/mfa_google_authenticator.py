@@ -133,6 +133,28 @@ class GoogleAuthenticatorVerifyTests(APITestCaseExtended):
         response = self.client.post(reverse("authentication_ga_verify"), {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_inactive_authenticator_is_rejected_without_solving_challenge(self):
+        token = models.Token.objects.get(user=self.test_user_obj)
+        token.google_authenticator_2fa = True
+        token.duo_2fa = True
+        token.save(update_fields=["google_authenticator_2fa", "duo_2fa"])
+        models.Google_Authenticator.objects.filter(user=self.test_user_obj).update(
+            active=False
+        )
+        self.client.force_authenticate(user=self.test_user_obj, token=token)
+
+        response = self.client.post(
+            reverse("authentication_ga_verify"), {"ga_token": self.totp.now()}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "NO_GOOGLE_AUTHENTICATOR_FOUND", response.data["non_field_errors"]
+        )
+        token.refresh_from_db()
+        self.assertTrue(token.google_authenticator_2fa)
+        self.assertTrue(token.duo_2fa)
+
     def test_multifactor_verification_preserves_other_pending_factors(self):
         from django.test import override_settings
 
