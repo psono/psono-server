@@ -24,7 +24,7 @@ from uuid import UUID
 import scrypt
 import json
 
-from nacl.public import PrivateKey, PublicKey, SealedBox
+from nacl.public import Box, PrivateKey, PublicKey
 import nacl.secret
 import nacl.encoding
 import nacl.utils
@@ -1435,33 +1435,46 @@ def decrypt_with_db_secret(encrypted_text: str) -> str:
     return plaintext.decode()
 
 
-def encrypt_with_admin_recovery_public_key(plain_text: str) -> str:
+def encrypt_with_admin_recovery_public_key(plain_text: str, sender_private_key: str):
     """Encrypt plain text with the configured admin recovery public key."""
     if not settings.ADMIN_RECOVERY_PUBLIC_KEY:
         raise ValueError("ADMIN_RECOVERY_PUBLIC_KEY is not configured")
 
-    crypto_box = SealedBox(
+    crypto_box = Box(
+        PrivateKey(sender_private_key, encoder=nacl.encoding.HexEncoder),
         PublicKey(
             settings.ADMIN_RECOVERY_PUBLIC_KEY,
             encoder=nacl.encoding.HexEncoder,
-        )
+        ),
     )
-    encrypted_data = crypto_box.encrypt(plain_text.encode())
+    nonce = nacl.utils.random(Box.NONCE_SIZE)
 
-    return nacl.encoding.HexEncoder.encode(encrypted_data).decode()
+    return {
+        "text": nacl.encoding.HexEncoder.encode(
+            crypto_box.encrypt(plain_text.encode(), nonce).ciphertext
+        ),
+        "nonce": nacl.encoding.HexEncoder.encode(nonce),
+    }
 
 
 def decrypt_with_admin_recovery_private_key(
-    encrypted_text: str, admin_recovery_private_key: str
+    encrypted_text: str,
+    nonce: str,
+    sender_public_key: str,
+    admin_recovery_private_key: str,
 ) -> str:
     """Decrypt admin recovery data with an explicitly provided private key."""
-    crypto_box = SealedBox(
+    crypto_box = Box(
         PrivateKey(
             admin_recovery_private_key,
             encoder=nacl.encoding.HexEncoder,
-        )
+        ),
+        PublicKey(sender_public_key, encoder=nacl.encoding.HexEncoder),
     )
-    plaintext = crypto_box.decrypt(nacl.encoding.HexEncoder.decode(encrypted_text))
+    plaintext = crypto_box.decrypt(
+        nacl.encoding.HexEncoder.decode(encrypted_text),
+        nacl.encoding.HexEncoder.decode(nonce),
+    )
 
     return plaintext.decode()
 
