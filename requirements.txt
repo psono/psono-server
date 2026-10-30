@@ -240,7 +240,7 @@ sqlparse==0.6.0
     # via django
 toml==0.10.2
     # via -r requirements.in
-twisted[tls]==26.4.0
+twisted[tls]==26.10.0
     # via daphne
 txaio==25.12.2
     # via autobahn
