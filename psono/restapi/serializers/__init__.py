@@ -91,6 +91,7 @@ from .bulk_move_secret_link import *
 from .bulk_read_secret import *
 from .read_shard import *
 from .read_share import *
+from .read_share_right import *
 from .read_share_rights import *
 from .read_file import *
 from .delete_file import *

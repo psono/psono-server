@@ -33,6 +33,7 @@ from .serializers import (
     DeleteWebauthnSerializer as DefaultDeleteWebauthnSerializer,
     ActivateDuoSerializer as DefaultActivateDuoSerializer,
     DeleteDuoSerializer as DefaultDeleteDuoSerializer,
+    ReadShareRightSerializer as DefaultReadShareRightSerializer,
     CreateShareRightSerializer as DefaultCreateShareRightSerializer,
     UpdateShareRightSerializer as DefaultUpdateShareRightSerializer,
     DeleteShareRightSerializer as DefaultDeleteShareRightSerializer,
@@ -264,6 +265,10 @@ DeleteDuoSerializer = import_callable(
     serializers.get("DELETE_DUO_SERIALIZER", DefaultDeleteDuoSerializer)
 )
 
+
+ReadShareRightSerializer = import_callable(
+    serializers.get("READ_SHARE_RIGHT_SERIALIZER", DefaultReadShareRightSerializer)
+)
 
 CreateShareRightSerializer = import_callable(
     serializers.get("CREATE_SHARE_RIGHT_SERIALIZER", DefaultCreateShareRightSerializer)

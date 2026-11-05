@@ -7,7 +7,7 @@ from ..models import (
     Data_Store,
 )
 
-from ..utils import authenticate, get_datastore
+from ..utils import get_datastore
 
 from ..app_settings import (
     CreateDatastoreSerializer,
@@ -163,7 +163,7 @@ class DatastoreView(GenericAPIView):
         :param request:
         :param args:
         :param kwargs:
-        :return: 200 / 400 / 403
+        :return: 200 / 400
         """
 
         serializer = DeleteDatastoreSerializer(
@@ -174,14 +174,6 @@ class DatastoreView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         datastore = serializer.validated_data.get("datastore")
-
-        user, error_code = authenticate(
-            username=request.user.username,
-            authkey=str(serializer.validated_data.get("authkey")),
-        )
-
-        if not user:
-            raise PermissionDenied({"message": "PASSWORD_INCORRECT"})
 
         # delete it
         datastore.delete()
