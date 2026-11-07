@@ -25,6 +25,8 @@ LANGUAGE_CODES = [
     "pl",
     "pt",
     "pt-br",
+    "tr",
+    "uk",
     "zh-cn",
 ]
 
