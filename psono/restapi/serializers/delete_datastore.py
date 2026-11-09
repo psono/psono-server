@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from ..models import Data_Store
+from ..utils import authenticate
 from rest_framework import serializers, exceptions
 from ..fields import UUIDField
 
@@ -30,6 +31,14 @@ class DeleteDatastoreSerializer(serializers.Serializer):
         # prevent deletion of the default datastore
         if datastore.is_default:
             msg = "CANNOT_DELETE_DEFAULT_DATASTORE"
+            raise exceptions.ValidationError(msg)
+
+        user, error_code = authenticate(
+            username=self.context["request"].user.username, authkey=attrs.get("authkey")
+        )
+
+        if not user:
+            msg = "PASSWORD_INCORRECT"
             raise exceptions.ValidationError(msg)
 
         attrs["datastore"] = datastore

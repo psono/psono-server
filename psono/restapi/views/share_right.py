@@ -21,6 +21,7 @@ from ..models import User_Share_Right
 from ..models import Group_Share_Right
 from ..models import User
 
+from ..app_settings import ReadShareRightSerializer
 from ..app_settings import CreateShareRightSerializer
 from ..app_settings import UpdateShareRightSerializer
 from ..app_settings import DeleteShareRightSerializer
@@ -42,6 +43,8 @@ class ShareRightView(GenericAPIView):
     allowed_methods = ("GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD")
 
     def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadShareRightSerializer
         if self.request.method == "PUT":
             return CreateShareRightSerializer
         if self.request.method == "POST":
@@ -58,7 +61,7 @@ class ShareRightView(GenericAPIView):
         :param user_share_right_id:
         :param args:
         :param kwargs:
-        :return: 200 / 403
+        :return: 200 / 400
         """
         if not user_share_right_id:
             # Generate a list of a all share rights
@@ -141,40 +144,14 @@ class ShareRightView(GenericAPIView):
         else:
             # TODO update according to inherit share rights
 
-            # Returns the specified share right if the user is the user
+            serializer = ReadShareRightSerializer(
+                data=request.data, context=self.get_serializer_context()
+            )
 
-            try:
-                share_right = User_Share_Right.objects.get(pk=user_share_right_id)
-                if (
-                    share_right.creator_id != request.user.id
-                    and share_right.user_id != request.user.id
-                ):
-                    return Response(
-                        {
-                            "message": "NO_PERMISSION_OR_NOT_EXIST",
-                            "resource_id": user_share_right_id,
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-                if (
-                    share_right.expiration_date
-                    and share_right.expiration_date <= timezone.now()
-                ):
-                    return Response(
-                        {
-                            "message": "NO_PERMISSION_OR_NOT_EXIST",
-                            "resource_id": user_share_right_id,
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-            except User_Share_Right.DoesNotExist:
-                return Response(
-                    {
-                        "message": "NO_PERMISSION_OR_NOT_EXIST",
-                        "resource_id": user_share_right_id,
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            share_right = serializer.validated_data["share_right"]
 
             response = {
                 "id": share_right.id,

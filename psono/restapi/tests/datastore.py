@@ -1095,7 +1095,8 @@ class DeleteDatastoreTests(APITestCaseExtended):
                 "authkey": "0" * (settings.AUTH_KEY_LENGTH_BYTES * 2),
             },
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["non_field_errors"], ["PASSWORD_INCORRECT"])
         self.assertTrue(
             models.Data_Store.objects.filter(pk=self.new_datastore_id).exists()
         )

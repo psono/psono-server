@@ -117,7 +117,10 @@ class ReadUserShareRightTest(APITestCaseExtended):
         response = self.client.get(
             reverse("share_right", kwargs={"user_share_right_id": right.id})
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"], ["NO_PERMISSION_OR_NOT_EXIST"]
+        )
         foreign_share = models.Share.objects.create(
             user=self.test_user2_obj, data=b"foreign", data_nonce="foreign-nonce"
         )
@@ -130,7 +133,21 @@ class ReadUserShareRightTest(APITestCaseExtended):
         response = self.client.get(
             reverse("share_right", kwargs={"user_share_right_id": foreign.id})
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"], ["NO_PERMISSION_OR_NOT_EXIST"]
+        )
+
+    def test_read_share_right_with_malformed_id(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+        response = self.client.get(
+            reverse("share_right", kwargs={"user_share_right_id": "invalid"})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"], ["USER_SHARE_RIGHT_ID_MALFORMED"]
+        )
 
     def test_list_share_right_without_credentials(self):
         """
@@ -268,7 +285,10 @@ class ReadUserShareRightTest(APITestCaseExtended):
         self.client.force_authenticate(user=self.test_user2_obj)
         response = self.client.get(url, data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"], ["NO_PERMISSION_OR_NOT_EXIST"]
+        )
         self.assertFalse(
             response.data.get("shares", False),
             "Shares do not exist in list shares response",
