@@ -45,6 +45,9 @@ class UserUpdateSerializer(serializers.Serializer):
     secret_key_nonce = serializers.CharField(
         max_length=64, required=False, allow_null=True
     )
+    user_sauce = serializers.CharField(
+        max_length=64, required=False, allow_null=True, trim_whitespace=False
+    )
     hashing_algorithm = serializers.ChoiceField(
         choices=HASHING_ALGORITHMS,
         required=False,
@@ -67,6 +70,7 @@ class UserUpdateSerializer(serializers.Serializer):
         private_key_nonce = attrs.get("private_key_nonce", "")
         private_key = attrs.get("private_key", "")
         secret_key_nonce = attrs.get("secret_key_nonce", "")
+        user_sauce = attrs.get("user_sauce")
 
         if not authkey_old and any(
             [
@@ -78,6 +82,7 @@ class UserUpdateSerializer(serializers.Serializer):
                 secret_key,
                 private_key_nonce,
                 secret_key_nonce,
+                user_sauce,
             ]
         ):
             msg = "AUTHKEY_REQUIRED"

@@ -282,6 +282,97 @@ class UserModificationTests(APITestCaseExtended):
         user = models.User.objects.get(pk=self.test_user_obj.pk)
 
         self.assertEqual(user.language, data["language"])
+        self.assertEqual(user.user_sauce, self.test_user_sauce)
+
+    def test_update_user_sauce_requires_old_authkey(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        for authkey_data in ({}, {"authkey_old": None}):
+            with self.subTest(authkey_data=authkey_data):
+                response = self.client.put(
+                    reverse("user_update"),
+                    {"user_sauce": self.test_user_sauce2, **authkey_data},
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(
+                    response.data["non_field_errors"], ["AUTHKEY_REQUIRED"]
+                )
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.user_sauce, self.test_user_sauce)
+
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
+    def test_update_user_sauce_with_wrong_old_authkey(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        response = self.client.put(
+            reverse("user_update"),
+            {"user_sauce": self.test_user_sauce2, "authkey_old": "wrong-authkey"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["non_field_errors"], ["OLD_PASSWORD_INCORRECT"])
+        self.test_user_obj.refresh_from_db()
+        self.assertEqual(self.test_user_obj.user_sauce, self.test_user_sauce)
+
+    @override_settings(
+        PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
+    )
+    def test_update_user_sauce_with_correct_old_authkey(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        for user_sauce in (self.test_user_sauce2, " padded-sauce "):
+            with self.subTest(user_sauce=user_sauce):
+                response = self.client.put(
+                    reverse("user_update"),
+                    {"user_sauce": user_sauce, "authkey_old": self.test_authkey},
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.user_sauce, user_sauce)
+
+    def test_update_user_with_null_sauce_does_not_require_old_authkey(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        response = self.client.put(
+            reverse("user_update"), {"user_sauce": None, "language": "de"}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertEqual(self.test_user_obj.user_sauce, self.test_user_sauce)
+        self.assertEqual(self.test_user_obj.language, "de")
+
+    def test_update_user_sauce_invalid_values_are_not_written(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        for user_sauce in ("", False, [], {}, "a" * 65):
+            with self.subTest(user_sauce=user_sauce):
+                response = self.client.put(
+                    reverse("user_update"),
+                    {"user_sauce": user_sauce, "authkey_old": self.test_authkey},
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("user_sauce", response.data)
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.user_sauce, self.test_user_sauce)
+
+    def test_update_user_sauce_falsey_values_cannot_bypass_authkey_requirement(self):
+        self.client.force_authenticate(user=self.test_user_obj)
+
+        for user_sauce in ("", " ", 0, False, [], {}):
+            with self.subTest(user_sauce=user_sauce):
+                response = self.client.put(
+                    reverse("user_update"), {"user_sauce": user_sauce}
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.user_sauce, self.test_user_sauce)
 
     @override_settings(
         PASSWORD_HASHERS=("restapi.tests.base.InsecureUnittestPasswordHasher",)
