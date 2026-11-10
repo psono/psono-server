@@ -30,6 +30,7 @@ from ..app_settings import (
 class APIKeyAccessSecretView(GenericAPIView):
     renderer_classes = (PlainJSONRenderer,)
     permission_classes = (AllowAny,)
+    throttle_scope = "api_key_access_secret"
 
     def get_serializer_class(self):
         if self.request.method == "POST":

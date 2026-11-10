@@ -21,6 +21,7 @@ class APIKeyView(GenericAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     allowed_methods = ("GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD")
+    throttle_scope = "api_key"
 
     def get_serializer_class(self):
         if self.request.method == "PUT":
