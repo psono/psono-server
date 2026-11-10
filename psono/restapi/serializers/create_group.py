@@ -7,7 +7,7 @@ from rest_framework import serializers, exceptions
 
 
 class CreateGroupSerializer(serializers.Serializer):
-    name = serializers.CharField(required=True)
+    name = serializers.CharField(max_length=128, required=True)
     secret_key = serializers.CharField(required=True)
     secret_key_nonce = serializers.CharField(max_length=64, required=True)
     private_key = serializers.CharField(required=True)

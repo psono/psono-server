@@ -9,7 +9,7 @@ class UpdateGroupSerializer(AdminCapabilitySerializerMixin, serializers.Serializ
     required_capability = "groups.update"
 
     group_id = UUIDField(required=True)
-    name = serializers.CharField(max_length=64, required=True)
+    name = serializers.CharField(max_length=128, required=True)
 
     def validate(self, attrs: dict) -> dict:
 
