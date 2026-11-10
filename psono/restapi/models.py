@@ -697,7 +697,7 @@ class Group(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
     write_date = models.DateTimeField(auto_now=True)
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=128)
     public_key = models.CharField("public key", max_length=256)
     forced_membership = models.BooleanField(
         "Forced Membership",

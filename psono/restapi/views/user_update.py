@@ -81,8 +81,9 @@ class UserUpdate(GenericAPIView):
             and request.data["private_key_nonce"] is not None
         ):
             request.user.private_key_nonce = str(request.data["private_key_nonce"])
-        if "user_sauce" in request.data and request.data["user_sauce"] is not None:
-            request.user.user_sauce = str(request.data["user_sauce"])
+        user_sauce = serializer.validated_data.get("user_sauce")
+        if user_sauce is not None:
+            request.user.user_sauce = user_sauce
         if hashing_parameters:
             request.user.hashing_parameters = hashing_parameters
         if hashing_algorithm:

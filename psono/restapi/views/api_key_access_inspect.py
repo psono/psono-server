@@ -19,6 +19,7 @@ class APIKeyAccessInspectView(GenericAPIView):
     permission_classes = (AllowAny,)
     parser_classes = [JSONParser]
     allowed_methods = ("POST", "OPTIONS", "HEAD")
+    throttle_scope = "api_key_access_inspect"
 
     def get_serializer_class(self):
         if self.request.method == "POST":
