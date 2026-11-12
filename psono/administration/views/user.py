@@ -257,6 +257,7 @@ class UserView(GenericAPIView):
         result = {
             "id": user.id,
             "username": user.username,
+            "server_secret_exists": False,
             "is_managed": False,
             "admin_recovery_exists": False,
             "db_secret_exists": False,  # nosec -- not [B105:hardcoded_password_string]

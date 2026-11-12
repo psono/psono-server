@@ -235,6 +235,7 @@ class ReadUserTests(APITestCaseExtended):
         self.assertEqual(response.data["language"], self.test_user_obj.language)
         self.assertIs(response.data["admin_recovery_exists"], False)
         self.assertIs(response.data["db_secret_exists"], False)
+        self.assertIs(response.data["server_secret_exists"], False)
 
     def test_read_specific_user_failure_not_exist(self):
         """
@@ -666,6 +667,41 @@ class UpdateUserTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_username_changes_are_not_supported_in_community_edition(self):
+        self.client.force_authenticate(user=self.admin)
+        for authentication in ("AUTHKEY", "SAML", "OIDC", "LDAP"):
+            with self.subTest(authentication=authentication):
+                self.test_user_obj.authentication = authentication
+                self.test_user_obj.save(update_fields=["authentication"])
+                response = self.client.put(
+                    reverse("admin_user"),
+                    {
+                        "user_id": self.test_user_obj.id,
+                        "username": "renamed@example.com",
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(response.data["username"], ["USER_KEYS_NOT_AVAILABLE"])
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.username, self.test_username)
+
+    def test_unchanged_username_is_accepted_for_api_compatibility(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "username": self.test_username.upper()},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid_username_is_rejected(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "username": "invalid"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["username"], ["INVALID_USERNAME_FORMAT"])
 
     def test_update_user_email_success(self):
         """
