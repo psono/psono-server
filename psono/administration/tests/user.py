@@ -1,8 +1,13 @@
 from django.urls import reverse
 from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 
+from datetime import timedelta
 import random
 import string
 import binascii
@@ -12,6 +17,7 @@ from mock import patch
 from restapi.utils import encrypt_with_db_secret
 from restapi.utils import create_user as create_user_util
 from restapi import models
+from restapi.authentication import TokenAuthentication
 from restapi.tests.base import APITestCaseExtended
 
 from .helpers import AdministrativeAccessTestCase, create_user
@@ -653,6 +659,68 @@ class UpdateUserTests(APITestCaseExtended):
         self.test_user_obj.refresh_from_db()
         self.assertFalse(self.test_user_obj.is_superuser)
         self.assertFalse(self.test_user_obj.is_staff)
+
+    @override_settings(
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        },
+    )
+    def test_disabling_user_revokes_all_sessions_including_cached_tokens(self):
+        valid_till = timezone.now() + timedelta(hours=1)
+        tokens = [
+            models.Token.objects.create(
+                user=self.test_user_obj, active=active, valid_till=valid_till
+            )
+            for active in (True, True, False)
+        ]
+        other_token = models.Token.objects.create(
+            user=self.test_user_obj2, active=True, valid_till=valid_till
+        )
+        authentication = TokenAuthentication()
+        for token in tokens:
+            self.assertIsNotNone(cache.get("psono_token_" + token.pk))
+        for token in tokens[:2]:
+            self.assertEqual(authentication.get_db_token(token.pk).pk, token.pk)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "is_active": False},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertFalse(self.test_user_obj.is_active)
+        self.assertFalse(self.test_user_obj.auth_tokens.exists())
+        for token in tokens:
+            self.assertIsNone(cache.get("psono_token_" + token.pk))
+            with self.assertRaises(AuthenticationFailed):
+                authentication.get_db_token(token.pk)
+        self.assertEqual(authentication.get_db_token(other_token.pk).pk, other_token.pk)
+
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "is_active": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertTrue(self.test_user_obj.is_active)
+        for token in tokens:
+            with self.assertRaises(AuthenticationFailed):
+                authentication.get_db_token(token.pk)
+
+    def test_updating_active_user_preserves_sessions(self):
+        token = models.Token.objects.create(user=self.test_user_obj, active=True)
+        self.client.force_authenticate(user=self.admin)
+        for changes in ({"language": "de"}, {"is_active": True}):
+            with self.subTest(changes=changes):
+                response = self.client.put(
+                    reverse("admin_user"),
+                    {"user_id": self.test_user_obj.id, **changes},
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertTrue(models.Token.objects.filter(pk=token.pk).exists())
 
     def test_update_user_success(self):
         """
