@@ -58,6 +58,9 @@ class CommandDisableuserTestCase(TestCase):
         Tests to disable a user
         """
 
+        models.Token.objects.create(user=self.test_user_obj, active=True)
+        models.Token.objects.create(user=self.test_user_obj, active=True)
+
         args = [self.test_username]
         opts = {}
 
@@ -67,6 +70,7 @@ class CommandDisableuserTestCase(TestCase):
         user = models.User.objects.get(username=self.test_username)
 
         self.assertFalse(user.is_active)
+        self.assertFalse(user.auth_tokens.exists())
 
     def test_disableeuser_not_exist(self):
         """

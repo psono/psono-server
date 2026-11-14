@@ -12,6 +12,11 @@ class UpdateUserSerializer(AdminCapabilitySerializerMixin, serializers.Serialize
     required_capability = "users.update"
 
     user_id = UUIDField(required=True)
+    username = serializers.EmailField(
+        required=False,
+        max_length=254,
+        error_messages={"invalid": "INVALID_USERNAME_FORMAT"},
+    )
     is_active = BooleanField(required=False)
     is_email_active = BooleanField(required=False)
     is_staff = BooleanField(required=False)
@@ -41,6 +46,10 @@ class UpdateUserSerializer(AdminCapabilitySerializerMixin, serializers.Serialize
         self.validate_administrative_access(user=user)
         if is_superuser is not None or is_staff is not None:
             self.validate_superuser()
+
+        # Keep the API field compatible with EE, but CE cannot change usernames.
+        if "username" in attrs and attrs["username"].strip().lower() != user.username:
+            raise exceptions.ValidationError({"username": "USER_KEYS_NOT_AVAILABLE"})
 
         if email is not None:
             email = email.lower().strip()

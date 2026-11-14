@@ -203,14 +203,14 @@ class User(models.Model):
                     email_bcrypt=stored_user.email_bcrypt,
                 )
 
-            if not self.is_active:
-                for token in self.auth_tokens.all():
-                    token.delete()
-
         except User.DoesNotExist:
             pass
 
         super(User, self).save(*args, **kwargs)
+
+        if not self.is_active:
+            # Queryset deletion also invalidates cached tokens via post_delete.
+            self.auth_tokens.all().delete()
 
     class Meta:
         abstract = False

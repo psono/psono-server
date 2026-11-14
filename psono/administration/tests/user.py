@@ -1,8 +1,13 @@
 from django.urls import reverse
 from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 
+from datetime import timedelta
 import random
 import string
 import binascii
@@ -12,6 +17,7 @@ from mock import patch
 from restapi.utils import encrypt_with_db_secret
 from restapi.utils import create_user as create_user_util
 from restapi import models
+from restapi.authentication import TokenAuthentication
 from restapi.tests.base import APITestCaseExtended
 
 from .helpers import AdministrativeAccessTestCase, create_user
@@ -235,6 +241,7 @@ class ReadUserTests(APITestCaseExtended):
         self.assertEqual(response.data["language"], self.test_user_obj.language)
         self.assertIs(response.data["admin_recovery_exists"], False)
         self.assertIs(response.data["db_secret_exists"], False)
+        self.assertIs(response.data["server_secret_exists"], False)
 
     def test_read_specific_user_failure_not_exist(self):
         """
@@ -653,6 +660,68 @@ class UpdateUserTests(APITestCaseExtended):
         self.assertFalse(self.test_user_obj.is_superuser)
         self.assertFalse(self.test_user_obj.is_staff)
 
+    @override_settings(
+        CACHE_ENABLE=True,
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        },
+    )
+    def test_disabling_user_revokes_all_sessions_including_cached_tokens(self):
+        valid_till = timezone.now() + timedelta(hours=1)
+        tokens = [
+            models.Token.objects.create(
+                user=self.test_user_obj, active=active, valid_till=valid_till
+            )
+            for active in (True, True, False)
+        ]
+        other_token = models.Token.objects.create(
+            user=self.test_user_obj2, active=True, valid_till=valid_till
+        )
+        authentication = TokenAuthentication()
+        for token in tokens:
+            self.assertIsNotNone(cache.get("psono_token_" + token.pk))
+        for token in tokens[:2]:
+            self.assertEqual(authentication.get_db_token(token.pk).pk, token.pk)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "is_active": False},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertFalse(self.test_user_obj.is_active)
+        self.assertFalse(self.test_user_obj.auth_tokens.exists())
+        for token in tokens:
+            self.assertIsNone(cache.get("psono_token_" + token.pk))
+            with self.assertRaises(AuthenticationFailed):
+                authentication.get_db_token(token.pk)
+        self.assertEqual(authentication.get_db_token(other_token.pk).pk, other_token.pk)
+
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "is_active": True},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.test_user_obj.refresh_from_db()
+        self.assertTrue(self.test_user_obj.is_active)
+        for token in tokens:
+            with self.assertRaises(AuthenticationFailed):
+                authentication.get_db_token(token.pk)
+
+    def test_updating_active_user_preserves_sessions(self):
+        token = models.Token.objects.create(user=self.test_user_obj, active=True)
+        self.client.force_authenticate(user=self.admin)
+        for changes in ({"language": "de"}, {"is_active": True}):
+            with self.subTest(changes=changes):
+                response = self.client.put(
+                    reverse("admin_user"),
+                    {"user_id": self.test_user_obj.id, **changes},
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertTrue(models.Token.objects.filter(pk=token.pk).exists())
+
     def test_update_user_success(self):
         """
         Tests Update user
@@ -666,6 +735,41 @@ class UpdateUserTests(APITestCaseExtended):
         response = self.client.put(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_username_changes_are_not_supported_in_community_edition(self):
+        self.client.force_authenticate(user=self.admin)
+        for authentication in ("AUTHKEY", "SAML", "OIDC", "LDAP"):
+            with self.subTest(authentication=authentication):
+                self.test_user_obj.authentication = authentication
+                self.test_user_obj.save(update_fields=["authentication"])
+                response = self.client.put(
+                    reverse("admin_user"),
+                    {
+                        "user_id": self.test_user_obj.id,
+                        "username": "renamed@example.com",
+                    },
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(response.data["username"], ["USER_KEYS_NOT_AVAILABLE"])
+                self.test_user_obj.refresh_from_db()
+                self.assertEqual(self.test_user_obj.username, self.test_username)
+
+    def test_unchanged_username_is_accepted_for_api_compatibility(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "username": self.test_username.upper()},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid_username_is_rejected(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("admin_user"),
+            {"user_id": self.test_user_obj.id, "username": "invalid"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["username"], ["INVALID_USERNAME_FORMAT"])
 
     def test_update_user_email_success(self):
         """
