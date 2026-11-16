@@ -249,6 +249,10 @@ FAVICON_SERVICE_URL = config_get(
     "FAVICON_SERVICE_URL", "https://favicon.psono.com/v1/icon/"
 )
 
+PWNED_PASSWORDS_API_URL = config_get(
+    "PWNED_PASSWORDS_API_URL", "https://api.pwnedpasswords.com"
+)
+
 ALLOW_USER_SEARCH_BY_EMAIL = (
     str(config_get("ALLOW_USER_SEARCH_BY_EMAIL", False)).lower() == "true"
 )
@@ -974,6 +978,7 @@ def generate_signature():
         "files": FILES_ENABLED,
         "allowed_file_repository_types": ALLOWED_FILE_REPOSITORY_TYPES,
         "favicon_service_url": FAVICON_SERVICE_URL,
+        "pwned_passwords_api_url": PWNED_PASSWORDS_API_URL,
         "auto_prolongation_token_time_valid": AUTO_PROLONGATION_TOKEN_TIME_VALID,
         "allowed_second_factors": ALLOWED_SECOND_FACTORS,
         "disable_central_security_reports": DISABLE_CENTRAL_SECURITY_REPORTS,

@@ -1,11 +1,13 @@
 import binascii
 import json
+from unittest.mock import patch
 
 from django.conf import settings
 from django.urls import reverse
 import nacl.encoding
 import nacl.signing
 from rest_framework import status
+from psono.settings import generate_signature
 
 from .base import APITestCaseExtended
 
@@ -52,7 +54,28 @@ class ReadInfoTest(APITestCaseExtended):
             info.get("authentication_methods", None), settings.AUTHENTICATION_METHODS
         )
         self.assertEqual(info.get("management", None), settings.MANAGEMENT_ENABLED)
+        self.assertEqual(
+            info.get("pwned_passwords_api_url"), settings.PWNED_PASSWORDS_API_URL
+        )
 
+        verify_key = nacl.signing.VerifyKey(
+            response.data["verify_key"], encoder=nacl.encoding.HexEncoder
+        )
+        verify_key.verify(
+            response.data["info"].encode(),
+            binascii.unhexlify(response.data["signature"]),
+        )
+
+    @patch("psono.settings.PWNED_PASSWORDS_API_URL", "https://breaches.example.com/api")
+    def test_read_info_custom_pwned_passwords_api_url(self):
+        with self.settings(SIGNATURE=generate_signature()):
+            response = self.client.get(reverse("info"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            json.loads(response.data["info"])["pwned_passwords_api_url"],
+            "https://breaches.example.com/api",
+        )
         verify_key = nacl.signing.VerifyKey(
             response.data["verify_key"], encoder=nacl.encoding.HexEncoder
         )
