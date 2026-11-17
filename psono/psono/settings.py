@@ -697,6 +697,16 @@ if str(config_get("CACHE_REDIS", False)).lower() == "true":
         }
     }
 
+    if str(config_get("CACHE_REDIS_SENTINEL", False)).lower() == "true":
+        # Keep DefaultClient so reads and writes both use the discovered primary.
+        CACHES["default"]["OPTIONS"].update(
+            {
+                "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
+                "SENTINELS": config_get("CACHE_REDIS_SENTINELS"),
+                "SENTINEL_KWARGS": config_get("CACHE_REDIS_SENTINEL_KWARGS", {}),
+            }
+        )
+
 if not str(config_get("THROTTLING", True)).lower() == "true":
     CACHES = {
         "default": {
