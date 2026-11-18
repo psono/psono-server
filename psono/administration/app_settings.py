@@ -22,6 +22,8 @@ from .serializers import (
     DeleteEmergencyCodeSerializer as DefaultDeleteEmergencyCodeSerializer,
     DeleteLinkShareSerializer as DefaultDeleteLinkShareSerializer,
     UpdateGroupShareRightSerializer as DefaultUpdateGroupShareRightSerializer,
+    UpdateUserShareRightSerializer as DefaultUpdateUserShareRightSerializer,
+    DeleteUserShareRightSerializer as DefaultDeleteUserShareRightSerializer,
     DeleteGroupShareRightSerializer as DefaultDeleteGroupShareRightSerializer,
     ReadSecurityReportSerializer as DefaultReadSecurityReportSerializer,
     DeleteIvaltSerializer as DefaultDeleteIvaltSerializer,
@@ -130,6 +132,18 @@ DeleteLinkShareSerializer = import_callable(
 UpdateGroupShareRightSerializer = import_callable(
     serializers.get(
         "UPDATE_GROUP_SHARE_RIGHT_SERIALIZER", DefaultUpdateGroupShareRightSerializer
+    )
+)
+
+UpdateUserShareRightSerializer = import_callable(
+    serializers.get(
+        "UPDATE_USER_SHARE_RIGHT_SERIALIZER", DefaultUpdateUserShareRightSerializer
+    )
+)
+
+DeleteUserShareRightSerializer = import_callable(
+    serializers.get(
+        "DELETE_USER_SHARE_RIGHT_SERIALIZER", DefaultDeleteUserShareRightSerializer
     )
 )
 

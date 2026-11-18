@@ -42,6 +42,9 @@ _CAPABILITIES = (
         "users.link_shares.delete", "users", "DELETE_USER_LINK_SHARES", True
     ),
     AdministrativeCapability(
+        "users.shares.manage", "users", "MANAGE_USER_SHARE_RIGHTS", True
+    ),
+    AdministrativeCapability(
         "security_reports.read", "users", "VIEW_USER_SECURITY_REPORTS", True
     ),
     AdministrativeCapability(

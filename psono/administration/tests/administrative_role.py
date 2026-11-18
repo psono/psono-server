@@ -238,6 +238,7 @@ class AdministrativeRoleTests(AdministrativeAccessTestCase):
                 "users.recovery.read",
                 "users.recovery.delete",
                 "users.link_shares.delete",
+                "users.shares.manage",
                 "security_reports.read",
             },
         )

@@ -19,6 +19,8 @@ from .update_membership import UpdateMembershipSerializer
 from .update_user import UpdateUserSerializer
 from .delete_group_share_right import DeleteGroupShareRightSerializer
 from .update_group_share_right import UpdateGroupShareRightSerializer
+from .update_user_share_right import UpdateUserShareRightSerializer
+from .delete_user_share_right import DeleteUserShareRightSerializer
 from .delete_ivalt import DeleteIvaltSerializer
 from .create_fileserver_cluster import CreateFileserverClusterSerializer
 from .create_fileserver_cluster_shard_link import (
