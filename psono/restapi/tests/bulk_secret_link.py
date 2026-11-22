@@ -9,6 +9,7 @@ import random
 import string
 import os
 import binascii
+from uuid import uuid4
 
 
 class UserBulkDeleteSecretLinkTest(APITestCaseExtended):
@@ -437,6 +438,118 @@ class UserBulkMoveSecretLinkTest(APITestCaseExtended):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def _prepare_shared_link(self, read):
+        models.User_Share_Right.objects.create(
+            creator=self.test_user_obj,
+            user=self.test_user_obj2,
+            share=self.test_share2_obj,
+            accepted=True,
+            read=read,
+            write=True,
+            grant=False,
+        )
+        models.User_Share_Right.objects.create(
+            creator=self.test_user_obj,
+            user=self.test_user_obj2,
+            share=self.test_share1_obj,
+            accepted=True,
+            read=False,
+            write=True,
+            grant=False,
+        )
+        self.secret_link_obj.parent_datastore = None
+        self.secret_link_obj.parent_share = self.test_share2_obj
+        self.secret_link_obj.save()
+        self.client.force_authenticate(user=self.test_user_obj2)
+
+    def test_move_failure_write_only_source(self):
+        self._prepare_shared_link(read=False)
+        for destination in (
+            {"new_parent_datastore_id": self.test_datastore2_obj.id},
+            {"new_parent_share_id": self.test_share1_obj.id},
+        ):
+            with self.subTest(destination=destination):
+                response = self.client.post(
+                    reverse("bulk_secret_link"),
+                    {"link_ids": [self.link_id], **destination},
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(
+                    response.data["non_field_errors"], ["NO_PERMISSION_OR_NOT_EXIST"]
+                )
+                self.secret_link_obj.refresh_from_db()
+                self.assertEqual(
+                    self.secret_link_obj.parent_share_id, self.test_share2_obj.id
+                )
+                self.assertIsNone(self.secret_link_obj.parent_datastore_id)
+
+    def test_move_read_write_source_to_writable_destinations(self):
+        self._prepare_shared_link(read=True)
+        for destination in (
+            {"new_parent_datastore_id": self.test_datastore2_obj.id},
+            {"new_parent_share_id": self.test_share1_obj.id},
+        ):
+            with self.subTest(destination=destination):
+                link = models.Secret_Link.objects.create(
+                    link_id=uuid4(),
+                    secret=self.test_secret_obj,
+                    parent_share=self.test_share2_obj,
+                )
+                response = self.client.post(
+                    reverse("bulk_secret_link"),
+                    {"link_ids": [link.link_id], **destination},
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                moved = models.Secret_Link.objects.get(link_id=link.link_id)
+                self.assertEqual(
+                    moved.parent_share_id, destination.get("new_parent_share_id")
+                )
+                self.assertEqual(
+                    moved.parent_datastore_id,
+                    destination.get("new_parent_datastore_id"),
+                )
+
+    def test_move_failure_both_destination_parents(self):
+        self._prepare_shared_link(read=True)
+        response = self.client.post(
+            reverse("bulk_secret_link"),
+            {
+                "link_ids": [self.link_id],
+                "new_parent_share_id": self.test_share2_obj.id,
+                "new_parent_datastore_id": self.test_datastore2_obj.id,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"],
+            ["EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"],
+        )
+        self.secret_link_obj.refresh_from_db()
+        self.assertEqual(self.secret_link_obj.parent_share_id, self.test_share2_obj.id)
+        self.assertIsNone(self.secret_link_obj.parent_datastore_id)
+
+    def test_move_failure_one_write_only_source_leaves_all_links_unchanged(self):
+        self._prepare_shared_link(read=False)
+        readable = models.Secret_Link.objects.create(
+            link_id=uuid4(),
+            secret=self.test_secret_obj,
+            parent_datastore=self.test_datastore2_obj,
+        )
+        response = self.client.post(
+            reverse("bulk_secret_link"),
+            {
+                "link_ids": [readable.link_id, self.link_id],
+                "new_parent_share_id": self.test_share1_obj.id,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.secret_link_obj.refresh_from_db()
+        self.assertEqual(self.secret_link_obj.parent_share_id, self.test_share2_obj.id)
+        self.assertIsNone(self.secret_link_obj.parent_datastore_id)
+        readable.refresh_from_db()
+        self.assertEqual(readable.parent_datastore_id, self.test_datastore2_obj.id)
+        self.assertIsNone(readable.parent_share_id)
 
     def test_move_failure_new_parent_datastore_does_not_exist(self):
         """

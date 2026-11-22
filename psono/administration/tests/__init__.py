@@ -26,5 +26,6 @@ from .stats_two_factor import *
 from .tenant import *
 from .tenant_membership import *
 from .user import *
+from .user_share_right import *
 from .webauthn import *
 from .yubikey import *

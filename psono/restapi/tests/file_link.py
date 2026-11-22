@@ -263,6 +263,105 @@ class FileLinkDeleteTests(APITestCaseExtended):
         file.refresh_from_db()
         self.assertIsNone(file.delete_date)
 
+    def _create_shared_file_link(self, read):
+        owner = models.User.objects.create(
+            username="file-owner@example.com",
+            private_key_nonce="owner-private",
+            secret_key_nonce="owner-secret",
+        )
+        source = models.Share.objects.create(
+            user=owner, data=b"source", data_nonce="source-nonce"
+        )
+        models.User_Share_Right.objects.create(
+            creator=owner,
+            user=self.test_user_obj,
+            share=source,
+            accepted=True,
+            read=read,
+            write=True,
+            grant=False,
+        )
+        destination = models.Share.objects.create(
+            user=owner, data=b"destination", data_nonce="destination-nonce"
+        )
+        models.User_Share_Right.objects.create(
+            creator=owner,
+            user=self.test_user_obj,
+            share=destination,
+            accepted=True,
+            read=False,
+            write=True,
+            grant=False,
+        )
+        file = models.File.objects.create(
+            user=owner, shard=self.shard1, size=50, chunk_count=1
+        )
+        link = models.File_Link.objects.create(
+            link_id=uuid4(), file=file, parent_share=source
+        )
+        self.client.force_authenticate(user=self.test_user_obj)
+        return link, source, destination
+
+    def test_move_file_link_rejects_write_only_source(self):
+        link, source, destination_share = self._create_shared_file_link(read=False)
+        for destination in (
+            {"new_parent_datastore_id": self.test_datastore_obj.id},
+            {"new_parent_share_id": destination_share.id},
+        ):
+            with self.subTest(destination=destination):
+                response = self.client.post(
+                    reverse("file_link"), {"link_id": link.link_id, **destination}
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(
+                    response.data["non_field_errors"], ["NO_PERMISSION_OR_NOT_EXIST"]
+                )
+                link.refresh_from_db()
+                self.assertEqual(link.parent_share_id, source.id)
+                self.assertIsNone(link.parent_datastore_id)
+
+    def test_move_file_link_read_write_source_to_writable_destinations(self):
+        original, source, destination_share = self._create_shared_file_link(read=True)
+        for destination in (
+            {"new_parent_datastore_id": self.test_datastore_obj.id},
+            {"new_parent_share_id": destination_share.id},
+        ):
+            with self.subTest(destination=destination):
+                link = models.File_Link.objects.create(
+                    link_id=uuid4(), file=original.file, parent_share=source
+                )
+                response = self.client.post(
+                    reverse("file_link"), {"link_id": link.link_id, **destination}
+                )
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                moved = models.File_Link.objects.get(link_id=link.link_id)
+                self.assertEqual(
+                    moved.parent_share_id, destination.get("new_parent_share_id")
+                )
+                self.assertEqual(
+                    moved.parent_datastore_id,
+                    destination.get("new_parent_datastore_id"),
+                )
+
+    def test_move_file_link_rejects_both_destination_parents(self):
+        link, source, _ = self._create_shared_file_link(read=True)
+        response = self.client.post(
+            reverse("file_link"),
+            {
+                "link_id": link.link_id,
+                "new_parent_share_id": source.id,
+                "new_parent_datastore_id": self.test_datastore_obj.id,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"],
+            ["EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"],
+        )
+        link.refresh_from_db()
+        self.assertEqual(link.parent_share_id, source.id)
+        self.assertIsNone(link.parent_datastore_id)
+
     def test_move_file_link_requires_link_id(self):
         self.client.force_authenticate(user=self.test_user_obj)
         response = self.client.post(reverse("file_link"), {})

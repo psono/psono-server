@@ -28,6 +28,8 @@ LANGUAGE_CODES = [
     "tr",
     "uk",
     "zh-cn",
+    "zh-hans",
+    "zh-hant",
 ]
 
 
@@ -156,8 +158,8 @@ def main():
     # Download
     languages = get_languages()
     for lang in languages:
-        language_code = lang["code"].lower()
-        if language_code not in LANGUAGE_CODES:
+        language_code = lang["code"]
+        if language_code.lower() not in LANGUAGE_CODES:
             print("skipping language " + language_code)
             continue
         print("processing language " + language_code)

@@ -134,7 +134,8 @@ LANGUAGE_CODES = [
 ]
 
 FOLDER_MAPPING = {
-    "zh-Hans": ["zh-cn", "zh"],
+    "zh-Hans": ["zh_Hans", "zh_CN", "zh"],
+    "zh-Hant": ["zh_Hant", "zh_TW"],
 }
 
 

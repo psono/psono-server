@@ -72,6 +72,11 @@ if settings.MANAGEMENT_ENABLED:
         ),
         re_path(r"^user/$", views.UserView.as_view(), name="admin_user"),
         re_path(
+            r"^user-share-right/$",
+            views.UserShareRightView.as_view(),
+            name="admin_user_share_right",
+        ),
+        re_path(
             r"^yubikey-otp/$", views.YubikeyOTPView.as_view(), name="admin_yubikey_otp"
         ),
         re_path(r"^webautn/$", views.WebAuthnView.as_view(), name="admin_webauthn"),
