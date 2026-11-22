@@ -21,6 +21,10 @@ class MoveSecretLinkSerializer(serializers.Serializer):
             msg = "NO_PARENT_PROVIDED"
             raise exceptions.ValidationError(msg)
 
+        if new_parent_share_id is not None and new_parent_datastore_id is not None:
+            msg = "EITHER_PARENT_DATASTORE_OR_SHARE_NEED_TO_BE_DEFINED_NOT_BOTH"
+            raise exceptions.ValidationError(msg)
+
         secrets = []
         old_parents = []
         old_datastores = []
@@ -41,10 +45,14 @@ class MoveSecretLinkSerializer(serializers.Serializer):
             msg = "NO_PERMISSION_OR_NOT_EXIST"
             raise exceptions.ValidationError(msg)
 
-        # check write permissions on old_parents
+        # Moving a link can grant read access at the destination.
+        # Require read and write permissions on old_parents.
         for old_parent_share_id in old_parents:
             if not user_has_rights_on_share(
-                self.context["request"].user.id, old_parent_share_id, write=True
+                self.context["request"].user.id,
+                old_parent_share_id,
+                read=True,
+                write=True,
             ):
                 msg = "NO_PERMISSION_OR_NOT_EXIST"
                 raise exceptions.ValidationError(msg)
